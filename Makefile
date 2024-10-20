@@ -39,7 +39,15 @@ else
 	N64_CFLAGS += -O2
 endif
 
+all: $(T3D_INST)/build/t3d.a
+all: $(T3D_INST)/tools/gltf_importer/gltf_to_t3d
 all: $(ROMNAME).z64
+
+$(T3D_INST)/build/t3d.a:
+	$(MAKE) -C $(T3D_INST)
+
+$(T3D_INST)/tools/gltf_importer/gltf_to_t3d:
+	$(MAKE) -C $(T3D_INST)/tools/gltf_importer
 
 $(FILESYSTEM_DIR)/%.sprite: $(ASSETS_DIR)/%.png
 	@mkdir -p $(dir $@)
