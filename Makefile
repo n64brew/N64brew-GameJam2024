@@ -6,6 +6,7 @@ ASSETS_DIR = assets
 MINIGAME_DIR = code
 FILESYSTEM_DIR = filesystem
 MINIGAMEDSO_DIR = $(FILESYSTEM_DIR)/minigames
+T3D_INST=/home/shmuk/git/notmine/tiny3d/
 
 SRC = main.c core.c minigame.c menu.c
 
