@@ -2,6 +2,7 @@
 #include "../../core.h"
 #include "../../minigame.h"
 #include "hydraharmonics.h"
+#include "notes.h"
 
 const MinigameDef minigame_def = {
 	.gamename = "A Hydra Harmonics",
@@ -11,7 +12,6 @@ const MinigameDef minigame_def = {
 };
 
 #define FONT_TEXT 1
-#define PLAYER_MAX 4
 
 #define TIMER_START 1
 #define TIMER_GAME 10
@@ -19,11 +19,24 @@ const MinigameDef minigame_def = {
 
 rdpq_font_t *font;
 
-hydra_t players[PLAYER_MAX];
+hydra_t hydras[PLAYER_MAX];
 
-sprite_t* head_sprites[PLAYER_MAX][HEAD_STATES_MAX];
 float timer;
 uint8_t stage;
+
+void hit_detection(void) {
+	note_t* current = notes_get_first();
+	while (current != NULL) {
+		if (
+			(current->x < hydras[current->player].x + hydras[current->player].head_sprite->width &&
+			current->state == hydras[current->player].state) ||
+			(current->x < -current->sprite->width)
+		){
+			notes_destroy (current);
+		}
+		current = current->next;
+	}
+}
 
 /*==============================
 	minigame_init
@@ -32,7 +45,7 @@ uint8_t stage;
 void minigame_init()
 {
 	// Define some variables
-	uint8_t i, j;
+	uint8_t i;
 	char temptext[64];
 	timer = TIMER_START + TIMER_GAME + TIMER_END;
 
@@ -41,14 +54,17 @@ void minigame_init()
 	font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
 	rdpq_text_register_font(FONT_TEXT, font);
 
+	// Initiate game elements
+	notes_init();
+
 	// Set the player defaults
 	for (i=0; i<PLAYER_MAX; i++) {
-		players[i].state = STATE_MID;
+		hydras[i].state = STATE_MID;
 		// Load the head sprites
-		for (j=0; j<HEAD_STATES_MAX; j++) {
-			sprintf(temptext, "rom:/hydraharmonics/head-%i-%i.ci4.sprite", i, j);
-			players[i].head_sprites[j] = sprite_load(temptext);
-		}
+		sprintf(temptext, "rom:/hydraharmonics/head-%i.ci4.sprite", i);
+		hydras[i].head_sprite = sprite_load(temptext);
+		hydras[i].x = PADDING_LEFT+i*hydras[i].head_sprite->width;
+		hydras[i].y = PADDING_TOP+hydras[i].state*hydras[i].head_sprite->height;
 	}
 }
 
@@ -71,7 +87,12 @@ void minigame_fixedloop(float deltatime)
 	} else {
 		minigame_end();
 	}
+	if ((int)timer != (int)(timer - deltatime)) {
+		notes_add();
+	}
 	timer -= deltatime;
+	notes_move();
+	hit_detection();
 }
 
 /*==============================
@@ -82,22 +103,23 @@ void minigame_fixedloop(float deltatime)
 void minigame_loop(float deltatime)
 {
 	// Define some variables
-	uint8_t i, j;
+	uint8_t i;
 	rdpq_attach(display_get(), NULL);
 	rdpq_set_mode_fill(RGBA32(0, 0, 0, 0));
 	rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
 	rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 155, 100, "Delta time: %f\nStage: %i", timer, stage);
 
 	rdpq_set_mode_standard();
+	// Draw hydras
 	for (i=0; i<PLAYER_MAX; i++) {
-
 		rdpq_sprite_blit(
-			players[i].head_sprites[players[i].state],
-			10+i*players[i].head_sprites[players[i].state]->width,
-			10+players[i].state*players[i].head_sprites[players[i].state]->height,
+			hydras[i].head_sprite,
+			hydras[i].x,
+			hydras[i].y,
 			NULL
 		);
 	}
+	notes_draw();
 
 	rdpq_detach_show();
 
@@ -109,11 +131,11 @@ void minigame_loop(float deltatime)
 		for (i=0; i<core_get_playercount(); i++) {
 			buttons = joypad_get_buttons(core_get_playercontroller(i));
 			if (buttons.d_up) {
-				players[i].state = STATE_UP;
+				hydras[i].state = STATE_UP;
 			} else if (buttons.d_down) {
-				players[i].state = STATE_DOWN;
+				hydras[i].state = STATE_DOWN;
 			} else {
-				players[i].state = STATE_MID;
+				hydras[i].state = STATE_MID;
 			}
 		}
 	} else if (stage == STAGE_START) {
@@ -121,6 +143,10 @@ void minigame_loop(float deltatime)
 	} else if (stage == STAGE_END) {
 		// Announce a winner
 	}
+	for (i=0; i<PLAYER_MAX; i++) {
+		hydras[i].y = PADDING_TOP+hydras[i].state*hydras[i].head_sprite->height;
+	}
+
 }
 
 /*==============================
@@ -136,7 +162,8 @@ void minigame_cleanup()
 	uint8_t i, j;
 	for (i=0; i<PLAYER_MAX; i++) {
 		for (j=0; j<HEAD_STATES_MAX; j++) {
-			sprite_free(players[i].head_sprites[j] );
+			sprite_free(hydras[i].head_sprite);
 		}
 	}
+	notes_clear();
 }
