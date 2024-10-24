@@ -4,11 +4,12 @@
 #include <libdragon.h>
 
 #define HEAD_STATES_MAX 4
+#define PLAYER_MAX MAXPLAYERS
 
-typedef struct hydra_s {
-	uint8_t state;
-    sprite_t* head_sprites[HEAD_STATES_MAX];
-} hydra_t;
+#define HYDRA_HEAD_HEIGHT 32
+
+#define PADDING_TOP 10
+#define PADDING_LEFT 10
 
 typedef enum {
 	STAGE_START,
@@ -21,5 +22,13 @@ typedef enum {
     STATE_MID,
     STATE_DOWN,
 } hydraharmonics_state_t;
+
+typedef struct hydra_s {
+	float x,y;
+	hydraharmonics_state_t state;
+    sprite_t* head_sprite;
+} hydra_t;
+
+extern hydra_t hydras[PLAYER_MAX];
 
 #endif
