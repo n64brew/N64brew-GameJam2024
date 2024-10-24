@@ -1,8 +1,4 @@
-#include <libdragon.h>
-#include "../../core.h"
-#include "../../minigame.h"
 #include "notes.h"
-//#include "hydraharmonics.h"
 
 static note_ll_t notes;
 static sprite_t* note_sprites[PLAYER_MAX];
