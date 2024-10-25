@@ -1,6 +1,10 @@
 #ifndef GAMEJAM2024_CORE_H
 #define GAMEJAM2024_CORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
     /***************************************************************
                          Public Core Constants
     ***************************************************************/
@@ -87,5 +91,9 @@
     void core_set_aidifficulty(AiDiff difficulty);
     void core_set_subtick(double subtick);
     void core_reset_winners();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

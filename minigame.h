@@ -1,6 +1,10 @@
 #ifndef GAMEJAM2024_MINIGAME_H
 #define GAMEJAM2024_MINIGAME_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
     /***************************************************************
                        Public Minigame Constants
     ***************************************************************/
@@ -51,4 +55,8 @@
     Minigame* minigame_get_game();
     bool      minigame_get_ended();
 
-#endif 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
