@@ -24,14 +24,9 @@
 
 #pragma GCC diagnostic pop
 
+#include "../../../core.h"
+#include "../../../minigame.h"
 
-#define FONT_TEXT           1
-
-
-#include "../../core.h"
-#include "../../minigame.h"
-
-#ifdef __cplusplus
 
 #include <functional>
 #include <memory>
@@ -98,26 +93,6 @@ class Game
         void update(float deltatime);
         void fixed_update(float deltatime);
 };
-
-#else
-
-typedef struct Game Game;
-
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-Game* Game_new();
-void Game_update(Game* self, float delta);
-void Game_fixed_update(Game* self, float delta);
-void Game_destroy(Game* self);
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __GAME_H */
 

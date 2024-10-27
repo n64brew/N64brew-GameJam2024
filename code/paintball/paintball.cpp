@@ -4,9 +4,11 @@
 
 #include "./src/game.hpp"
 
-Game* game;
+namespace {
+  Game* game;
+}
 
-const MinigameDef minigame_def = {
+extern "C" const MinigameDef minigame_def = {
     .gamename = "Paintball",
     .developername = "Ali Naci Erdem",
     .description = "...",
@@ -17,9 +19,9 @@ const MinigameDef minigame_def = {
     minigame_init
     The minigame initialization function
 ==============================*/
-void minigame_init()
+extern "C" void minigame_init()
 {
-    game = Game_new();
+    game = new Game();
 }
 
 /*==============================
@@ -29,9 +31,9 @@ void minigame_init()
     important, like physics.
     @param  The fixed delta time for this tick
 ==============================*/
-void minigame_fixedloop(float deltatime)
+extern "C" void minigame_fixedloop(float deltatime)
 {
-    Game_fixed_update(game, deltatime);
+    game->fixed_update(deltatime);
 }
 
 /*==============================
@@ -39,16 +41,16 @@ void minigame_fixedloop(float deltatime)
     Code that is called every loop.
     @param  The delta time for this tick
 ==============================*/
-void minigame_loop(float deltatime)
+extern "C" void minigame_loop(float deltatime)
 {
-    Game_update(game, deltatime);
+    game->update(deltatime);
 }
 
 /*==============================
     minigame_cleanup
     Clean up any memory used by your game just before it ends.
 ==============================*/
-void minigame_cleanup()
+extern "C" void minigame_cleanup()
 {
-    Game_destroy(game);
+    delete game;
 }
