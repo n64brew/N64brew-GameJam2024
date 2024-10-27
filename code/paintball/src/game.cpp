@@ -1,10 +1,20 @@
 #include "game.hpp"
 
-Game::Game() {
-    auto callback = [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); };
-    new_timer_context(TICKS_FROM_MS(1000), TF_ONE_SHOT, callback, this);
+Game::Game() :
+    viewport(t3d_viewport_create()),
+    font("rom:/squarewave.font64", 1),
+    timer({
+        new_timer_context(TICKS_FROM_MS(1000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); }, this),
+        delete_timer
+    }),
+    mapMatFP({
+        (T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)),
+        free_uncached
+    })
+{
     debugf("Paintball minigame initialized\n");
 }
+
 
 void Game::timer_callback() {
     debugf("Timer callback called\n");
