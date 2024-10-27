@@ -5,5 +5,5 @@ filesystem/
 .vscode/
 
 # Blender backup files
-*.blend1
+*.blend[0-9]
 
