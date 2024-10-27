@@ -50,6 +50,6 @@ void Game_fixed_update(Game* self, float delta)
 
 void Game_destroy(Game* self)
 {
-    self->~Game();
+    delete self;
 }
 
