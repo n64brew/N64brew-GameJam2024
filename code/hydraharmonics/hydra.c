@@ -1,4 +1,5 @@
 #include "hydra.h"
+#include "logic.h"
 
 #define HYDRA_HEAD_OFFSET_FIRST 10
 #define HYDRA_HEAD_OFFSET_EACH 2
@@ -24,6 +25,7 @@ void hydra_init (void) {
 		hydras[i].pos = i;
 		hydras[i].x = PADDING_LEFT + hydras[i].pos * hydras[i].head_sprite->width;
 		hydras[i].y = PADDING_TOP + hydras[i].state * hydras[i].head_sprite->height;
+		hydras[i].ai = i < core_get_playercount() ? 0 : (rand()%(HYDRA_AI_COUNT-1) + 1);
 	}
 }
 
@@ -43,7 +45,7 @@ void hydra_move (void) {
 				hydras[i].state = STATE_MID;
 			}
 		} else {
-			// Bot character movement
+			hydra_ai (i);
 		}
 		// Adjust the Y position
 		hydras[i].y = PADDING_TOP+hydras[i].state*hydras[i].head_sprite->height;
@@ -100,6 +102,7 @@ void hydra_draw (void) {
 				NULL
 			);
 		}
+		//rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, hydras[i].x, PADDING_TOP+3*hydras[i].head_sprite->height, "%i", hydras[i].ai);
 	}
 }
 
