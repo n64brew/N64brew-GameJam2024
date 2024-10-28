@@ -27,6 +27,8 @@
 #include "../../../core.h"
 #include "../../../minigame.h"
 
+#include "./player.hpp"
+
 
 #include <functional>
 #include <memory>
@@ -78,6 +80,7 @@ class RDPQFont
 class Game
 {
     private:
+        PlayerController playerManager;
         Display display;
         T3D t3d;
 

@@ -4,7 +4,7 @@ Game::Game() :
     viewport(t3d_viewport_create()),
     font("rom:/squarewave.font64", 1),
     timer({
-        new_timer_context(TICKS_FROM_MS(1000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); }, this),
+        new_timer_context(TICKS_FROM_MS(10000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); }, this),
         delete_timer
     }),
     mapMatFP({
@@ -27,10 +27,16 @@ void Game::timer_callback() {
 
 void Game::setup() {
     setupMap(mapMatFP);
+    playerManager.setup();
 }
 
 void Game::setupMap(std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> &mapMatFP) {
-    t3d_mat4fp_from_srt_euler(mapMatFP.get(), (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0, 0, -10});
+    t3d_mat4fp_from_srt_euler(
+        mapMatFP.get(),
+        (float[3]){0.3f, 0.3f, 0.3f},
+        (float[3]){0, 0, 0},
+        (float[3]){0, 0, -10}
+    );
     rspq_block_begin();
         t3d_matrix_push(mapMatFP.get());
         rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
@@ -74,14 +80,16 @@ void Game::update(float deltatime) {
 
     renderMap();
 
-    rdpq_sync_tile();
-    rdpq_sync_pipe();
+    playerManager.update(deltatime);
+
+    // rdpq_sync_tile();
+    // rdpq_sync_pipe();
 
     rdpq_detach_show();
 }
 
 void Game::fixed_update(float deltatime) {
-
+    playerManager.fixed_update(deltatime);
 }
 
 Game* Game_new()
