@@ -22,6 +22,7 @@ extern "C" const MinigameDef minigame_def = {
 extern "C" void minigame_init()
 {
     game = new Game();
+    game->setup();
 }
 
 /*==============================

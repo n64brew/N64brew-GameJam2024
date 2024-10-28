@@ -35,7 +35,7 @@ class Display
 {
     private:
     public:
-        surface_t* depthBuffer;
+        const surface_t* depthBuffer;
         Display() {
             display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS);
             depthBuffer = display_get_zbuf();
@@ -85,11 +85,19 @@ class Game
         T3DViewport viewport;
         RDPQFont font;
         std::unique_ptr<timer_link_t, decltype(&delete_timer)> timer;
+
+        // Map
         std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> mapMatFP;
+        std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)> dplMap;
+        std::unique_ptr<T3DModel, decltype(&t3d_model_free)> modelMap;
+
+        void setupMap(std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> &mapMatFP);
+        void renderMap();
 
     public:
         Game();
         ~Game();
+        void setup();
         void update(float deltatime);
         void fixed_update(float deltatime);
 };
