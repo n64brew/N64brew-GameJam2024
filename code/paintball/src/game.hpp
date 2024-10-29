@@ -6,23 +6,9 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
 #include <t3d/t3dmodel.h>
-
-#pragma GCC diagnostic push
-
-#pragma GCC diagnostic ignored "-Wall"
-#pragma GCC diagnostic ignored "-Wextra"
-#pragma GCC diagnostic ignored "-Wformat-signedness"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-#pragma GCC diagnostic ignored "-Wformat-security"
-#pragma GCC diagnostic ignored "-Wformat-overflow"
-#pragma GCC diagnostic ignored "-Wformat-truncation"
-
-// #include <t3d/t3dskeleton.h>
-// #include <t3d/t3danim.h>
-// #include <t3d/t3ddebug.h>
-
-#pragma GCC diagnostic pop
+#include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
+#include <t3d/t3ddebug.h>
 
 #include "../../../core.h"
 #include "../../../minigame.h"

@@ -6,7 +6,7 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
 #include <t3d/t3dmodel.h>
-// #include <t3d/t3danim.h>
+#include <t3d/t3danim.h>
 
 #include <memory>
 #include <vector>
@@ -27,7 +27,8 @@ struct Player
     float direction;
     std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)> block;
     std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> matFP;
-    // std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)> skel;
+    // TODO: this wrapper is currently heap allocated
+    std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)> skel;
 };
 
 class PlayerController

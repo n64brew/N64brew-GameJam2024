@@ -104,15 +104,16 @@ void PlayerController::setup()
             (T3DVec3){{0,0,0}},
             0,
             std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>({nullptr, rspq_block_free}),
-            std::unique_ptr<T3DMat4FP, decltype(&free_uncached)>((T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached)
-            // std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)>({t3d_skeleton_create(model), t3d_skeleton_destroy}),
+            std::unique_ptr<T3DMat4FP, decltype(&free_uncached)>({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
+            std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)>({new T3DSkeleton(t3d_skeleton_create(model.get())), t3d_skeleton_destroy})
         });
+
+        t3d_skeleton_update(players[i].skel.get());
 
         rspq_block_begin();
             t3d_matrix_push(players[i].matFP.get());
             rdpq_set_prim_color(colors[i]);
-            t3d_model_draw(model.get());
-            // t3d_model_draw_skinned(model.get(), players[i].skel.get());
+            t3d_model_draw_skinned(model.get(), players[i].skel.get());
             t3d_matrix_pop(1);
         players[i].block = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>(rspq_block_end(), rspq_block_free);
     }
@@ -125,7 +126,7 @@ void PlayerController::update(float deltaTime)
     {
         t3d_mat4fp_from_srt_euler(
             player.matFP.get(),
-            (float[3]){0.5f, 0.5f, 0.5f},
+            (float[3]){0.125f, 0.125f, 0.125f},
             (float[3]){0.0f, player.direction, 0},
             player.pos.v
         );
