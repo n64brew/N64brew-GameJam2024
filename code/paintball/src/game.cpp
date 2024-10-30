@@ -17,17 +17,13 @@ Game::Game() :
         t3d_model_free
     })
 {
+    setupMap(mapMatFP);
     debugf("Paintball minigame initialized\n");
 }
 
 void Game::timer_callback() {
     debugf("Timer callback called\n");
     minigame_end();
-}
-
-void Game::setup() {
-    setupMap(mapMatFP);
-    playerManager.setup();
 }
 
 void Game::setupMap(std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> &mapMatFP) {

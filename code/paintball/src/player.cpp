@@ -1,9 +1,33 @@
 #include "./player.hpp"
 
+Player::Player(U::T3DModel &model, color_t color, T3DVec3 pos) :
+    pos {pos},
+    accel({0}),
+    velocity({0}),
+    direction(0),
+    block({nullptr, rspq_block_free}),
+    matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
+    skel({new T3DSkeleton(t3d_skeleton_create(model.get())), t3d_skeleton_destroy}) {
+        t3d_skeleton_update(skel.get());
+
+        rspq_block_begin();
+            t3d_matrix_push(matFP.get());
+            rdpq_set_prim_color(color);
+            t3d_model_draw_skinned(model.get(), skel.get());
+            t3d_matrix_pop(1);
+        block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
+    }
+
 PlayerController::PlayerController() :
     model({
         t3d_model_load("rom:/paintball/snake.t3dm"),
         t3d_model_free
+    }),
+    players({
+        Player {model, PLAYERCOLOR_1, {-100,0.15f,0}},
+        Player {model, PLAYERCOLOR_2, {0,0.15f,-100}},
+        Player {model, PLAYERCOLOR_3, {100,0.15f,0}},
+        Player {model, PLAYERCOLOR_4, {0,0.15f,100}}
     }) {}
 
 void PlayerController::processInputs(Player &player, uint32_t id, float deltaTime)
@@ -80,46 +104,6 @@ void PlayerController::processInputs(Player &player, uint32_t id, float deltaTim
     }
 }
 
-void PlayerController::setup()
-{
-    T3DVec3 start_positions[] = {
-        (T3DVec3){{-100,0.15f,0}},
-        (T3DVec3){{0,0.15f,-100}},
-        (T3DVec3){{100,0.15f,0}},
-        (T3DVec3){{0,0.15f,100}},
-    };
-    const color_t colors[] = {
-        PLAYERCOLOR_1,
-        PLAYERCOLOR_2,
-        PLAYERCOLOR_3,
-        PLAYERCOLOR_4,
-    };
-    players.reserve(PLAYER_COUNT);
-
-    for (int i = 0; i<PLAYER_COUNT; i++)
-    {
-        players.push_back({
-            start_positions[i],
-            (T3DVec3){{0,0,0}},
-            (T3DVec3){{0,0,0}},
-            0,
-            std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>({nullptr, rspq_block_free}),
-            std::unique_ptr<T3DMat4FP, decltype(&free_uncached)>({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
-            std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)>({new T3DSkeleton(t3d_skeleton_create(model.get())), t3d_skeleton_destroy})
-        });
-
-        t3d_skeleton_update(players[i].skel.get());
-
-        rspq_block_begin();
-            t3d_matrix_push(players[i].matFP.get());
-            rdpq_set_prim_color(colors[i]);
-            t3d_model_draw_skinned(model.get(), players[i].skel.get());
-            t3d_matrix_pop(1);
-        players[i].block = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>(rspq_block_end(), rspq_block_free);
-    }
-}
-
-
 void PlayerController::update(float deltaTime)
 {
     for (auto& player : players)
@@ -130,6 +114,8 @@ void PlayerController::update(float deltaTime)
             (float[3]){0.0f, player.direction, 0},
             player.pos.v
         );
+        auto bl = player.block.get();
+        assertf(bl != nullptr, "Block is null");
         rspq_block_run(player.block.get());
     }
 }

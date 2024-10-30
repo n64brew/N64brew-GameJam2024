@@ -14,79 +14,36 @@
 #include "../../../minigame.h"
 
 #include "./player.hpp"
-
+#include "./damage.hpp"
+#include "./wrappers.hpp"
 
 #include <functional>
 #include <memory>
 
-class Display
-{
-    private:
-    public:
-        const surface_t* depthBuffer;
-        Display() {
-            display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS);
-            depthBuffer = display_get_zbuf();
-        };
-        ~Display() {
-            display_close();
-        };
-};
-
-class T3D
-{
-    private:
-    public:
-        T3D() {
-            t3d_init((T3DInitParams){});
-        };
-        ~T3D() {
-            t3d_destroy();
-        };
-};
-
-class RDPQFont
-{
-    private:
-        int id;
-    public:
-        std::unique_ptr<rdpq_font_t, decltype(&rdpq_font_free)> font;
-        RDPQFont(const char *name, int id):
-            id(id),
-            font({rdpq_font_load(name), rdpq_font_free}) 
-        {
-            rdpq_text_register_font(id, font.get());
-        };
-        ~RDPQFont() {
-            rdpq_text_unregister_font(id);
-        };
-};
-
-
 class Game
 {
     private:
-        PlayerController playerManager;
         Display display;
         T3D t3d;
+        PlayerController playerManager;
+        DamageController damageController;
 
         void timer_callback();
         T3DViewport viewport;
         RDPQFont font;
-        std::unique_ptr<timer_link_t, decltype(&delete_timer)> timer;
+        U::Timer timer;
 
         // Map
-        std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> mapMatFP;
-        std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)> dplMap;
-        std::unique_ptr<T3DModel, decltype(&t3d_model_free)> modelMap;
+        U::T3DMat4FP mapMatFP;
+        U::RSPQBlock dplMap;
+        U::T3DModel modelMap;
 
-        void setupMap(std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> &mapMatFP);
+        void setupMap(U::T3DMat4FP &mapMatFP);
         void renderMap();
 
     public:
         Game();
         ~Game();
-        void setup();
         void update(float deltatime);
         void fixed_update(float deltatime);
 };
