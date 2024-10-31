@@ -14,12 +14,9 @@
 #include "../../../core.h"
 #include "../../../minigame.h"
 
+#include "./constants.hpp"
 #include "./wrappers.hpp"
-
-constexpr int PlayerCount = 4;
-constexpr float speedLimit = 80.f;
-constexpr float forceLimit = 60.f;
-constexpr float invMass = 10;
+#include "./damage.hpp"
 
 class Player
 {
@@ -30,6 +27,7 @@ class Player
         T3DVec3 accel;
         T3DVec3 velocity;
         float direction;
+        color_t color;
         U::RSPQBlock block;
         U::T3DMat4FP matFP;
         // TODO: this wrapper is currently heap allocated
@@ -39,6 +37,8 @@ class Player
 class PlayerController
 {
     private:
+        DamageController damageController;
+
         U::T3DModel model;
 
         std::vector<Player> players;

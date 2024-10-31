@@ -51,7 +51,7 @@ Game::~Game() {
     debugf("Paintball minigame cleaned up\n");
 }
 
-void Game::update(float deltatime) {
+void Game::update(float deltaTime) {
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
 
@@ -78,15 +78,13 @@ void Game::update(float deltatime) {
 
     renderMap();
 
-    playerManager.update(deltatime);
-    damageController.update(deltatime);
+    playerManager.update(deltaTime);
 
     rdpq_detach_show();
 }
 
-void Game::fixed_update(float deltatime) {
-    playerManager.fixed_update(deltatime);
-    damageController.fixed_update(deltatime);
+void Game::fixed_update(float deltaTime) {
+    playerManager.fixed_update(deltaTime);
 }
 
 Game* Game_new()

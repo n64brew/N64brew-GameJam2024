@@ -14,7 +14,6 @@
 #include "../../../minigame.h"
 
 #include "./player.hpp"
-#include "./damage.hpp"
 #include "./wrappers.hpp"
 
 #include <functional>
@@ -29,7 +28,6 @@ class Game
 
         // Controllers
         PlayerController playerManager;
-        DamageController damageController;
 
         RDPQFont font;
         U::Timer timer;

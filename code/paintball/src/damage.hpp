@@ -15,15 +15,14 @@
 #include "../../../minigame.h"
 
 #include "./wrappers.hpp"
-
-constexpr int BulletLimit = 100;
+#include "./constants.hpp"
 
 class Bullet
 {
     public:
         Bullet();
         T3DVec3 pos;
-        T3DVec3 direction;
+        T3DVec3 velocity;
         color_t color;
         U::T3DMat4FP matFP;
 };
@@ -31,9 +30,12 @@ class Bullet
 class DamageController
 {
     private:
-        int bulletCount;
+        int newBulletCount;
         U::T3DModel model;
         U::RSPQBlock block;
+
+        std::array<Bullet, 4> newBullets;
+
         std::array<Bullet, BulletLimit> bullets;
 
     public:
@@ -41,7 +43,7 @@ class DamageController
         void update(float deltaTime);
         void fixed_update(float deltaTime);
 
-        void fireBullet(const T3DVec3 &pos, T3DVec3 &direction, color_t color);
+        void fireBullet(const T3DVec3 &pos, T3DVec3 &velocity, color_t color);
 };
 
 #endif // __DAMAGE_H
