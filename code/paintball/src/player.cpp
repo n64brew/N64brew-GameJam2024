@@ -1,19 +1,19 @@
 #include "./player.hpp"
 
-Player::Player(U::T3DModel &model, color_t color, T3DVec3 pos) :
+Player::Player(T3DModel *model, color_t color, T3DVec3 pos) :
     pos {pos},
     accel({0}),
     velocity({0}),
     direction(0),
     block({nullptr, rspq_block_free}),
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
-    skel({new T3DSkeleton(t3d_skeleton_create(model.get())), t3d_skeleton_destroy}) {
+    skel({new T3DSkeleton(t3d_skeleton_create(model)), t3d_skeleton_destroy}) {
         t3d_skeleton_update(skel.get());
 
         rspq_block_begin();
             t3d_matrix_push(matFP.get());
             rdpq_set_prim_color(color);
-            t3d_model_draw_skinned(model.get(), skel.get());
+            t3d_model_draw_skinned(model, skel.get());
             t3d_matrix_pop(1);
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
     }
@@ -22,13 +22,14 @@ PlayerController::PlayerController() :
     model({
         t3d_model_load("rom:/paintball/snake.t3dm"),
         t3d_model_free
-    }),
-    players({
-        Player {model, PLAYERCOLOR_1, {-100,0.15f,0}},
-        Player {model, PLAYERCOLOR_2, {0,0.15f,-100}},
-        Player {model, PLAYERCOLOR_3, {100,0.15f,0}},
-        Player {model, PLAYERCOLOR_4, {0,0.15f,100}}
-    }) {}
+    })
+    {
+        players.reserve(PlayerCount);
+        players.emplace_back(Player {model.get(), PLAYERCOLOR_1, {-100,0.15f,0}});
+        players.emplace_back(Player {model.get(), PLAYERCOLOR_2, {0,0.15f,-100}});
+        players.emplace_back(Player {model.get(), PLAYERCOLOR_3, {100,0.15f,0}});
+        players.emplace_back(Player {model.get(), PLAYERCOLOR_4, {0,0.15f,100}});
+    }
 
 void PlayerController::processInputs(Player &player, uint32_t id, float deltaTime)
 {

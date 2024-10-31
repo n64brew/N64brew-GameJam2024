@@ -7,6 +7,8 @@ Game::Game() :
         new_timer_context(TICKS_FROM_MS(10000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); }, this),
         delete_timer
     }),
+
+    // Map
     mapMatFP({
         (T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)),
         free_uncached
@@ -26,7 +28,7 @@ void Game::timer_callback() {
     minigame_end();
 }
 
-void Game::setupMap(std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> &mapMatFP) {
+void Game::setupMap(U::T3DMat4FP &mapMatFP) {
     t3d_mat4fp_from_srt_euler(
         mapMatFP.get(),
         (float[3]){0.3f, 0.3f, 0.3f},
@@ -38,7 +40,7 @@ void Game::setupMap(std::unique_ptr<T3DMat4FP, decltype(&free_uncached)> &mapMat
         rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         t3d_model_draw(modelMap.get());
         t3d_matrix_pop(1);
-    dplMap = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>(rspq_block_end(), rspq_block_free);
+    dplMap = U::RSPQBlock(rspq_block_end(), rspq_block_free);
 }
 
 void Game::renderMap() {
@@ -77,15 +79,14 @@ void Game::update(float deltatime) {
     renderMap();
 
     playerManager.update(deltatime);
-
-    // rdpq_sync_tile();
-    // rdpq_sync_pipe();
+    damageController.update(deltatime);
 
     rdpq_detach_show();
 }
 
 void Game::fixed_update(float deltatime) {
     playerManager.fixed_update(deltatime);
+    damageController.fixed_update(deltatime);
 }
 
 Game* Game_new()

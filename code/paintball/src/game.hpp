@@ -25,22 +25,23 @@ class Game
     private:
         Display display;
         T3D t3d;
+        T3DViewport viewport;
+
+        // Controllers
         PlayerController playerManager;
         DamageController damageController;
 
-        void timer_callback();
-        T3DViewport viewport;
         RDPQFont font;
         U::Timer timer;
 
         // Map
+        void setupMap(U::T3DMat4FP &mapMatFP);
+        void renderMap();
         U::T3DMat4FP mapMatFP;
         U::RSPQBlock dplMap;
         U::T3DModel modelMap;
 
-        void setupMap(U::T3DMat4FP &mapMatFP);
-        void renderMap();
-
+        void timer_callback();
     public:
         Game();
         ~Game();

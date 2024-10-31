@@ -10,7 +10,6 @@
 
 #include <memory>
 #include <vector>
-#include <array>
 
 #include "../../../core.h"
 #include "../../../minigame.h"
@@ -25,7 +24,7 @@ constexpr float invMass = 10;
 class Player
 {
     public:
-        Player(U::T3DModel &model, color_t color, T3DVec3 pos);
+        Player(T3DModel *model, color_t color, T3DVec3 pos);
 
         T3DVec3 pos;
         T3DVec3 accel;
@@ -42,7 +41,7 @@ class PlayerController
     private:
         U::T3DModel model;
 
-        std::array<Player, PlayerCount> players;
+        std::vector<Player> players;
         void processInputs(Player &player, uint32_t id, float deltaTime);
 
     public:
