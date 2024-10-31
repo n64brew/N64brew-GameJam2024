@@ -5,6 +5,7 @@
 #include "hydra.h"
 #include "notes.h"
 #include "logic.h"
+#include "ui.h"
 
 const MinigameDef minigame_def = {
 	.gamename = "A Hydra Harmonics",
@@ -13,20 +14,18 @@ const MinigameDef minigame_def = {
 	.instructions = "Grab the most notes to win."
 };
 
-#define FONT_TEXT 1
-
-#define TIMER_START 0
+#define TIMER_START 1
 #define TIMER_GAME NOTES_PER_PLAYER * PLAYER_MAX + (10 / NOTE_SPEED)
 #define TIMER_END_ANNOUNCE 2
 #define TIMER_END_DISPLAY 1
 #define TIMER_END_FANFARE 2
 #define TIMER_END_TOTAL TIMER_END_ANNOUNCE + TIMER_END_DISPLAY + TIMER_END_FANFARE
 
-rdpq_font_t *font;
+rdpq_font_t *font_default;
+rdpq_font_t *font_clarendon;
 
 float timer;
 uint8_t stage;
-winner_t* winners;
 
 /*==============================
 	minigame_init
@@ -34,18 +33,20 @@ winner_t* winners;
 ==============================*/
 void minigame_init()
 {
-	// Define some variables
-
-	timer = TIMER_START + TIMER_GAME + TIMER_END_TOTAL;
-
 	// Initiate subsystems
 	display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
-	font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
-	rdpq_text_register_font(FONT_TEXT, font);
+
+	// Define some variables
+	timer = TIMER_START + TIMER_GAME + TIMER_END_TOTAL;
+	font_default = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
+	font_clarendon = rdpq_font_load("rom:/hydraharmonics/Superclarendon-Regular-01.font64");
+	rdpq_text_register_font(FONT_DEFAULT, font_default);
+	rdpq_text_register_font(FONT_CLARENDON, font_clarendon);
 
 	// Initiate game elements
 	notes_init();
 	hydra_init();
+	ui_init ();
 }
 
 /*==============================
@@ -61,8 +62,11 @@ void minigame_fixedloop(float deltatime)
 	if (timer <= TIMER_END_TOTAL && timer >= 0) {
 		if (stage != STAGE_END) {
 			notes_destroy_all();
-			winners = scores_get_winner();
+			scores_get_winner();
 			stage = STAGE_END;
+			for (uint8_t i=0; i<PLAYER_MAX; i++) {
+				hydra_animate (i, HYDRA_ANIMATION_SLEEP);
+			}
 		}
 	} else if (timer <= TIMER_END_TOTAL + TIMER_GAME && timer >= 0) {
 		stage = STAGE_GAME;
@@ -75,6 +79,7 @@ void minigame_fixedloop(float deltatime)
 		}
 		notes_move();
 		note_hit_detection();
+		hydra_shell_bounce();
 	} else  if (timer >= 0) {
 		stage = STAGE_START;
 	} else {
@@ -91,24 +96,17 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-	// Define some variables
-	char scores_buffer[64] = "";
-	char winners_buffer[64] = "";
-	char mini_buffer[32];
-
 	// Prepare the RDP
 	rdpq_attach(display_get(), NULL);
-	rdpq_set_mode_fill(RGBA32(100, 100, 100, 0));
-	rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
 
-	rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 180, 200, "Timer: %f\nRemaining:%i", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL));
+	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 200, "Timer: %f\nRemaining:%i", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL));
 
 	// Draw things
+	ui_draw();
 	rdpq_set_mode_standard();
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	hydra_draw();
 	notes_draw();
-
 
 	// Things that should only be drawn at particular stages
 	if (stage == STAGE_GAME) {
@@ -118,30 +116,11 @@ void minigame_loop(float deltatime)
 	} else if (stage == STAGE_END) {
 		// Announce a winner
 		if (timer < TIMER_END_FANFARE + TIMER_END_DISPLAY) {
-			// Get the player scores
-			for (uint8_t i=0; i<PLAYER_MAX; i++) {
-				sprintf(mini_buffer, "P %i: %i\n", i+1, scores_get(i));
-				strcat(scores_buffer, mini_buffer);
-			}
-			// Get the winner(s)
-			for (uint8_t i=0; i<winners->length; i++) {
-				sprintf(mini_buffer, "Player %i wins!\n", winners->winners[i]+1);
-				strcat(winners_buffer, mini_buffer);
-			}
-			// Print it out
-			rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 100, 100, "And the winner is...\n%s\n%s", scores_buffer, winners_buffer);
+			scores_results_draw (SCORES_RESULTS_FINAL);
 		} else if (timer < TIMER_END_FANFARE) {
 			// Play a song
 		} else {
-			// Shuffle around
-			for (uint8_t i=0; i<PLAYER_MAX; i++) {
-				sprintf(mini_buffer, "P %i: %i\n", i+1, rand()%100);
-				strcat(scores_buffer, mini_buffer);
-			}
-			rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 100, 100, "And the winner is...\n%s", scores_buffer);
-		}
-		if (timer > TIMER_END_TOTAL/2) {
-
+			scores_results_draw (SCORES_RESULTS_SHUFFLE);
 		}
 	}
 
@@ -157,8 +136,7 @@ void minigame_loop(float deltatime)
 	} else if (stage == STAGE_END) {
 		// Announce a winner
 	}
-
-
+	hydra_adjust_hats();
 }
 
 /*==============================
@@ -167,17 +145,18 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
-	rdpq_text_unregister_font(FONT_TEXT);
-	rdpq_font_free(font);
-	display_close();
-
-	// Set the winners
-	for (uint8_t i=0; i<winners->length; i++) {
-		core_set_winner(winners->winners[i]);
-	}
-
 	// Free allocated memory
 	notes_clear();
 	hydra_clear();
-	free(winners);
+	scores_clear();
+	ui_clear();
+
+	// Free the fonts
+	rdpq_text_unregister_font(FONT_DEFAULT);
+	rdpq_font_free(font_default);
+	rdpq_text_unregister_font(FONT_CLARENDON);
+	rdpq_font_free(font_clarendon);
+
+	// Close the display
+	display_close();
 }

@@ -7,10 +7,15 @@
 #define HEAD_STATES_MAX 4
 #define PLAYER_MAX MAXPLAYERS
 
-#define HYDRA_HEAD_HEIGHT 32
+#define HYDRA_HEAD_WIDTH 48
+#define HYDRA_HEAD_HEIGHT 64
+#define HYDRA_ROW_HEIGHT 32
 
 #define PADDING_TOP 10
 #define PADDING_LEFT 10
+
+#define FONT_DEFAULT 1
+#define FONT_CLARENDON 2
 
 typedef enum {
 	STAGE_START,
