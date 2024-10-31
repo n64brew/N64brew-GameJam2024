@@ -16,3 +16,11 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/shell-2.ci4.sprite \
 	filesystem/hydraharmonics/shell-3.ci4.sprite \
 	filesystem/hydraharmonics/eyes.ci4.sprite \
+	filesystem/hydraharmonics/hats.ci4.sprite \
+	filesystem/hydraharmonics/legs.ci4.sprite \
+	filesystem/hydraharmonics/signs.ci4.sprite \
+	filesystem/hydraharmonics/background.ci4.sprite \
+	filesystem/hydraharmonics/floor.ci4.sprite \
+	filesystem/hydraharmonics/Superclarendon-Regular-01.font64
+
+filesystem/hydraharmonics/Superclarendon-Regular-01.font64: MKFONT_FLAGS += --outline 1 --size 16

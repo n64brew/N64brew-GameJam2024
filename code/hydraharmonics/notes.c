@@ -10,8 +10,12 @@
 #define NOTE_ANIMATION_BOUNCE 0x1
 #define NOTE_ANIMATION_ROTATE 0x2
 #define NOTE_ANIMATION_PULSE 0x4
+#define NOTE_WIDTH 32
+#define NOTE_HEIGHT 32
+#define NOTE_ANIMATION_SPEED 8
+#define NOTE_ANIMATION_OFFSET_Y NOTE_Y_OFFSET_AMPLITUDE * 0.35
 
-
+// Global vars
 static note_ll_t notes;
 static sprite_t* note_sprites[PLAYER_MAX];
 
@@ -65,21 +69,23 @@ void notes_add (void) {
 		if (random%3 == 0) {
 			note->state = STATE_UP;
 		} else if (random%3 == 1) {
-			note->state = STATE_UP;
+			note->state = STATE_MID;
 		} else {
 			note->state = STATE_DOWN;
 		}
 		note->player = note_get_free();
 		note->sprite = note_sprites[note->player];
 		note->x = display_get_width();
-		note->y = PADDING_TOP + note->state*HYDRA_HEAD_HEIGHT + 8;
+		note->y = PADDING_TOP + (note->state+1) * HYDRA_ROW_HEIGHT + 8;
 		note->anim_offset = random % UINT8_MAX;
 		note->blitparms = (rdpq_blitparms_t){
 			.theta = 0,
+			.width = NOTE_WIDTH,
+			.height = NOTE_HEIGHT,
 			.scale_x = 0,
 			.scale_y = 0,
-			.cx = note->sprite->width/2,
-			.cy = note->sprite->height/2,
+			.cx = NOTE_WIDTH/2,
+			.cy = NOTE_HEIGHT/2,
 		};
 		note->scale = 0;
 		note->y_offset = 0;
@@ -99,6 +105,7 @@ void notes_move (void) {
 		current->blitparms.theta = sin((current->x - current->anim_offset) / NOTE_THETA_PERIOD) * NOTE_THETA_AMPLITUDE;
 		current->blitparms.scale_x = 1 + sin((current->x + current->anim_offset) / NOTE_SCALE_PERIOD) * NOTE_SCALE_AMPLITUDE;
 		current->blitparms.scale_y = 1 + sin((current->x + current->anim_offset) / NOTE_SCALE_PERIOD) * NOTE_SCALE_AMPLITUDE;
+		current->blitparms.s0 = (current->y_offset < -NOTE_ANIMATION_OFFSET_Y ? 2 : (current->y_offset > NOTE_ANIMATION_OFFSET_Y ? 0 : 1)) * NOTE_WIDTH;
 		current = current->next;
 	}
 }
