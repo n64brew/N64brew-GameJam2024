@@ -40,6 +40,7 @@ class RDPQFont
             id(id),
             font({rdpq_font_load(name), rdpq_font_free}) 
         {
+            assertf(font.get(), "Font is null");
             rdpq_text_register_font(id, font.get());
         };
         ~RDPQFont() {

@@ -13,6 +13,8 @@ DamageController::DamageController() :
         t3d_model_free
     }),
     block({nullptr, rspq_block_free}) {
+        assertf(model.get(), "Bullet model is null");
+
         rspq_block_begin();
             t3d_model_draw(model.get());
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
@@ -22,6 +24,9 @@ void DamageController::update(float deltaTime) {
     assertf(newBulletCount == 0, "Bullets were not processed before render");
     for (auto& bullet : bullets)
     {
+        assertf(bullet.matFP.get(), "Bullet matrix is null");
+        assertf(block.get(), "Bullet dl is null");
+
         t3d_mat4fp_from_srt_euler(
             bullet.matFP.get(),
             (float[3]){0.05f, 0.05f, 0.05f},
@@ -31,12 +36,9 @@ void DamageController::update(float deltaTime) {
         );
 
         if (bullet.velocity.v[0] > 0 || bullet.velocity.v[1] > 0 || bullet.velocity.v[2] > 0) {
-            auto bl = block.get();
-            assertf(bl != nullptr, "Bullet block is null");
-
             t3d_matrix_push(bullet.matFP.get());
                 rdpq_set_prim_color(bullet.color);
-                rspq_block_run(bl);
+                rspq_block_run(block.get());
             t3d_matrix_pop(1);
         }
     }

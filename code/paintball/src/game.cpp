@@ -24,10 +24,13 @@ Game::Game() :
     rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
     rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
 
-    rdpq_font_style(font.font.get(), 0, &p1Style);
-    rdpq_font_style(font.font.get(), 1, &p2Style);
-    rdpq_font_style(font.font.get(), 2, &p3Style);
-    rdpq_font_style(font.font.get(), 3, &p4Style);
+    auto fnt = font.font.get();
+    assertf(fnt, "Font is null");
+
+    rdpq_font_style(fnt, 0, &p1Style);
+    rdpq_font_style(fnt, 1, &p2Style);
+    rdpq_font_style(fnt, 2, &p3Style);
+    rdpq_font_style(fnt, 3, &p4Style);
 
     setupMap(mapMatFP);
     debugf("Paintball minigame initialized\n");
@@ -39,6 +42,9 @@ void Game::timer_callback() {
 }
 
 void Game::setupMap(U::T3DMat4FP &mapMatFP) {
+    assertf(mapMatFP.get(), "Map matrix is null");
+    assertf(modelMap.get(), "Map model is null");
+
     t3d_mat4fp_from_srt_euler(
         mapMatFP.get(),
         (float[3]){0.3f, 0.3f, 0.3f},
@@ -54,6 +60,7 @@ void Game::setupMap(U::T3DMat4FP &mapMatFP) {
 }
 
 void Game::renderMap() {
+    assertf(dplMap.get(), "Map dl is null");
     rspq_block_run(dplMap.get());
 }
 

@@ -9,6 +9,9 @@ Player::Player(T3DModel *model, color_t color, T3DVec3 pos) :
     block({nullptr, rspq_block_free}),
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
     skel({new T3DSkeleton(t3d_skeleton_create(model)), t3d_skeleton_destroy}) {
+        assertf(skel.get(), "Player skel is null");
+        assertf(matFP.get(), "Player matrix is null");
+
         t3d_skeleton_update(skel.get());
 
         rspq_block_begin();
@@ -26,6 +29,8 @@ PlayerController::PlayerController() :
         t3d_model_free
     })
     {
+        assertf(model.get(), "Player model is null");
+
         players.reserve(PlayerCount);
         players.emplace_back(Player {model.get(), PLAYERCOLOR_1, {-100,0.15f,0}});
         players.emplace_back(Player {model.get(), PLAYERCOLOR_2, {0,0.15f,-100}});
@@ -118,14 +123,15 @@ void PlayerController::update(float deltaTime, T3DViewport &viewport)
     int16_t i = 0;
     for (auto& player : players)
     {
+        assertf(player.matFP.get(), "Player %d matrix is null", i);
+        assertf(player.block.get(), "Player %d block is null", i);
+
         t3d_mat4fp_from_srt_euler(
             player.matFP.get(),
             (float[3]){0.125f, 0.125f, 0.125f},
             (float[3]){0.0f, player.direction, 0},
             player.pos.v
         );
-        auto bl = player.block.get();
-        assertf(bl != nullptr, "Block is null");
         rspq_block_run(player.block.get());
 
         T3DVec3 billboardPos = (T3DVec3){{
