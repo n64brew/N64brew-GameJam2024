@@ -18,16 +18,23 @@
 #include "./wrappers.hpp"
 #include "./damage.hpp"
 
-class Player
+struct PlayerGameplayData
+{
+    T3DVec3 pos;
+    color_t color;
+};
+
+class PlayerOtherData
 {
     public:
-        Player(T3DModel *model, color_t color, T3DVec3 pos);
+        PlayerOtherData(T3DModel *model, const color_t &color);
 
-        T3DVec3 pos;
+        // Physics
         T3DVec3 accel;
         T3DVec3 velocity;
+
+        // Renderer
         float direction;
-        color_t color;
         U::RSPQBlock block;
         U::T3DMat4FP matFP;
         // TODO: this wrapper is currently heap allocated
@@ -41,9 +48,13 @@ class PlayerController
 
         U::T3DModel model;
 
-        std::vector<Player> players;
-        void handleMotion(Player &player, uint32_t id, float deltaTime);
-        void handleActions(Player &player, uint32_t id);
+        std::vector<PlayerOtherData> playerOtherData;
+        std::vector<PlayerGameplayData> playerGameplayData;
+
+        void simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, float deltaTime);
+        void handleActions(PlayerGameplayData &gameplay, uint32_t id);
+
+        void renderPlayer(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, T3DViewport &viewport);
 
     public:
         PlayerController();
