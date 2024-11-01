@@ -47,15 +47,19 @@ void DamageController::update(float deltaTime) {
 void DamageController::fixed_update(float deltaTime) {
     for (auto& bullet : bullets)
     {
-        // This is a free bullet slot, fill it if we have pending bullets
         // TODO: this will prevent firing once every slot is occupied
-        if (bullet.velocity.v[0] == 0 && bullet.velocity.v[1] == 0 && bullet.velocity.v[2] == 0 && newBulletCount > 0) {
-            debugf("spawn bullet\n");
+        // This is a free bullet slot, fill it if we have pending bullets
+        if (bullet.velocity.v[0] == 0 && bullet.velocity.v[1] == 0 && bullet.velocity.v[2] == 0) {
+            if (newBulletCount > 0) {
+                debugf("spawn bullet\n");
 
-            int bulletIndex = --newBulletCount;
-            bullet.pos = newBullets[bulletIndex].pos;
-            bullet.velocity = newBullets[bulletIndex].velocity;
-            bullet.color = newBullets[bulletIndex].color;
+                int bulletIndex = --newBulletCount;
+                bullet.pos = newBullets[bulletIndex].pos;
+                bullet.velocity = newBullets[bulletIndex].velocity;
+                bullet.color = newBullets[bulletIndex].color;
+            } else {
+                continue;
+            }
         }
 
         // TODO: add some gravity
