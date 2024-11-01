@@ -34,7 +34,7 @@ class DamageController
         U::T3DModel model;
         U::RSPQBlock block;
 
-        std::array<Bullet, 4> newBullets;
+        std::array<Bullet, MAXPLAYERS> newBullets;
 
         std::array<Bullet, BulletLimit> bullets;
 

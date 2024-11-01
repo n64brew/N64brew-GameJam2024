@@ -2,7 +2,7 @@
 
 Game::Game() :
     viewport(t3d_viewport_create()),
-    font("rom:/squarewave.font64", 1),
+    font("rom:/squarewave.font64", MainFont),
     timer({
         new_timer_context(TICKS_FROM_MS(10000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); }, this),
         delete_timer
@@ -19,6 +19,16 @@ Game::Game() :
         t3d_model_free
     })
 {
+    rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
+    rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
+    rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
+    rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
+
+    rdpq_font_style(font.font.get(), 0, &p1Style);
+    rdpq_font_style(font.font.get(), 1, &p2Style);
+    rdpq_font_style(font.font.get(), 2, &p3Style);
+    rdpq_font_style(font.font.get(), 3, &p4Style);
+
     setupMap(mapMatFP);
     debugf("Paintball minigame initialized\n");
 }
@@ -78,13 +88,13 @@ void Game::update(float deltaTime) {
 
     renderMap();
 
-    playerManager.update(deltaTime);
+    playerController.update(deltaTime, viewport);
 
     rdpq_detach_show();
 }
 
 void Game::fixed_update(float deltaTime) {
-    playerManager.fixed_update(deltaTime);
+    playerController.fixed_update(deltaTime);
 }
 
 Game* Game_new()

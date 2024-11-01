@@ -46,7 +46,7 @@ class PlayerController
 
     public:
         PlayerController();
-        void update(float deltaTime);
+        void update(float deltaTime, T3DViewport &viewport);
         void fixed_update(float deltaTime);
 };
 

@@ -35,7 +35,7 @@ PlayerController::PlayerController() :
 
 void PlayerController::processInputs(Player &player, uint32_t id, float deltaTime)
 {
-    if (id < 4 && id < core_get_playercount()) {
+    if (id < MAXPLAYERS && id < core_get_playercount()) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
         // Fire button
         if (pressed.z) {
@@ -113,8 +113,9 @@ void PlayerController::processInputs(Player &player, uint32_t id, float deltaTim
     }
 }
 
-void PlayerController::update(float deltaTime)
+void PlayerController::update(float deltaTime, T3DViewport &viewport)
 {
+    int16_t i = 0;
     for (auto& player : players)
     {
         t3d_mat4fp_from_srt_euler(
@@ -126,6 +127,25 @@ void PlayerController::update(float deltaTime)
         auto bl = player.block.get();
         assertf(bl != nullptr, "Block is null");
         rspq_block_run(player.block.get());
+
+        T3DVec3 billboardPos = (T3DVec3){{
+            player.pos.v[0],
+            player.pos.v[1] + 15,
+            player.pos.v[2]
+        }};
+
+        T3DVec3 billboardScreenPos;
+        t3d_viewport_calc_viewspace_pos(viewport, billboardScreenPos, billboardPos);
+
+        int x = floorf(billboardScreenPos.v[0]);
+        int y = floorf(billboardScreenPos.v[1]);
+
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+
+        rdpq_textparms_t fontParams { .style_id = i };
+        rdpq_text_printf(&fontParams, MainFont, x-5, y-16, "P%d", i+1);
+        i++;
     }
     damageController.update(deltaTime);
 }

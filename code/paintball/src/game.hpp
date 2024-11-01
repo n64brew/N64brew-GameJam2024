@@ -15,6 +15,7 @@
 
 #include "./player.hpp"
 #include "./wrappers.hpp"
+#include "./constants.hpp"
 
 #include <functional>
 #include <memory>
@@ -27,7 +28,7 @@ class Game
         T3DViewport viewport;
 
         // Controllers
-        PlayerController playerManager;
+        PlayerController playerController;
 
         RDPQFont font;
         U::Timer timer;

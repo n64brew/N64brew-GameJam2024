@@ -1,6 +1,7 @@
 #ifndef __CONSTANTS_H
 #define __CONSTANTS_H
 
+constexpr int MainFont = 1;
 constexpr int BulletLimit = 100;
 constexpr int PlayerCount = 4;
 constexpr float SpeedLimit = 80.f;
