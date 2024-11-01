@@ -104,23 +104,3 @@ void Game::fixed_update(float deltaTime) {
     playerController.fixed_update(deltaTime);
 }
 
-Game* Game_new()
-{
-    return new Game();
-}
-
-void Game_update(Game* self, float delta)
-{
-    self->update(delta);
-}
-
-void Game_fixed_update(Game* self, float delta)
-{
-    self->fixed_update(delta);
-}
-
-void Game_destroy(Game* self)
-{
-    delete self;
-}
-

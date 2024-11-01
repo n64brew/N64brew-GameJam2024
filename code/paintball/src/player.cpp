@@ -38,16 +38,9 @@ PlayerController::PlayerController() :
         players.emplace_back(Player {model.get(), PLAYERCOLOR_4, {0,0.15f,100}});
     }
 
-void PlayerController::processInputs(Player &player, uint32_t id, float deltaTime)
+void PlayerController::handleMotion(Player &player, uint32_t id, float deltaTime)
 {
     if (id < MAXPLAYERS && id < core_get_playercount()) {
-        joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
-        // Fire button
-        if (pressed.z) {
-            T3DVec3 dir = {500, 0, 0};
-            damageController.fireBullet(player.pos, dir, player.color);
-        }
-
         joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
         T3DVec3 direction = {0};
         direction.v[0] = (float)joypad.stick_x;
@@ -118,11 +111,29 @@ void PlayerController::processInputs(Player &player, uint32_t id, float deltaTim
     }
 }
 
+void PlayerController::handleActions(Player &player, uint32_t id) {
+    if (id < core_get_playercount()) {
+        joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
+        // Fire button
+        if (pressed.c_up || pressed.d_up) {
+            damageController.fireBullet(player.pos, (T3DVec3){0, 0, -BulletVelocity}, player.color);
+        } else if (pressed.c_down || pressed.d_down) {
+            damageController.fireBullet(player.pos, (T3DVec3){0, 0, BulletVelocity}, player.color);
+        } else if (pressed.c_left || pressed.d_left) {
+            damageController.fireBullet(player.pos, (T3DVec3){-BulletVelocity, 0, 0}, player.color);
+        } else if (pressed.c_right || pressed.d_right) {
+            damageController.fireBullet(player.pos, (T3DVec3){BulletVelocity, 0, 0}, player.color);
+        }
+    }
+}
+
 void PlayerController::update(float deltaTime, T3DViewport &viewport)
 {
     int16_t i = 0;
     for (auto& player : players)
     {
+        handleActions(player, i);
+
         assertf(player.matFP.get(), "Player %d matrix is null", i);
         assertf(player.block.get(), "Player %d block is null", i);
 
@@ -161,7 +172,7 @@ void PlayerController::fixed_update(float deltaTime)
     uint32_t i = 0;
     for (auto& player : players)
     {
-        processInputs(player, i, deltaTime);
+        handleMotion(player, i, deltaTime);
         i++;
     }
     damageController.fixed_update(deltaTime);

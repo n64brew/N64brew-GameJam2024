@@ -42,7 +42,8 @@ class PlayerController
         U::T3DModel model;
 
         std::vector<Player> players;
-        void processInputs(Player &player, uint32_t id, float deltaTime);
+        void handleMotion(Player &player, uint32_t id, float deltaTime);
+        void handleActions(Player &player, uint32_t id);
 
     public:
         PlayerController();

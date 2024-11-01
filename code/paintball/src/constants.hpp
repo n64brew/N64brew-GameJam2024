@@ -8,5 +8,6 @@ constexpr float SpeedLimit = 80.f;
 // Same range as analog input
 constexpr float ForceLimit = 60.f;
 constexpr float invMass = 10;
+constexpr float BulletVelocity = 500;
 
 #endif // __CONSTANTS_H

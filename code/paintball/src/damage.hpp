@@ -43,7 +43,7 @@ class DamageController
         void update(float deltaTime);
         void fixed_update(float deltaTime);
 
-        void fireBullet(const T3DVec3 &pos, T3DVec3 &velocity, color_t color);
+        void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, color_t color);
 };
 
 #endif // __DAMAGE_H
