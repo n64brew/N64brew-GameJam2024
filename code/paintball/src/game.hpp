@@ -31,7 +31,6 @@ class Game
         GameplayController gameplayController;
 
         RDPQFont font;
-        U::Timer timer;
 
         // Map
         void setupMap(U::T3DMat4FP &mapMatFP);
@@ -40,7 +39,6 @@ class Game
         U::RSPQBlock dplMap;
         U::T3DModel modelMap;
 
-        void timer_callback();
     public:
         Game();
         ~Game();

@@ -3,10 +3,6 @@
 Game::Game() :
     viewport(t3d_viewport_create()),
     font("rom:/squarewave.font64", MainFont),
-    timer({
-        new_timer_context(TICKS_FROM_MS(10000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->timer_callback(); }, this),
-        delete_timer
-    }),
 
     // Map
     mapMatFP({
@@ -34,11 +30,6 @@ Game::Game() :
 
     setupMap(mapMatFP);
     debugf("Paintball minigame initialized\n");
-}
-
-void Game::timer_callback() {
-    debugf("Timer callback called\n");
-    // minigame_end();
 }
 
 void Game::setupMap(U::T3DMat4FP &mapMatFP) {

@@ -1,6 +1,7 @@
 #include "./gameplay.hpp"
 
 GameplayController::GameplayController() :
+    timer({ nullptr, delete_timer }),
     model({
         t3d_model_load("rom:/paintball/snake.t3dm"),
         t3d_model_free
@@ -214,11 +215,19 @@ void GameplayController::fixedUpdate(float deltaTime)
     if (isFinished && !gameFinished) {
         i = 0;
         for (auto& died : playerHitStatus) {
-            if (!died) {
-                core_set_winner(i);
+            if (i < core_get_playercount() && !died) {
+                core_set_winner((PlyNum)i);
             }
             i++;
         }
         gameFinished = true;
+        timer = {
+            new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((GameplayController*)self)->gameOver(); }, this),
+            delete_timer
+        };
     }
+}
+
+void GameplayController::gameOver() {
+    minigame_end();
 }

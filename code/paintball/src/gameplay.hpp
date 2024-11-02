@@ -24,9 +24,12 @@ class GameplayController
     private:
         BulletController bulletController;
 
+        U::Timer timer;
+
         U::T3DModel model;
 
         bool gameFinished;
+        void gameOver();
 
         std::vector<PlayerOtherData> playerOtherData;
         std::vector<PlayerGameplayData> playerGameplayData;
