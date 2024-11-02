@@ -24,6 +24,8 @@ GameplayController::GameplayController() :
 
 void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
 {
+    gameplay.prevPos = gameplay.pos;
+
     if (id < MAXPLAYERS && id < core_get_playercount()) {
         joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
         T3DVec3 direction = {0};
@@ -114,6 +116,10 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) 
 
 void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport)
 {
+    double interpolate = core_get_subtick();
+    T3DVec3 currentPos {0};
+    t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
+
     const color_t colors[] = {
         PLAYERCOLOR_1,
         PLAYERCOLOR_2,
@@ -128,16 +134,16 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
         playerOther.matFP.get(),
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, playerOther.direction, 0},
-        playerGameplay.pos.v
+        currentPos.v
     );
 
     rdpq_set_prim_color(colors[playerGameplay.team]);
     rspq_block_run(playerOther.block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
-        playerGameplay.pos.v[0],
-        playerGameplay.pos.v[1] + 15,
-        playerGameplay.pos.v[2]
+        currentPos.v[0],
+        currentPos.v[1] + 15,
+        currentPos.v[2]
     }};
 
     T3DVec3 billboardScreenPos;

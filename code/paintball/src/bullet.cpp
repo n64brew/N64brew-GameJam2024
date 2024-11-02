@@ -2,6 +2,7 @@
 
 Bullet::Bullet() :
     pos {0},
+    prevPos {0},
     velocity {0},
     team {PLAYER_1},
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
@@ -28,17 +29,22 @@ void BulletController::update(float deltaTime) {
         PLAYERCOLOR_4,
     };
 
+    double interpolate = core_get_subtick();
+
     for (auto& bullet : bullets)
     {
         assertf(bullet.matFP.get(), "Bullet matrix is null");
         assertf(block.get(), "Bullet dl is null");
+
+        T3DVec3 currentPos {0};
+        t3d_vec3_lerp(currentPos, bullet.prevPos, bullet.pos, interpolate);
 
         t3d_mat4fp_from_srt_euler(
             bullet.matFP.get(),
             (float[3]){0.1f, 0.1f, 0.1f},
             /// TODO: add some random rotation & size
             (float[3]){0.0f, 0.0f, 0.0f},
-            bullet.pos.v
+            currentPos.v
         );
 
         if (bullet.velocity.v[0] != 0 || bullet.velocity.v[1] != 0 || bullet.velocity.v[2] != 0) {
@@ -60,6 +66,8 @@ void BulletController::killBullet(Bullet &bullet) {
 void BulletController::fixed_update(float deltaTime, std::vector<PlayerGameplayData> &gameplayData) {
     for (auto& bullet : bullets)
     {
+        bullet.prevPos = bullet.pos;
+
         // TODO: this will prevent firing once every slot is occupied
         // This is a free bullet slot, fill it if we have pending bullets
         if (bullet.velocity.v[0] == 0 && bullet.velocity.v[1] == 0 && bullet.velocity.v[2] == 0) {

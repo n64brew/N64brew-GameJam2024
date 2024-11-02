@@ -1,5 +1,8 @@
 #include "player.hpp"
 
+PlayerGameplayData::PlayerGameplayData(T3DVec3 pos, PlyNum team, std::array<int, MAXPLAYERS> health) :
+    pos(pos), prevPos(pos), team(team), health(health) {}
+
 PlayerOtherData::PlayerOtherData(T3DModel *model) :
     accel({0}),
     velocity({0}),

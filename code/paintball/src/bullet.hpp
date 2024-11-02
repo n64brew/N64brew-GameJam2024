@@ -24,6 +24,7 @@ class Bullet
     public:
         Bullet();
         T3DVec3 pos;
+        T3DVec3 prevPos;
         T3DVec3 velocity;
         PlyNum team;
         U::T3DMat4FP matFP;

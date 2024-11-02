@@ -18,7 +18,9 @@
 
 struct PlayerGameplayData
 {
+    PlayerGameplayData(T3DVec3 pos, PlyNum team, std::array<int, MAXPLAYERS> health);
     T3DVec3 pos;
+    T3DVec3 prevPos;
     // A player can be in any team at any given time
     PlyNum team;
     std::array<int, MAXPLAYERS> health;
