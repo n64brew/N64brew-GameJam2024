@@ -41,13 +41,15 @@ class BulletController
 
         std::array<Bullet, BulletLimit> bullets;
 
+        void simulatePhysics(float deltaTime, Bullet &bullet);
+        void killBullet(Bullet &bullet);
+        bool applyDamage(PlayerGameplayData &gameplayData, PlyNum team);
+
     public:
         BulletController();
-        void update(float deltaTime);
-        void fixed_update(float deltaTime, std::vector<PlayerGameplayData> &gameplayData);
-
+        void render(float deltaTime);
+        std::array<bool, PlayerCount> fixedUpdate(float deltaTime, std::vector<PlayerGameplayData> &gameplayData);
         void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum player);
-        void killBullet(Bullet &bullet);
 };
 
 #endif // __DAMAGE_H

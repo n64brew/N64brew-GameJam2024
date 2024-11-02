@@ -26,18 +26,20 @@ class GameplayController
 
         U::T3DModel model;
 
+        bool gameFinished;
+
         std::vector<PlayerOtherData> playerOtherData;
         std::vector<PlayerGameplayData> playerGameplayData;
 
-        void simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, float deltaTime);
-        void handleActions(PlayerGameplayData &gameplay, uint32_t id);
-
-        void renderPlayer(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, T3DViewport &viewport);
+        // Player calculations
+        void simulatePhysics(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, float deltaTime);
+        void handleActions(PlayerGameplayData &gameplayData, uint32_t id);
+        void renderPlayer(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, T3DViewport &viewport);
 
     public:
         GameplayController();
-        void update(float deltaTime, T3DViewport &viewport);
-        void fixed_update(float deltaTime);
+        void render(float deltaTime, T3DViewport &viewport);
+        void fixedUpdate(float deltaTime);
 };
 
 #endif // __GAMEPLAY_H

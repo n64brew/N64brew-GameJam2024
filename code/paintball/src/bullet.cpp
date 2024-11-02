@@ -21,7 +21,7 @@ BulletController::BulletController() :
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
     }
 
-void BulletController::update(float deltaTime) {
+void BulletController::render(float deltaTime) {
     const color_t colors[] = {
         PLAYERCOLOR_1,
         PLAYERCOLOR_2,
@@ -63,17 +63,64 @@ void BulletController::killBullet(Bullet &bullet) {
     bullet.velocity.v[2] = 0;
 }
 
-void BulletController::fixed_update(float deltaTime, std::vector<PlayerGameplayData> &gameplayData) {
+/**
+ * Returns true if the player changed team
+ */
+bool BulletController::applyDamage(PlayerGameplayData &gameplayData, PlyNum team) {
+    auto currentVal = gameplayData.health[team];
+
+    // Already on same team
+    if (gameplayData.team == team || currentVal == MaxHealth) return false;
+
+    gameplayData.health[team] = 0;
+
+    auto result = std::max_element(gameplayData.health.begin(), gameplayData.health.end(), [](int a, int b)
+    {
+        if (a == b) return (static_cast<float>(rand()) / RAND_MAX) > 0.5f;
+        return a < b;
+    });
+
+    *result -= Damage;
+    if (*result < 0) *result = 0;
+
+    gameplayData.health[team] = currentVal + Damage;
+    if (gameplayData.health[team] >= MaxHealth) {
+        gameplayData.health[team] = MaxHealth;
+        gameplayData.team = team;
+        return true;
+    }
+    return false;
+}
+
+void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
+    bullet.prevPos = bullet.pos;
+
+    // TODO: add some gravity
+    T3DVec3 posDiff = {0};
+    t3d_vec3_scale(posDiff, bullet.velocity, deltaTime);
+    t3d_vec3_add(bullet.pos, bullet.pos, posDiff);
+
+    if (bullet.pos.v[0] > 200.f || bullet.pos.v[0] < -200.f ||
+        bullet.pos.v[2] > 200.f || bullet.pos.v[2] < -200.f) {
+        killBullet(bullet);
+    }
+}
+
+/**
+ * Returns an array of players changed status this tick
+ */
+std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std::vector<PlayerGameplayData> &gameplayData) {
+    std::array<bool, PlayerCount> playerHitStatus {0};
+
     for (auto& bullet : bullets)
     {
-        bullet.prevPos = bullet.pos;
-
         // TODO: this will prevent firing once every slot is occupied
         // This is a free bullet slot, fill it if we have pending bullets
         if (bullet.velocity.v[0] == 0 && bullet.velocity.v[1] == 0 && bullet.velocity.v[2] == 0) {
             if (newBulletCount > 0) {
                 int bulletIndex = --newBulletCount;
                 bullet.pos = newBullets[bulletIndex].pos;
+                bullet.prevPos = bullet.pos;
                 bullet.velocity = newBullets[bulletIndex].velocity;
                 bullet.team = newBullets[bulletIndex].team;
             } else {
@@ -81,41 +128,20 @@ void BulletController::fixed_update(float deltaTime, std::vector<PlayerGameplayD
             }
         }
 
-        // TODO: add some gravity
-        T3DVec3 posDiff = {0};
-        t3d_vec3_scale(posDiff, bullet.velocity, deltaTime);
-        t3d_vec3_add(bullet.pos, bullet.pos, posDiff);
+        simulatePhysics(deltaTime, bullet);
 
-        if (bullet.pos.v[0] > 200.f || bullet.pos.v[0] < -200.f ||
-            bullet.pos.v[2] > 200.f || bullet.pos.v[2] < -200.f) {
-            killBullet(bullet);
-        }
-
+        int i = 0;
         for (auto& player : gameplayData)
         {
             if (t3d_vec3_distance2(player.pos, bullet.pos) < PlayerRadius * PlayerRadius) {
+                playerHitStatus[i] = applyDamage(player, bullet.team);
                 killBullet(bullet);
-
-                auto currentVal = player.health[bullet.team];
-                player.health[bullet.team] = 0;
-
-                auto result = std::max_element(player.health.begin(), player.health.end(), [](int a, int b)
-                {
-                    if (a == b) return (static_cast<float>(rand()) / RAND_MAX) > 0.5f;
-                    return a < b;
-                });
-
-                *result -= Damage;
-                if (*result < 0) *result = 0;
-
-                player.health[bullet.team] = currentVal + Damage;
-                if (player.health[bullet.team] >= Health) {
-                    player.health[bullet.team] = Health;
-                    player.team = bullet.team;
-                }
             }
+            i++;
         }
     }
+
+    return playerHitStatus;
 }
 
 void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum team) {

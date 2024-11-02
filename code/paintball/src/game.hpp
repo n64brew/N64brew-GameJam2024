@@ -44,8 +44,8 @@ class Game
     public:
         Game();
         ~Game();
-        void update(float deltatime);
-        void fixed_update(float deltatime);
+        void render(float deltatime);
+        void fixedUpdate(float deltatime);
 };
 
 #endif /* __GAME_H */

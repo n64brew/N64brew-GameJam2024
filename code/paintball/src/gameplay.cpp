@@ -4,7 +4,8 @@ GameplayController::GameplayController() :
     model({
         t3d_model_load("rom:/paintball/snake.t3dm"),
         t3d_model_free
-    })
+    }),
+    gameFinished(false)
     {
         assertf(model.get(), "Player model is null");
 
@@ -16,10 +17,10 @@ GameplayController::GameplayController() :
         playerOtherData.emplace_back(PlayerOtherData {model.get()});
 
         playerGameplayData.reserve(PlayerCount);
-        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0.15f,0}, PLAYER_1, {Health, 0, 0, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,-100}, PLAYER_2, {0, Health, 0, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{100,0.15f,0}, PLAYER_3, {0, 0, Health, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,100}, PLAYER_4, {0, 0, 0, Health}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0.15f,0}, PLAYER_1, {MaxHealth, 0, 0, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,-100}, PLAYER_2, {0, MaxHealth, 0, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{100,0.15f,0}, PLAYER_3, {0, 0, MaxHealth, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,100}, PLAYER_4, {0, 0, 0, MaxHealth}});
     }
 
 void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
@@ -111,6 +112,8 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) 
         } else if (pressed.c_right || pressed.d_right) {
             bulletController.fireBullet(player.pos, (T3DVec3){BulletVelocity, 0, 0}, player.team);
         }
+
+        if (pressed.start) minigame_end();
     }
 }
 
@@ -170,7 +173,7 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
     );
 }
 
-void GameplayController::update(float deltaTime, T3DViewport &viewport)
+void GameplayController::render(float deltaTime, T3DViewport &viewport)
 {
     int i = 0;
     for (auto& playerOther : playerOtherData)
@@ -182,18 +185,40 @@ void GameplayController::update(float deltaTime, T3DViewport &viewport)
 
         i++;
     }
-    bulletController.update(deltaTime);
+    bulletController.render(deltaTime);
 }
 
-void GameplayController::fixed_update(float deltaTime)
+void GameplayController::fixedUpdate(float deltaTime)
 {
     uint32_t i = 0;
     for (auto& player : playerOtherData)
     {
         auto& gameplayData = playerGameplayData[i];
-
         simulatePhysics(gameplayData, player, i, deltaTime);
         i++;
     }
-    bulletController.fixed_update(deltaTime, playerGameplayData);
+
+    std::array<bool, PlayerCount>playerHitStatus = bulletController.fixedUpdate(deltaTime, playerGameplayData);
+
+    PlyNum team = playerGameplayData[0].team;
+    bool isFinished = true;
+    for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
+        // All players must be in the same team to finish the game
+        if (it->team != team) {
+            isFinished = false;
+        }
+        team = it->team;
+    }
+
+    // If you died last, you lose!
+    if (isFinished && !gameFinished) {
+        i = 0;
+        for (auto& died : playerHitStatus) {
+            if (!died) {
+                core_set_winner(i);
+            }
+            i++;
+        }
+        gameFinished = true;
+    }
 }

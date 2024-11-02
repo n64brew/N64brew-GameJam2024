@@ -13,6 +13,6 @@ constexpr float BulletVelocity = 500;
 constexpr float PlayerRadius = 10;
 
 constexpr int Damage = 10;
-constexpr int Health = 100;
+constexpr int MaxHealth = 100;
 
 #endif // __CONSTANTS_H

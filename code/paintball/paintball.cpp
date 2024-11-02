@@ -33,7 +33,7 @@ extern "C" void minigame_init()
 ==============================*/
 extern "C" void minigame_fixedloop(float deltatime)
 {
-    game->fixed_update(deltatime);
+    game->fixedUpdate(deltatime);
 }
 
 /*==============================
@@ -43,7 +43,7 @@ extern "C" void minigame_fixedloop(float deltatime)
 ==============================*/
 extern "C" void minigame_loop(float deltatime)
 {
-    game->update(deltatime);
+    game->render(deltatime);
 }
 
 /*==============================
