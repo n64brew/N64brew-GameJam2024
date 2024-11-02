@@ -13,9 +13,9 @@
 #include "../../../core.h"
 #include "../../../minigame.h"
 
-#include "./player.hpp"
 #include "./wrappers.hpp"
 #include "./constants.hpp"
+#include "./gameplay.hpp"
 
 #include <functional>
 #include <memory>

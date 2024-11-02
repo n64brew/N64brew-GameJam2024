@@ -16,6 +16,7 @@
 
 #include "./wrappers.hpp"
 #include "./constants.hpp"
+#include "./player.hpp"
 
 class Bullet
 {
@@ -27,7 +28,7 @@ class Bullet
         U::T3DMat4FP matFP;
 };
 
-class DamageController
+class BulletController
 {
     private:
         int newBulletCount;
@@ -39,9 +40,9 @@ class DamageController
         std::array<Bullet, BulletLimit> bullets;
 
     public:
-        DamageController();
+        BulletController();
         void update(float deltaTime);
-        void fixed_update(float deltaTime);
+        void fixed_update(float deltaTime, const std::vector<PlayerGameplayData> &gameplayData);
 
         void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, color_t color);
 };

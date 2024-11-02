@@ -1,4 +1,4 @@
-#include "damage.hpp"
+#include "bullet.hpp"
 
 Bullet::Bullet() :
     pos {0},
@@ -6,7 +6,7 @@ Bullet::Bullet() :
     color {0},
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
 
-DamageController::DamageController() :
+BulletController::BulletController() :
     newBulletCount(0),
     model({
         t3d_model_load("rom:/paintball/snake.t3dm"),
@@ -20,7 +20,7 @@ DamageController::DamageController() :
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
     }
 
-void DamageController::update(float deltaTime) {
+void BulletController::update(float deltaTime) {
     // assertf(newBulletCount == 0, "Bullets were not processed before render");
     for (auto& bullet : bullets)
     {
@@ -44,7 +44,7 @@ void DamageController::update(float deltaTime) {
     }
 }
 
-void DamageController::fixed_update(float deltaTime) {
+void BulletController::fixed_update(float deltaTime, const std::vector<PlayerGameplayData> &gameplayData) {
     for (auto& bullet : bullets)
     {
         // TODO: this will prevent firing once every slot is occupied
@@ -74,10 +74,21 @@ void DamageController::fixed_update(float deltaTime) {
             bullet.velocity.v[1] = 0;
             bullet.velocity.v[2] = 0;
         }
+
+        uint32_t i = 0;
+        for (auto& player : gameplayData)
+        {
+            if (t3d_vec3_distance2(player.pos, bullet.pos) < PlayerRadius * PlayerRadius) {
+                bullet.velocity.v[0] = 0;
+                bullet.velocity.v[1] = 0;
+                bullet.velocity.v[2] = 0;
+            }
+            i++;
+        }
     }
 }
 
-void DamageController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, color_t color) {
+void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, color_t color) {
     debugf("Firing bullet\n");
     newBullets[newBulletCount].pos = pos;
     newBullets[newBulletCount].velocity = velocity;

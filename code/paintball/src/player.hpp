@@ -14,9 +14,7 @@
 #include "../../../core.h"
 #include "../../../minigame.h"
 
-#include "./constants.hpp"
 #include "./wrappers.hpp"
-#include "./damage.hpp"
 
 struct PlayerGameplayData
 {
@@ -41,25 +39,5 @@ class PlayerOtherData
         U::T3DSkeleton skel;
 };
 
-class GameplayController
-{
-    private:
-        DamageController damageController;
-
-        U::T3DModel model;
-
-        std::vector<PlayerOtherData> playerOtherData;
-        std::vector<PlayerGameplayData> playerGameplayData;
-
-        void simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, float deltaTime);
-        void handleActions(PlayerGameplayData &gameplay, uint32_t id);
-
-        void renderPlayer(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, T3DViewport &viewport);
-
-    public:
-        GameplayController();
-        void update(float deltaTime, T3DViewport &viewport);
-        void fixed_update(float deltaTime);
-};
-
 #endif // __PLAYER_H
+
