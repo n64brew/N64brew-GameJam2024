@@ -188,6 +188,8 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport)
         i++;
     }
     bulletController.render(deltaTime);
+
+    rdpq_text_printf(NULL, MainFont, 200, 220, "FPS   : %.2f", display_get_fps());
 }
 
 void GameplayController::fixedUpdate(float deltaTime)
