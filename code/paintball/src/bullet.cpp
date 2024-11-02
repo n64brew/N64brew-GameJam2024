@@ -10,7 +10,7 @@ Bullet::Bullet() :
 BulletController::BulletController() :
     newBulletCount(0),
     model({
-        t3d_model_load("rom:/paintball/snake.t3dm"),
+        t3d_model_load("rom:/paintball/Bat.t3dm"),
         t3d_model_free
     }),
     block({nullptr, rspq_block_free}) {

@@ -3,7 +3,7 @@
 GameplayController::GameplayController() :
     timer({ nullptr, delete_timer }),
     model({
-        t3d_model_load("rom:/paintball/snake.t3dm"),
+        t3d_model_load("rom:/paintball/Bat.t3dm"),
         t3d_model_free
     }),
     gameFinished(false)
@@ -136,12 +136,13 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
 
     t3d_mat4fp_from_srt_euler(
         playerOther.matFP.get(),
-        (float[3]){0.125f, 0.125f, 0.125f},
+        (float[3]){0.2f, 0.2f, 0.2f},
         (float[3]){0.0f, playerOther.direction, 0},
         currentPos.v
     );
 
     rdpq_set_prim_color(colors[playerGameplay.team]);
+
     rspq_block_run(playerOther.block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
