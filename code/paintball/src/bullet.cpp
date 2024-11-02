@@ -44,6 +44,13 @@ void BulletController::update(float deltaTime) {
     }
 }
 
+// TODO: shift everything to left to fill in holes & gain performance
+void BulletController::killBullet(Bullet &bullet) {
+    bullet.velocity.v[0] = 0;
+    bullet.velocity.v[1] = 0;
+    bullet.velocity.v[2] = 0;
+}
+
 void BulletController::fixed_update(float deltaTime, const std::vector<PlayerGameplayData> &gameplayData) {
     for (auto& bullet : bullets)
     {
@@ -70,20 +77,14 @@ void BulletController::fixed_update(float deltaTime, const std::vector<PlayerGam
         // Kill bullet
         if (bullet.pos.v[0] > 200.f || bullet.pos.v[0] < -200.f ||
             bullet.pos.v[2] > 200.f || bullet.pos.v[2] < -200.f) {
-            bullet.velocity.v[0] = 0;
-            bullet.velocity.v[1] = 0;
-            bullet.velocity.v[2] = 0;
+            killBullet(bullet);
         }
 
-        uint32_t i = 0;
         for (auto& player : gameplayData)
         {
             if (t3d_vec3_distance2(player.pos, bullet.pos) < PlayerRadius * PlayerRadius) {
-                bullet.velocity.v[0] = 0;
-                bullet.velocity.v[1] = 0;
-                bullet.velocity.v[2] = 0;
+                killBullet(bullet);
             }
-            i++;
         }
     }
 }

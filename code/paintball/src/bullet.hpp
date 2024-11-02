@@ -45,6 +45,7 @@ class BulletController
         void fixed_update(float deltaTime, const std::vector<PlayerGameplayData> &gameplayData);
 
         void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, color_t color);
+        void killBullet(Bullet &bullet);
 };
 
 #endif // __DAMAGE_H
