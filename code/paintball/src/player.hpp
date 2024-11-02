@@ -19,13 +19,15 @@
 struct PlayerGameplayData
 {
     T3DVec3 pos;
-    color_t color;
+    // A player can be in any team at any given time
+    PlyNum team;
+    std::array<int, MAXPLAYERS> health;
 };
 
 class PlayerOtherData
 {
     public:
-        PlayerOtherData(T3DModel *model, const color_t &color);
+        PlayerOtherData(T3DModel *model);
 
         // Physics
         T3DVec3 accel;

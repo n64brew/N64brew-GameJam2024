@@ -22,7 +22,7 @@
 class GameplayController
 {
     private:
-        BulletController damageController;
+        BulletController bulletController;
 
         U::T3DModel model;
 

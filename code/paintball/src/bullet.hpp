@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <array>
+#include <algorithm>
 
 #include "../../../core.h"
 #include "../../../minigame.h"
@@ -24,7 +25,7 @@ class Bullet
         Bullet();
         T3DVec3 pos;
         T3DVec3 velocity;
-        color_t color;
+        PlyNum team;
         U::T3DMat4FP matFP;
 };
 
@@ -42,9 +43,9 @@ class BulletController
     public:
         BulletController();
         void update(float deltaTime);
-        void fixed_update(float deltaTime, const std::vector<PlayerGameplayData> &gameplayData);
+        void fixed_update(float deltaTime, std::vector<PlayerGameplayData> &gameplayData);
 
-        void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, color_t color);
+        void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum player);
         void killBullet(Bullet &bullet);
 };
 

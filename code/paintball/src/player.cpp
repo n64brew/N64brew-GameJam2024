@@ -1,6 +1,6 @@
 #include "player.hpp"
 
-PlayerOtherData::PlayerOtherData(T3DModel *model, const color_t &color) :
+PlayerOtherData::PlayerOtherData(T3DModel *model) :
     accel({0}),
     velocity({0}),
     direction(0),
@@ -14,8 +14,6 @@ PlayerOtherData::PlayerOtherData(T3DModel *model, const color_t &color) :
 
         rspq_block_begin();
             t3d_matrix_push(matFP.get());
-            // TODO: this will change, this is not a good place
-            rdpq_set_prim_color(color);
             t3d_model_draw_skinned(model, skel.get());
             t3d_matrix_pop(1);
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);

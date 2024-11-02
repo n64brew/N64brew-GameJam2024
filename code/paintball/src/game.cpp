@@ -38,7 +38,7 @@ Game::Game() :
 
 void Game::timer_callback() {
     debugf("Timer callback called\n");
-    minigame_end();
+    // minigame_end();
 }
 
 void Game::setupMap(U::T3DMat4FP &mapMatFP) {

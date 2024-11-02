@@ -10,16 +10,16 @@ GameplayController::GameplayController() :
 
         playerOtherData.reserve(PlayerCount);
 
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), PLAYERCOLOR_1});
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), PLAYERCOLOR_2});
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), PLAYERCOLOR_3});
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), PLAYERCOLOR_4});
+        playerOtherData.emplace_back(PlayerOtherData {model.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get()});
 
         playerGameplayData.reserve(PlayerCount);
-        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0.15f,0}, PLAYERCOLOR_1});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,-100}, PLAYERCOLOR_2});
-        playerGameplayData.emplace_back(PlayerGameplayData {{100,0.15f,0}, PLAYERCOLOR_3});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,100}, PLAYERCOLOR_4});
+        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0.15f,0}, PLAYER_1, {Health, 0, 0, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,-100}, PLAYER_2, {0, Health, 0, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{100,0.15f,0}, PLAYER_3, {0, 0, Health, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,100}, PLAYER_4, {0, 0, 0, Health}});
     }
 
 void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
@@ -101,19 +101,26 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) 
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
         // Fire button
         if (pressed.c_up || pressed.d_up) {
-            damageController.fireBullet(player.pos, (T3DVec3){0, 0, -BulletVelocity}, player.color);
+            bulletController.fireBullet(player.pos, (T3DVec3){0, 0, -BulletVelocity}, player.team);
         } else if (pressed.c_down || pressed.d_down) {
-            damageController.fireBullet(player.pos, (T3DVec3){0, 0, BulletVelocity}, player.color);
+            bulletController.fireBullet(player.pos, (T3DVec3){0, 0, BulletVelocity}, player.team);
         } else if (pressed.c_left || pressed.d_left) {
-            damageController.fireBullet(player.pos, (T3DVec3){-BulletVelocity, 0, 0}, player.color);
+            bulletController.fireBullet(player.pos, (T3DVec3){-BulletVelocity, 0, 0}, player.team);
         } else if (pressed.c_right || pressed.d_right) {
-            damageController.fireBullet(player.pos, (T3DVec3){BulletVelocity, 0, 0}, player.color);
+            bulletController.fireBullet(player.pos, (T3DVec3){BulletVelocity, 0, 0}, player.team);
         }
     }
 }
 
 void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport)
 {
+    const color_t colors[] = {
+        PLAYERCOLOR_1,
+        PLAYERCOLOR_2,
+        PLAYERCOLOR_3,
+        PLAYERCOLOR_4,
+    };
+
     assertf(playerOther.matFP.get(), "Player %lu matrix is null", id);
     assertf(playerOther.block.get(), "Player %lu block is null", id);
 
@@ -123,6 +130,8 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
         (float[3]){0.0f, playerOther.direction, 0},
         playerGameplay.pos.v
     );
+
+    rdpq_set_prim_color(colors[playerGameplay.team]);
     rspq_block_run(playerOther.block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
@@ -140,8 +149,19 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
     rdpq_sync_pipe(); // Hardware crashes otherwise
     rdpq_sync_tile(); // Hardware crashes otherwise
 
-    rdpq_textparms_t fontParams { .style_id = static_cast<int16_t>(id) };
-    rdpq_text_printf(&fontParams, MainFont, x-5, y-16, "P%lu", id+1);
+    rdpq_textparms_t fontParams { .style_id = playerGameplay.team };
+    rdpq_text_printf(
+        &fontParams,
+        MainFont,
+        x-5,
+        y-16,
+        "P%lu (%u, %u, %u, %u)",
+        id + 1,
+        playerGameplay.health[0],
+        playerGameplay.health[1],
+        playerGameplay.health[2],
+        playerGameplay.health[3]
+    );
 }
 
 void GameplayController::update(float deltaTime, T3DViewport &viewport)
@@ -156,7 +176,7 @@ void GameplayController::update(float deltaTime, T3DViewport &viewport)
 
         i++;
     }
-    damageController.update(deltaTime);
+    bulletController.update(deltaTime);
 }
 
 void GameplayController::fixed_update(float deltaTime)
@@ -169,5 +189,5 @@ void GameplayController::fixed_update(float deltaTime)
         simulatePhysics(gameplayData, player, i, deltaTime);
         i++;
     }
-    damageController.fixed_update(deltaTime, playerGameplayData);
+    bulletController.fixed_update(deltaTime, playerGameplayData);
 }
