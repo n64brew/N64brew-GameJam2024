@@ -41,7 +41,7 @@ class PlayerOtherData
         U::T3DSkeleton skel;
 };
 
-class PlayerController
+class GameplayController
 {
     private:
         DamageController damageController;
@@ -57,7 +57,7 @@ class PlayerController
         void renderPlayer(PlayerGameplayData &gameplay, PlayerOtherData &other, uint32_t id, T3DViewport &viewport);
 
     public:
-        PlayerController();
+        GameplayController();
         void update(float deltaTime, T3DViewport &viewport);
         void fixed_update(float deltaTime);
 };

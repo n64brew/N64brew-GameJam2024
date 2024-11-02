@@ -95,12 +95,12 @@ void Game::update(float deltaTime) {
 
     renderMap();
 
-    playerController.update(deltaTime, viewport);
+    gameplayController.update(deltaTime, viewport);
 
     rdpq_detach_show();
 }
 
 void Game::fixed_update(float deltaTime) {
-    playerController.fixed_update(deltaTime);
+    gameplayController.fixed_update(deltaTime);
 }
 

@@ -28,7 +28,7 @@ class Game
         T3DViewport viewport;
 
         // Controllers
-        PlayerController playerController;
+        GameplayController gameplayController;
 
         RDPQFont font;
         U::Timer timer;

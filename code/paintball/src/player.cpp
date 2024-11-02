@@ -21,7 +21,7 @@ PlayerOtherData::PlayerOtherData(T3DModel *model, const color_t &color) :
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
     }
 
-PlayerController::PlayerController() :
+GameplayController::GameplayController() :
     model({
         t3d_model_load("rom:/paintball/snake.t3dm"),
         t3d_model_free
@@ -43,7 +43,7 @@ PlayerController::PlayerController() :
         playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,100}, PLAYERCOLOR_4});
     }
 
-void PlayerController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
+void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
 {
     if (id < MAXPLAYERS && id < core_get_playercount()) {
         joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
@@ -117,7 +117,7 @@ void PlayerController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOther
     }
 }
 
-void PlayerController::handleActions(PlayerGameplayData &player, uint32_t id) {
+void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) {
     if (id < core_get_playercount()) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
         // Fire button
@@ -133,7 +133,7 @@ void PlayerController::handleActions(PlayerGameplayData &player, uint32_t id) {
     }
 }
 
-void PlayerController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport)
+void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport)
 {
     assertf(playerOther.matFP.get(), "Player %lu matrix is null", id);
     assertf(playerOther.block.get(), "Player %lu block is null", id);
@@ -165,7 +165,7 @@ void PlayerController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOt
     rdpq_text_printf(&fontParams, MainFont, x-5, y-16, "P%lu", id+1);
 }
 
-void PlayerController::update(float deltaTime, T3DViewport &viewport)
+void GameplayController::update(float deltaTime, T3DViewport &viewport)
 {
     int i = 0;
     for (auto& playerOther : playerOtherData)
@@ -180,7 +180,7 @@ void PlayerController::update(float deltaTime, T3DViewport &viewport)
     damageController.update(deltaTime);
 }
 
-void PlayerController::fixed_update(float deltaTime)
+void GameplayController::fixed_update(float deltaTime)
 {
     uint32_t i = 0;
     for (auto& player : playerOtherData)
