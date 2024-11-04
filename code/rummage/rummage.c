@@ -1,6 +1,7 @@
 #include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
+#include "game.h"
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
@@ -27,10 +28,6 @@ T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 
-T3DModel* roomModel;
-T3DMat4FP* roomMatFP;
-rspq_block_t* roomDpl;
-
 
 /*==============================
     minigame_init
@@ -51,16 +48,7 @@ void minigame_init()
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
-    // Init map
-    roomModel = t3d_model_load("rom:/rummage/room.t3dm");
-    roomMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    t3d_mat4fp_from_srt_euler(roomMatFP, (float[3]){1, 1, 1}, (float[3]){0, 0, 0}, (float[3]){0, 0, 0});
-    rspq_block_begin();
-        t3d_matrix_push(roomMatFP);
-        t3d_model_draw(roomModel);
-        t3d_matrix_pop(1);
-    roomDpl = rspq_block_end();
-
+    game_init();
     
     countdown_timer = COUNTDOWN_DELAY;
 }
@@ -76,6 +64,8 @@ void minigame_init()
 
 void minigame_fixedloop(float deltatime)
 {
+    game_logic(deltatime);
+
     if (countdown_timer > 0)
     {
         countdown_timer -= deltatime;
@@ -110,7 +100,9 @@ void minigame_loop(float deltatime)
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
-    rspq_block_run(roomDpl);
+
+    game_render(deltatime);
+
     rdpq_detach_show();
 }
 
@@ -122,9 +114,7 @@ void minigame_loop(float deltatime)
 
 void minigame_cleanup()
 {
-    rspq_block_free(roomDpl);
-    free_uncached(roomMatFP);
-    t3d_model_free(roomModel);
+    game_cleanup();
     t3d_destroy();
     display_close();
 }
