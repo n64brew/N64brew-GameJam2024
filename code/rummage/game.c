@@ -4,8 +4,16 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#define CUTE_C2_IMPLEMENTATION
+#include "cute_c2.h"
+#pragma GCC diagnostic pop
+
 
 #define T3D_MODEL_SCALE 64
+#define COLLISION_CORRECTIVE_FACTOR 1.3f
 
 typedef struct actor_t {
     T3DModel* model;
@@ -20,6 +28,7 @@ typedef struct actor_t {
 
 typedef struct {
     actor_t;
+    bool rotated;
     bool has_key;
 } furniture_t;
 
@@ -78,7 +87,8 @@ void game_init()
         furnitures[i].w = 0.92f * T3D_MODEL_SCALE;
         furnitures[i].h = 0.42f * T3D_MODEL_SCALE;
         furnitures[i].scale = (T3DVec3){{1, 1, 1}};
-        furnitures[i].rotation = (T3DVec3){{0, ((float)rand()/(float)(RAND_MAX)) * 2 * M_PI, 0}};  // TODO randomize rotation?
+        int rotated = rand() % 3;
+        furnitures[i].rotation = (T3DVec3){{0, rotated * M_PI/2, 0}};  // TODO randomize rotation?
         furnitures[i].position = (T3DVec3){{ ((i%3)-1)*((room.w-furnitures[i].w-50)/2.0f), 0, (((i/3)%3)-1)*((room.h-furnitures[i].h-50)/2.0f) }};
         furnitures[i].model = furniture_model;
         furnitures[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
@@ -88,6 +98,7 @@ void game_init()
             t3d_model_draw(furnitures[i].model);
             t3d_matrix_pop(1);
         furnitures[i].dpl = rspq_block_end();
+        furnitures[i].rotated = rotated % 2;
         furnitures[i].has_key = (i == key);
     }
 
@@ -120,11 +131,11 @@ void game_init()
     };
     T3DModel* player_model = t3d_model_load("rom:/rummage/player.t3dm");
     for (int i=0; i<MAXPLAYERS; i++) {
-        players[i].w = 0.5f * T3D_MODEL_SCALE;
-        players[i].h = 0.5f * T3D_MODEL_SCALE;
+        players[i].w = 0.3f * T3D_MODEL_SCALE;
+        players[i].h = 0.3f * T3D_MODEL_SCALE;
         players[i].scale = (T3DVec3){{1, 1, 1}};
         players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
-        players[i].position = (T3DVec3){{ ((i-1)%2)*(room.w-players[i].h)/3.0f, 0, ((i-2)%2)*(room.h-players[i].h)/3.0f }};
+        players[i].position = (T3DVec3){{ ((i-1)%2)*50, 0, ((i-2)%2)*50 }};
         players[i].model = player_model;
         players[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         players[i].color = colors[i];
@@ -145,6 +156,7 @@ void game_init()
 
 void game_logic(float deltatime)
 {
+    // Player controls
     uint32_t playercount = core_get_playercount();
     for (size_t i = 0; i < MAXPLAYERS; i++) {
         if (i < playercount) {  // Human player
@@ -171,7 +183,59 @@ void game_logic(float deltatime)
             // Move player
             players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
             players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
-            t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
+        }
+    }
+
+    // Collision handling
+    for (size_t i = 0; i < MAXPLAYERS; i++) {
+        // Players cannot move outside the room
+        if(players[i].position.v[0] < -(room.w/2.0f - players[i].w/2.0f))   players[i].position.v[0] = -(room.w/2.0f - players[i].w/2.0f);
+        if(players[i].position.v[0] >  (room.w/2.0f - players[i].w/2.0f))   players[i].position.v[0] =  (room.w/2.0f - players[i].w/2.0f);
+        if(players[i].position.v[2] < -(room.h/2.0f - players[i].h/2.0f))   players[i].position.v[2] = -(room.h/2.0f - players[i].h/2.0f);
+        if(players[i].position.v[2] >  (room.h/2.0f - players[i].h/2.0f))   players[i].position.v[2] =  (room.h/2.0f - players[i].h/2.0f);
+        // Static objects
+        c2AABB player_i;
+        player_i.min = c2V(players[i].position.v[0] - players[i].w/2.0f, players[i].position.v[2] - players[i].h/2.0f);
+        player_i.max = c2V(players[i].position.v[0] + players[i].w/2.0f, players[i].position.v[2] + players[i].h/2.0f);
+        for (int j=0; j<FURNITURES_COUNT; j++) {
+            c2AABB furniture_j;
+            float fw = furnitures[j].rotated ? furnitures[j].h : furnitures[j].w;
+            float fh = furnitures[j].rotated ? furnitures[j].w : furnitures[j].h;
+            furniture_j.min = c2V(furnitures[j].position.v[0] - fw/2.0f, furnitures[j].position.v[2] - fh/2.0f);
+            furniture_j.max = c2V(furnitures[j].position.v[0] + fw/2.0f, furnitures[j].position.v[2] + fh/2.0f);
+            c2Manifold m;
+            c2AABBtoAABBManifold(player_i, furniture_j, &m);
+            if (m.count) {
+                players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
+                players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
+            }
+        }
+        for (int j=0; j<VAULTS_COUNT; j++) {
+            c2AABB vault_j;
+            vault_j.min = c2V(vaults[j].position.v[0] - vaults[j].w/2.0f, vaults[j].position.v[2] - vaults[j].h/2.0f);
+            vault_j.max = c2V(vaults[j].position.v[0] + vaults[j].w/2.0f, vaults[j].position.v[2] + vaults[j].h/2.0f);
+            c2Manifold m;
+            c2AABBtoAABBManifold(player_i, vault_j, &m);
+            if (m.count) {
+                players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
+                players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
+            }
+        }
+        // Other players
+        for (int j=0; j<MAXPLAYERS; j++) {
+            if (i != j) {
+                c2AABB player_j;
+                player_j.min = c2V(players[j].position.v[0] - players[j].w/2.0f, players[j].position.v[2] - players[j].h/2.0f);
+                player_j.max = c2V(players[j].position.v[0] + players[j].w/2.0f, players[j].position.v[2] + players[j].h/2.0f);
+                c2Manifold m;
+                c2AABBtoAABBManifold(player_i, player_j, &m);
+                if (m.count) {
+                    players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
+                    players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
+                    players[j].position.v[0] += m.n.x * COLLISION_CORRECTIVE_FACTOR;
+                    players[j].position.v[2] += m.n.y * COLLISION_CORRECTIVE_FACTOR;
+                }
+            }
         }
     }
 }
@@ -193,6 +257,7 @@ void game_render(float deltatime)
 
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
+        t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_run(players[i].dpl);
     }
 }
