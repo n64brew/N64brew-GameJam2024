@@ -334,3 +334,23 @@ void game_cleanup()
     }
     t3d_model_free(players[0].model);
 }
+
+
+int game_key() {
+    for (int i=0; i<FURNITURES_COUNT; i++) {
+        if (furnitures[i].has_key) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+int game_vault() {
+    for (int i=0; i<VAULTS_COUNT; i++) {
+        if (vaults[i].is_target) {
+            return i;
+        }
+    }
+    return -1;
+}

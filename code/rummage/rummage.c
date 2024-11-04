@@ -5,6 +5,9 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
+#define ENABLE_MUSIC 0
+#define ENABLE_TEXT 1
+
 #define COUNTDOWN_DELAY     3.0f
 #define GAME_BACKGROUND     0xffff00ff
 #define FONT_DEBUG          1
@@ -51,15 +54,19 @@ void minigame_init()
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
+#if ENABLE_TEXT
     // Init fonts
     fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     rdpq_text_register_font(FONT_DEBUG, fontdbg);
+#endif
 
+#if ENABLE_MUSIC
     // Init and play music
     wav64_open(&music, "rom:/rummage/music.wav64");
 	wav64_set_loop(&music, true);
     mixer_ch_set_vol(1, 0.15f, 0.15f);
     wav64_play(&music, 1);
+#endif
 
     game_init();
     
@@ -114,7 +121,15 @@ void minigame_loop(float deltatime)
     game_render(deltatime);
 
     // Display FPS
+#if ENABLE_TEXT
     rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
+#endif
+
+    // Display game data
+#if ENABLE_TEXT
+    rdpq_text_printf(NULL, FONT_DEBUG, 10, 30, "Key: %d", game_key());
+    rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
+#endif
 
     rdpq_detach_show();
 }
@@ -128,9 +143,13 @@ void minigame_loop(float deltatime)
 void minigame_cleanup()
 {
     game_cleanup();
+#if ENABLE_MUSIC
     wav64_close(&music);
+#endif
+#if ENABLE_TEXT
     rdpq_text_unregister_font(FONT_DEBUG);
     rdpq_font_free(fontdbg);
+#endif
     t3d_destroy();
     display_close();
 }
