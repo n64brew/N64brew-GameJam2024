@@ -29,6 +29,7 @@ T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 rdpq_font_t* fontdbg;
+wav64_t music;
 
 
 /*==============================
@@ -53,6 +54,12 @@ void minigame_init()
     // Init fonts
     fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     rdpq_text_register_font(FONT_DEBUG, fontdbg);
+
+    // Init and play music
+    wav64_open(&music, "rom:/rummage/music.wav64");
+	wav64_set_loop(&music, true);
+    mixer_ch_set_vol(1, 0.15f, 0.15f);
+    wav64_play(&music, 1);
 
     game_init();
     
@@ -121,6 +128,7 @@ void minigame_loop(float deltatime)
 void minigame_cleanup()
 {
     game_cleanup();
+    wav64_close(&music);
     rdpq_text_unregister_font(FONT_DEBUG);
     rdpq_font_free(fontdbg);
     t3d_destroy();
