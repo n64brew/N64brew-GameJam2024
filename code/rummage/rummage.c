@@ -7,6 +7,7 @@
 
 #define COUNTDOWN_DELAY     3.0f
 #define GAME_BACKGROUND     0xffff00ff
+#define FONT_DEBUG          1
 
 
 /*********************************
@@ -48,6 +49,10 @@ void minigame_init()
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
+    // Init fonts
+    rdpq_font_t *fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
+    rdpq_text_register_font(FONT_DEBUG, fontdbg);
+
     game_init();
     
     countdown_timer = COUNTDOWN_DELAY;
@@ -69,9 +74,6 @@ void minigame_fixedloop(float deltatime)
     if (countdown_timer > 0)
     {
         countdown_timer -= deltatime;
-    } else {
-        core_set_winner(0);
-        minigame_end();
     }
 }
 
@@ -102,6 +104,9 @@ void minigame_loop(float deltatime)
     t3d_light_set_count(1);
 
     game_render(deltatime);
+
+    // Display FPS
+    rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
 
     rdpq_detach_show();
 }

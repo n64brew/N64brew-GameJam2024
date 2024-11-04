@@ -1,5 +1,6 @@
 #include "game.h"
 #include "../../core.h"
+#include "../../minigame.h"
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
@@ -140,6 +141,16 @@ void game_init()
 
 void game_logic(float deltatime)
 {
+    uint32_t playercount = core_get_playercount();
+    for (size_t i = 0; i < core_get_playercount(); i++) {
+        if (i < playercount) {  // Human player
+            joypad_port_t port = core_get_playercontroller(i);
+            joypad_buttons_t btn = joypad_get_buttons_pressed(port);
+            if (btn.start) {
+                minigame_end();
+            }
+        }
+    }
 }
 
 void game_render(float deltatime)
