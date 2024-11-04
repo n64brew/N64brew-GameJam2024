@@ -41,6 +41,8 @@ class PlayerOtherData
         U::T3DMat4FP matFP;
         // TODO: this wrapper is currently heap allocated
         U::T3DSkeleton skel;
+
+        T3DVec3 screenPos;
 };
 
 #endif // __PLAYER_H

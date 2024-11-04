@@ -151,16 +151,18 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
         currentPos.v[2]
     }};
 
-    T3DVec3 billboardScreenPos;
-    t3d_viewport_calc_viewspace_pos(viewport, billboardScreenPos, billboardPos);
+    t3d_viewport_calc_viewspace_pos(viewport,  playerOther.screenPos, billboardPos);
+}
 
-    int x = floorf(billboardScreenPos.v[0]);
-    int y = floorf(billboardScreenPos.v[1]);
+void GameplayController::renderPlayer2ndPass(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id)
+{
+    int x = floorf(playerOther.screenPos.v[0]);
+    int y = floorf(playerOther.screenPos.v[1]);
 
     rdpq_sync_pipe(); // Hardware crashes otherwise
     rdpq_sync_tile(); // Hardware crashes otherwise
 
-    rdpq_textparms_t fontParams { .style_id = playerGameplay.team };
+    rdpq_textparms_t fontParams { .style_id = playerGameplay.team, .disable_aa_fix = false };
     rdpq_text_printf(
         &fontParams,
         MainFont,
@@ -189,7 +191,18 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport)
     }
     bulletController.render(deltaTime);
 
-    rdpq_text_printf(NULL, MainFont, 200, 220, "FPS   : %.2f", display_get_fps());
+    debugf("FPS   : %.2f\n", display_get_fps());
+}
+
+void GameplayController::render2ndPass()
+{
+    int i = 0;
+    for (auto& playerOther : playerOtherData)
+    {
+        auto& playerGameplay = playerGameplayData[i];
+        renderPlayer2ndPass(playerGameplay, playerOther, i);
+        i++;
+    }
 }
 
 void GameplayController::fixedUpdate(float deltaTime)

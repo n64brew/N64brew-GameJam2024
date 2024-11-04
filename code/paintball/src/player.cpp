@@ -9,7 +9,9 @@ PlayerOtherData::PlayerOtherData(T3DModel *model) :
     direction(0),
     block({nullptr, rspq_block_free}),
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
-    skel({new T3DSkeleton(t3d_skeleton_create(model)), t3d_skeleton_destroy}) {
+    skel({new T3DSkeleton(t3d_skeleton_create(model)), t3d_skeleton_destroy}),
+    screenPos({0})
+    {
         assertf(skel.get(), "Player skel is null");
         assertf(matFP.get(), "Player matrix is null");
 

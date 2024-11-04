@@ -10,7 +10,7 @@ class Display
     public:
         const surface_t* depthBuffer;
         Display() {
-            display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS);
+            display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
             depthBuffer = display_get_zbuf();
         };
         ~Display() {

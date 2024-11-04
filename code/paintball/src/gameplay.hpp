@@ -38,10 +38,12 @@ class GameplayController
         void simulatePhysics(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, float deltaTime);
         void handleActions(PlayerGameplayData &gameplayData, uint32_t id);
         void renderPlayer(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, T3DViewport &viewport);
+        void renderPlayer2ndPass(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id);
 
     public:
         GameplayController();
         void render(float deltaTime, T3DViewport &viewport);
+        void render2ndPass();
         void fixedUpdate(float deltaTime);
 };
 

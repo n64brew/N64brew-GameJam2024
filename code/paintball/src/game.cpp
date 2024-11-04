@@ -87,6 +87,7 @@ void Game::render(float deltaTime) {
     renderMap();
 
     gameplayController.render(deltaTime, viewport);
+    gameplayController.render2ndPass();
 
     rdpq_detach_show();
 }
