@@ -28,6 +28,7 @@ T3DViewport viewport;
 T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
+rdpq_font_t* fontdbg;
 
 
 /*==============================
@@ -50,7 +51,7 @@ void minigame_init()
     t3d_vec3_norm(&lightDirVec);
 
     // Init fonts
-    rdpq_font_t *fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
+    fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     rdpq_text_register_font(FONT_DEBUG, fontdbg);
 
     game_init();
@@ -120,6 +121,8 @@ void minigame_loop(float deltatime)
 void minigame_cleanup()
 {
     game_cleanup();
+    rdpq_text_unregister_font(FONT_DEBUG);
+    rdpq_font_free(fontdbg);
     t3d_destroy();
     display_close();
 }

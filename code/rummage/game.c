@@ -33,6 +33,8 @@ typedef struct {
     // TODO rotation, speed, skeleton, animations, ...
     PlyNum plynum;
     color_t color;
+    T3DVec3 direction;
+    float speed;
     bool has_key;
 } player_t;
 
@@ -134,6 +136,8 @@ void game_init()
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
         players[i].plynum = i;
+        players[i].direction = (T3DVec3){{0, 0, 0}};
+        players[i].speed = 0.0f;
         players[i].has_key = false;
     }
 }
@@ -142,13 +146,32 @@ void game_init()
 void game_logic(float deltatime)
 {
     uint32_t playercount = core_get_playercount();
-    for (size_t i = 0; i < core_get_playercount(); i++) {
+    for (size_t i = 0; i < MAXPLAYERS; i++) {
         if (i < playercount) {  // Human player
             joypad_port_t port = core_get_playercontroller(i);
-            joypad_buttons_t btn = joypad_get_buttons_pressed(port);
-            if (btn.start) {
+            joypad_inputs_t joypad = joypad_get_inputs(port);
+            if (joypad.btn.start) {
                 minigame_end();
             }
+            T3DVec3 newDir = {0};
+            newDir.v[0] = (float)joypad.stick_x * 0.05f;
+            newDir.v[2] = -(float)joypad.stick_y * 0.05f;
+            float speed = sqrtf(t3d_vec3_len2(&newDir));
+            // Smooth movements and stop
+            if(speed > 0.15f) {
+                newDir.v[0] /= speed;
+                newDir.v[2] /= speed;
+                players[i].direction = newDir;
+                float newAngle = -atan2f(players[i].direction.v[0], players[i].direction.v[2]);
+                players[i].rotation.v[1] = t3d_lerp_angle(players[i].rotation.v[1], newAngle, 0.5f);
+                players[i].speed = t3d_lerp(players[i].speed, speed * 0.3f, 0.15f);
+            } else {
+                players[i].speed *= 0.64f;
+            }
+            // Move player
+            players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
+            players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
+            t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         }
     }
 }
