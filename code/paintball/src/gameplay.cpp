@@ -78,14 +78,15 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
             t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
             t3d_vec3_add(velocityTarget, otherData.velocity, velocityTarget);
 
-            if (t3d_vec3_len(velocityTarget) > SpeedLimit) {
+            float speedLimit = strength * SpeedLimit / ForceLimit;
+            if (t3d_vec3_len(velocityTarget) > speedLimit) {
                 T3DVec3 accelDiff = {0};
                 t3d_vec3_diff(accelDiff, velocityTarget, otherData.velocity);
                 t3d_vec3_scale(accelDiff, accelDiff, 1.0f/deltaTime);
                 t3d_vec3_add(newAccel, otherData.accel, accelDiff);
 
                 t3d_vec3_norm(velocityTarget);
-                t3d_vec3_scale(velocityTarget, velocityTarget, SpeedLimit);
+                t3d_vec3_scale(velocityTarget, velocityTarget, speedLimit);
             }
             otherData.accel = newAccel;
             otherData.velocity = velocityTarget;
