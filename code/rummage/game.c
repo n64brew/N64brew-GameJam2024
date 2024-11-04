@@ -22,13 +22,13 @@ typedef struct actor_t {
     T3DVec3 scale;
     T3DVec3 rotation;
     T3DVec3 position;
+    T3DVec3 direction;
     float w;
     float h;
 } actor_t;
 
 typedef struct {
     actor_t;
-    T3DVec3 direction;
     bool rotated;
     bool has_key;
 } furniture_t;
@@ -43,7 +43,6 @@ typedef struct {
     // TODO rotation, speed, skeleton, animations, ...
     PlyNum plynum;
     color_t color;
-    T3DVec3 direction;
     float speed;
     bool has_key;
 } player_t;
@@ -83,14 +82,17 @@ void game_init()
 
     // Place furnitures
     int key = rand() % FURNITURES_COUNT;
+    debugf("Key is in furniture #%d!\n", key);
     T3DModel* furniture_model = t3d_model_load("rom:/rummage/furniture.t3dm");
     for (int i=0; i<FURNITURES_COUNT; i++) {
         furnitures[i].w = 0.92f * T3D_MODEL_SCALE;
         furnitures[i].h = 0.42f * T3D_MODEL_SCALE;
         furnitures[i].scale = (T3DVec3){{1, 1, 1}};
         int rotated = rand() % 3;
-        furnitures[i].rotation = (T3DVec3){{0, rotated * M_PI/2, 0}};  // TODO randomize rotation?
+        furnitures[i].rotated = rotated % 2;
+        furnitures[i].rotation = (T3DVec3){{0, rotated * M_PI/2, 0}};
         furnitures[i].position = (T3DVec3){{ ((i%3)-1)*((room.w-furnitures[i].w-50)/2.0f), 0, (((i/3)%3)-1)*((room.h-furnitures[i].h-50)/2.0f) }};
+        furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
         furnitures[i].model = furniture_model;
         furnitures[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         t3d_mat4fp_from_srt_euler(furnitures[i].mat_fp, furnitures[i].scale.v, furnitures[i].rotation.v, furnitures[i].position.v);
@@ -99,13 +101,12 @@ void game_init()
             t3d_model_draw(furnitures[i].model);
             t3d_matrix_pop(1);
         furnitures[i].dpl = rspq_block_end();
-        furnitures[i].rotated = rotated % 2;
-        furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
         furnitures[i].has_key = (i == key);
     }
 
     // Place vaults
     int target = rand() % VAULTS_COUNT;
+    debugf("Target is vault #%d!\n", target);
     T3DModel* vault_model = t3d_model_load("rom:/rummage/vault.t3dm");
     for (int i=0; i<VAULTS_COUNT; i++) {
         vaults[i].w = 1.09f * T3D_MODEL_SCALE;
@@ -113,6 +114,7 @@ void game_init()
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
         vaults[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         vaults[i].position = (T3DVec3){{ (i-1)*(room.w-vaults[i].h)/2.0f, 0, -1*(room.h-vaults[i].h)/2.0f*(i%2) }};
+        vaults[i].direction = (T3DVec3){{1-i, 0, i%2}};
         vaults[i].model = vault_model;
         vaults[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         t3d_mat4fp_from_srt_euler(vaults[i].mat_fp, vaults[i].scale.v, vaults[i].rotation.v, vaults[i].position.v);
@@ -138,6 +140,7 @@ void game_init()
         players[i].scale = (T3DVec3){{1, 1, 1}};
         players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         players[i].position = (T3DVec3){{ ((i-1)%2)*50, 0, ((i-2)%2)*50 }};
+        players[i].direction = (T3DVec3){{0, 0, 0}};
         players[i].model = player_model;
         players[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         players[i].color = colors[i];
@@ -149,7 +152,6 @@ void game_init()
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
         players[i].plynum = i;
-        players[i].direction = (T3DVec3){{0, 0, 0}};
         players[i].speed = 0.0f;
         players[i].has_key = false;
     }
@@ -187,6 +189,27 @@ void game_logic(float deltatime)
                                 debugf("Player #%d found key in furniture #%d!\n", i, j);
                                 players[i].has_key = true;
                                 furnitures[j].has_key = false;
+                            }
+                        }
+                    }
+                }
+                if (players[i].has_key) {
+                    for (int j=0; j<VAULTS_COUNT; j++) {
+                        // Is player on the front side of vault?
+                        T3DVec3 diff;
+                        t3d_vec3_diff(&diff, &players[i].position, &vaults[j].position);
+                        float dot = t3d_vec3_dot(&vaults[j].direction, &diff);
+                        if (dot > 0) {
+                            // Is player close enough?
+                            float center_distance = t3d_vec3_distance(&players[i].position, &vaults[j].position);
+                            float distance = center_distance - players[i].h/2.0f - vaults[j].h/2.0f;
+                            if (distance <= 8.0f) {
+                                debugf("Trying open vault #%d!\n", j);
+                                if (vaults[j].is_target) {
+                                    debugf("Player #%d opened the vault #%d!\n", i, j);
+                                    core_set_winner(i);
+                                    minigame_end(); // FIXME Don't exit minigame immediately
+                                }
                             }
                         }
                     }
