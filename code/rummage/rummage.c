@@ -43,7 +43,7 @@ void minigame_init()
     viewport = t3d_viewport_create();
 
     // Init camera and lighting
-    camPos = (T3DVec3){{0, 100.0f, 150.0f}};
+    camPos = (T3DVec3){{0, 200.0f, 80.0f}};
     camTarget = (T3DVec3){{0, 0, 0}};
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
