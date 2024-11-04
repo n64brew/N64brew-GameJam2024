@@ -28,6 +28,7 @@ typedef struct actor_t {
 
 typedef struct {
     actor_t;
+    T3DVec3 direction;
     bool rotated;
     bool has_key;
 } furniture_t;
@@ -99,6 +100,7 @@ void game_init()
             t3d_matrix_pop(1);
         furnitures[i].dpl = rspq_block_end();
         furnitures[i].rotated = rotated % 2;
+        furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
         furnitures[i].has_key = (i == key);
     }
 
@@ -162,8 +164,33 @@ void game_logic(float deltatime)
         if (i < playercount) {  // Human player
             joypad_port_t port = core_get_playercontroller(i);
             joypad_inputs_t joypad = joypad_get_inputs(port);
+            // Exit minigame by pressing start
             if (joypad.btn.start) {
                 minigame_end();
+            }
+            // Player actions: rummage, open vault, grab other player
+            // FIXME Limit the rate at which a player can perform an action
+            if(joypad.btn.a || joypad.btn.b) {
+                // If the player is close to a furniture, search for the key
+                for (int j=0; j<FURNITURES_COUNT; j++) {
+                    // Is player on the front side of furniture?
+                    T3DVec3 diff;
+                    t3d_vec3_diff(&diff, &players[i].position, &furnitures[j].position);
+                    float dot = t3d_vec3_dot(&furnitures[j].direction, &diff);
+                    if (dot > 0) {
+                        // Is player close enough?
+                        float center_distance = t3d_vec3_distance(&players[i].position, &furnitures[j].position);
+                        float distance = center_distance - players[i].h/2.0f - furnitures[j].h/2.0f;
+                        if (distance <= 8.0f) {
+                            debugf("Rummaging through furniture #%d!\n", j);
+                            if (furnitures[j].has_key) {
+                                debugf("Player #%d found key in furniture #%d!\n", i, j);
+                                players[i].has_key = true;
+                                furnitures[j].has_key = false;
+                            }
+                        }
+                    }
+                }
             }
             T3DVec3 newDir = {0};
             newDir.v[0] = (float)joypad.stick_x * 0.05f;
