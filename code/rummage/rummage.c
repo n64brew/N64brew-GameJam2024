@@ -2,6 +2,7 @@
 #include "../../core.h"
 #include "../../minigame.h"
 #include <t3d/t3d.h>
+#include <t3d/t3dmodel.h>
 
 #define COUNTDOWN_DELAY     3.0f
 #define GAME_BACKGROUND     0xffff00ff
@@ -20,11 +21,15 @@ const MinigameDef minigame_def = {
 
 float countdown_timer;
 
-surface_t *depthBuffer;
+surface_t* depthBuffer;
 T3DViewport viewport;
 T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
+
+T3DModel* roomModel;
+T3DMat4FP* roomMatFP;
+rspq_block_t* roomDpl;
 
 
 /*==============================
@@ -41,10 +46,21 @@ void minigame_init()
     viewport = t3d_viewport_create();
 
     // Init camera and lighting
-    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
-    camTarget = (T3DVec3){{0, 0, 40}};
+    camPos = (T3DVec3){{0, 100.0f, 150.0f}};
+    camTarget = (T3DVec3){{0, 0, 0}};
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
+
+    // Init map
+    roomModel = t3d_model_load("rom:/rummage/room.t3dm");
+    roomMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    t3d_mat4fp_from_srt_euler(roomMatFP, (float[3]){1, 1, 1}, (float[3]){0, 0, 0}, (float[3]){0, 0, 0});
+    rspq_block_begin();
+        t3d_matrix_push(roomMatFP);
+        t3d_model_draw(roomModel);
+        t3d_matrix_pop(1);
+    roomDpl = rspq_block_end();
+
     
     countdown_timer = COUNTDOWN_DELAY;
 }
@@ -94,6 +110,7 @@ void minigame_loop(float deltatime)
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
+    rspq_block_run(roomDpl);
     rdpq_detach_show();
 }
 
@@ -105,6 +122,9 @@ void minigame_loop(float deltatime)
 
 void minigame_cleanup()
 {
+    rspq_block_free(roomDpl);
+    free_uncached(roomMatFP);
+    t3d_model_free(roomModel);
     t3d_destroy();
     display_close();
 }
