@@ -14,10 +14,6 @@
 struct collision_scene g_scene;
 
 void collision_scene_reset() {
-    free(g_scene.elements);
-    free(g_scene.all_contacts);
-    hash_map_destroy(&g_scene.entity_mapping);
-
     hash_map_init(&g_scene.entity_mapping, MIN_DYNAMIC_OBJECTS);
 
     g_scene.elements = malloc(sizeof(struct collision_scene_element) * MIN_DYNAMIC_OBJECTS);
@@ -31,6 +27,12 @@ void collision_scene_reset() {
     }
 
     g_scene.all_contacts[MAX_ACTIVE_CONTACTS - 1].next = NULL;
+}
+
+void collision_scene_destroy() {
+    free(g_scene.elements);
+    free(g_scene.all_contacts);
+    hash_map_destroy(&g_scene.entity_mapping);
 }
 
 void collision_scene_add(struct dynamic_object* object) {

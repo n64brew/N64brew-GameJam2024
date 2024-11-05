@@ -26,9 +26,10 @@ struct collision_scene {
     struct mesh_collider* mesh_collider;
 };
 
-void collision_scene_reset();
+void collision_scene_init();
 void collision_scene_add(struct dynamic_object* object);
 void collision_scene_remove(struct dynamic_object* object);
+void collision_scene_destroy();
 
 struct dynamic_object* collision_scene_find_object(int id);
 

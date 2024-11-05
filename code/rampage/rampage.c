@@ -10,6 +10,7 @@
 #include <t3d/t3ddebug.h>
 
 #include "./rampage.h"
+#include "./collision/collision_scene.h"
 #include "./assets.h"
 
 surface_t *depthBuffer;
@@ -30,6 +31,8 @@ const MinigameDef minigame_def = {
 void minigame_init() {
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     t3d_init((T3DInitParams){});
+
+    collision_scene_init();
 
     depthBuffer = display_get_zbuf();
     viewport = t3d_viewport_create();
@@ -123,4 +126,5 @@ void rampage_destroy(struct Rampage* rampage) {
     }
 
     rampage_assets_destroy();
+    collision_scene_destroy();
 }

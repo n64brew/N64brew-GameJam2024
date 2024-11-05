@@ -16,7 +16,6 @@ void dynamic_object_init(
     object->type = type;
     object->position = position;
     object->rotation = rotation;
-    object->pitch = 0;
     object->velocity = gZeroVec;
     object->center = gZeroVec;
     object->has_gravity = 1;
@@ -77,46 +76,26 @@ bool dynamic_object_is_touching(struct dynamic_object* object, int id) {
 void dynamic_object_minkowski_sum(void* data, struct Vector3* direction, struct Vector3* output) {
     struct dynamic_object* object = (struct dynamic_object*)data;
 
-    struct Vector3 rotated_dir;
-
-    if (!object->rotation && !object->pitch) {
+    if (!object->rotation) {
         object->type->minkowsi_sum(&object->type->data, direction, output);
         vector3Add(output, object->position, output);
         vector3Add(output, &object->center, output);
         return;
     }
 
-    struct Vector3 pitched_dir;
+    struct Vector3 rotated_dir;
 
-    if (object->pitch) {
-        pitched_dir.x = direction->x;
-        pitched_dir.y = direction->y * object->pitch->x - direction->z * object->pitch->y;
-        pitched_dir.z = direction->z * object->pitch->x + direction->y * object->pitch->y;
-    } else {
-        pitched_dir = *direction;
-    }
-
-    rotated_dir.x = pitched_dir.x * object->rotation->x - pitched_dir.z * object->rotation->y;
-    rotated_dir.y = pitched_dir.y;
-    rotated_dir.z = pitched_dir.z * object->rotation->x + pitched_dir.x * object->rotation->y;
+    rotated_dir.x = direction->x * object->rotation->x - direction->z * object->rotation->y;
+    rotated_dir.y = direction->y;
+    rotated_dir.z = direction->z * object->rotation->x + direction->x * object->rotation->y;
 
     struct Vector3 unrotated_out;
     
     object->type->minkowsi_sum(&object->type->data, &rotated_dir, &unrotated_out);
 
-    struct Vector3 unpitched_out;
-
-    unpitched_out.x = unrotated_out.x * object->rotation->x + unrotated_out.z * object->rotation->y;
-    unpitched_out.y = unrotated_out.y;
-    unpitched_out.z = unrotated_out.z * object->rotation->x - unrotated_out.x * object->rotation->y;
-
-    if (object->pitch) {
-        output->x = unpitched_out.x;
-        output->y = unpitched_out.y * object->pitch->x + unpitched_out.z * object->pitch->y;
-        output->z = unpitched_out.z * object->pitch->x - unpitched_out.y * object->pitch->y;
-    } else {
-        *output = unpitched_out;
-    }
+    output->x = unrotated_out.x * object->rotation->x + unrotated_out.z * object->rotation->y;
+    output->y = unrotated_out.y;
+    output->z = unrotated_out.z * object->rotation->x - unrotated_out.x * object->rotation->y;
 
     vector3Add(output, &object->center, output);
 

@@ -47,7 +47,6 @@ struct dynamic_object {
     struct dynamic_object_type* type;
     struct Vector3* position;
     struct Vector2* rotation;
-    struct Vector2* pitch;
     float scale;
     struct Vector3 center;
     struct Vector3 velocity;
