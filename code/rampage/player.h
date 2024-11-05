@@ -4,7 +4,7 @@
 #include <t3d/t3dmath.h>
 #include <libdragon.h>
 
-#include "./vector2.h"
+#include "./math/vector2.h"
 
 enum PlayerType {
     PLAYER_TYPE_0,

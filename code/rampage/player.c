@@ -1,7 +1,7 @@
 #include "player.h"
 
 #include "./assets.h"
-#include "./vector2.h"
+#include "./math/vector2.h"
 #include "../../core.h"
 
 #include <stdint.h>
