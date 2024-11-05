@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "libdragon.h": "c"
+        "libdragon.h": "c",
+        "core.h": "c",
+        "minigame.h": "c",
+        "stdio.h": "c",
+        "t3dmath.h": "c",
+        "t3dmodel.h": "c",
+        "mallard.h": "c"
     }
 }
