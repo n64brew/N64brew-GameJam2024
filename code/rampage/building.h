@@ -5,8 +5,10 @@
 #include <t3d/t3dmath.h>
 #include <stdint.h>
 
+#include "./collision/dynamic_object.h"
+
 struct RampageBuilding {
-    T3DVec3 position;
+    struct dynamic_object dynamic_object;
     short hp;
     T3DMat4FP mtx;
 };

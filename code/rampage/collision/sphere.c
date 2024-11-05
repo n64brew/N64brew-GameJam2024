@@ -1,6 +1,6 @@
-#include "sphere.h"
+#include "./sphere.h"
 
-#include "../dynamic_object.h"
+#include "./dynamic_object.h"
 #include <math.h>
 
 #define SQRT_1_3  0.577350269f

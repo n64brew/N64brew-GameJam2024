@@ -13,7 +13,7 @@
 
 struct collision_scene g_scene;
 
-void collision_scene_reset() {
+void collision_scene_init() {
     hash_map_init(&g_scene.entity_mapping, MIN_DYNAMIC_OBJECTS);
 
     g_scene.elements = malloc(sizeof(struct collision_scene_element) * MIN_DYNAMIC_OBJECTS);
@@ -219,7 +219,7 @@ void collision_scene_collide_dynamic() {
 void collision_scene_collide_single(struct dynamic_object* object, struct Vector3* prev_pos) {
     for (int i = 0; i < MAX_SWEPT_ITERATIONS; i += 1) {
         struct Vector3 offset;
-        vector3Sub(object->position, prev_pos, &offset);
+        vector3Sub(&object->position, prev_pos, &offset);
         struct Vector3 bbSize;
         vector3Sub(&object->bounding_box.max, &object->bounding_box.min, &bbSize);
         vector3Scale(&bbSize, &bbSize, 0.5f);
@@ -241,7 +241,7 @@ void collision_scene_collide_single(struct dynamic_object* object, struct Vector
     // to prevent tunneling just move 
     // the object back to the previous known
     // valid location
-    *object->position = *prev_pos;
+    object->position = *prev_pos;
 }
 
 void collision_scene_collide(float fixed_time_step) {
@@ -249,7 +249,7 @@ void collision_scene_collide(float fixed_time_step) {
 
     for (int i = 0; i < g_scene.count; ++i) {
         struct collision_scene_element* element = &g_scene.elements[i];
-        prev_pos[i] = *element->object->position;
+        prev_pos[i] = element->object->position;
 
         collision_scene_return_contacts(element->object);
 
@@ -269,7 +269,7 @@ void collision_scene_collide(float fixed_time_step) {
 
         collision_scene_collide_single(element->object, &prev_pos[i]);
 
-        element->object->is_out_of_bounds = mesh_index_is_contained(&g_scene.mesh_collider->index, element->object->position);
+        element->object->is_out_of_bounds = mesh_index_is_contained(&g_scene.mesh_collider->index, &element->object->position);
     }
 }
 
@@ -319,7 +319,7 @@ void collision_scene_query(struct dynamic_object_type* shape, struct Vector3* ce
         struct Simplex simplex;
 
         struct Vector3 first_dir;
-        vector3Sub(center, element->object->position, &first_dir);
+        vector3Sub(center, &element->object->position, &first_dir);
 
         if (!gjkCheckForOverlap(&simplex, &positioned_shape, positioned_shape_mink_sum, element->object, dynamic_object_minkowski_sum, &first_dir)) {
             continue;;

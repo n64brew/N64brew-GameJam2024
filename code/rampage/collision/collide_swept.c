@@ -38,7 +38,7 @@ bool collide_object_swept_to_triangle(struct mesh_index* index, void* data, int 
 
     struct swept_dynamic_object swept;
     swept.object = collide_data->object;
-    vector3Sub(collide_data->prev_pos, collide_data->object->position, &swept.offset);
+    vector3Sub(collide_data->prev_pos, &collide_data->object->position, &swept.offset);
 
     struct mesh_triangle triangle;
     triangle.vertices = collide_data->mesh->vertices;
@@ -58,15 +58,15 @@ bool collide_object_swept_to_triangle(struct mesh_index* index, void* data, int 
         &swept, 
         swept_dynamic_object_minkowski_sum, 
         collide_data->prev_pos,
-        collide_data->object->position,
+        &collide_data->object->position,
         &result
     )) {
         collide_data->hit_result = result;
         return true;
     }
 
-    struct Vector3 final_pos = *collide_data->object->position;
-    *collide_data->object->position = *collide_data->prev_pos;
+    struct Vector3 final_pos = collide_data->object->position;
+    collide_data->object->position = *collide_data->prev_pos;
 
     if (epaSolve(
         &simplex,
@@ -80,7 +80,7 @@ bool collide_object_swept_to_triangle(struct mesh_index* index, void* data, int 
         return true;
     }
 
-    *collide_data->object->position = final_pos;
+    collide_data->object->position = final_pos;
 
     return false;
 }
@@ -92,10 +92,10 @@ void collide_object_swept_bounce(
 ) {
     // this is the new prev position when iterating
     // over mulitple swept collisions
-    *collide_data->prev_pos = *object->position;
+    *collide_data->prev_pos = object->position;
 
     struct Vector3 move_amount;
-    vector3Sub(start_pos, object->position, &move_amount);
+    vector3Sub(start_pos, &object->position, &move_amount);
 
     struct Vector3 move_amount_normal;
     vector3Project(&move_amount, &collide_data->hit_result.normal, &move_amount_normal);
@@ -104,13 +104,13 @@ void collide_object_swept_bounce(
 
     vector3Scale(&move_amount_normal, &move_amount_normal, -object->type->bounce);
     
-    vector3Add(object->position, &move_amount_normal, object->position);
-    vector3Add(object->position, &move_amount_tangent, object->position);
+    vector3Add(&object->position, &move_amount_normal, &object->position);
+    vector3Add(&object->position, &move_amount_tangent, &object->position);
 
     // don't include friction on a bounce
     correct_velocity(object, &collide_data->hit_result, -1.0f, 0.0f, object->type->bounce);
 
-    vector3Sub(object->position, start_pos, &move_amount);
+    vector3Sub(&object->position, start_pos, &move_amount);
     vector3Add(&move_amount, &object->bounding_box.min, &object->bounding_box.min);
     vector3Add(&move_amount, &object->bounding_box.max, &object->bounding_box.max);
 
@@ -125,11 +125,11 @@ bool collide_object_to_mesh_swept(struct dynamic_object* object, struct mesh_col
     struct object_mesh_collide_data collide_data;
     object_mesh_collide_data_init(&collide_data, prev_pos, mesh, object);
 
-    struct Vector3 start_pos = *object->position;
+    struct Vector3 start_pos = object->position;
     struct Vector3 offset;
 
     vector3Sub(
-        object->position, 
+        &object->position, 
         prev_pos, 
         &offset
     );

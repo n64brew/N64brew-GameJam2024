@@ -5,6 +5,7 @@
 #include <libdragon.h>
 
 #include "./math/vector2.h"
+#include "./collision/dynamic_object.h"
 
 enum PlayerType {
     PLAYER_TYPE_0,
@@ -17,14 +18,13 @@ enum PlayerType {
 };
 
 struct RampagePlayer {
-    T3DVec3 position;
-    struct Vector2 rotation;
+    struct dynamic_object dynamic_object;
     rspq_block_t* render_block;
     enum PlayerType type;
     T3DMat4FP mtx;
 };
 
-void rampage_player_init(struct RampagePlayer* player, T3DVec3* start_position, enum PlayerType type);
+void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, enum PlayerType type);
 void rampage_player_destroy(struct RampagePlayer* player);
 
 void rampage_player_update(struct RampagePlayer* player, float delta_time);

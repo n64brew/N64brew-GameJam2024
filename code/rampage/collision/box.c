@@ -1,6 +1,6 @@
-#include "cylinder.h"
+#include "./cylinder.h"
 
-#include "../dynamic_object.h"
+#include "./dynamic_object.h"
 #include <math.h>
 
 void box_minkowski_sum(void* data, struct Vector3* direction, struct Vector3* output) {

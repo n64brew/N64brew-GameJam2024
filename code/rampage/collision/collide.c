@@ -25,7 +25,7 @@ void correct_overlap(struct dynamic_object* object, struct EpaResult* result, fl
         return;
     }
 
-    vector3AddScaled(object->position, &result->normal, result->penetration * ratio, object->position);
+    vector3AddScaled(&object->position, &result->normal, result->penetration * ratio, &object->position);
 
     correct_velocity(object, result, ratio, friction, bounce);
 }
@@ -101,14 +101,14 @@ void collide_object_to_object(struct dynamic_object* a, struct dynamic_object* b
 
         if (b->is_trigger) {
             contact->normal = gZeroVec;
-            contact->point = *a->position;
+            contact->point = a->position;
             contact->other_object = a ? a->entity_id : 0;
 
             contact->next = b->active_contacts;
             b->active_contacts = contact;
         } else {
             contact->normal = gZeroVec;
-            contact->point = *b->position;
+            contact->point = b->position;
             contact->other_object = b ? b->entity_id : 0;
 
             contact->next = a->active_contacts;

@@ -28,11 +28,46 @@ const MinigameDef minigame_def = {
     .instructions = "Press A to win."
 };
 
+static struct mesh_triangle_indices global_mesh_collider_triangles[] = {
+    {.indices = {0, 1, 2}},
+    {.indices = {0, 2, 3}},
+};
+
+static struct Vector3 global_mesh_collider_vertices[] = {
+    {SCALE_FIXED_POINT(-20.0f), 0.0f, SCALE_FIXED_POINT(-20.0f)},
+    {SCALE_FIXED_POINT(20.0f), 0.0f, SCALE_FIXED_POINT(-20.0f)},
+    {SCALE_FIXED_POINT(20.0f), 0.0f, SCALE_FIXED_POINT(20.0f)},
+    {SCALE_FIXED_POINT(-20.0f), 0.0f, SCALE_FIXED_POINT(20.0f)},  
+};
+
+static struct mesh_index_block global_mesh_collider_blocks[] = {
+    {.first_index = 0, .last_index = 2},
+};
+
+static uint16_t global_mesh_collider_indices[] = {
+    0, 1,
+};
+
+static struct mesh_collider global_mesh_collider = {
+    .triangle_count = 2,
+    .triangles = global_mesh_collider_triangles,
+    .vertices = global_mesh_collider_vertices,
+
+    .index = {
+        .block_count = {1, 1, 1},
+        .min = {SCALE_FIXED_POINT(-20.0f), 0.0f, SCALE_FIXED_POINT(-20.0f)},
+        .stride_inv = {1.0f / SCALE_FIXED_POINT(40.0f), 1.0f, 1.0f / SCALE_FIXED_POINT(40.0f)},
+        .blocks = global_mesh_collider_blocks,
+        .index_indices = global_mesh_collider_indices,
+    }
+};
+
 void minigame_init() {
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     t3d_init((T3DInitParams){});
 
     collision_scene_init();
+    collision_scene_use_static_collision(&global_mesh_collider);
 
     depthBuffer = display_get_zbuf();
     viewport = t3d_viewport_create();
@@ -41,6 +76,8 @@ void minigame_init() {
 }
 
 void minigame_fixedloop(float deltatime) {
+    collision_scene_collide(deltatime);
+
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_update(&gRampage.players[i], deltatime);
     }
@@ -84,11 +121,11 @@ void minigame_cleanup() {
     t3d_destroy();
 }
 
-static T3DVec3 gStartingPositions[] = {
-    {{SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)}},
-    {{SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)}},
-    {{SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)}},
-    {{SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)}},
+static struct Vector3 gStartingPositions[] = {
+    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
+    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
 };
 
 enum PlayerType rampage_player_type(int index) {

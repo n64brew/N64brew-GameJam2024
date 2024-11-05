@@ -13,9 +13,6 @@
 
 enum collision_layers {
     COLLISION_LAYER_TANGIBLE = (1 << 0),
-    COLLISION_LAYER_LIGHTING_TANGIBLE = (1 << 1),
-    COLLISION_LAYER_DAMAGE_PLAYER = (1 << 2),
-    COLLISION_LAYER_DAMAGE_ENEMY = (1 << 3),
 };
 
 enum collision_group {
@@ -44,12 +41,12 @@ struct dynamic_object_type {
 
 struct dynamic_object {
     int entity_id;
+    struct Vector3 position;
+    struct Vector2 rotation;
+    struct Vector3 velocity;
     struct dynamic_object_type* type;
-    struct Vector3* position;
-    struct Vector2* rotation;
     float scale;
     struct Vector3 center;
-    struct Vector3 velocity;
     struct Box3D bounding_box;
     uint16_t has_gravity: 1;
     uint16_t is_trigger: 1;
