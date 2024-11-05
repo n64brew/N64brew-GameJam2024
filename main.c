@@ -46,10 +46,12 @@ int main()
         rspq_profile_start();
     #endif
 
-    // Initialize the random number generator
+    // Initialize the random number generator, then call rand() every
+    // frame so to get random behavior also in emulators.
     uint32_t seed;
     getentropy(&seed, sizeof(seed));
     srand(seed);
+    register_VI_handler((void(*)(void))rand);
 
     // Program Loop
     while (1)
