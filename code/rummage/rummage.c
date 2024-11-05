@@ -6,7 +6,7 @@
 #include <t3d/t3dmodel.h>
 
 #define ENABLE_MUSIC 0
-#define ENABLE_TEXT 1
+#define ENABLE_TEXT 0
 
 #define COUNTDOWN_DELAY     3.0f
 #define GAME_BACKGROUND     0xffff00ff

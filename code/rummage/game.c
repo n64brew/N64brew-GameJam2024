@@ -1,4 +1,5 @@
 #include "game.h"
+#include "astar.h"
 #include "../../core.h"
 #include "../../minigame.h"
 #include <t3d/t3d.h>
@@ -7,6 +8,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch"
 #pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #define CUTE_C2_IMPLEMENTATION
 #include "cute_c2.h"
 #pragma GCC diagnostic pop
@@ -14,6 +16,9 @@
 
 #define T3D_MODEL_SCALE 64
 #define COLLISION_CORRECTIVE_FACTOR 1.3f
+#define MAP_REDUCTION_FACTOR 10
+#define PATH_LENGTH 10
+#define NO_PATH 9999
 
 typedef struct actor_t {
     T3DModel* model;
@@ -45,6 +50,10 @@ typedef struct {
     color_t color;
     float speed;
     bool has_key;
+    // AI players
+    T3DVec3 target;
+    T3DVec3 path[PATH_LENGTH];  // Next points in path
+    int path_pos;
 } player_t;
 
 
@@ -61,6 +70,59 @@ vault_t vaults[VAULTS_COUNT];
 
 // Players
 player_t players[MAXPLAYERS];
+
+
+// Path finding
+
+int map_width;
+int map_height;
+T3DVec3 origin;
+
+inline static void to_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
+    t3d_vec3_scale(res, a, 1.0f/MAP_REDUCTION_FACTOR);
+    t3d_vec3_diff(res, res, &origin);
+}
+
+inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
+    t3d_vec3_add(res, a, &origin);
+    t3d_vec3_scale(res, res, MAP_REDUCTION_FACTOR);
+}
+
+bool is_walkable(cell_t cell) {
+    // TODO Compute map only once? store 1 bit per position ??
+    bool walkable = (cell.x >= 0 && cell.x < map_width && cell.y >= 0 && cell.y < map_height);
+    if (walkable) {
+        for (int i=0; i<FURNITURES_COUNT; i++) {
+            // FIXME Make a function to get a furniture's bounding box (also used for collisions)
+            float fw = furnitures[i].rotated ? furnitures[i].h : furnitures[i].w;
+            float fh = furnitures[i].rotated ? furnitures[i].w : furnitures[i].h;
+            T3DVec3 furniture_min = (T3DVec3){{furnitures[i].position.v[0] - fw/2.0f, 0, furnitures[i].position.v[2] - fh/2.0f}};
+            to_pathmap_coords(&furniture_min, &furniture_min);
+            T3DVec3 furniture_max = (T3DVec3){{furnitures[i].position.v[0] + fw/2.0f, 0, furnitures[i].position.v[2] + fh/2.0f}};
+            to_pathmap_coords(&furniture_max, &furniture_max);
+            if (cell.x > furniture_min.v[0] && cell.x < furniture_max.v[0] && cell.y > furniture_min.v[2] && cell.y < furniture_max.v[2]) {
+                return false;
+            }
+        }
+    }
+    return walkable;
+}
+
+void add_neighbours(node_list_t* list, cell_t cell) {
+    for (int x=cell.x-1; x<=cell.x+1; x++) {
+        for (int y=cell.y-1; y<=cell.y+1; y++) {
+            if ((x != cell.x || y != cell.y) && is_walkable((cell_t){x, y})) {
+                float cost = (x == cell.x || y == cell.y) ? 1 : 1.414;
+                add_neighbour(list, (cell_t){x, y}, cost);
+            }
+        }
+    }
+}
+
+float heuristic(cell_t from, cell_t to) {
+    // Manhattan distance FIXME use diagonal/octile distance? euclidian distance?
+    return (fabs(from.x - to.x) + fabs(from.y - to.y));
+}
 
 
 void game_init()
@@ -127,6 +189,7 @@ void game_init()
     }
 
     // Place players
+    uint32_t playercount = core_get_playercount();
     const color_t colors[] = {
         PLAYERCOLOR_1,
         PLAYERCOLOR_2,
@@ -154,7 +217,22 @@ void game_init()
         players[i].plynum = i;
         players[i].speed = 0.0f;
         players[i].has_key = false;
+        // AI player
+        if (i >= playercount) {
+            players[i].target = (T3DVec3){{NO_PATH, 0, NO_PATH}};
+            for (int j=0; j<PATH_LENGTH; j++) {
+                players[i].path[j].v[0] = NO_PATH;
+                players[i].path[j].v[1] = 0;
+                players[i].path[j].v[2] = NO_PATH;
+            }
+            players[i].path_pos = 0;
+        }
     }
+
+    // Init pathfinder
+    map_width = room.w/MAP_REDUCTION_FACTOR;
+    map_height = room.h/MAP_REDUCTION_FACTOR;
+    origin = (T3DVec3){{-map_width/2.0f, 0, -map_height/2.0f}};
 }
 
 
@@ -233,6 +311,90 @@ void game_logic(float deltatime)
             // Move player
             players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
             players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
+        } else {    // API Player
+            // TODO Have we reached current target ?? If not, keep going in the previous direction/speed
+
+            T3DVec3* next = &players[i].path[players[i].path_pos];
+            if (next->v[0] != NO_PATH) {
+                // Follow path
+                //players[i].path_pos++;
+
+                // Move towards next point in path
+                // TODO Perform action and change target when reached
+                // TODO Change target when stuck? (may be blocked by a furniture or a player)
+                T3DVec3 next_point = (T3DVec3){{next->v[0], 0, next->v[2]}};
+                //debugf("next_point: %f %f\n", next_point.v[0], next_point.v[2]);
+                from_pathmap_coords(&next_point, &next_point);
+                //debugf("next_point_converted: %f %f\n", next_point.v[0], next_point.v[2]);
+                T3DVec3 newDir;
+                t3d_vec3_diff(&newDir, &next_point, &players[i].position);
+                //debugf("AI NEW DIR LENGTH: %f\n", t3d_vec3_len2(&newDir));
+                float speed = sqrtf(t3d_vec3_len2(&newDir));
+                if (speed > 4.8) {  // FIXME AI speed limit ??
+                    speed = 4.8;
+                }
+                // Smooth movements and stop
+                if(speed > 0.15f) {
+                    newDir.v[0] /= speed;
+                    newDir.v[2] /= speed;
+                    players[i].direction = newDir;
+                    float newAngle = -atan2f(players[i].direction.v[0], players[i].direction.v[2]);
+                    players[i].rotation.v[1] = t3d_lerp_angle(players[i].rotation.v[1], newAngle, 0.5f);
+                    players[i].speed = t3d_lerp(players[i].speed, speed * 0.3f, 0.15f);
+                } else {
+                    players[i].speed *= 0.64f;
+                }
+                // Move player
+                players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
+                players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
+
+                // FIXME threshold?
+                // FIXME after collision resolution?
+                if (t3d_vec3_distance(&players[i].position, &next_point) < 5.0f) {
+                    players[i].path_pos++;
+                }
+            } else {
+                // Find a new path
+                debugf("AI Player #%d needs a new path\n", i);
+                for (int j=0; j<PATH_LENGTH; j++) {
+                    players[i].path[j].v[0] = NO_PATH;
+                    players[i].path[j].v[2] = NO_PATH;
+                }
+                players[i].path_pos = 0;
+
+                // FIXME threshold?
+                if (next->v[0] == NO_PATH || t3d_vec3_distance(&players[i].position, &players[i].target) < 5.0f) {
+                    // TODO Do something at destination?
+                    // Find a new target
+                    int target_idx = rand() % FURNITURES_COUNT;
+                    // FIXME destination cannot be inside an obstacle !! --> find point IN FRONT OF FURNITURE
+                    t3d_vec3_scale(&players[i].target, &furnitures[target_idx].direction, furnitures[target_idx].h/2.0f + players[i].h/2.0f);
+                    t3d_vec3_add(&players[i].target, &players[i].target, &furnitures[target_idx].position);
+                    debugf("now targeting furniture #%d at coords: %f %f\n", target_idx, players[i].target.v[0], players[i].target.v[2]);
+                }
+
+                T3DVec3 start;
+                to_pathmap_coords(&start, &players[i].position);
+                T3DVec3 target;
+                to_pathmap_coords(&target, &players[i].target);
+                cell_t start_node = {(int)start.v[0], (int)start.v[2]};
+                cell_t target_node = {(int)target.v[0], (int)target.v[2]};
+                path_t* path = find_path(start_node, target_node);
+                if (get_path_count(path) > 1) {
+                    //debugf("path points count: %d\n", get_path_count(path));
+                    for (int j=0; j<get_path_count(path); j++) {
+                        if (players[i].path_pos >= PATH_LENGTH-1)   break;
+                        //debugf("getting point #%d\n", j);
+                        cell_t* node = get_path_cell(path, j);
+                        //debugf("add point: %d %d\n", node->x, node->y);
+                        players[i].path[players[i].path_pos].v[0] = node->x;
+                        players[i].path[players[i].path_pos].v[2] = node->y;
+                        players[i].path_pos++;
+                    }
+                    players[i].path_pos = 0;
+                }
+                free_path(path);
+            }
         }
     }
 
