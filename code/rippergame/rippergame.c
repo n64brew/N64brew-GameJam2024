@@ -272,6 +272,9 @@ void minigame_loop(float deltatime)
 
 void minigame_cleanup()
 {
+    wav64_close(&sfx_start);
+    wav64_close(&sfx_countdown);
+    
     rspq_block_free(dplMap);
 
     t3d_model_free(modelMap);
