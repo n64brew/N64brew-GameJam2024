@@ -15,6 +15,8 @@
 
 #define GAME_BACKGROUND     0xffff00ff
 #define FONT_DEBUG          1
+#define FONT_TEXT           2
+#define TEXT_COLOR          0x6CBB3CFF
 
 
 /*********************************
@@ -38,6 +40,7 @@ T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 rdpq_font_t* fontdbg;
+rdpq_font_t *fonttext;
 wav64_t music;
 wav64_t sfx_start;
 wav64_t sfx_countdown;
@@ -68,6 +71,9 @@ void minigame_init()
     // Init fonts
     fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     rdpq_text_register_font(FONT_DEBUG, fontdbg);
+    fonttext = rdpq_font_load("rom:/rummage/thickhead.font64");
+    rdpq_text_register_font(FONT_TEXT, fonttext);
+    rdpq_font_style(fonttext, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
 #endif
 
 #if ENABLE_MUSIC
@@ -161,15 +167,22 @@ void minigame_loop(float deltatime)
 
     game_render(deltatime);
 
-    // Display FPS
 #if ENABLE_TEXT
+    rdpq_sync_tile();
+    rdpq_sync_pipe(); // Hardware crashes otherwise
+
+    // Display FPS
     rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
-#endif
 
     // Display game data
-#if ENABLE_TEXT
     rdpq_text_printf(NULL, FONT_DEBUG, 10, 30, "Key: %d", game_key());
     rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
+
+    // Display winner
+    if (is_ending && end_timer >= WIN_SHOW_DELAY) {
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
+        rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins!", winner()+1);
+    }
 #endif
 
     rdpq_detach_show();
@@ -194,6 +207,8 @@ void minigame_cleanup()
 #if ENABLE_TEXT
     rdpq_text_unregister_font(FONT_DEBUG);
     rdpq_font_free(fontdbg);
+    rdpq_text_unregister_font(FONT_TEXT);
+    rdpq_font_free(fonttext);
 #endif
     t3d_destroy();
     display_close();
