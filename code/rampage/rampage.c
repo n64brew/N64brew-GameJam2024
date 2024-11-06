@@ -89,7 +89,6 @@ void minigame_fixedloop(float deltatime) {
             rampage_building_update(&gRampage.buildings[y][x], deltatime);
         }
     }
-    
 }
 
 void minigame_loop(float deltatime) {   

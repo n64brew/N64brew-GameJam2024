@@ -9,10 +9,12 @@
 #include "./collision/cylinder.h"
 #include "./rampage.h"
 #include "./util/entity_id.h"
+#include "./scene_query.h"
 
 #include <stdint.h>
 
 #define PLAYER_MOVE_SPEED   128
+#define PLAYER_ATTACK_TIME  0.75f
 
 #define FIRST_PLAYER_COLLIDER_GROUP 2
 
@@ -57,7 +59,25 @@ float clamp_joy_input(int8_t input) {
     }
 }
 
-struct RampageInput rampage_player_get_input(struct RampagePlayer* player) {
+int floatBits(void* input) {
+    return *(int*)input;
+}
+
+bool rampage_player_is_touching_target(struct RampagePlayer* player) {
+    struct contact* contact = player->dynamic_object.active_contacts;
+
+    while (contact) {
+        if (contact->other_object) {
+            return true;
+        }
+
+        contact = contact->next;
+    }
+
+    return false;
+}
+
+struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float delta_time) {
     if (player->type <= PLAYER_TYPE_3) {
         struct RampageInput result = {};
 
@@ -79,10 +99,39 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player) {
 
     struct RampageInput result = {};
 
-    result.direction.x = player->dynamic_object.position.z;
-    result.direction.y = -player->dynamic_object.position.x;
+    if (player->moving_to_target) {
+        struct Vector3 offset;
 
-    vector2Normalize(&result.direction, &result.direction);
+        vector3Sub(&player->current_target, &player->dynamic_object.position, &offset);
+        offset.y = 0.0f;
+
+        if (vector3MagSqrd(&offset) < SCALE_FIXED_POINT(0.2f)) {
+            player->moving_to_target = 0;
+        }
+
+        vector3Normalize(&offset, &offset);
+
+        result.direction.x = offset.x;
+        result.direction.y = offset.z;
+
+        if (rampage_player_is_touching_target(player)) {
+            if (player->attack_timer <= 0.0f) {
+                result.do_attack = true;
+                player->attack_timer = PLAYER_ATTACK_TIME;
+            } else {
+                player->attack_timer -= delta_time;
+            }
+        } else {
+            player->attack_timer = 0.0f;
+        }
+    } else {
+        struct Vector3* new_target = find_nearest_target(&player->dynamic_object.position, 1.3f);
+
+        if (new_target) {
+            player->moving_to_target = 1;
+            player->current_target = *new_target;
+        }
+    }
 
     return result;
 }
@@ -113,7 +162,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     );
 
     player->dynamic_object.center.y = SCALE_FIXED_POINT(1.0f);
-    player->dynamic_object.collision_group = FIRST_PLAYER_COLLIDER_GROUP;
+    player->dynamic_object.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
 
     collision_scene_add(&player->dynamic_object);
 
@@ -128,7 +177,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
 
     player->damage_trigger.center.y = SCALE_FIXED_POINT(1.0f);
     player->damage_trigger.is_trigger = true;
-    player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP;
+    player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
 
     collision_scene_add(&player->damage_trigger);
 
@@ -143,6 +192,10 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     health_register(entity_id, &player->health, rampage_player_damage, player);
 
     player->last_attack_state = 0;
+    player->moving_to_target = 0;
+    player->attacking_target = 0;
+    player->current_target = gZeroVec;
+    player->attack_timer = 0.0f;
 }
 
 void rampage_player_destroy(struct RampagePlayer* player) {
@@ -153,7 +206,7 @@ void rampage_player_destroy(struct RampagePlayer* player) {
 }
 
 void rampage_player_update(struct RampagePlayer* player, float delta_time) {
-    struct RampageInput input = rampage_player_get_input(player);
+    struct RampageInput input = rampage_player_get_input(player, delta_time);
     
     rampage_player_update_damager(player);
 

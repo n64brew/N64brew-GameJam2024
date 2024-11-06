@@ -26,6 +26,11 @@ struct RampagePlayer {
     T3DMat4FP mtx;
     struct health health;
     int last_attack_state: 1;
+    int moving_to_target: 1;
+    int attacking_target: 1;
+
+    struct Vector3 current_target;
+    float attack_timer;
 };
 
 void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, int player_index, enum PlayerType type);
