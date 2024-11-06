@@ -1,6 +1,7 @@
 ASSETS_LIST += \
 	filesystem/rummage/room.t3dm \
 	filesystem/rummage/furniture.t3dm \
+	filesystem/rummage/furniture_tex.ci4.sprite \
 	filesystem/rummage/vault.t3dm \
 	filesystem/rummage/player.t3dm \
 	filesystem/rummage/music.wav64
