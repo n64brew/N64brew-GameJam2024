@@ -28,6 +28,19 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 T3DModel* modelMap;
 
+typedef struct
+{
+    int playerNumber;
+    T3DMat4FP* modelMatFP;
+    T3DModel* model;
+    rspq_block_t* dplPlayer;
+    T3DVec3 playerPos;
+    float rotY;
+    bool isAi;
+} player_data;
+
+player_data players[MAXPLAYERS];
+
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
 
@@ -69,7 +82,28 @@ void debugInfoDraw(float deltaTime)
     The player initialization function, determines number of 
     players and assigns AI to players that aren't human
 ==============================*/
-void player_init();
+void player_init(int playerNumber)
+{
+    players[playerNumber].playerNumber = playerNumber;
+    players[playerNumber].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    players[playerNumber].model = t3d_model_load("rom:/snake3d/snake.t3dm");
+    rspq_block_begin();
+        t3d_matrix_push(players[playerNumber].modelMatFP);
+        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        t3d_model_draw(players[playerNumber].model);
+        t3d_matrix_pop(1);
+    players[playerNumber].dplPlayer = rspq_block_end();
+    players[playerNumber].playerPos = (T3DVec3){{0.0f, 0.0f, 0.0f}};
+    players[playerNumber].rotY = 0.0f;
+    players[playerNumber].isAi = false;
+}
+
+void player_cleanup(int playerNumber)
+{
+    rspq_block_free(players[playerNumber].dplPlayer);
+    t3d_model_free(players[playerNumber].model);
+    free_uncached(players[playerNumber].modelMatFP);
+}
 
 /*==============================
     player_loop
@@ -89,16 +123,26 @@ void player_loop(float deltaTime, int playerNumber)
 
     if(btn.start) minigame_end();
 
+    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
+
+    t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
+        (float[3]){0.125f, 0.125f, 0.125f},
+        (float[3]){0.0f, 0.0f, 0},
+        players[playerNumber].playerPos.v
+        );
+
+    //update matrix
+
     // move camera with stick test
 
     // stick left
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == -1) camPos.v[0] += 1.0f;
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == -1) players[playerNumber].playerPos.v[0] += 1.0f;
     // stick right
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == 1) camPos.v[0] -= 1.0f;
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == 1) players[playerNumber].playerPos.v[0] -= 1.0f;
     // stick up
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == 1) camPos.v[1] += 1.0f;
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == 1) players[playerNumber].playerPos.v[2] += 1.0f;
     // stick down
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == -1) camPos.v[1] -= 1.0f;
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == -1) players[playerNumber].playerPos.v[2] -= 1.0f;
 
     // rumble pak test code
     if(joypad_get_rumble_supported(controllerPort) && btn.a)
@@ -110,6 +154,11 @@ void player_loop(float deltaTime, int playerNumber)
     {
         joypad_set_rumble_active(controllerPort, false);
     }
+}
+
+void player_draw(int playerNumber)
+{
+    rspq_block_run(players[playerNumber].dplPlayer);
 }
 
 /*==============================
@@ -168,6 +217,12 @@ void minigame_init()
     wav64_open(&sfx_start, "rom:/core/Start.wav64");
     wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
     mixer_ch_set_vol(31, 0.5f, 0.5f);
+
+    // load players
+    for(int i = 0; i < MAXPLAYERS; i++)
+    {
+        player_init(i);
+    }
 
     return;
 }
@@ -241,6 +296,12 @@ void minigame_loop(float deltatime)
     // run the displaylist containing the map draw routine
     rspq_block_run(dplMap);
 
+    // draw the player entities
+    for(int i = 0; i < core_get_playercount(); i++)
+    {
+        player_draw(i);
+    }
+
     // set a sync point
     syncPoint = rspq_syncpoint_new();
 
@@ -272,9 +333,15 @@ void minigame_loop(float deltatime)
 
 void minigame_cleanup()
 {
+    // cleanup players
+    for(int i = 0; i < MAXPLAYERS; i++)
+    {
+        player_cleanup(i);
+    }
+
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);
-    
+
     rspq_block_free(dplMap);
 
     t3d_model_free(modelMap);
