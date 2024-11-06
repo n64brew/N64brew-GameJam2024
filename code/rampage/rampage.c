@@ -11,12 +11,13 @@
 
 #include "./rampage.h"
 #include "./collision/collision_scene.h"
+#include "./health.h"
 #include "./assets.h"
 
 surface_t *depthBuffer;
 T3DViewport viewport;
 
-T3DVec3 camPos = {{0.0f, SCALE_FIXED_POINT(12.0f), SCALE_FIXED_POINT(4.0f)}};
+T3DVec3 camPos = {{0.0f, SCALE_FIXED_POINT(8.0f), SCALE_FIXED_POINT(5.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 
 struct Rampage gRampage;
@@ -67,6 +68,7 @@ void minigame_init() {
     t3d_init((T3DInitParams){});
 
     collision_scene_init();
+    health_init();
     collision_scene_use_static_collision(&global_mesh_collider);
 
     depthBuffer = display_get_zbuf();
@@ -81,6 +83,13 @@ void minigame_fixedloop(float deltatime) {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_update(&gRampage.players[i], deltatime);
     }
+
+    for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
+        for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
+            rampage_building_update(&gRampage.buildings[y][x], deltatime);
+        }
+    }
+    
 }
 
 void minigame_loop(float deltatime) {   
@@ -90,7 +99,7 @@ void minigame_loop(float deltatime) {
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), SCALE_FIXED_POINT(6.0f), SCALE_FIXED_POINT(16.0f));
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(14.0f));
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     rdpq_attach(display_get(), depthBuffer);
@@ -113,12 +122,16 @@ void minigame_loop(float deltatime) {
         }
     }
 
+    t3d_model_draw(rampage_assets_get()->ground);
+
     rdpq_detach_show();
 }
 
 void minigame_cleanup() {
     rampage_destroy(&gRampage);
     t3d_destroy();
+    collision_scene_destroy();
+    health_destroy();
 }
 
 static struct Vector3 gStartingPositions[] = {
@@ -142,7 +155,7 @@ void rampage_init(struct Rampage* rampage) {
     rampage_assets_init();
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
-        rampage_player_init(&rampage->players[i], &gStartingPositions[i], rampage_player_type(i));
+        rampage_player_init(&rampage->players[i], &gStartingPositions[i], i, rampage_player_type(i));
     }
 
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
@@ -163,5 +176,4 @@ void rampage_destroy(struct Rampage* rampage) {
     }
 
     rampage_assets_destroy();
-    collision_scene_destroy();
 }

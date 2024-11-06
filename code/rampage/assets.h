@@ -6,6 +6,7 @@
 struct RampageAssets {
     T3DModel* player;
     T3DModel* building;
+    T3DModel* ground;
 };
 
 void rampage_assets_init();

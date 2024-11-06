@@ -11,7 +11,6 @@ void cylinder_minkowski_sum(void* data, struct Vector3* direction, struct Vector
     float abs_x = fabsf(direction->x);
     float abs_y = fabsf(direction->y);
     float angle_dot = (abs_x + abs_y) * SQRT_1_2;
-    bool use_angle = false;
 
     if (abs_x > angle_dot && abs_y > angle_dot) {
         output->x = direction->x > 0.0f ? SQRT_1_2 * shape_data->cylinder.radius : -SQRT_1_2 * shape_data->cylinder.radius;

@@ -6,6 +6,7 @@
 
 #include "./math/vector2.h"
 #include "./collision/dynamic_object.h"
+#include "./health.h"
 
 enum PlayerType {
     PLAYER_TYPE_0,
@@ -19,12 +20,15 @@ enum PlayerType {
 
 struct RampagePlayer {
     struct dynamic_object dynamic_object;
+    struct dynamic_object damage_trigger;
     rspq_block_t* render_block;
     enum PlayerType type;
     T3DMat4FP mtx;
+    struct health health;
+    int last_attack_state: 1;
 };
 
-void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, enum PlayerType type);
+void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, int player_index, enum PlayerType type);
 void rampage_player_destroy(struct RampagePlayer* player);
 
 void rampage_player_update(struct RampagePlayer* player, float delta_time);

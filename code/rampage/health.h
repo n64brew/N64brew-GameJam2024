@@ -1,0 +1,23 @@
+#ifndef __RAMPAGE_HEALTH_H__
+#define __RAMPAGE_HEALTH_H__
+
+#include "./collision/contact.h"
+
+typedef void (*DamageCallback)(void* data);
+
+struct health {
+    void* data;
+    DamageCallback callback;
+};
+
+// global setup
+void health_init();
+void health_destroy();
+
+void health_register(int entity_id, struct health* health, DamageCallback callback, void* data);
+void health_unregister(int entity_id);
+
+void health_apply_damage(int entity_id);
+void health_contact_damage(struct contact* contact);
+
+#endif

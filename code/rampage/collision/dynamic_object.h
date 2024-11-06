@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define GRAVITY_CONSTANT    -9.8f
+#define GRAVITY_CONSTANT    (-9.8f * 64.0f)
 
 enum collision_layers {
     COLLISION_LAYER_TANGIBLE = (1 << 0),

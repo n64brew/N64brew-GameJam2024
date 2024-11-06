@@ -1,7 +1,8 @@
 
 ASSETS_LIST += \
 	filesystem/rampage/building.t3dm \
-	filesystem/rampage/player.t3dm
+	filesystem/rampage/player.t3dm \
+	filesystem/rampage/ground.t3dm
 
 assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)
