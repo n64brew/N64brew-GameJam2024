@@ -27,8 +27,8 @@ const MinigameDef minigame_def = {
 
 // Target screen resolution that we render at.
 // Choosing a resolution above 240p (interlaced) can't be recommended for video playback.
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
+#define SCREEN_WIDTH 320 // 128
+#define SCREEN_HEIGHT 240 // 96
 
 /*==============================
     minigame_init
@@ -59,14 +59,14 @@ void minigame_init()
     audio_init(AUDIO_HZ, 4);
     // mixer_init(8);
 
-    // Check if the movie is present in the filesystem, so that we can provide
+    // Check if the video is present in the filesystem, so that we can provide
     // a specific error message.
-    FILE *f = fopen("rom:/mallard/movie.m1v", "rb");
-    assertf(f, "Movie not found!\nInstall wget and ffmpeg to download and encode the sample movie\n");
+    FILE *f = fopen("rom:/mallard/video.m1v", "rb");
+    assertf(f, "Video not found!\n");
     fclose(f);
 
-    // Open the movie using the mpeg2 module and create a YUV blitter to draw it.
-    mpeg2_t *video_track = mpeg2_open("rom:/mallard/movie.m1v");
+    // Open the video using the mpeg2 module and create a YUV blitter to draw it.
+    mpeg2_t *video_track = mpeg2_open("rom:/mallard/video.m1v");
     yuv_blitter_t yuv = yuv_blitter_new_fmv(
         // Resolution of the video we expect to play.
         // Video needs to have a width divisible by 32 and a height divisible by 16.
@@ -89,7 +89,7 @@ void minigame_init()
 
     // Open the audio track and start playing it in channel 0.
     wav64_t audio_track;
-    wav64_open(&audio_track, "rom:/mallard/movie.wav64");
+    wav64_open(&audio_track, "rom:/mallard/video.wav64");
     mixer_ch_play(0, &audio_track.wave);
 
     int nframes = 0;
