@@ -24,6 +24,54 @@ const MinigameDef minigame_def = {
     .instructions = "Mash A to win."
 };
 
+
+/*==============================
+    player_init
+    The player initialization function, determines number of 
+    players and assigns AI to players that aren't human
+==============================*/
+void player_init();
+/*==============================
+    player_loop
+    The scans player controllers and updates player entities
+    accordingly
+==============================*/
+void player_loop(float deltaTime, int playerNumber)
+{
+    joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
+    
+    if(!joypad_is_connected(controllerPort))
+    {
+        return;
+    }
+
+    joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
+
+    if(btn.start) minigame_end();
+
+    printf("Buttons pressed by player: %i", playerNumber + 1);
+
+    if(btn.a) printf(" A");
+    if(btn.b) printf(" B");
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == -1) printf(" Stick Left");
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == 1) printf(" Stick Right");
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == 1) printf(" Stick Up");
+    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == -1) printf(" Stick Down");
+
+    printf("\n");
+
+    // rumble pak test code
+    if(joypad_get_rumble_supported(controllerPort) && btn.a)
+    {
+        joypad_set_rumble_active(controllerPort, true);
+    }
+
+    if(joypad_get_rumble_supported(controllerPort) && btn.b)
+    {
+        joypad_set_rumble_active(controllerPort, false);
+    }
+}
+
 /*==============================
     minigame_init
     The minigame initialization function
@@ -69,14 +117,17 @@ void minigame_loop(float deltatime)
     printf("Time running: %f \n", timer);
     printf("Press Start to quit\n");
 
-    joypad_buttons_t btn = joypad_get_buttons_pressed(core_get_playercontroller(1));
-
-    if(btn.start) minigame_end();
+    for(int i = 0; i < core_get_playercount(); i++)
+    {
+        player_loop(deltatime, i);
+    }
 
     console_render();
 
+    //attach the rdp queue in order to dispatch commands to the RDP
     //rdpq_attach(display_get(), display_get_zbuf());
 
+    //detach the queue to flip the buffers and show it on screen
     //rdpq_detach_show();
     return;
 }
