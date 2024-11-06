@@ -6,9 +6,13 @@
 #include <t3d/t3dmodel.h>
 
 #define ENABLE_MUSIC 0
-#define ENABLE_TEXT 0
+#define ENABLE_TEXT 1
 
 #define COUNTDOWN_DELAY     3.0f
+#define GO_DELAY            1.0f
+#define WIN_DELAY           5.0f
+#define WIN_SHOW_DELAY      2.0f
+
 #define GAME_BACKGROUND     0xffff00ff
 #define FONT_DEBUG          1
 
@@ -25,6 +29,8 @@ const MinigameDef minigame_def = {
 };
 
 float countdown_timer;
+bool is_ending;
+float end_timer;
 
 surface_t* depthBuffer;
 T3DViewport viewport;
@@ -33,6 +39,10 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 rdpq_font_t* fontdbg;
 wav64_t music;
+wav64_t sfx_start;
+wav64_t sfx_countdown;
+wav64_t sfx_stop;
+wav64_t sfx_winner;
 
 
 /*==============================
@@ -68,9 +78,15 @@ void minigame_init()
     wav64_play(&music, 1);
 #endif
 
+    wav64_open(&sfx_start, "rom:/core/Start.wav64");
+    wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
+    wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
+
     game_init();
     
     countdown_timer = COUNTDOWN_DELAY;
+    end_timer = 0;
 }
 
 
@@ -86,9 +102,34 @@ void minigame_fixedloop(float deltatime)
 {
     game_logic(deltatime);
 
-    if (countdown_timer > 0)
-    {
+    if (countdown_timer > 0) {
+        float prev = countdown_timer;
         countdown_timer -= deltatime;
+        if ((int)prev != (int)countdown_timer && countdown_timer >= 0) {
+            wav64_play(&sfx_countdown, 31);
+        }
+    }
+    if (!is_playing() && !is_ending && countdown_timer < 0) {
+        start_game();
+        wav64_play(&sfx_start, 31);
+    }
+
+    if (!is_ending) {
+        if (has_winner()) {
+            is_ending = true;
+            stop_game();
+            wav64_play(&sfx_stop, 31);
+        }
+    } else {
+        float prev = end_timer;
+        end_timer += deltatime;
+        if ((int)prev != (int)end_timer && (int)end_timer == WIN_SHOW_DELAY) {
+            wav64_play(&sfx_winner, 31);
+        }
+        if (end_timer > WIN_DELAY) {
+            core_set_winner(winner());
+            minigame_end();
+        }
     }
 }
 
@@ -146,6 +187,10 @@ void minigame_cleanup()
 #if ENABLE_MUSIC
     wav64_close(&music);
 #endif
+    wav64_close(&sfx_start);
+    wav64_close(&sfx_countdown);
+    wav64_close(&sfx_stop);
+    wav64_close(&sfx_winner);
 #if ENABLE_TEXT
     rdpq_text_unregister_font(FONT_DEBUG);
     rdpq_font_free(fontdbg);
