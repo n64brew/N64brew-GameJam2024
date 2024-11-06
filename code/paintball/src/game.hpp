@@ -16,6 +16,7 @@
 #include "./wrappers.hpp"
 #include "./constants.hpp"
 #include "./gameplay.hpp"
+#include "./map.hpp"
 
 #include <functional>
 #include <memory>
@@ -26,18 +27,13 @@ class Game
         Display display;
         T3D t3d;
         T3DViewport viewport;
+        RDPQFont font;
 
         // Controllers
         GameplayController gameplayController;
 
-        RDPQFont font;
-
         // Map
-        void setupMap(U::T3DMat4FP &mapMatFP);
-        void renderMap();
-        U::T3DMat4FP mapMatFP;
-        U::RSPQBlock dplMap;
-        U::T3DModel modelMap;
+        MapRenderer mapRenderer;
 
     public:
         Game();

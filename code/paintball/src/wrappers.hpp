@@ -4,6 +4,8 @@
 #include <functional>
 #include <memory>
 
+#include <t3d/t3dskeleton.h>
+
 class Display
 {
     private:
@@ -47,6 +49,20 @@ class RDPQFont
             rdpq_text_unregister_font(id);
         };
 };
+
+class RDPQSurface
+{
+    private:
+        surface_t surface;
+    public:
+        RDPQSurface(tex_format_t format, uint16_t width, uint16_t height) {
+            surface = surface_alloc(format, width, height);
+        };
+        ~RDPQSurface() {
+            surface_free(&surface);
+        };
+};
+
 
 namespace U {
     using RSPQBlock = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>;

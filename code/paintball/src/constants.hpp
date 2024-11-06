@@ -15,4 +15,7 @@ constexpr float PlayerRadius = 10;
 constexpr int Damage = 10;
 constexpr int MaxHealth = 100;
 
+constexpr int MapWidth = 1024;
+constexpr int MapHeight = 1024;
+
 #endif // __CONSTANTS_H

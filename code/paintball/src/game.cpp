@@ -2,18 +2,7 @@
 
 Game::Game() :
     viewport(t3d_viewport_create()),
-    font("rom:/squarewave.font64", MainFont),
-
-    // Map
-    mapMatFP({
-        (T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)),
-        free_uncached
-    }),
-    dplMap({nullptr, rspq_block_free}),
-    modelMap({
-        t3d_model_load("rom:/paintball/map.t3dm"),
-        t3d_model_free
-    })
+    font("rom:/squarewave.font64", MainFont)
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
@@ -23,36 +12,13 @@ Game::Game() :
     auto fnt = font.font.get();
     assertf(fnt, "Font is null");
 
+    // TODO: move to player.cpp
     rdpq_font_style(fnt, 0, &p1Style);
     rdpq_font_style(fnt, 1, &p2Style);
     rdpq_font_style(fnt, 2, &p3Style);
     rdpq_font_style(fnt, 3, &p4Style);
 
-    setupMap(mapMatFP);
     debugf("Paintball minigame initialized\n");
-}
-
-void Game::setupMap(U::T3DMat4FP &mapMatFP) {
-    assertf(mapMatFP.get(), "Map matrix is null");
-    assertf(modelMap.get(), "Map model is null");
-
-    t3d_mat4fp_from_srt_euler(
-        mapMatFP.get(),
-        (float[3]){0.3f, 0.3f, 0.3f},
-        (float[3]){0, 0, 0},
-        (float[3]){0, 0, -10}
-    );
-    rspq_block_begin();
-        t3d_matrix_push(mapMatFP.get());
-        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        t3d_model_draw(modelMap.get());
-        t3d_matrix_pop(1);
-    dplMap = U::RSPQBlock(rspq_block_end(), rspq_block_free);
-}
-
-void Game::renderMap() {
-    assertf(dplMap.get(), "Map dl is null");
-    rspq_block_run(dplMap.get());
 }
 
 Game::~Game() {
@@ -84,7 +50,7 @@ void Game::render(float deltaTime) {
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
-    renderMap();
+    mapRenderer.render();
 
     gameplayController.render(deltaTime, viewport);
     gameplayController.render2ndPass();
