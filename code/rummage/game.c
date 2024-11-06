@@ -19,6 +19,7 @@
 #define MAP_REDUCTION_FACTOR 10
 #define PATH_LENGTH 10
 #define NO_PATH 9999
+#define ACTION_TIME 1.0f
 
 typedef struct actor_t {
     T3DModel* model;
@@ -49,7 +50,9 @@ typedef struct {
     PlyNum plynum;
     color_t color;
     float speed;
+    bool had_key;
     bool has_key;
+    float action_playing_time;
     // AI players
     T3DVec3 target;
     T3DVec3 path[PATH_LENGTH];  // Next points in path
@@ -70,6 +73,15 @@ vault_t vaults[VAULTS_COUNT];
 
 // Players
 player_t players[MAXPLAYERS];
+
+
+// Sound FX
+wav64_t sfx_start;
+wav64_t sfx_countdown;
+wav64_t sfx_stop;
+wav64_t sfx_winner;
+wav64_t sfx_rummage;
+wav64_t sfx_key;
 
 
 // Path finding
@@ -216,7 +228,9 @@ void game_init()
         players[i].dpl = rspq_block_end();
         players[i].plynum = i;
         players[i].speed = 0.0f;
+        players[i].had_key = false;
         players[i].has_key = false;
+        players[i].action_playing_time = 0;
         // AI player
         if (i >= playercount) {
             players[i].target = (T3DVec3){{NO_PATH, 0, NO_PATH}};
@@ -228,6 +242,14 @@ void game_init()
             players[i].path_pos = 0;
         }
     }
+
+    // Sound FX
+    wav64_open(&sfx_start, "rom:/core/Start.wav64");
+    wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
+    wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
+    wav64_open(&sfx_rummage, "rom:/rummage/rummage.wav64");
+    wav64_open(&sfx_key, "rom:/rummage/key.wav64");
 
     // Init pathfinder
     map_width = room.w/MAP_REDUCTION_FACTOR;
@@ -241,6 +263,16 @@ void game_logic(float deltatime)
     // Player controls
     uint32_t playercount = core_get_playercount();
     for (size_t i = 0; i < MAXPLAYERS; i++) {
+        if (players[i].action_playing_time > deltatime) {
+            players[i].action_playing_time -= deltatime;
+            continue;
+        } else {
+            players[i].action_playing_time = 0;
+            if (players[i].has_key && !players[i].had_key) {
+                wav64_play(&sfx_key, 31);
+                players[i].had_key = true;
+            }
+        }
         if (i < playercount) {  // Human player
             joypad_port_t port = core_get_playercontroller(i);
             joypad_inputs_t joypad = joypad_get_inputs(port);
@@ -249,8 +281,7 @@ void game_logic(float deltatime)
                 minigame_end();
             }
             // Player actions: rummage, open vault, grab other player
-            // FIXME Limit the rate at which a player can perform an action
-            if(joypad.btn.a || joypad.btn.b) {
+            if(joypad.btn.a || joypad.btn.b) {  // TODO use new key presses only ?
                 // If the player is close to a furniture, search for the key
                 for (int j=0; j<FURNITURES_COUNT; j++) {
                     // Is player on the front side of furniture?
@@ -263,6 +294,8 @@ void game_logic(float deltatime)
                         float distance = center_distance - players[i].h/2.0f - furnitures[j].h/2.0f;
                         if (distance <= 8.0f) {
                             debugf("Rummaging through furniture #%d!\n", j);
+                            wav64_play(&sfx_rummage, 31);
+                            players[i].action_playing_time = ACTION_TIME;
                             if (furnitures[j].has_key) {
                                 debugf("Player #%d found key in furniture #%d!\n", i, j);
                                 players[i].has_key = true;
@@ -477,6 +510,13 @@ void game_render(float deltatime)
 
 void game_cleanup()
 {
+    wav64_close(&sfx_start);
+    wav64_close(&sfx_countdown);
+    wav64_close(&sfx_stop);
+    wav64_close(&sfx_winner);
+    wav64_close(&sfx_rummage);
+    wav64_close(&sfx_key);
+    
     rspq_block_free(room.dpl);
     free_uncached(room.mat_fp);
     t3d_model_free(room.model);
