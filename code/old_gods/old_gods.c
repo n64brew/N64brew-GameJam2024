@@ -1,13 +1,25 @@
 #include <libdragon.h>
+
 #include "../../core.h"
 #include "../../minigame.h"
 
+#include "App.h"
+#include "AF_Time.h"
+
+#define WINDOW_WIDTH 320
+#define WINDOW_HEIGHT 240
+
+AF_Time gameTime;
+
 const MinigameDef minigame_def = {
-    .gamename = "Example Game",
-    .developername = "Your Name",
-    .description = "This is an example game.",
-    .instructions = "Press A to win."
+    .gamename = "Old Gods",
+    .developername = "mr_J05H",
+    .description = "Work with or against your villager friends to feed the old gods to keep them contained.",
+    .instructions = "Collect the sacrifices and feed them to the gods. Try not to kill each other along the way."
 };
+
+    
+
 
 /*==============================
     minigame_init
@@ -15,7 +27,9 @@ const MinigameDef minigame_def = {
 ==============================*/
 void minigame_init()
 {
+    App_Init(WINDOW_WIDTH, WINDOW_HEIGHT, &gameTime);// Initialize lastTime before the loop
 
+    gameTime.lastTime = timer_ticks();
 }
 
 /*==============================
@@ -27,7 +41,8 @@ void minigame_init()
 ==============================*/
 void minigame_fixedloop(float deltatime)
 {
-
+    // set framerate to target 60fp and call the app update function
+    App_Update_Wrapper(1);
 }
 
 /*==============================
@@ -37,7 +52,11 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-
+    gameTime.currentTime = timer_ticks();
+    gameTime.timeSinceLastFrame = deltatime;
+    gameTime.lastTime = gameTime.currentTime;
+    // render stuff as fast as possible, interdependent from other code
+    App_Render_Update(&gameTime);
 }
 
 /*==============================
@@ -46,5 +65,5 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
-
+    App_Shutdown();
 }

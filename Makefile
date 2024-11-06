@@ -5,9 +5,15 @@ BUILD_DIR = build
 ASSETS_DIR = assets
 MINIGAME_DIR = code
 FILESYSTEM_DIR = filesystem
+#-- ADDED
 MINIGAMEDSO_DIR = $(FILESYSTEM_DIR)/minigames
 
-SRC = main.c core.c minigame.c menu.c
+# UNFLoader files
+UNFLLOADER_DIR = UNFLoader/
+DEBUGFILES = $(UNFLLOADER_DIR)debug.c $(UNFLLOADER_DIR)usb.c
+CFLAGS += -IAF_Math/include -IAF_Lib/include -IUNFLoader
+
+SRC = main.c core.c minigame.c menu.c $(DEBUGFILES:.c=.o)
 
 filesystem/squarewave.font64: MKFONT_FLAGS += --outline 1 --range all
 
@@ -33,6 +39,7 @@ ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MUSIC_LIST:%.xm=%.xm64)
 ifeq ($(DEBUG), 1)
 	N64_CFLAGS += -g -O0
 	N64_LDFLAGS += -g
+	N64_CFLAGS += -Wno-unused-variables -Wno-unsued-function
 else
 	N64_CFLAGS += -O2
 endif
@@ -73,7 +80,10 @@ SRC_$(1) = \
 	$$(wildcard $$(MINIGAME_DIR)/$(1)/**/*.cpp)
 $$(MINIGAMEDSO_DIR)/$(1).dso: $$(SRC_$(1):%.cpp=$$(BUILD_DIR)/%.o)
 $$(MINIGAMEDSO_DIR)/$(1).dso: $$(SRC_$(1):%.c=$$(BUILD_DIR)/%.o)
--include $$(MINIGAME_DIR)/$(1)/$(1).mk
+
+-include $$(MINIGAME_DIR)/$(1)/$(1).mk ]
+
+
 endef
 
 $(foreach minigame, $(MINIGAMES_LIST), $(eval $(call MINIGAME_template,$(minigame))))
