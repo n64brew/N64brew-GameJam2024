@@ -1,3 +1,5 @@
+// Freely inspired by Sean Heber's A* implementation: https://github.com/BigZaphod/AStar
+
 #ifndef __ASTAR_H
 #define __ASTAR_H
 
