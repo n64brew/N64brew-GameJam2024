@@ -6,6 +6,9 @@
         "stdio.h": "c",
         "t3dmath.h": "c",
         "t3dmodel.h": "c",
-        "mallard.h": "c"
+        "mallard.h": "c",
+        "profile.h": "c",
+        "debug.h": "c",
+        "memory.h": "c"
     }
 }
