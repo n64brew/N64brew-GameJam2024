@@ -2,8 +2,14 @@
 #include "notes.h"
 #include "logic.h"
 
-#define HYDRA_AI_RANDOM_INTERVAL 20
-#define HYDRA_AI_SMART_X_OFFSET 20
+#define HYDRA_AI_RANDOM_INTERVAL 60
+#define HYDRA_AI_SMART_X_OFFSET (HYDRA_EATING_FRAMES + 4)
+
+#define HYDRA_AI_DIFFICULTY_MODIFIER 3
+#define HYDRA_AI_DIFFICULTY_COUNT 3
+
+#define HIT_DETECTION_LEFT_OFFSET (HYDRA_HEAD_WIDTH/2)
+#define HIT_DETECTION_RIGHT_OFFSET 0
 
 static uint16_t scores[PLAYER_MAX] = {0};
 winner_t* winners;
@@ -83,6 +89,7 @@ void scores_clear (void) {
 
 void note_hit_detection(void) {
 	note_t* current = notes_get_first();
+	uint8_t add_score;
 	// Loop trhough notes
 	while (current != NULL) {
 		// Loop through players
@@ -90,19 +97,36 @@ void note_hit_detection(void) {
 			// Check if the note and player are colliding
 			if (
 				(
-					current->x < hydras[i].x + HYDRA_HEAD_WIDTH &&
-					current->x > hydras[i].x &&
+					current->x < hydras[i].x + HYDRA_HEAD_WIDTH + HIT_DETECTION_RIGHT_OFFSET &&
+					current->x > hydras[i].x + HIT_DETECTION_LEFT_OFFSET &&
 					hydras[i].y == PADDING_TOP+current->state*HYDRA_ROW_HEIGHT
 				)
 			){
 				// Check if this note's colour matches the player'
+				add_score =
+					(HYDRA_EATING_FRAMES - abs(HYDRA_EATING_FRAMES-((hydras[i].animation-1)*HYDRA_EATING_FRAMES + hydras[i].frame))) / 5 + 1;
 				if (i == current->player) {
-					if (hydras[i].animation != HYDRA_ANIMATION_STUN) {
-						scores[current->player]++;
-						hydra_animate (current->player, HYDRA_ANIMATION_OPEN);
+					// Check if the animation is correct
+					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
+						// Note is eaten
+						scores[i] += add_score;
+						hydras[i].animation += HYDRA_ANIMATION_SUCCESS_DIFF;
 						notes_destroy (current);
 					}
-				} else  {
+				} else if (current->player >= PLAYER_MAX) {
+					// It's a special note
+					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
+						scores[i] += add_score;
+						hydra_swap_start (i, current->player);
+						notes_destroy (current);
+					}
+				} else if (
+					(hydras[i].animation < HYDRA_ANIMATION_SWAP_DOWN || hydras[i].animation > HYDRA_ANIMATION_SWAP_WAIT) &&
+					hydras[i].animation != HYDRA_ANIMATION_OPEN_TO_SWAP &&
+					hydras[i].animation != HYDRA_ANIMATION_CLOSE_TO_SWAP &&
+					hydras[i].animation != HYDRA_ANIMATION_CHEW_TO_SWAP
+				) {
+					// It's someone else's note. Stun them.
 					hydra_animate (i, HYDRA_ANIMATION_STUN);
 				}
 			} else if (current->x < -current->sprite->width) {
@@ -116,18 +140,50 @@ void note_hit_detection(void) {
 void hydra_ai (uint8_t hydra) {
 	static uint16_t ai_timer = 0;
 	ai_timer++;
+	note_t* current;
 	if (hydras[hydra].ai == HYDRA_AI_SMART) {
-		note_t* current = notes_get_first();
+		// Loop through all notes
+		current = notes_get_first();
 		while (current != NULL) {
-			if (current->player == hydra && current->x < hydras[hydra].x + HYDRA_HEAD_WIDTH + HYDRA_AI_SMART_X_OFFSET){
-				hydras[hydra].state = current->state;
+			// Check if there is a note in range
+			if (
+				current->x < hydras[hydra].x + HYDRA_HEAD_WIDTH + HYDRA_AI_SMART_X_OFFSET &&
+				current->x > hydras[hydra].x &&
+				hydras[hydra].animation == HYDRA_ANIMATION_NONE
+			){
+				// Check if we should do something smart
+				if (!(rand() % (HYDRA_AI_DIFFICULTY_MODIFIER * 3 - HYDRA_AI_DIFFICULTY_MODIFIER * core_get_aidifficulty()))) {
+					// Check if this is a note that we want to eat
+					if (current->player == hydra) {
+						// It's the hydra's note!
+						hydras[hydra].animation = HYDRA_ANIMATION_OPEN;
+						hydras[hydra].state = current->state;
+					} else if (hydras[hydra].state == current->state) {
+						// It's an enemy note! Move one row down
+						hydras[hydra].state = (hydras[hydra].state + 1) % HEAD_STATES_PLAYABLE;
+					}
+				}
 			} else {
 				//hydras[hydra].state = STATE_MID;
 			}
 			current = current->next;
 		}
 	} else if (hydras[hydra].ai == HYDRA_AI_RANDOM) {
-		if (!(ai_timer % HYDRA_AI_RANDOM_INTERVAL)) {
+		// Loop through all notes
+		current = notes_get_first();
+		while (current != NULL) {
+			if (
+				current->player == hydra &&
+				current->x < hydras[hydra].x + HYDRA_HEAD_WIDTH + HYDRA_AI_SMART_X_OFFSET &&
+				current->x > hydras[hydra].x &&
+				hydras[hydra].animation == HYDRA_ANIMATION_NONE &&
+				hydras[hydra].state == current->state
+			){
+				hydras[hydra].animation = HYDRA_ANIMATION_OPEN;
+			}
+			current = current->next;
+		}
+		if (!(ai_timer % HYDRA_AI_RANDOM_INTERVAL) && hydras[hydra].animation == HYDRA_ANIMATION_NONE) {
 			hydras[hydra].state = rand() % 3;
 		}
 	}
