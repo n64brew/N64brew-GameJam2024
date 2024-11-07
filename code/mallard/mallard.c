@@ -27,8 +27,16 @@ const MinigameDef minigame_def = {
 
 // Target screen resolution that we render at.
 // Choosing a resolution above 240p (interlaced) can't be recommended for video playback.
-#define SCREEN_WIDTH 320 // 128
-#define SCREEN_HEIGHT 240 // 96
+#define SCREEN_WIDTH 288
+#define SCREEN_HEIGHT 208
+
+// Sound globals
+wav64_t audio_track;
+
+float fps;
+mpeg2_t *video_track;
+yuv_blitter_t yuv;
+int nframes = 0;
 
 /*==============================
     minigame_init
@@ -37,8 +45,8 @@ const MinigameDef minigame_def = {
 void minigame_init()
 {
     joypad_init();
-    debug_init_isviewer();
-    debug_init_usblog();
+    // debug_init_isviewer();
+    // debug_init_usblog();
 
     display_init((resolution_t){
                      .width = SCREEN_WIDTH,
@@ -66,8 +74,8 @@ void minigame_init()
     fclose(f);
 
     // Open the video using the mpeg2 module and create a YUV blitter to draw it.
-    mpeg2_t *video_track = mpeg2_open("rom:/mallard/video.m1v");
-    yuv_blitter_t yuv = yuv_blitter_new_fmv(
+    video_track = mpeg2_open("rom:/mallard/video.m1v");
+    yuv = yuv_blitter_new_fmv(
         // Resolution of the video we expect to play.
         // Video needs to have a width divisible by 32 and a height divisible by 16.
         //
@@ -84,58 +92,14 @@ void minigame_init()
         &(yuv_fmv_parms_t){.zoom = YUV_ZOOM_NONE});
 
     // Engage the fps limiter to ensure proper video pacing.
-    float fps = mpeg2_get_framerate(video_track);
+    fps = mpeg2_get_framerate(video_track);
     display_set_fps_limit(fps);
 
     // Open the audio track and start playing it in channel 0.
-    wav64_t audio_track;
     wav64_open(&audio_track, "rom:/mallard/video.wav64");
     mixer_ch_play(0, &audio_track.wave);
 
-    int nframes = 0;
-
-    while (1)
-    {
-        mixer_throttle(AUDIO_HZ / fps);
-
-        if (!mpeg2_next_frame(video_track))
-        {
-            break;
-        }
-
-        // This polls the mixer to try and play the next chunk of audio, if available.
-        // We call this function twice during the frame to make sure the audio never stalls.
-        mixer_try_play();
-
-        rdpq_attach(display_get(), NULL);
-
-        PROFILE_START(PS_YUV, 0);
-        // Get the next video frame and feed it into our previously set up blitter.
-        yuv_frame_t frame = mpeg2_get_frame(video_track);
-        yuv_blitter_run(&yuv, &frame);
-        PROFILE_STOP(PS_YUV, 0);
-
-        rdpq_detach_show();
-
-        nframes++;
-
-        mixer_try_play();
-
-        PROFILE_START(PS_SYNC, 0);
-        rspq_wait();
-        PROFILE_STOP(PS_SYNC, 0);
-
-        profile_next_frame();
-        if (nframes % 128 == 0)
-        {
-            profile_dump();
-            profile_init();
-        }
-    }
-
-    fprintf(stderr, "Mallard 64 Init\n");
-
-    // minigame_end();
+    fprintf(stderr, "End Init\n");
 }
 
 /*==============================
@@ -156,6 +120,62 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
+    mixer_throttle(AUDIO_HZ / fps);
+
+    if (!mpeg2_next_frame(video_track))
+    {
+        fprintf(stderr, "Video Ended\n");
+        return;
+    }
+
+    // This polls the mixer to try and play the next chunk of audio, if available.
+    // We call this function twice during the frame to make sure the audio never stalls.
+    mixer_try_play();
+
+    rdpq_attach(display_get(), NULL);
+
+    PROFILE_START(PS_YUV, 0);
+    // Get the next video frame and feed it into our previously set up blitter.
+    yuv_frame_t frame = mpeg2_get_frame(video_track);
+    yuv_blitter_run(&yuv, &frame);
+    PROFILE_STOP(PS_YUV, 0);
+
+    rdpq_detach_show();
+
+    nframes++;
+
+    mixer_try_play();
+
+    PROFILE_START(PS_SYNC, 0);
+    rspq_wait();
+    PROFILE_STOP(PS_SYNC, 0);
+
+    profile_next_frame();
+    if (nframes % 128 == 0)
+    {
+        profile_dump();
+        profile_init();
+    }
+
+    //////////////////////////////////////////////////////////////
+    // Check if the start button is pressed to end the minigame //
+    //////////////////////////////////////////////////////////////
+
+    joypad_port_t controllerPort = core_get_playercontroller(0);
+
+    if (!joypad_is_connected(controllerPort))
+    {
+        fprintf(stderr, "Controller not connected\n");
+        return;
+    }
+
+    joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
+
+    if (btn.start)
+    {
+        fprintf(stderr, "Start button pressed\n");
+        minigame_end();
+    }
 }
 
 /*==============================
@@ -164,4 +184,9 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
+    wav64_close(&audio_track);
+
+    display_close();
+
+    fprintf(stderr, "End Cleanup\n");
 }
