@@ -17,16 +17,21 @@
 
 // Global vars
 static note_ll_t notes;
-static sprite_t* note_sprites[PLAYER_MAX];
+static sprite_t* note_sprites[NOTES_TOTAL_COUNT];
 
 void notes_init(void) {
 	char temptext[64];
-	for (uint8_t i=0; i<PLAYER_MAX; i++) {
+	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
 		// Load the note sprites
 		sprintf(temptext, "rom:/hydraharmonics/note-%i.ci4.sprite", i);
 		note_sprites[i] = sprite_load(temptext);
-		// Set how many notes are left per player
-		notes.notes_left[i] = NOTES_PER_PLAYER;
+		if (i < PLAYER_MAX) {
+			// Set how many notes are left per player
+			notes.notes_left[i] = NOTES_PER_PLAYER;
+		} else {
+			// Set the amount of special notes
+			notes.notes_left[i] = NOTES_PER_PLAYER_SPECIAL;
+		}
 	}
 	// Init notes
 	notes.start = notes.end = NULL;
@@ -34,23 +39,25 @@ void notes_init(void) {
 
 PlyNum note_get_free(void) {
 	uint8_t i, status;
-	// Check if we've depleted them
-	status = 0;
-	for (i=0; i<PLAYER_MAX; i++) {
-		if (notes.notes_left[i]) {
-			status = 1;
+	uint16_t notes_left_total = 0;
+	// Get the sum of weights
+	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
+		notes_left_total += notes.notes_left[i];
+	}
+
+	// Pick a random note
+	uint16_t random_note = rand() % notes_left_total;
+
+	// Find out which group it belongs to
+	uint16_t notes_left_cum = 0;
+	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
+		notes_left_cum += notes.notes_left[i];
+		if (random_note < notes_left_cum) {
+			notes.notes_left[i]--;
+			return i;
 		}
 	}
-	// Depleted, let's just pull some random ones now
-	if (!status) {
-		return rand()%PLAYER_MAX;
-	}
-	// Pick a random player to spawn a note for
-	do {
-		status = rand()%PLAYER_MAX;
-	} while (!notes.notes_left[status]);
-	notes.notes_left[status]--;
-	return status;
+	return 0;
 }
 
 void notes_add (void) {
@@ -100,7 +107,7 @@ note_t* notes_get_first(void) {
 void notes_move (void) {
 	note_t* current = notes.start;
 	while (current != NULL) {
-		current->x -= NOTE_SPEED;
+		current->x -= NOTES_SPEED;
 		current->y_offset = sin(current->x / NOTE_Y_OFFSET_PERIOD) * NOTE_Y_OFFSET_AMPLITUDE;
 		current->blitparms.theta = sin((current->x - current->anim_offset) / NOTE_THETA_PERIOD) * NOTE_THETA_AMPLITUDE;
 		current->blitparms.scale_x = 1 + sin((current->x + current->anim_offset) / NOTE_SCALE_PERIOD) * NOTE_SCALE_AMPLITUDE;
@@ -128,7 +135,7 @@ uint16_t notes_get_remaining (notes_remaining_t type) {
 	uint8_t i;
 	note_t* current = notes.start;
 	// Get unspawned notes
-	for (i=0; i<PLAYER_MAX && (type & NOTES_GET_REMAINING_UNSPAWNED); i++) {
+	for (i=0; i<NOTES_TOTAL_COUNT && (type & NOTES_GET_REMAINING_UNSPAWNED); i++) {
 		remaining += notes.notes_left[i];
 	}
 	// Get spawned notes
@@ -173,7 +180,7 @@ void notes_destroy_all (void) {
 
 void notes_clear (void) {
 	uint8_t i;
-	for (i=0; i<PLAYER_MAX; i++) {
+	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
 		sprite_free(note_sprites[i]);
 	}
 	notes_destroy_all();

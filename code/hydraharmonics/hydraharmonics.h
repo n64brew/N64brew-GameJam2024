@@ -5,6 +5,7 @@
 #include "../../core.h"
 
 #define HEAD_STATES_MAX 4
+#define HEAD_STATES_PLAYABLE (HEAD_STATES_MAX - 1)
 #define PLAYER_MAX MAXPLAYERS
 
 #define HYDRA_HEAD_WIDTH 48
@@ -29,5 +30,11 @@ typedef enum {
     STATE_DOWN,
     STATE_HIDE,
 } hydraharmonics_state_t;
+
+typedef enum {
+	NOTES_SPECIAL_WHITE = 4,
+	NOTES_SPECIAL_GREY = 5,
+	NOTES_SPECIAL_BLACK = 6,
+} notes_special_t;
 
 #endif

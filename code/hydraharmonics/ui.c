@@ -40,7 +40,7 @@ static void ui_signs_draw (void) {
 			display_get_height() - score_sprite->height - PADDING_TOP,
 			&(rdpq_blitparms_t){
 				.width = score_sprite->width / PLAYER_MAX,
-				.s0 = (score_sprite->width / PLAYER_MAX) * hydras[i].pos,
+				.s0 = (score_sprite->width / PLAYER_MAX) * i,
 			}
 		);
 	}
@@ -66,7 +66,6 @@ static void ui_bars_draw (void) {
 }
 
 void ui_draw (void) {
-	rdpq_set_mode_copy(true);
 	ui_bg_draw();
 	ui_signs_draw();
 	ui_bars_draw();

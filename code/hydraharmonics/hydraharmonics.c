@@ -15,7 +15,7 @@ const MinigameDef minigame_def = {
 };
 
 #define TIMER_START 1
-#define TIMER_GAME NOTES_PER_PLAYER * PLAYER_MAX + (10 / NOTE_SPEED)
+#define TIMER_GAME (NOTES_PER_PLAYER * PLAYER_MAX) + (NOTES_PER_PLAYER_SPECIAL * NOTES_SPECIAL_TYPES) + (13 / NOTES_SPEED)
 #define TIMER_END_ANNOUNCE 2
 #define TIMER_END_DISPLAY 1
 #define TIMER_END_FANFARE 2
@@ -99,14 +99,17 @@ void minigame_loop(float deltatime)
 	// Prepare the RDP
 	rdpq_attach(display_get(), NULL);
 
-	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 200, "Timer: %f\nRemaining:%i", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL));
-
 	// Draw things
+	rdpq_set_mode_copy(true);
 	ui_draw();
 	rdpq_set_mode_standard();
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	hydra_draw();
+	rdpq_set_mode_standard();
+	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	notes_draw();
+
+	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 200, "Timer: %f\nRemaining:%i", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL));
 
 	// Things that should only be drawn at particular stages
 	if (stage == STAGE_GAME) {
