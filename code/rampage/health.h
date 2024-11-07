@@ -5,9 +5,16 @@
 
 typedef void (*DamageCallback)(void* data);
 
+enum HealthStatus {
+    HEALTH_STATUS_NONE,
+    HEALTH_STATUS_ALIVE,
+    HEALTH_STATUS_DEAD,
+};
+
 struct health {
     void* data;
     DamageCallback callback;
+    int is_dead:1;
 };
 
 // global setup
@@ -19,5 +26,7 @@ void health_unregister(int entity_id);
 
 void health_apply_damage(int entity_id);
 void health_contact_damage(struct contact* contact);
+
+enum HealthStatus health_status(int entity_id);
 
 #endif

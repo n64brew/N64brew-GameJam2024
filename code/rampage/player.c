@@ -1,6 +1,7 @@
 #include "player.h"
 
 #include "./assets.h"
+#include "./math/mathf.h"
 #include "./math/vector2.h"
 #include "./math/quaternion.h"
 #include "../../core.h"
@@ -14,6 +15,7 @@
 #include <stdint.h>
 
 #define PLAYER_MOVE_SPEED   128
+#define PLAYER_ACCEL        5000
 #define PLAYER_ATTACK_TIME  0.75f
 
 #define FIRST_PLAYER_COLLIDER_GROUP 2
@@ -28,7 +30,7 @@ struct dynamic_object_type player_collider = {
         },
     },
     .bounce = 0.0f,
-    .friction = 0.5f,
+    .friction = 0.0f,
 };
 
 struct dynamic_object_type damage_trigger_collider = {
@@ -49,6 +51,8 @@ struct RampageInput {
     uint32_t do_attack:1;
 };
 
+struct Vector2 max_rotate;
+
 float clamp_joy_input(int8_t input) {
     if (input < -80) {
         return -1.0f;
@@ -63,15 +67,28 @@ int floatBits(void* input) {
     return *(int*)input;
 }
 
-bool rampage_player_is_touching_target(struct RampagePlayer* player) {
+bool rampage_player_is_touching_target(struct RampagePlayer* player, struct Vector2* input_dir) {
     struct contact* contact = player->dynamic_object.active_contacts;
 
-    while (contact) {
-        if (contact->other_object) {
-            return true;
+    for (
+        struct contact* contact = player->dynamic_object.active_contacts;
+        contact; 
+        contact = contact->next
+    ) {
+        if (!contact->other_object) {
+            continue;
         }
 
-        contact = contact->next;
+        enum HealthStatus status = health_status(contact->other_object);
+
+        if (status == HEALTH_STATUS_ALIVE) {
+            return true;
+        } else if (status == HEALTH_STATUS_DEAD) {
+            input_dir->x = contact->normal.z;
+            input_dir->y = -contact->normal.x;
+            player->moving_to_target = 0;
+            vector2Normalize(input_dir, input_dir);
+        }
     }
 
     return false;
@@ -114,7 +131,7 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
         result.direction.x = offset.x;
         result.direction.y = offset.z;
 
-        if (rampage_player_is_touching_target(player)) {
+        if (rampage_player_is_touching_target(player, &result.direction)) {
             if (player->attack_timer <= 0.0f) {
                 result.do_attack = true;
                 player->attack_timer = PLAYER_ATTACK_TIME;
@@ -196,6 +213,8 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->attacking_target = 0;
     player->current_target = gZeroVec;
     player->attack_timer = 0.0f;
+
+    vector2ComplexFromAngle(3.14f / 30.0f, &max_rotate);
 }
 
 void rampage_player_destroy(struct RampagePlayer* player) {
@@ -210,8 +229,42 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     
     rampage_player_update_damager(player);
 
-    player->dynamic_object.velocity.x = input.direction.x * PLAYER_MOVE_SPEED;
-    player->dynamic_object.velocity.z = input.direction.y * PLAYER_MOVE_SPEED;
+    struct Vector2 target_vel;
+    vector2Scale(&input.direction, PLAYER_MOVE_SPEED, &target_vel);
+
+    struct Vector2 current_forward = {
+        player->dynamic_object.rotation.y,
+        player->dynamic_object.rotation.x
+    };
+
+    struct Vector2 target_dir;
+    vector2Normalize(&target_vel, &target_dir);
+
+    if (vector2MagSqr(&target_dir) > 0.01f) {
+        vector2RotateTowards(&current_forward, &target_dir, &max_rotate, &current_forward);
+        player->dynamic_object.rotation.x = current_forward.y;
+        player->dynamic_object.rotation.y = current_forward.x;
+    }
+
+    float vel_scale = vector2Dot(&current_forward, &target_dir);
+
+    if (vel_scale < 0.0f) {
+        vel_scale = 0.0f;
+    }
+
+    float accel = PLAYER_ACCEL * delta_time * vel_scale;
+
+    player->dynamic_object.velocity.x = mathfMoveTowards(
+        player->dynamic_object.velocity.x,
+        target_vel.x * PLAYER_MOVE_SPEED,
+        accel
+    );
+
+    player->dynamic_object.velocity.z = mathfMoveTowards(
+        player->dynamic_object.velocity.z,
+        target_vel.y * PLAYER_MOVE_SPEED,
+        accel
+    );
 
     if (player->dynamic_object.position.y < 0.0f) {
         player->dynamic_object.position.y = 0.0f;
@@ -219,15 +272,6 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         if (player->dynamic_object.velocity.y < 0.0f) {
             player->dynamic_object.velocity.y = 0.0f;
         }
-    }
-
-    struct Vector3 dir = player->dynamic_object.velocity;
-    dir.y = 0.0f;
-
-    if (vector3MagSqrd(&dir) > 0.001f) {
-        vector3Normalize(&dir, &dir);
-        player->dynamic_object.rotation.x = dir.z;
-        player->dynamic_object.rotation.y = dir.x;
     }
 
     if (input.do_attack && !player->last_attack_state) {

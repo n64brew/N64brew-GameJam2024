@@ -45,6 +45,7 @@ void rampage_building_damage(void* data) {
     building->shake_timer = SHAKE_TIME;
 
     if (building->hp == 0) {
+        building->health.is_dead = 1;
         building->is_collapsing = true;
     }
 }
