@@ -238,15 +238,15 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     };
 
     struct Vector2 target_dir;
-    vector2Normalize(&target_vel, &target_dir);
 
-    if (vector2MagSqr(&target_dir) > 0.01f) {
+    if (vector2MagSqr(&target_vel) > 0.01f) {
+        vector2Normalize(&target_vel, &target_dir);
         vector2RotateTowards(&current_forward, &target_dir, &max_rotate, &current_forward);
         player->dynamic_object.rotation.x = current_forward.y;
         player->dynamic_object.rotation.y = current_forward.x;
     }
 
-    float vel_scale = vector2Dot(&current_forward, &target_dir);
+    float vel_scale = vector2Dot(&current_forward, &target_vel);
 
     if (vel_scale < 0.0f) {
         vel_scale = 0.0f;
@@ -256,14 +256,14 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
 
     player->dynamic_object.velocity.x = mathfMoveTowards(
         player->dynamic_object.velocity.x,
-        target_vel.x * PLAYER_MOVE_SPEED,
-        accel
+        current_forward.x * vel_scale,
+        PLAYER_ACCEL * delta_time
     );
 
     player->dynamic_object.velocity.z = mathfMoveTowards(
         player->dynamic_object.velocity.z,
-        target_vel.y * PLAYER_MOVE_SPEED,
-        accel
+        current_forward.y * vel_scale,
+        PLAYER_ACCEL * delta_time
     );
 
     if (player->dynamic_object.position.y < 0.0f) {
