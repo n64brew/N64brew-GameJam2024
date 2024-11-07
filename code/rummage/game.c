@@ -16,9 +16,11 @@
 
 #define T3D_MODEL_SCALE 64
 #define COLLISION_CORRECTIVE_FACTOR 1.3f
-#define MAP_REDUCTION_FACTOR 10
+#define MAP_REDUCTION_FACTOR 4
 #define PATH_LENGTH 10
 #define NO_PATH 9999
+#define WAYPOINT_DISTANCE_THRESHOLD 5.0f
+#define ACTION_DISTANCE_THRESHOLD 8.0f
 #define ACTION_TIME 1.0f
 
 bool playing = false;
@@ -33,6 +35,7 @@ typedef struct actor_t {
     T3DVec3 direction;
     float w;
     float h;
+    bool hidden;
 } actor_t;
 
 typedef struct {
@@ -46,6 +49,16 @@ typedef struct {
     bool is_target;
 } vault_t;
 
+typedef enum {
+    IDLE = 0,
+    MOVING_TO_FURNITURE,
+    RUMMAGING,
+    MOVING_TO_PLAYER,
+    ATTACKING,
+    MOVING_TO_VAULT,
+    OPENING_VAULT
+} ai_state_t;
+
 typedef struct {
     actor_t;
     // TODO rotation, speed, skeleton, animations, ...
@@ -57,6 +70,9 @@ typedef struct {
     bool has_won;
     float action_playing_time;
     // AI players
+    float idle_delay;
+    ai_state_t state;
+    int target_idx;
     T3DVec3 target;
     T3DVec3 path[PATH_LENGTH];  // Next points in path
     int path_pos;
@@ -77,8 +93,11 @@ vault_t vaults[VAULTS_COUNT];
 // Players
 player_t players[MAXPLAYERS];
 
+// Key
+actor_t key;
 
-// Sound FX
+
+// Sound FX FIXME increase sfx volume to match countdown sfx
 wav64_t sfx_rummage;
 wav64_t sfx_key;
 
@@ -119,12 +138,16 @@ bool is_walkable(cell_t cell) {
     return walkable;
 }
 
+int visited = 0;    // FIXME DEBUG ONLY
 void add_neighbours(node_list_t* list, cell_t cell) {
+    visited++;
     for (int x=cell.x-1; x<=cell.x+1; x++) {
         for (int y=cell.y-1; y<=cell.y+1; y++) {
             if ((x != cell.x || y != cell.y) && is_walkable((cell_t){x, y})) {
                 float cost = (x == cell.x || y == cell.y) ? 1 : 1.414;
-                add_neighbour(list, (cell_t){x, y}, cost);
+                if (cost == 1) {    // FIXME DEBUG ONLY
+                    add_neighbour(list, (cell_t){x, y}, cost);
+                }
             }
         }
     }
@@ -134,6 +157,169 @@ float heuristic(cell_t from, cell_t to) {
     // Manhattan distance FIXME use diagonal/octile distance? euclidian distance?
     return (fabs(from.x - to.x) + fabs(from.y - to.y));
 }
+
+
+
+// FIXME DON'T GET STUCK WHEN THERE IS NO PATH !!!
+// FIXME (fix find_path() ??? issue with empty node maybe ?)
+// FIXME implement early exit / depth limit? --> ALWAYS LIMIT !!!
+void update_path(PlyNum i) {
+    // Clear path
+    for (int j=0; j<PATH_LENGTH; j++) {
+        players[i].path[j].v[0] = NO_PATH;
+        players[i].path[j].v[2] = NO_PATH;
+    }
+    players[i].path_pos = 0;
+    // Find new path to target
+    T3DVec3 start;
+    to_pathmap_coords(&start, &players[i].position);
+    T3DVec3 target;
+    to_pathmap_coords(&target, &players[i].target);
+    cell_t start_node = {(int)start.v[0], (int)start.v[2]};
+    cell_t target_node = {(int)target.v[0], (int)target.v[2]};
+    //debugf("find_path(%d %d, %d %d)\n", start_node.x, start_node.y, target_node.x, target_node.y);
+    visited = 0;
+    path_t* path = find_path(start_node, target_node);
+    if (get_path_count(path) > 1) {
+        debugf("path points count: %d\n", get_path_count(path));
+        for (int j=0; j<get_path_count(path); j++) {
+            if (players[i].path_pos >= PATH_LENGTH-1)   break;
+            //debugf("getting point #%d\n", j);
+            cell_t* node = get_path_cell(path, j);
+            //debugf("add point: %d %d\n", node->x, node->y);
+            players[i].path[players[i].path_pos].v[0] = node->x;
+            players[i].path[players[i].path_pos].v[2] = node->y;
+            players[i].path_pos++;
+        }
+        players[i].path_pos = 0;
+    } else {
+        debugf("No path from %d %d to %d %d\n", start_node.x, start_node.y, target_node.x, target_node.y);
+    }
+    debugf("visited: %d\n", visited);
+    free_path(path);
+}
+
+bool has_waypoints(PlyNum i) {
+    return players[i].path[players[i].path_pos].v[0] != NO_PATH;
+}
+
+bool follow_path(PlyNum i) {
+    T3DVec3* next = &players[i].path[players[i].path_pos];
+    if (next->v[0] != NO_PATH) {
+        // Follow path
+        // Move towards next point in path
+        // TODO Change target when stuck? (may be blocked by a furniture or a player)
+        T3DVec3 next_point = (T3DVec3){{next->v[0], 0, next->v[2]}};
+        //debugf("next_point: %f %f\n", next_point.v[0], next_point.v[2]);
+        from_pathmap_coords(&next_point, &next_point);
+        //debugf("next_point_converted: %f %f\n", next_point.v[0], next_point.v[2]);
+        T3DVec3 newDir;
+        t3d_vec3_diff(&newDir, &next_point, &players[i].position);
+        //debugf("AI NEW DIR LENGTH: %f\n", t3d_vec3_len2(&newDir));
+        float speed = sqrtf(t3d_vec3_len2(&newDir));
+        if (speed > 4.8) {  // FIXME AI speed limit ??
+            speed = 4.8;
+        }
+        // Smooth movements and stop
+        if(speed > 0.15f) {
+            newDir.v[0] /= speed;
+            newDir.v[2] /= speed;
+            players[i].direction = newDir;
+            float newAngle = -atan2f(players[i].direction.v[0], players[i].direction.v[2]);
+            players[i].rotation.v[1] = t3d_lerp_angle(players[i].rotation.v[1], newAngle, 0.5f);
+            players[i].speed = t3d_lerp(players[i].speed, speed * 0.3f, 0.15f);
+        } else {
+            players[i].speed *= 0.64f;
+        }
+        // Move player
+        players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
+        players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
+
+        // FIXME after collision resolution?
+        if (t3d_vec3_distance(&players[i].position, &next_point) < WAYPOINT_DISTANCE_THRESHOLD) {
+            //debugf("reached waypoint #%d\n", players[i].path_pos);
+            players[i].path_pos++;
+        }
+    }
+    
+    return has_waypoints(i);
+}
+
+
+
+bool can_rummage(int i, int j) {
+    // Is player on the front side of furniture?
+    T3DVec3 diff;
+    t3d_vec3_diff(&diff, &players[i].position, &furnitures[j].position);
+    float dot = t3d_vec3_dot(&furnitures[j].direction, &diff);
+    if (dot > 0) {
+        // Is player close enough?
+        float center_distance = t3d_vec3_distance(&players[i].position, &furnitures[j].position);
+        float distance = center_distance - players[i].h/2.0f - furnitures[j].h/2.0f;
+        return distance <= ACTION_DISTANCE_THRESHOLD;
+    }
+    return false;
+}
+
+bool rummage(int i, int j) {
+    if (can_rummage(i, j)) {
+        debugf("Player #%d rummaging through furniture #%d!\n", i, j);
+        wav64_play(&sfx_rummage, 31);
+        players[i].action_playing_time = ACTION_TIME;
+        if (furnitures[j].has_key) {
+            debugf("Player #%d found key in furniture #%d!\n", i, j);
+            players[i].has_key = true;
+            furnitures[j].has_key = false;
+            return true;
+        }
+    }
+    return false;
+}
+
+PlyNum leader() {
+    for (int i=0; i<MAXPLAYERS; i++) {
+        if (players[i].has_key) {
+            return players[i].plynum;
+        }
+    }
+    return MAXPLAYERS;
+}
+
+bool can_open(int i, int j) {
+    // Is player on the front side of vault?
+    T3DVec3 diff;
+    t3d_vec3_diff(&diff, &players[i].position, &vaults[j].position);
+    float dot = t3d_vec3_dot(&vaults[j].direction, &diff);
+    if (dot > 0) {
+        // Is player close enough?
+        float center_distance = t3d_vec3_distance(&players[i].position, &vaults[j].position);
+        float distance = center_distance - players[i].h/2.0f - vaults[j].h/2.0f;
+        if (distance <= ACTION_DISTANCE_THRESHOLD) {
+            debugf("Trying open vault #%d!\n", j);
+            return vaults[j].is_target;
+        }
+    }
+    return false;
+}
+
+bool open(int i, int j) {
+    if (players[i].has_key && can_open(i, j)) {
+        debugf("Player #%d trying open vault #%d!\n", i, j);
+        // TODO play sfx?
+        players[i].action_playing_time = ACTION_TIME;
+        if (vaults[j].is_target) {
+            debugf("Player #%d opened the vault #%d!\n", i, j);
+            players[i].has_won = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+void reset_idle_delay(int i) {
+    players[i].idle_delay = (2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3);
+}
+
 
 
 void game_init()
@@ -152,10 +338,11 @@ void game_init()
         t3d_model_draw(room.model);
         t3d_matrix_pop(1);
     room.dpl = rspq_block_end();
+    room.hidden = false;
 
     // Place furnitures
-    int key = rand() % FURNITURES_COUNT;
-    debugf("Key is in furniture #%d!\n", key);
+    int hideout = rand() % FURNITURES_COUNT;
+    debugf("Key is in furniture #%d!\n", hideout);
     T3DModel* furniture_model = t3d_model_load("rom:/rummage/furniture.t3dm");
     for (int i=0; i<FURNITURES_COUNT; i++) {
         furnitures[i].w = 0.92f * T3D_MODEL_SCALE;
@@ -174,7 +361,8 @@ void game_init()
             t3d_model_draw(furnitures[i].model);
             t3d_matrix_pop(1);
         furnitures[i].dpl = rspq_block_end();
-        furnitures[i].has_key = (i == key);
+        furnitures[i].has_key = (i == hideout);
+        furnitures[i].hidden = false;
     }
 
     // Place vaults
@@ -197,6 +385,7 @@ void game_init()
             t3d_matrix_pop(1);
         vaults[i].dpl = rspq_block_end();
         vaults[i].is_target = (i == target);
+        vaults[i].hidden = false;
     }
 
     // Place players
@@ -231,8 +420,12 @@ void game_init()
         players[i].has_key = false;
         players[i].has_won = false;
         players[i].action_playing_time = 0;
+        players[i].hidden = false;
         // AI player
         if (i >= playercount) {
+            reset_idle_delay(i);
+            players[i].state = IDLE;
+            players[i].target_idx = -1;
             players[i].target = (T3DVec3){{NO_PATH, 0, NO_PATH}};
             for (int j=0; j<PATH_LENGTH; j++) {
                 players[i].path[j].v[0] = NO_PATH;
@@ -242,6 +435,22 @@ void game_init()
             players[i].path_pos = 0;
         }
     }
+
+    // Init key
+    key.scale = (T3DVec3){{1, 1, 1}};
+    key.rotation = (T3DVec3){{0, 0, 0}};
+    key.position = (T3DVec3){{0, 0, 0}};
+    key.w = 0.3f * T3D_MODEL_SCALE;
+    key.h = 0.3f * T3D_MODEL_SCALE;
+    key.model = t3d_model_load("rom:/rummage/key.t3dm");
+    key.mat_fp = malloc_uncached(sizeof(T3DMat4FP));
+    t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, key.position.v);
+    rspq_block_begin();
+        t3d_matrix_push(key.mat_fp);
+        t3d_model_draw(key.model);
+        t3d_matrix_pop(1);
+    key.dpl = rspq_block_end();
+    key.hidden = true;
 
     // Sound FX
     wav64_open(&sfx_rummage, "rom:/rummage/rummage.wav64");
@@ -268,6 +477,7 @@ void game_logic(float deltatime)
                 if (players[i].has_key && !players[i].had_key) {
                     wav64_play(&sfx_key, 31);
                     players[i].had_key = true;
+                    key.hidden = false;
                 }
             }
             if (i < playercount) {  // Human player
@@ -281,44 +491,11 @@ void game_logic(float deltatime)
                 if(joypad.btn.a || joypad.btn.b) {  // TODO use new key presses only ?
                     // If the player is close to a furniture, search for the key
                     for (int j=0; j<FURNITURES_COUNT; j++) {
-                        // Is player on the front side of furniture?
-                        T3DVec3 diff;
-                        t3d_vec3_diff(&diff, &players[i].position, &furnitures[j].position);
-                        float dot = t3d_vec3_dot(&furnitures[j].direction, &diff);
-                        if (dot > 0) {
-                            // Is player close enough?
-                            float center_distance = t3d_vec3_distance(&players[i].position, &furnitures[j].position);
-                            float distance = center_distance - players[i].h/2.0f - furnitures[j].h/2.0f;
-                            if (distance <= 8.0f) {
-                                debugf("Rummaging through furniture #%d!\n", j);
-                                wav64_play(&sfx_rummage, 31);
-                                players[i].action_playing_time = ACTION_TIME;
-                                if (furnitures[j].has_key) {
-                                    debugf("Player #%d found key in furniture #%d!\n", i, j);
-                                    players[i].has_key = true;
-                                    furnitures[j].has_key = false;
-                                }
-                            }
-                        }
+                        rummage(i, j);
                     }
                     if (players[i].has_key) {
                         for (int j=0; j<VAULTS_COUNT; j++) {
-                            // Is player on the front side of vault?
-                            T3DVec3 diff;
-                            t3d_vec3_diff(&diff, &players[i].position, &vaults[j].position);
-                            float dot = t3d_vec3_dot(&vaults[j].direction, &diff);
-                            if (dot > 0) {
-                                // Is player close enough?
-                                float center_distance = t3d_vec3_distance(&players[i].position, &vaults[j].position);
-                                float distance = center_distance - players[i].h/2.0f - vaults[j].h/2.0f;
-                                if (distance <= 8.0f) {
-                                    debugf("Trying open vault #%d!\n", j);
-                                    if (vaults[j].is_target) {
-                                        debugf("Player #%d opened the vault #%d!\n", i, j);
-                                        players[i].has_won = true;
-                                    }
-                                }
-                            }
+                            open(i, j);
                         }
                     }
                 }
@@ -341,88 +518,153 @@ void game_logic(float deltatime)
                 players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
                 players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
             } else {    // API Player
-                // TODO Have we reached current target ?? If not, keep going in the previous direction/speed
-
-                T3DVec3* next = &players[i].path[players[i].path_pos];
-                if (next->v[0] != NO_PATH) {
-                    // Follow path
-                    //players[i].path_pos++;
-
-                    // Move towards next point in path
-                    // TODO Perform action and change target when reached
-                    // TODO Change target when stuck? (may be blocked by a furniture or a player)
-                    T3DVec3 next_point = (T3DVec3){{next->v[0], 0, next->v[2]}};
-                    //debugf("next_point: %f %f\n", next_point.v[0], next_point.v[2]);
-                    from_pathmap_coords(&next_point, &next_point);
-                    //debugf("next_point_converted: %f %f\n", next_point.v[0], next_point.v[2]);
-                    T3DVec3 newDir;
-                    t3d_vec3_diff(&newDir, &next_point, &players[i].position);
-                    //debugf("AI NEW DIR LENGTH: %f\n", t3d_vec3_len2(&newDir));
-                    float speed = sqrtf(t3d_vec3_len2(&newDir));
-                    if (speed > 4.8) {  // FIXME AI speed limit ??
-                        speed = 4.8;
-                    }
-                    // Smooth movements and stop
-                    if(speed > 0.15f) {
-                        newDir.v[0] /= speed;
-                        newDir.v[2] /= speed;
-                        players[i].direction = newDir;
-                        float newAngle = -atan2f(players[i].direction.v[0], players[i].direction.v[2]);
-                        players[i].rotation.v[1] = t3d_lerp_angle(players[i].rotation.v[1], newAngle, 0.5f);
-                        players[i].speed = t3d_lerp(players[i].speed, speed * 0.3f, 0.15f);
-                    } else {
-                        players[i].speed *= 0.64f;
-                    }
-                    // Move player
-                    players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
-                    players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
-
-                    // FIXME threshold?
-                    // FIXME after collision resolution?
-                    if (t3d_vec3_distance(&players[i].position, &next_point) < 5.0f) {
-                        players[i].path_pos++;
-                    }
-                } else {
-                    // Find a new path
-                    debugf("AI Player #%d needs a new path\n", i);
-                    for (int j=0; j<PATH_LENGTH; j++) {
-                        players[i].path[j].v[0] = NO_PATH;
-                        players[i].path[j].v[2] = NO_PATH;
-                    }
-                    players[i].path_pos = 0;
-
-                    // FIXME threshold?
-                    if (next->v[0] == NO_PATH || t3d_vec3_distance(&players[i].position, &players[i].target) < 5.0f) {
-                        // TODO Do something at destination?
-                        // Find a new target
-                        int target_idx = rand() % FURNITURES_COUNT;
-                        // FIXME destination cannot be inside an obstacle !! --> find point IN FRONT OF FURNITURE
-                        t3d_vec3_scale(&players[i].target, &furnitures[target_idx].direction, furnitures[target_idx].h/2.0f + players[i].h/2.0f);
-                        t3d_vec3_add(&players[i].target, &players[i].target, &furnitures[target_idx].position);
-                        debugf("now targeting furniture #%d at coords: %f %f\n", target_idx, players[i].target.v[0], players[i].target.v[2]);
-                    }
-
-                    T3DVec3 start;
-                    to_pathmap_coords(&start, &players[i].position);
-                    T3DVec3 target;
-                    to_pathmap_coords(&target, &players[i].target);
-                    cell_t start_node = {(int)start.v[0], (int)start.v[2]};
-                    cell_t target_node = {(int)target.v[0], (int)target.v[2]};
-                    path_t* path = find_path(start_node, target_node);
-                    if (get_path_count(path) > 1) {
-                        //debugf("path points count: %d\n", get_path_count(path));
-                        for (int j=0; j<get_path_count(path); j++) {
-                            if (players[i].path_pos >= PATH_LENGTH-1)   break;
-                            //debugf("getting point #%d\n", j);
-                            cell_t* node = get_path_cell(path, j);
-                            //debugf("add point: %d %d\n", node->x, node->y);
-                            players[i].path[players[i].path_pos].v[0] = node->x;
-                            players[i].path[players[i].path_pos].v[2] = node->y;
-                            players[i].path_pos++;
+                switch(players[i].state) {
+                    case IDLE:
+                    {
+                        if (players[i].idle_delay > 0) {
+                            players[i].idle_delay--;
+                            break;
                         }
-                        players[i].path_pos = 0;
+
+                        // Find a new target and path
+                        debugf("AI Player #%d needs a new path\n", i);
+
+                        // TODO Adjust difficulty
+                        // - by decreasing reaction time
+                        // - by increasing frequency of pathfinder (store fewer waypoints), especially when chasing player?
+
+                        ai_state_t next_state = IDLE;
+                        if (leader() != MAXPLAYERS) {
+                            if (players[i].has_key) {
+                                // We have the key, go to unvisited vault
+                                // FIXME Keep track of visited vaults
+                                int target_idx = rand() % VAULTS_COUNT;
+                                players[i].target_idx = target_idx;
+                                // Go to a point in front of the vault
+                                t3d_vec3_scale(&players[i].target, &vaults[target_idx].direction, vaults[target_idx].h/2.0f + players[i].h/2.0f);
+                                t3d_vec3_add(&players[i].target, &players[i].target, &vaults[target_idx].position);
+                                debugf("Player #%d now targeting vault #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                next_state = MOVING_TO_VAULT;
+                            } else {
+                                // Another player has the key, go after them!
+                                int target_idx = leader();
+                                players[i].target_idx = target_idx;
+                                // FIXME Go to a (REACHABLE) point in front of the player
+                                //t3d_vec3_scale(&players[i].target, &players[target_idx].direction, players[target_idx].h/2.0f + players[i].h/2.0f);
+                                //t3d_vec3_add(&players[i].target, &players[i].target, &players[target_idx].position);
+                                players[i].target.v[0] = players[target_idx].position.v[0];
+                                players[i].target.v[1] = players[target_idx].position.v[1];
+                                players[i].target.v[2] = players[target_idx].position.v[2];
+                                debugf("Player #%d now targeting player #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                next_state = MOVING_TO_PLAYER;
+                            }
+                        } else {
+                            // The key has not been found, go to unvisited furniture
+                            // FIXME Keep track of visited furnitures
+                            int target_idx = rand() % FURNITURES_COUNT;
+                            players[i].target_idx = target_idx;
+                            // Go to a point in front of the furniture
+                            t3d_vec3_scale(&players[i].target, &furnitures[target_idx].direction, furnitures[target_idx].h/2.0f + players[i].h/2.0f);
+                            t3d_vec3_add(&players[i].target, &players[i].target, &furnitures[target_idx].position);
+                            debugf("Player #%d now targeting furniture #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                            next_state = MOVING_TO_FURNITURE;
+                        }
+
+                        update_path(i);
+                        if (has_waypoints(i)) {
+                            reset_idle_delay(i);
+                            players[i].state = next_state;
+                        }
+                        break;
                     }
-                    free_path(path);
+                    case MOVING_TO_FURNITURE:
+                    {
+                        // FIXME Don't get stuck!
+                        // Move towards next waypoint
+                        if (!follow_path(i)) {
+                            // No more waypoint
+                            if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
+                                // We have reached the target: search for key
+                                players[i].state = RUMMAGING;
+                            } else {
+                                // We haven't reached the target, get more waypoints
+                                update_path(i);
+                            }
+                        }
+                        break;
+                    }
+                    case RUMMAGING:
+                    {
+                        rummage(i, players[i].target_idx);
+                        reset_idle_delay(i);
+                        players[i].state = IDLE;
+                        break;
+                    }
+                    case MOVING_TO_PLAYER:
+                    {
+                        // FIXME Don't get stuck!
+                        // Move towards next waypoint
+                        if (!follow_path(i)) {
+                            // No more waypoint
+                            if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
+                                // FIXME should use a smaller waypoints buffer for a moving target
+                                // FIXME should also limit pathfinder to a certain depth for better performances
+                                int target_idx = players[i].target_idx;
+                                if (t3d_vec3_distance(&players[i].position, &players[target_idx].position) < ACTION_DISTANCE_THRESHOLD) {
+                                    // We have reached the target: attack player
+                                    players[i].state = ATTACKING;
+                                } else {
+                                    // TODO Player has moved --> find new position and keep moving
+                                    players[i].target.v[0] = players[target_idx].position.v[0];
+                                    players[i].target.v[1] = players[target_idx].position.v[1];
+                                    players[i].target.v[2] = players[target_idx].position.v[2];
+                                    debugf("Player #%d now chasing player #%d at *new* coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                }
+                            } else {
+                                // We haven't reached the target, get more waypoints
+                                update_path(i);
+                            }
+                        }
+                        break;
+                    }
+                    case ATTACKING:
+                    {
+                        // TODO If key successfully stolen, go to unvisited vault
+                        // FIXME attack(i, players[i].target_idx);
+                        // TODO attacked player should be stunned and get back to IDLE
+                        reset_idle_delay(i);
+                        players[i].state = IDLE;
+                        break;
+                    }
+                    case MOVING_TO_VAULT:
+                    {
+                        // FIXME Don't get stuck!
+                        // Move towards next waypoint
+                        if (!follow_path(i)) {
+                            // No more waypoint
+                            if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
+                                // We have reached the target: attack player
+                                players[i].state = OPENING_VAULT;
+                            } else {
+                                // We haven't reached the target, get more waypoints
+                                update_path(i);
+                            }
+                        }
+                        break;
+                    }
+                    case OPENING_VAULT:
+                    {
+                        open(i, players[i].target_idx);
+                        reset_idle_delay(i);
+                        players[i].state = IDLE;
+                        break;
+                    }
+                    default:
+                    {
+                        reset_idle_delay(i);
+                        players[i].state = IDLE;
+                        break;
+                    }
                 }
             }
         }
@@ -501,6 +743,11 @@ void game_render(float deltatime)
     for (int i=0; i<MAXPLAYERS; i++) {
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_run(players[i].dpl);
+        // Display key
+        if (players[i].has_key && !key.hidden) {
+            t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, players[i].position.v);
+            rspq_block_run(key.dpl);
+        }
     }
 }
 
@@ -528,6 +775,9 @@ void game_cleanup()
         free_uncached(players[i].mat_fp);
     }
     t3d_model_free(players[0].model);
+    rspq_block_free(key.dpl);
+    free_uncached(key.mat_fp);
+    t3d_model_free(key.model);
 }
 
 
