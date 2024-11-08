@@ -10,7 +10,7 @@ filesystem/mallard/video.wav64: build/code/mallard/video.wav
 build/code/mallard/video.wav: assets/mallard/video.mp4
 	@mkdir -p $(dir $@)
 	@echo "    [MP4 to WAV] $@"
-	ffmpeg -y -i "$<" -vn -acodec pcm_s16le -ar 48000 -ac 1 "$@"
+	ffmpeg -y -i "$<" -vn -acodec pcm_s16le -ar 32000 -ac 1 "$@"
 
 filesystem/mallard/video.m1v: assets/mallard/video.mp4
 	@mkdir -p $(dir $@)

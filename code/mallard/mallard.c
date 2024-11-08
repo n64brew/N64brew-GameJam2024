@@ -1,5 +1,4 @@
 #include <libdragon.h>
-#include <time.h>
 #include "../../core.h"
 #include "../../minigame.h"
 
@@ -38,10 +37,12 @@ yuv_blitter_t yuv;
 yuv_fmv_parms_t yuv_fmv_params = {
     .zoom = YUV_ZOOM_NONE};
 
-float start_press_time = 0.0f;
-bool start_button_held = false;
+float start_held_time = 0.0f;
+bool start_held = false;
 
 bool paused = false;
+
+rdpq_font_t *font;
 
 /*==============================
     minigame_init
@@ -49,57 +50,71 @@ bool paused = false;
 ==============================*/
 void minigame_init()
 {
-    // display_init(
-    //     RESOLUTION_288x208,
-    //     // 32-bit display mode is mandatory for video playback.
-    //     DEPTH_32_BPP,
-    //     NUM_DISPLAY,
-    //     GAMMA_NONE,
-    //     // FILTERS_DISABLED disables all VI post-processing to achieve the sharpest
-    //     // possible image. If you'd like to soften the image a little bit, switch to
-    //     // FITLERS_RESAMPLE.
-    //     FILTERS_DISABLED);
+    ///////////////////////////////////////////////////////////
+    //                  Set up Display                       //
+    ///////////////////////////////////////////////////////////
 
-    // // Initialize the RSP queue
-    // rspq_init();
+    display_init(
+        RESOLUTION_288x208,
+        // 32-bit display mode is mandatory for video playback.
+        DEPTH_32_BPP,
+        NUM_DISPLAY,
+        GAMMA_NONE,
+        // FILTERS_DISABLED disables all VI post-processing to achieve the sharpest
+        // possible image. If you'd like to soften the image a little bit, switch to
+        // FITLERS_RESAMPLE.
+        FILTERS_DISABLED);
 
-    // // Initialize the YUV blitter
-    // yuv_init();
+    ///////////////////////////////////////////////////////////
+    //                  Set up Font                          //
+    ///////////////////////////////////////////////////////////
 
-    // // Check if the video is present in the filesystem
-    // FILE *f = fopen("rom:/mallard/video.m1v", "rb");
-    // assertf(f, "Video not found!\n");
-    // fclose(f);
+    font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
+    rdpq_text_register_font(1, font);
 
-    // // Open the video using the mpeg2 module and create a YUV blitter to draw it
-    // video_track = mpeg2_open("rom:/mallard/video.m1v");
-    // yuv = yuv_blitter_new_fmv(
-    //     // Resolution of the video we expect to play.
-    //     // Video needs to have a width divisible by 32 and a height divisible by 16.
-    //     //
-    //     // Here we have a video resolution of 288x160 which is a nice, valid resolution
-    //     // that leaves a margin of 32 pixels on the side - great for making sure
-    //     // CRT TVs with overscan still display the entire frame of your video.
-    //     // The resolution is not an exact 16:9 ratio (16:8.88) but it's close enough that
-    //     // most people won't notice. The lower resolution can also help with performance.
-    //     mpeg2_get_width(video_track),
-    //     mpeg2_get_height(video_track),
-    //     // Set blitter's output area to our entire display
-    //     display_get_width(),
-    //     display_get_height(),
-    //     // Override default FMV parms to not zoom the video.
-    //     // This will leave our desired CRT TV-friendly margin around the video.
-    //     &yuv_fmv_params);
+    ///////////////////////////////////////////////////////////
+    //                  Set up Video                         //
+    ///////////////////////////////////////////////////////////
 
-    // // Engage the fps limiter to ensure proper video pacing.
-    // fps = mpeg2_get_framerate(video_track);
-    // display_set_fps_limit(fps);
+    // Initialize the YUV conversion library.
+    yuv_init();
+
+    // Check if the video is available in the filesystem.
+    FILE *f = fopen("rom:/mallard/video.m1v", "rb");
+    assertf(f, "Video not found!\n");
+    fclose(f);
+
+    // Open the video using the mpeg2 module and create a YUV blitter to draw it
+    video_track = mpeg2_open("rom:/mallard/video.m1v");
+    yuv = yuv_blitter_new_fmv(
+        // Resolution of the video we expect to play.
+        // Video needs to have a width divisible by 32 and a height divisible by 16.
+        //
+        // Here we have a video resolution of 288x160 which is a nice, valid resolution
+        // that leaves a margin of 32 pixels on the side - great for making sure
+        // CRT TVs with overscan still display the entire frame of your video.
+        // The resolution is not an exact 16:9 ratio (16:8.88) but it's close enough that
+        // most people won't notice. The lower resolution can also help with performance.
+        mpeg2_get_width(video_track),
+        mpeg2_get_height(video_track),
+        // Set blitter's output area to our entire display
+        display_get_width(),
+        display_get_height(),
+        // Override default FMV parms to not zoom the video.
+        // This will leave our desired CRT TV-friendly margin around the video.
+        &yuv_fmv_params);
+
+    // Engage the fps limiter to ensure proper video pacing.
+    fps = mpeg2_get_framerate(video_track);
+    display_set_fps_limit(fps);
+
+    ///////////////////////////////////////////////////////////
+    //                  Set up Audio                         //
+    ///////////////////////////////////////////////////////////
 
     // Open the audio track and start playing it in channel 0.
-    // wav64_open(&audio_track, "rom:/mallard/video.wav64");
-    // wav64_play(&audio_track, 0);
-
-    // srand(time(NULL));
+    wav64_open(&audio_track, "rom:/mallard/video.wav64");
+    wav64_play(&audio_track, 0);
 }
 
 /*==============================
@@ -120,86 +135,122 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-    // fprintf(stderr,"%i\n",rand());
+    rdpq_attach(display_get(), NULL);
 
-    joypad_port_t controllerPort = core_get_playercontroller(0);
-    joypad_buttons_t btn = joypad_get_buttons_pressed(controllerPort);
+    //////////////////////////////////////////////////////////////
+    //                  Pause or Resume Video                   //
+    //////////////////////////////////////////////////////////////
 
-    // Pause the video.
-    if (btn.a)
+    if (!paused)
     {
-        fprintf(stderr, "Controller %u: A %u B %u Z %u Start %u\n", controllerPort, btn.a, btn.b, btn.z, btn.start);
+        if (!mpeg2_next_frame(video_track))
+        {
+            minigame_end();
+        }
 
-        // paused = true;
+        // Get the next video frame and feed it into our previously set up blitter.
+        yuv_frame_t frame = mpeg2_get_frame(video_track);
+        yuv_blitter_run(&yuv, &frame);
+    }
+    else
+    {
+        // TODO: Pause the video. Right now it just loops through a few frmes that it has (presumably) buffered.
+    }
+
+    ///////////////////////////////////////////////////////////
+    //                  Render UI - Pause                    //
+    ///////////////////////////////////////////////////////////
+
+    rdpq_set_mode_standard();
+    if (paused)
+        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 30, 30, "Paused");
+
+    ///////////////////////////////////////////////////////////
+    //                  Render UI - Quitting                 //
+    ///////////////////////////////////////////////////////////
+
+    if (start_held)
+    {
+        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, SCREEN_WIDTH - 100, 30, "Quitting in %.2f", 3.0f - start_held_time);
+
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
+        rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 30, 37);
+
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
+        rdpq_fill_rectangle(SCREEN_WIDTH - 100, 43, SCREEN_WIDTH - 30, 45);
+
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
+        rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 128, 45);
+
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
+        rdpq_fill_rectangle(SCREEN_WIDTH - 32, 35, SCREEN_WIDTH - 30, 45);
+
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
+        int width = (int)(50 * (start_held_time / 3.0f));
+        rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 100 + width, 45);
     }
 
     //////////////////////////////////////////////////////////////
-    //                  Play video to display                   //
+    //                  Pause or Resume Audio                   //
     //////////////////////////////////////////////////////////////
 
-    // if (!paused)
-    // {
-    //     if (!mpeg2_next_frame(video_track))
-    //     {
-    //         minigame_end();
-    //         return;
-    //     }
+    // TODO: Pause the audio. Or stop it and get it to start at the same spot.
 
-    //     // Get the next video frame and feed it into our previously set up blitter.
-    //     yuv_frame_t frame = mpeg2_get_frame(video_track);
-    //     rdpq_attach(display_get(), NULL);
-    //     yuv_blitter_run(&yuv, &frame);
-    //     rdpq_detach_show();
-    // }
+    ////////////////////////////////////////////////////////////
+    //                  Handle Joypad Input                   //
+    ////////////////////////////////////////////////////////////
 
-    //////////////////////////////////////////////////////////////
-    // Check if the start button is pressed to end the minigame //
-    //////////////////////////////////////////////////////////////
+    for (size_t i = 0; i < core_get_playercount(); i++)
+    {
+        joypad_port_t controllerPort = core_get_playercontroller(i);
+        joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
+        joypad_buttons_t held = joypad_get_buttons_held(controllerPort);
 
-    // for (size_t i = 0; i < core_get_playercount(); i++)
-    // {
-    //     joypad_port_t controllerPort = core_get_playercontroller(i);
-    //     joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
-    //     joypad_buttons_t held = joypad_get_buttons_held(controllerPort);
+        if (!joypad_is_connected(controllerPort))
+        {
+            continue;
+        }
 
-    //     if (!joypad_is_connected(controllerPort))
-    //     {
-    //         continue;
-    //     }
+        // Exit the game.
+        if (held.start)
+        {
+            if (!start_held)
+            {
+                // Record the time when the button is first pressed
+                start_held = true;
+            }
+            else
+            {
+                start_held_time += deltatime;
+                fprintf(stderr, "Controller %u has held start for %f\n", controllerPort, start_held_time);
 
-    //     // Exit the game.
-    //     if (held.start)
-    //     {
-    //         if (!start_button_held)
-    //         {
-    //             // Record the time when the button is first pressed
-    //             start_button_held = true;
-    //         }
-    //         else
-    //         {
-    //             start_press_time += deltatime;
-    //             printf("Controller %u has held start for %f\n", controllerPort, start_press_time);
+                // If the button is held for more than 3 seconds, end the minigame
+                if (start_held_time > 3.0f)
+                {
+                    minigame_end();
+                }
+            }
+        }
+        else
+        {
+            start_held = false;
+            start_held_time = 0;
+        }
 
-    //             // If the button is held for more than 3 seconds, end the minigame
-    //             if (start_press_time > 3.0f)
-    //             {
-    //                 minigame_end();
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         start_button_held = false;
-    //         start_press_time = 0;
-    //     }
+        // Pause the video.
+        if (pressed.a)
+        {
+            paused = !paused;
+            fprintf(stderr, "Player pressed A. Video is now %s.\n", paused ? "paused" : "unpaused");
+        }
+    }
 
-    //     // Pause the video.
-    //     if (pressed.a)
-    //     {
-    //         fprintf(stderr, "Controller %u has pressed A.\n", controllerPort);
-    //         // paused = true;
-    //     }
-    // }
+    rdpq_detach_show();
 }
 
 /*==============================
@@ -213,4 +264,9 @@ void minigame_cleanup()
     mpeg2_close(video_track);
 
     display_close();
+
+    rdpq_text_unregister_font(1);
+    rdpq_font_free(font);
+
+    fprintf(stderr, "End Cleanup\n");
 }
