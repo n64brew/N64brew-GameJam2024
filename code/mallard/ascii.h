@@ -1,6 +1,7 @@
 #ifndef ASCII_H
 #define ASCII_H
 
-void ascii_art();
+extern const char *strings[];
+extern const int num_strings;
 
 #endif // ASCII_H

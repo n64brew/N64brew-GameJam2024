@@ -1,4 +1,3 @@
-#include <libdragon.h>
 #include "ascii.h"
 
 const char *strings[] = {
@@ -46,45 +45,3 @@ const char *strings[] = {
 };
 
 const int num_strings = sizeof(strings) / sizeof(strings[0]);
-
-void print_ascii_frame(int frame)
-{
-    puts(strings[frame]);
-}
-
-void ascii_art()
-{
-    console_init();
-    console_set_render_mode(RENDER_MANUAL);
-
-    int FRAMES_PER_ASCII_FRAME = 10;
-    int duplicate = 0;
-    int frame = 0;
-
-    while (1)
-    {
-        console_clear();
-        print_ascii_frame(frame);
-        console_render();
-
-        // Adding the duplicates loop doesn't seem to affect how long each ascii frame is displayed.
-
-        if (duplicate == FRAMES_PER_ASCII_FRAME)
-        {
-            if (frame == num_strings - 1)
-            {
-                frame = 0;
-            }
-            else
-            {
-                frame++;
-            }
-        }
-        else
-        {
-            duplicate++;
-        }
-    }
-
-    console_close();
-}

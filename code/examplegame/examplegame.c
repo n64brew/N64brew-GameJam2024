@@ -16,7 +16,7 @@ the game jam.
 #define WIN_DELAY           5.0f
 #define WIN_SHOW_DELAY      2.0f
 
-#define POINTS_TO_WIN       30
+#define POINTS_TO_WIN       150
 #define POINTS_PER_PRESS    6
 
 #define POWERBAR_WIDTH      100

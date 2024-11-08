@@ -21,6 +21,11 @@
         "algorithm": "c",
         "charconv": "c",
         "format": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "cstdint": "c",
+        "strings.h": "c",
+        "sequence1.h": "c",
+        "input.h": "c",
+        "ascii.h": "c"
     }
 }

@@ -1,6 +1,7 @@
 ASSETS_LIST += \
 	filesystem/mallard/video.wav64 \
-	filesystem/mallard/video.m1v
+	filesystem/mallard/video.m1v \
+	filesystem/mallard/libdragon.rgba32.sprite
 
 filesystem/mallard/video.wav64: build/code/mallard/video.wav
 	@mkdir -p $(dir $@)
