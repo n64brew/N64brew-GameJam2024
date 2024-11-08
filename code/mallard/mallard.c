@@ -1,6 +1,8 @@
 #include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
+#include "strings.h" // Include the header file
+#include "ascii.h"   // Include the new header file
 
 #include <stdio.h>
 #include <unistd.h>
@@ -50,6 +52,8 @@ rdpq_font_t *font;
 ==============================*/
 void minigame_init()
 {
+    ascii_art();
+
     ///////////////////////////////////////////////////////////
     //                  Set up Display                       //
     ///////////////////////////////////////////////////////////
