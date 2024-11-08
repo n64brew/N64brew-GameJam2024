@@ -126,8 +126,8 @@ void minigame_init()
     // wav64_open(&audio_track, "rom:/mallard/video.wav64");
     // wav64_play(&audio_track, 0);
 
-    // sequence_1_libdragon = true;
-    sequence_2_ascii = true;
+    sequence_1_libdragon = true;
+    // sequence_2_ascii = true;
 }
 
 /*==============================

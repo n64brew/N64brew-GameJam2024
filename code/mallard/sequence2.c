@@ -2,6 +2,8 @@
 #include "sequence2.h"
 #include "ascii.h"
 
+#define SEQUENCE2_DURATION 1.0f
+
 bool sequence2_initialized = false;
 float sequence2_duration = 0.0f;
 int frame = 0;
@@ -26,7 +28,7 @@ void sequence_2(float deltatime)
 {
     sequence2_duration += deltatime;
 
-    if (sequence2_duration > 3.0f)
+    if (sequence2_duration > SEQUENCE2_DURATION)
     {
         sequence2_cleanup();
         return;

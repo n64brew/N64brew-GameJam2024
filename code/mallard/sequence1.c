@@ -4,6 +4,7 @@
 #define NUM_DISPLAY 3
 #define FONT_TEXT 1
 #define BACKGROUND 0x000000FF
+#define SEQUENCE1_DURATION 1.0f
 
 bool sequence1_initialized = false;
 float sequence1_duration = 0.0f;
@@ -24,7 +25,8 @@ void sequence1_cleanup()
     rdpq_text_unregister_font(FONT_TEXT);
     rdpq_font_free(font);
     sprite_free(libdragon);
-    display_close(); // <----------------- This is the line that causes the crash
+    rspq_wait();
+    display_close();
     sequence1_initialized = false;
     sequence1_duration = 0.0f;
     sequence_1_libdragon = false;
@@ -35,7 +37,7 @@ void sequence_1(float deltatime)
 {
     sequence1_duration += deltatime;
 
-    if (sequence1_duration > 3.0f)
+    if (sequence1_duration > SEQUENCE1_DURATION)
     {
         sequence1_cleanup();
         return;
