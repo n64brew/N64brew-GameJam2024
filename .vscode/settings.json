@@ -9,6 +9,18 @@
         "mallard.h": "c",
         "profile.h": "c",
         "debug.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "*.tcc": "c",
+        "ctime": "c",
+        "limits": "c",
+        "numeric": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "algorithm": "c",
+        "charconv": "c",
+        "format": "c",
+        "unistd.h": "c"
     }
 }

@@ -1,7 +1,7 @@
 #include <libdragon.h>
+#include <time.h>
 #include "../../core.h"
 #include "../../minigame.h"
-#include "profile.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -16,7 +16,7 @@ const MinigameDef minigame_def = {
 // Number of frame back buffers we reserve.
 // These buffers are used to render the video ahead of time.
 // More buffers help ensure smooth video playback at the cost of more memory.
-#define NUM_DISPLAY 8
+#define NUM_DISPLAY 28
 
 // Maximum target audio frequency.
 //
@@ -29,14 +29,19 @@ const MinigameDef minigame_def = {
 // Choosing a resolution above 240p (interlaced) can't be recommended for video playback.
 #define SCREEN_WIDTH 288
 #define SCREEN_HEIGHT 208
-
-// Sound globals
-wav64_t audio_track;
+const resolution_t RESOLUTION_288x208 = {SCREEN_WIDTH, SCREEN_HEIGHT, INTERLACE_OFF};
 
 float fps;
+wav64_t audio_track;
 mpeg2_t *video_track;
 yuv_blitter_t yuv;
-int nframes = 0;
+yuv_fmv_parms_t yuv_fmv_params = {
+    .zoom = YUV_ZOOM_NONE};
+
+float start_press_time = 0.0f;
+bool start_button_held = false;
+
+bool paused = false;
 
 /*==============================
     minigame_init
@@ -44,62 +49,57 @@ int nframes = 0;
 ==============================*/
 void minigame_init()
 {
-    joypad_init();
-    // debug_init_isviewer();
-    // debug_init_usblog();
+    // display_init(
+    //     RESOLUTION_288x208,
+    //     // 32-bit display mode is mandatory for video playback.
+    //     DEPTH_32_BPP,
+    //     NUM_DISPLAY,
+    //     GAMMA_NONE,
+    //     // FILTERS_DISABLED disables all VI post-processing to achieve the sharpest
+    //     // possible image. If you'd like to soften the image a little bit, switch to
+    //     // FITLERS_RESAMPLE.
+    //     FILTERS_DISABLED);
 
-    display_init((resolution_t){
-                     .width = SCREEN_WIDTH,
-                     .height = SCREEN_HEIGHT,
-                     .interlaced = INTERLACE_OFF},
-                 // 32-bit display mode is mandatory for video playback.
-                 DEPTH_32_BPP, NUM_DISPLAY, GAMMA_NONE,
-                 // FILTERS_DISABLED disables all VI post-processing to achieve the sharpest
-                 // possible image. If you'd like to soften the image a little bit, switch to
-                 // FITLERS_RESAMPLE.
-                 FILTERS_DISABLED);
+    // // Initialize the RSP queue
+    // rspq_init();
 
-    dfs_init(DFS_DEFAULT_LOCATION);
-    rdpq_init();
-    profile_init();
-    yuv_init();
+    // // Initialize the YUV blitter
+    // yuv_init();
 
-    audio_init(AUDIO_HZ, 4);
-    // mixer_init(8);
+    // // Check if the video is present in the filesystem
+    // FILE *f = fopen("rom:/mallard/video.m1v", "rb");
+    // assertf(f, "Video not found!\n");
+    // fclose(f);
 
-    // Check if the video is present in the filesystem, so that we can provide
-    // a specific error message.
-    FILE *f = fopen("rom:/mallard/video.m1v", "rb");
-    assertf(f, "Video not found!\n");
-    fclose(f);
+    // // Open the video using the mpeg2 module and create a YUV blitter to draw it
+    // video_track = mpeg2_open("rom:/mallard/video.m1v");
+    // yuv = yuv_blitter_new_fmv(
+    //     // Resolution of the video we expect to play.
+    //     // Video needs to have a width divisible by 32 and a height divisible by 16.
+    //     //
+    //     // Here we have a video resolution of 288x160 which is a nice, valid resolution
+    //     // that leaves a margin of 32 pixels on the side - great for making sure
+    //     // CRT TVs with overscan still display the entire frame of your video.
+    //     // The resolution is not an exact 16:9 ratio (16:8.88) but it's close enough that
+    //     // most people won't notice. The lower resolution can also help with performance.
+    //     mpeg2_get_width(video_track),
+    //     mpeg2_get_height(video_track),
+    //     // Set blitter's output area to our entire display
+    //     display_get_width(),
+    //     display_get_height(),
+    //     // Override default FMV parms to not zoom the video.
+    //     // This will leave our desired CRT TV-friendly margin around the video.
+    //     &yuv_fmv_params);
 
-    // Open the video using the mpeg2 module and create a YUV blitter to draw it.
-    video_track = mpeg2_open("rom:/mallard/video.m1v");
-    yuv = yuv_blitter_new_fmv(
-        // Resolution of the video we expect to play.
-        // Video needs to have a width divisible by 32 and a height divisible by 16.
-        //
-        // Here we have a video resolution of 288x160 which is a nice, valid resolution
-        // that leaves a margin of 32 pixels on the side - great for making sure
-        // CRT TVs with overscan still display the entire frame of your video.
-        // The resolution is not an exact 16:9 ratio (16:8.88) but it's close enough that
-        // most people won't notice. The lower resolution can also help with performance.
-        mpeg2_get_width(video_track), mpeg2_get_height(video_track),
-        // Set blitter's output area to our entire display
-        display_get_width(), display_get_height(),
-        // Override default FMV parms to not zoom the video.
-        // This will leave our desired CRT TV-friendly margin around the video.
-        &(yuv_fmv_parms_t){.zoom = YUV_ZOOM_NONE});
-
-    // Engage the fps limiter to ensure proper video pacing.
-    fps = mpeg2_get_framerate(video_track);
-    display_set_fps_limit(fps);
+    // // Engage the fps limiter to ensure proper video pacing.
+    // fps = mpeg2_get_framerate(video_track);
+    // display_set_fps_limit(fps);
 
     // Open the audio track and start playing it in channel 0.
-    wav64_open(&audio_track, "rom:/mallard/video.wav64");
-    mixer_ch_play(0, &audio_track.wave);
+    // wav64_open(&audio_track, "rom:/mallard/video.wav64");
+    // wav64_play(&audio_track, 0);
 
-    fprintf(stderr, "End Init\n");
+    // srand(time(NULL));
 }
 
 /*==============================
@@ -120,62 +120,86 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-    mixer_throttle(AUDIO_HZ / fps);
+    // fprintf(stderr,"%i\n",rand());
 
-    if (!mpeg2_next_frame(video_track))
+    joypad_port_t controllerPort = core_get_playercontroller(0);
+    joypad_buttons_t btn = joypad_get_buttons_pressed(controllerPort);
+
+    // Pause the video.
+    if (btn.a)
     {
-        fprintf(stderr, "Video Ended\n");
-        return;
+        fprintf(stderr, "Controller %u: A %u B %u Z %u Start %u\n", controllerPort, btn.a, btn.b, btn.z, btn.start);
+
+        // paused = true;
     }
 
-    // This polls the mixer to try and play the next chunk of audio, if available.
-    // We call this function twice during the frame to make sure the audio never stalls.
-    mixer_try_play();
+    //////////////////////////////////////////////////////////////
+    //                  Play video to display                   //
+    //////////////////////////////////////////////////////////////
 
-    rdpq_attach(display_get(), NULL);
+    // if (!paused)
+    // {
+    //     if (!mpeg2_next_frame(video_track))
+    //     {
+    //         minigame_end();
+    //         return;
+    //     }
 
-    PROFILE_START(PS_YUV, 0);
-    // Get the next video frame and feed it into our previously set up blitter.
-    yuv_frame_t frame = mpeg2_get_frame(video_track);
-    yuv_blitter_run(&yuv, &frame);
-    PROFILE_STOP(PS_YUV, 0);
-
-    rdpq_detach_show();
-
-    nframes++;
-
-    mixer_try_play();
-
-    PROFILE_START(PS_SYNC, 0);
-    rspq_wait();
-    PROFILE_STOP(PS_SYNC, 0);
-
-    profile_next_frame();
-    if (nframes % 128 == 0)
-    {
-        profile_dump();
-        profile_init();
-    }
+    //     // Get the next video frame and feed it into our previously set up blitter.
+    //     yuv_frame_t frame = mpeg2_get_frame(video_track);
+    //     rdpq_attach(display_get(), NULL);
+    //     yuv_blitter_run(&yuv, &frame);
+    //     rdpq_detach_show();
+    // }
 
     //////////////////////////////////////////////////////////////
     // Check if the start button is pressed to end the minigame //
     //////////////////////////////////////////////////////////////
 
-    joypad_port_t controllerPort = core_get_playercontroller(0);
+    // for (size_t i = 0; i < core_get_playercount(); i++)
+    // {
+    //     joypad_port_t controllerPort = core_get_playercontroller(i);
+    //     joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
+    //     joypad_buttons_t held = joypad_get_buttons_held(controllerPort);
 
-    if (!joypad_is_connected(controllerPort))
-    {
-        fprintf(stderr, "Controller not connected\n");
-        return;
-    }
+    //     if (!joypad_is_connected(controllerPort))
+    //     {
+    //         continue;
+    //     }
 
-    joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
+    //     // Exit the game.
+    //     if (held.start)
+    //     {
+    //         if (!start_button_held)
+    //         {
+    //             // Record the time when the button is first pressed
+    //             start_button_held = true;
+    //         }
+    //         else
+    //         {
+    //             start_press_time += deltatime;
+    //             printf("Controller %u has held start for %f\n", controllerPort, start_press_time);
 
-    if (btn.start)
-    {
-        fprintf(stderr, "Start button pressed\n");
-        minigame_end();
-    }
+    //             // If the button is held for more than 3 seconds, end the minigame
+    //             if (start_press_time > 3.0f)
+    //             {
+    //                 minigame_end();
+    //             }
+    //         }
+    //     }
+    //     else
+    //     {
+    //         start_button_held = false;
+    //         start_press_time = 0;
+    //     }
+
+    //     // Pause the video.
+    //     if (pressed.a)
+    //     {
+    //         fprintf(stderr, "Controller %u has pressed A.\n", controllerPort);
+    //         // paused = true;
+    //     }
+    // }
 }
 
 /*==============================
@@ -186,7 +210,7 @@ void minigame_cleanup()
 {
     wav64_close(&audio_track);
 
-    display_close();
+    mpeg2_close(video_track);
 
-    fprintf(stderr, "End Cleanup\n");
+    display_close();
 }
