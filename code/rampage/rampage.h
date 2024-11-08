@@ -3,17 +3,20 @@
 
 #include "./player.h"
 #include "./building.h"
+#include "./tank.h"
 
 #define BUILDING_COUNT_X    5
 #define BUILDING_COUNT_Y    4
 
 #define PLAYER_COUNT    4
+#define TANK_COUNT      4
 
 #define SCALE_FIXED_POINT(value)    ((value) * 64.0f)
 
 struct Rampage {
     struct RampagePlayer players[PLAYER_COUNT];
     struct RampageBuilding buildings[BUILDING_COUNT_Y][BUILDING_COUNT_X];
+    struct RampageTank tanks[TANK_COUNT];
 };
 
 void rampage_init(struct Rampage* rampage);

@@ -108,7 +108,7 @@ void rampage_building_render(struct RampageBuilding* building) {
 
     t3d_mat4fp_from_srt(UncachedAddr(&building->mtx), scale.v, rotation.v, (float*)&final_pos);
     t3d_matrix_push(&building->mtx);
-    t3d_model_draw(rampage_assets_get()->building);
+    rspq_block_run(rampage_assets_get()->buildingSplit.mesh);
     t3d_matrix_pop(1);
 }
 

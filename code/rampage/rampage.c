@@ -89,6 +89,10 @@ void minigame_fixedloop(float deltatime) {
             rampage_building_update(&gRampage.buildings[y][x], deltatime);
         }
     }
+
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        rampage_tank_update(&gRampage.tanks[i], deltatime);
+    }
 }
 
 void minigame_loop(float deltatime) {   
@@ -115,10 +119,16 @@ void minigame_loop(float deltatime) {
         rampage_player_render(&gRampage.players[i]);
     }
 
+    rspq_block_run(rampage_assets_get()->buildingSplit.material);
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
         for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
             rampage_building_render(&gRampage.buildings[y][x]);
         }
+    }
+
+    rspq_block_run(rampage_assets_get()->tankSplit.material);
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        rampage_tank_render(&gRampage.tanks[i]);
     }
 
     t3d_model_draw(rampage_assets_get()->ground);
@@ -138,6 +148,13 @@ static struct Vector3 gStartingPositions[] = {
     {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
     {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
     {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
+};
+
+static struct Vector3 gStartingTankPositions[] = {
+    {SCALE_FIXED_POINT(-1.5f), 0.0f, SCALE_FIXED_POINT(-2.0f)},
+    {SCALE_FIXED_POINT(1.5f), 0.0f, SCALE_FIXED_POINT(-2.0f)},
+    {SCALE_FIXED_POINT(-1.5f), 0.0f, SCALE_FIXED_POINT(2.0f)},
+    {SCALE_FIXED_POINT(1.5f), 0.0f, SCALE_FIXED_POINT(2.0f)},
 };
 
 enum PlayerType rampage_player_type(int index) {
@@ -167,11 +184,25 @@ void rampage_init(struct Rampage* rampage) {
             rampage_building_init(&rampage->buildings[y][x], &position);
         }
     }
+
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        rampage_tank_init(&gRampage.tanks[i], &gStartingTankPositions[i]);
+    }
 }
 
 void rampage_destroy(struct Rampage* rampage) {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_destroy(&rampage->players[i]);
+    }
+
+    for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
+        for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
+            rampage_building_destroy(&rampage->buildings[y][x]);
+        }
+    }
+
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        rampage_tank_destroy(&rampage->tanks[i]);
     }
 
     rampage_assets_destroy();
