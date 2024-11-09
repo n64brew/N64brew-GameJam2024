@@ -8,7 +8,7 @@
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
 
-int frame = 0;
+int sequence2_frame = 0;
 
 bool sequence2_initialized = false;
 float sequence2_duration = 0.0f;
@@ -27,7 +27,7 @@ void sequence2_cleanup()
     // Reset the state.
     sequence2_initialized = false;
     sequence2_duration = 0.0f;
-    frame = 0;
+    sequence2_frame = 0;
 
     // End the sequence.
     sequence_2_ascii = false;
@@ -48,11 +48,11 @@ void sequence_2(float deltatime)
         sequence2_init();
 
     console_clear();
-    puts(strings[frame]);
+    puts(strings[sequence2_frame]);
     console_render();
 
-    if (frame == num_strings - 1)
-        frame = frame;
+    if (sequence2_frame == num_strings - 1)
+        sequence2_frame = sequence2_frame;
     else
-        frame++;
+        sequence2_frame++;
 }

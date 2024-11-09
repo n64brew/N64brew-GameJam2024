@@ -2,7 +2,7 @@
 #include "../../core.h"
 #include "../../minigame.h"
 
-void handle_input(float deltatime)
+void process_controller(float deltatime)
 {
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
@@ -15,37 +15,35 @@ void handle_input(float deltatime)
             continue;
         }
 
-        // Exit the game.
+        // Exit the video.
         if (held.b)
         {
-            if (!b_btn_held)
-            {
-                // Record the time when the button is first pressed
-                b_btn_held = true;
-            }
-            else
-            {
-                b_btn_held_duration += deltatime;
-                fprintf(stderr, "Controller %u has held B for %f\n", controllerPort, b_btn_held_duration);
+            sequence3_b_btn_held_duration += deltatime;
+            fprintf(stderr, "Controller %u has held B for %f\n", controllerPort, sequence3_b_btn_held_duration);
 
-                // If the button is held for more than 3 seconds, end the minigame
-                if (b_btn_held_duration > 3.0f)
-                {
-                    minigame_end();
-                }
+            // If the button is held for more than 3 seconds, end the minigame
+            if (sequence3_b_btn_held_duration > 3.0f)
+            {
+                sequence3_video_finished = true;
             }
         }
         else
         {
-            b_btn_held = false;
-            b_btn_held_duration = 0;
+            sequence3_b_btn_held_duration = 0;
         }
 
         // Pause the video.
         if (pressed.a)
         {
-            paused = !paused;
-            fprintf(stderr, "Player pressed A. Video is now %s.\n", paused ? "paused" : "unpaused");
+            sequence3_paused = !sequence3_paused;
+            fprintf(stderr, "Controller %u pressed A. Video is now %s.\n", controllerPort, sequence3_paused ? "paused" : "unpaused");
+        }
+
+        // Rewind the video.
+        if (pressed.z)
+        {
+            sequence3_rewind = true;
+            fprintf(stderr, "Controller %u pressed Z. Video will now rewind.\n", controllerPort);
         }
     }
 }

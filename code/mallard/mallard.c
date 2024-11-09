@@ -1,8 +1,6 @@
 #include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
-#include "strings.h" // Include the header file
-#include "input.h"   // Include the input header file
 
 #include "sequence1.h"
 #include "sequence2.h"
@@ -26,10 +24,6 @@ const MinigameDef minigame_def = {
 // #define AUDIO_HZ 32000.0f
 
 // wav64_t audio_track;
-
-float b_btn_held_duration = 0.0f;
-bool b_btn_held = false;
-bool paused = false;
 
 // rdpq_font_t *font;
 
@@ -120,7 +114,7 @@ void minigame_loop(float deltatime)
 
     // if (b_btn_held)
     // {
-    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, SCREEN_WIDTH - 100, 30, "Quitting in %.2f", 3.0f - b_btn_held_duration);
+    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, SCREEN_WIDTH - 100, 30, "Quitting in %.2f", 3.0f - sequence3_b_btn_held_duration);
 
     //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
@@ -140,7 +134,7 @@ void minigame_loop(float deltatime)
 
     //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     int width = (int)(50 * (b_btn_held_duration / 3.0f));
+    //     int width = (int)(50 * (sequence3_b_btn_held_duration / 3.0f));
     //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 100 + width, 45);
     // }
 

@@ -1,6 +1,7 @@
 #include <libdragon.h>
 #include "../../minigame.h"
 #include "sequence3.h"
+#include "input.h"
 
 // Target screen resolution that we render at.
 // Choosing a resolution above 240p (interlaced) can't be recommended for video playback.
@@ -19,6 +20,11 @@
 float fps;
 mpeg2_t *mp2;
 yuv_blitter_t yuvBlitter;
+yuv_frame_t sequence3_frame;
+
+bool sequence3_paused = false;
+bool sequence3_rewind = false;
+float sequence3_b_btn_held_duration = 0.0f;
 
 bool sequence3_initialized = false;
 bool sequence3_video_finished = false;
@@ -84,6 +90,9 @@ void sequence3_cleanup()
     display_close();
 
     // Reset the state.
+    sequence3_b_btn_held_duration = 0.0f;
+    sequence3_paused = false;
+    sequence3_rewind = false;
     sequence3_initialized = false;
     sequence3_video_finished = false;
 
@@ -94,6 +103,9 @@ void sequence3_cleanup()
 
 void sequence_3(float deltatime)
 {
+
+    process_controller(deltatime);
+
     if (sequence3_video_finished)
     {
         sequence3_cleanup();
@@ -107,27 +119,31 @@ void sequence_3(float deltatime)
     //                  Play Video                              //
     //////////////////////////////////////////////////////////////
 
-    if (!mpeg2_next_frame(mp2))
+    if (sequence3_rewind)
     {
-        // TODO: Use rewind + next_frame to replay the video. (Press Z)
-        // mpeg2_rewind(mp2);
-        // mpeg2_next_frame(mp2);
-
-        sequence3_video_finished = true;
-        return;
+        mpeg2_rewind(mp2);
+        mpeg2_next_frame(mp2);
+        sequence3_frame = mpeg2_get_frame(mp2);
+        sequence3_rewind = false;
     }
 
-    rdpq_attach(display_get(), NULL);
+    if (!sequence3_paused)
+    {
 
-    // if (!paused)
-    // {
-    yuv_frame_t frame = mpeg2_get_frame(mp2);
-    yuv_blitter_run(&yuvBlitter, &frame);
-    // }
-    // else
-    // {
-    //     // TODO: Pause the video. Right now it just loops through a few frmes that it has (presumably) buffered.
-    // }
-
-    rdpq_detach_show();
+        if (!mpeg2_next_frame(mp2))
+        {
+            sequence3_video_finished = true;
+            return;
+        }
+        sequence3_frame = mpeg2_get_frame(mp2);
+        rdpq_attach(display_get(), NULL);
+        yuv_blitter_run(&yuvBlitter, &sequence3_frame);
+        rdpq_detach_show();
+    }
+    else
+    {
+        rdpq_attach(display_get(), NULL);
+        yuv_blitter_run(&yuvBlitter, &sequence3_frame);
+        rdpq_detach_show();
+    }
 }
