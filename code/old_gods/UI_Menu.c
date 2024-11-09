@@ -84,6 +84,7 @@ void UI_Menu_Update(AppData* _appData){
         break;
 
         case GAME_STATE_GAME_OVER_WIN:
+            UI_Menu_RenderGameOverScreen(_appData);
         break;
     }
     
@@ -241,38 +242,25 @@ void UI_Menu_PlayingSetState(BOOL _state){
         countdownTimerLabelEntity->text->isShowing = _state;
 }
 void UI_Menu_RenderMainMenu(AppData* _appData){
-    
-    //switch (gameState)
-   // {
-    //case GAME_STATE_MAIN_MENU:
         UI_Menu_MainMenuSetShowing(TRUE);
         UI_Menu_GameOverUISetShowing(FALSE);
         UI_Menu_PlayingSetState(FALSE);
-        
-
-        GameplayData* gameplayData = &_appData->gameplayData;
-        // gods count reset
-        gameplayData->godEatCount = 0;
-        // countdown Time
-        gameplayData->countdownTimer = COUNT_DOWN_TIME;
 
         // detect start button pressed
         if(_appData->input.keys[A_KEY].pressed == TRUE){
+            GameplayData* gameplayData = &_appData->gameplayData;
+            // gods count reset
+            gameplayData->godEatCount = 0;
+            // countdown Time
+            gameplayData->countdownTimer = COUNT_DOWN_TIME;
 
             gameplayData->gameState = GAME_STATE_PLAYING;
-            //gameState = GAME_STATE_PLAYING;
-            // TODO, fix this
-            /*
-            player1Entity->playerData->score = 0;
-            player2Entity->playerData->score = 0;
-            player3Entity->playerData->score = 0;
-            player4Entity->playerData->score = 0;
-           
-            playersCountUIEntity->playerData->score = 0;
-             */
-            //Game_UpdatePlayerScoreText();
+            
+            // reset the player score
+            for(int i = 0; i < PLAYER_COUNT; ++i){
+                _appData->gameplayData.playerEntities[i]->playerData->score = 0;
+            }
         }
-  
 }
 
 
@@ -298,9 +286,6 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
     
     playersCountUIEntity->text->text = playerCountCharBuff;
     playersCountUIEntity->text->isDirty = TRUE;
-
-    
-
 
     AF_Time* time = &_appData->gameTime;
     // Update countdown timer
