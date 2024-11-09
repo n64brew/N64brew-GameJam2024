@@ -6,10 +6,15 @@
 #define BACKGROUND 0x000000FF
 #define SEQUENCE1_DURATION 1.0f
 
-bool sequence1_initialized = false;
-float sequence1_duration = 0.0f;
+///////////////////////////////////////////////////////////
+//                  Globals                              //
+///////////////////////////////////////////////////////////
+
 rdpq_font_t *font;
 sprite_t *libdragon;
+
+bool sequence1_initialized = false;
+float sequence1_duration = 0.0f;
 
 void sequence1_init()
 {
@@ -27,8 +32,12 @@ void sequence1_cleanup()
     sprite_free(libdragon);
     rspq_wait();
     display_close();
+
+    // Reset the state.
     sequence1_initialized = false;
     sequence1_duration = 0.0f;
+
+    // End the sequence.
     sequence_1_libdragon = false;
     sequence_2_ascii = true;
 }

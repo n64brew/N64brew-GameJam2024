@@ -2,11 +2,16 @@
 #include "sequence2.h"
 #include "ascii.h"
 
-#define SEQUENCE2_DURATION 1.0f
+#define SEQUENCE2_DURATION 3.0f
+
+///////////////////////////////////////////////////////////
+//                  Globals                              //
+///////////////////////////////////////////////////////////
+
+int frame = 0;
 
 bool sequence2_initialized = false;
 float sequence2_duration = 0.0f;
-int frame = 0;
 
 void sequence2_init()
 {
@@ -18,10 +23,15 @@ void sequence2_init()
 void sequence2_cleanup()
 {
     console_close();
+
+    // Reset the state.
     sequence2_initialized = false;
     sequence2_duration = 0.0f;
+    frame = 0;
+
+    // End the sequence.
     sequence_2_ascii = false;
-    sequence_1_libdragon = true;
+    sequence_3_video = true;
 }
 
 void sequence_2(float deltatime)
@@ -42,7 +52,7 @@ void sequence_2(float deltatime)
     console_render();
 
     if (frame == num_strings - 1)
-        frame = 0;
+        frame = frame;
     else
         frame++;
 }
