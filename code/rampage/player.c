@@ -16,9 +16,18 @@
 
 #define PLAYER_MOVE_SPEED   128
 #define PLAYER_ACCEL        5000
+#define PLAYER_AIR_ACCEL    2000
 #define PLAYER_ATTACK_TIME  0.75f
 
+#define PLAYER_JUMP_IMPULSE 250
+#define PLAYER_JUMP_FLOAT   400
+
+#define SLAM_SPEED          -400
+
 #define FIRST_PLAYER_COLLIDER_GROUP 2
+
+#define PLAYER_STUN_TIME    3.0f
+#define PLAYER_STUN_IMPULSE 400
 
 struct dynamic_object_type player_collider = {
     .minkowsi_sum = capsule_minkowski_sum,
@@ -49,6 +58,8 @@ struct dynamic_object_type damage_trigger_collider = {
 struct RampageInput {
     struct Vector2 direction;
     uint32_t do_attack:1;
+    uint32_t do_jump:1;
+    uint32_t do_slam:1;
 };
 
 struct Vector2 max_rotate;
@@ -105,6 +116,8 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
         result.direction.x = clamp_joy_input(inputs.stick_x);
         result.direction.y = -clamp_joy_input(inputs.stick_y);
         result.do_attack = inputs.btn.b;
+        result.do_jump = inputs.btn.a;
+        result.do_slam = inputs.btn.z;
 
         float mag = vector2MagSqr(&result.direction);
         if (mag > 1.0f) {
@@ -163,8 +176,13 @@ void rampage_player_update_damager(struct RampagePlayer* player) {
     vector3Add(&player->dynamic_object.position, &offset, &player->damage_trigger.position);
 }
 
-void rampage_player_damage(void* data) {
+void rampage_player_damage(void* data, int amount) {
+    struct RampagePlayer* player = (struct RampagePlayer*)data;
 
+    if (player->stun_timer <= 0.0f) {
+        player->stun_timer = PLAYER_STUN_TIME;
+        player->dynamic_object.velocity = (struct Vector3){0.0f, PLAYER_STUN_IMPULSE, 0.0f};
+    }
 }
 
 void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, int player_index, enum PlayerType type) {
@@ -213,8 +231,12 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->attacking_target = 0;
     player->current_target = gZeroVec;
     player->attack_timer = 0.0f;
+    player->is_jumping = 0;
+    player->was_jumping = 1;
+    player->is_slamming = 0;
+    player->stun_timer = 0.0f;
 
-    vector2ComplexFromAngle(3.14f / 30.0f, &max_rotate);
+    vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 }
 
 void rampage_player_destroy(struct RampagePlayer* player) {
@@ -224,13 +246,23 @@ void rampage_player_destroy(struct RampagePlayer* player) {
     health_unregister(player->dynamic_object.entity_id);
 }
 
-void rampage_player_update(struct RampagePlayer* player, float delta_time) {
-    struct RampageInput input = rampage_player_get_input(player, delta_time);
-    
-    rampage_player_update_damager(player);
+bool rampage_player_is_grounded(struct RampagePlayer* player) {
+    struct contact* curr = player->dynamic_object.active_contacts;
 
+    while (curr) {
+        if (curr->normal.y > 0.5f) {
+            return true;
+        }
+
+        curr = curr->next;
+    }
+
+    return false;
+}
+
+void rampage_player_handle_ground_movement(struct RampagePlayer* player, struct RampageInput* input, float delta_time) {
     struct Vector2 target_vel;
-    vector2Scale(&input.direction, PLAYER_MOVE_SPEED, &target_vel);
+    vector2Scale(&input->direction, PLAYER_MOVE_SPEED, &target_vel);
 
     struct Vector2 current_forward = {
         player->dynamic_object.rotation.y,
@@ -266,19 +298,73 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         PLAYER_ACCEL * delta_time
     );
 
-    if (player->dynamic_object.position.y < 0.0f) {
-        player->dynamic_object.position.y = 0.0f;
+    if (player->is_slamming) {
+        health_contact_damage(player->dynamic_object.active_contacts, 3);
+        player->is_slamming = false;
+    }
 
-        if (player->dynamic_object.velocity.y < 0.0f) {
-            player->dynamic_object.velocity.y = 0.0f;
-        }
+    if (input->do_jump && !player->was_jumping) {
+        player->dynamic_object.velocity.y = PLAYER_JUMP_IMPULSE;
+        player->is_jumping = 1;
+    }
+}
+
+void rampage_player_handle_air(struct RampagePlayer* player, struct RampageInput* input, float delta_time) {
+    if (player->is_jumping && input->do_jump) {
+        player->dynamic_object.velocity.y += PLAYER_JUMP_FLOAT * delta_time;
+    } else {
+        player->is_jumping = false;
+    }
+
+    if (input->do_slam) {
+        player->is_slamming = true;
+    }
+
+    player->dynamic_object.velocity.x = mathfMoveTowards(
+        player->dynamic_object.velocity.x,
+        input->direction.x * PLAYER_MOVE_SPEED,
+        PLAYER_AIR_ACCEL * delta_time
+    );
+
+    player->dynamic_object.velocity.z = mathfMoveTowards(
+        player->dynamic_object.velocity.z,
+        input->direction.y * PLAYER_MOVE_SPEED,
+        PLAYER_AIR_ACCEL * delta_time
+    );
+}
+
+void rampage_player_handle_slam(struct RampagePlayer* player, struct RampageInput* input, float delta_time) {
+    player->dynamic_object.velocity.x = 0.0f;
+    player->dynamic_object.velocity.y = SLAM_SPEED;
+    player->dynamic_object.velocity.z = 0.0f;
+}
+
+void rampage_player_update(struct RampagePlayer* player, float delta_time) {
+    struct RampageInput input = rampage_player_get_input(player, delta_time);
+
+    bool is_grounded = rampage_player_is_grounded(player);
+    
+    rampage_player_update_damager(player);
+
+    if (player->stun_timer > 0.0f) {
+        player->stun_timer -= delta_time;
+        player->dynamic_object.velocity.x *= 0.5f;
+        player->dynamic_object.velocity.z *= 0.5f;
+        return;
+    } if (is_grounded) {
+        rampage_player_handle_ground_movement(player, &input, delta_time);
+    } else if (player->is_slamming) {
+        rampage_player_handle_slam(player, &input, delta_time);
+    } else {
+        rampage_player_handle_air(player, &input, delta_time);
     }
 
     if (input.do_attack && !player->last_attack_state) {
-        health_contact_damage(player->damage_trigger.active_contacts);
+        health_contact_damage(player->damage_trigger.active_contacts, 1);
     }
 
     player->last_attack_state = input.do_attack;
+    player->was_jumping = input.do_jump;
 }
 
 void rampage_player_render(struct RampagePlayer* player) {

@@ -13,6 +13,7 @@ struct RampageBuilding {
     short hp:3;
     short is_destroyed:1;
     short is_collapsing:1;
+    short height: 3;
     T3DMat4FP mtx;
     struct health health;
     float shake_timer;

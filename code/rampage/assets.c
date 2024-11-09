@@ -33,7 +33,7 @@ void rampage_model_free_split(struct RampageSplitMesh* result) {
 }
 
 void rampage_assets_init() {
-    gRampageAssets.building = t3d_model_load("rom:/rampage/building.t3dm");
+    gRampageAssets.building = t3d_model_load("rom:/rampage/house.t3dm");
     rampage_model_separate_material(gRampageAssets.building, &gRampageAssets.buildingSplit);
 
     gRampageAssets.player = t3d_model_load("rom:/rampage/player.t3dm");
