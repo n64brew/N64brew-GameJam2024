@@ -130,6 +130,7 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     //glOrtho( -10, 10, -10, 10, -10, 10 );
     glFrustum(-near_plane*aspect_ratio, near_plane*aspect_ratio, -near_plane, near_plane, near_plane, far_plane);
 
+    /*
     // Retrieve the projection matrix
     // Define the projection matrix manually
     float projectionMatrix[16] = {
@@ -140,9 +141,10 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     };
 
     // Now you can use projectionMatrix as needed
+    
     for (int i = 0; i < 16; i++) {
         debugf("Projection Matrix [%d]: %f\n", i, projectionMatrix[i]);
-    }
+    }*/
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

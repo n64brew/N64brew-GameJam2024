@@ -78,10 +78,10 @@ void App_Init(AppData* _appData){
     AF_Renderer_Init(ecs); 
     
     Game_Awake(ecs);
-    Scene_Awake(ecs);
+    Scene_Awake(_appData);
 
     Game_Start(ecs);
-    Scene_Start(ecs);
+    Scene_Start(_appData);
 
     // UI
     AF_UI_Init(ecs);

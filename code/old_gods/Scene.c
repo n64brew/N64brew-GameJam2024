@@ -8,7 +8,7 @@
 
 // ECS system
 AF_Entity* camera = NULL;
-AF_Entity* playerEntities[PLAYER_COUNT] = {NULL};  // Initialize all elements to NULL
+//AF_Entity* playerEntities[PLAYER_COUNT] = {NULL};  // Initialize all elements to NULL
 
 // God
 AF_Entity* godEntity = NULL;
@@ -48,13 +48,14 @@ AF_Entity* musicSoundEntity = NULL;
 uint8_t g_currentBucket = 0;
 
 
-void Scene_Awake(AF_ECS* _ecs){
-    Scene_SetupEntities(_ecs);
-    Scene_CreateIU_Entities(_ecs);
+void Scene_Awake(AppData* _appData){
+    Scene_SetupEntities(_appData);
+    Scene_CreateIU_Entities(&_appData->ecs);
 }
 
-void Scene_Start(AF_ECS* _ecs){
-    // TODO
+void Scene_Start(AppData* _appData){
+    // TODO: get rid of global state, current bucket
+    debugf("Scene: Scene Start: TODO: get rid of global state, current bucket");
     Scene_SpawnBucket(&g_currentBucket);
 }
 
@@ -62,7 +63,7 @@ void Scene_Update(AppData* _appData){
     // TODO
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
         
-        PlayerController_UpdateAllPlayerMovements(&_appData->input, *playerEntities, PLAYER_COUNT);
+        PlayerController_UpdateAllPlayerMovements(&_appData->input, *_appData->gameplayData.playerEntities, PLAYER_COUNT);
     }
 
     AF_ECS* ecs = &_appData->ecs;
@@ -71,6 +72,7 @@ void Scene_Update(AppData* _appData){
         AF_Entity* entity = &ecs->entities[i];
         AF_CPlayerData* playerData = entity->playerData;
 
+        
         // TODO: move this out of this function
         //if((AF_Component_GetHas(playerData->enabled) == TRUE) && (AF_Component_GetEnabled(playerData->enabled) == TRUE)){
         if(playerData->isCarrying == TRUE){
@@ -81,6 +83,20 @@ void Scene_Update(AppData* _appData){
             //debugf("entity carrying villager: x: %f y: %f x: %f \n", villagerCarryPos.x, villagerCarryPos.y, villagerCarryPos.z);
         }
     }
+
+    // Update the god count by summing the players scores
+    
+    int updatedTotalScore = 0;
+    assert(_appData->gameplayData.playerEntities != NULL && "Scene_Update: player entities component is null\n");
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        AF_Entity* playerEntity = _appData->gameplayData.playerEntities[i];
+        assert(playerEntity!= NULL && "Scene_Update: player entity component is null\n");
+        AF_CPlayerData* playerData = playerEntity->playerData;
+        assert(playerData != NULL && "Scene_Update: playerdata component is null\n");
+        updatedTotalScore += playerData->score;
+    }
+    _appData->gameplayData.godEatCount = updatedTotalScore;
+    /**/
     
 }
 
@@ -89,9 +105,10 @@ void Scene_Destroy(AF_ECS* _ecs){
 }
 
 // Setup the games entities
-void Scene_SetupEntities(AF_ECS* _ecs){
+void Scene_SetupEntities(AppData* _appData){
     // TODO: store these entities into a special struct just to hold pointers to these elements specifically
-    
+    AF_ECS* _ecs = &_appData->ecs;
+    GameplayData* gameplayData = &_appData->gameplayData;
     int zeroInverseMass = 0.0f;
 	// initialise the ecs system
 	// Create Camera
@@ -139,34 +156,43 @@ void Scene_SetupEntities(AF_ECS* _ecs){
 	// ---------Create Player1------------------
 	Vec3 player1Pos = {2.5, 1.5, -5};
 	Vec3 player1Scale = {1,1,1};
-    playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_CUBE, AABB);
-    playerEntities[0]->mesh->material.textureID = TEXTURE_ID_0;
-    *playerEntities[0]->playerData = AF_CPlayerData_ADD();
+    
+    gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_CUBE, AABB);
+    AF_Entity* player1Entity = gameplayData->playerEntities[0];
+    player1Entity->mesh->material.textureID = TEXTURE_ID_0;
+    *player1Entity->playerData = AF_CPlayerData_ADD();
 
     // Create Player2
 	Vec3 player2Pos = {-2.5, 1.5, -5};
 	Vec3 player2Scale = {1,1,1};
-    playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_CUBE, AABB);
-    playerEntities[1]->mesh->material.textureID = TEXTURE_ID_1;
-	playerEntities[1]->rigidbody->isKinematic = TRUE;
-    *playerEntities[1]->playerData = AF_CPlayerData_ADD();
+    
+    gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_CUBE, AABB);
+    
+    AF_Entity* player2Entity = gameplayData->playerEntities[1];
+    player2Entity->mesh->material.textureID = TEXTURE_ID_1;
+	player2Entity->rigidbody->isKinematic = TRUE;
+    *player2Entity->playerData = AF_CPlayerData_ADD();
 
     // Create Player3
 	Vec3 player3Pos = {-2.5, 1.5, 5};
 	Vec3 player3Scale = {1,1,1};
-    playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_CUBE, AABB);
-    playerEntities[2]->mesh->material.textureID = TEXTURE_ID_2;
-	playerEntities[2]->rigidbody->isKinematic = TRUE;
-    *playerEntities[2]->playerData = AF_CPlayerData_ADD();
+    
+    gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_CUBE, AABB);
+    AF_Entity* player3Entity = gameplayData->playerEntities[2];
+    player3Entity->mesh->material.textureID = TEXTURE_ID_2;
+	player3Entity->rigidbody->isKinematic = TRUE;
+    *player3Entity->playerData = AF_CPlayerData_ADD();
 
     // Create Player4
 	Vec3 player4Pos = {2.5, 1.5, 5};
 	Vec3 player4Scale = {1,1,1};
-    playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_CUBE, AABB);
-	playerEntities[3]->mesh->material.textureID = TEXTURE_ID_3;
-    playerEntities[3]->rigidbody->inverseMass = 1;
-	playerEntities[3]->rigidbody->isKinematic = TRUE;
-    *playerEntities[3]->playerData = AF_CPlayerData_ADD();
+    
+    gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_CUBE, AABB);
+	AF_Entity* player4Entity = gameplayData->playerEntities[3];
+    player4Entity->mesh->material.textureID = TEXTURE_ID_3;
+    player4Entity->rigidbody->inverseMass = 1;
+	player4Entity->rigidbody->isKinematic = TRUE;
+    *player4Entity->playerData = AF_CPlayerData_ADD();
 
 	//=========ENVIRONMENT========
 	// Create Plane
@@ -369,12 +395,10 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         //debugf("Scene_GodTrigger: eat count %i \n", godEatCount);
         // TODO: update godEatCount. observer pattern would be nice right now
         //godEatCount++;
-        debugf("Scene_GodTrigger: TODO: update godEatCount \n");
         
+        // update the player who collided with gods score.
         entity2->playerData->score ++;
         
-        //Scene_UpdatePlayerScoreText(entity2, playerCountCharBuff, &entity2->playerData->score);
-         debugf("Scene_GodTrigger: TODO: update player score text \n");
 
         entity2->playerData->isCarrying = FALSE;
         entity2->playerData->carryingEntity = 0;
@@ -386,10 +410,11 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
 		//AF_Audio_Play(cannonSoundEntity->audioSource, 0.5f, FALSE);
 
         // clear the players from carrying
-        playerEntities[0]->playerData->isCarrying = FALSE;
-        playerEntities[1]->playerData->isCarrying = FALSE;
-        playerEntities[2]->playerData->isCarrying = FALSE;
-        playerEntities[3]->playerData->isCarrying = FALSE;
+        debugf("Scene_OnGoTrigger: tell all the players they are not carrying");
+        //playerEntities[0]->playerData->isCarrying = FALSE;
+        //playerEntities[1]->playerData->isCarrying = FALSE;
+        //playerEntities[2]->playerData->isCarrying = FALSE;
+        //playerEntities[3]->playerData->isCarrying = FALSE;
     }
     
 	
@@ -509,6 +534,7 @@ AF_Entity* GetGodEntity(){
     return godEntity;
 }
 
+/*
 AF_Entity* GetPlayerEntity(uint8_t _index){
     if(_index >= PLAYER_COUNT)
     {
@@ -516,7 +542,7 @@ AF_Entity* GetPlayerEntity(uint8_t _index){
         return NULL;
     }
     return playerEntities[_index];
-}
+}*/
 
 
 AF_Entity* GetBucket1(){

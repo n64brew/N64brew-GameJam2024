@@ -5,12 +5,15 @@ GAMEDATA_H
 Definition gameplay data struct
 ===============================================================================
 */
+//#include "Observer.h"
 #ifndef GAMEPLAYDATA_H
 #define GAMEPLAYDATA_H
 
 // Gameplay variables
 #define COUNT_DOWN_TIME 120
-#define GODS_EAT_COUNT 15
+#define GODS_EAT_COUNT 2
+#define MAX_OBSERVERS 10
+#define PLAYER_COUNT 4
 
 // ===== Game State ====
 enum GAME_STATE{
@@ -32,6 +35,9 @@ typedef struct GameplayData {
     enum GAME_STATE gameState;
     // SpriteSheet
     int currentBucket;
+    AF_Entity* playerEntities[PLAYER_COUNT];
+    //Observer observers[MAX_OBSERVERS];
+    //int observerCount;
 } GameplayData;
 
 // Factor function to initialise the gameplay data
@@ -40,9 +46,26 @@ static inline GameplayData GameplayData_INIT(){
         .godEatCount = GODS_EAT_COUNT,
         .countdownTimer = COUNT_DOWN_TIME,
         .gameState = GAME_STATE_MAIN_MENU,
-        .currentBucket = 0
+        .currentBucket = 0,
+        .playerEntities = {NULL, NULL, NULL, NULL}
     };
     return gameplayData;
 }
 
+/*
+// Function to register an observer
+static inline void GameState_RegisterObserver(GameplayData* gameState, EventCallback callback) {
+    if (gameState->observerCount < MAX_OBSERVERS) {
+        gameState->observers[gameState->observerCount++].callback = callback;
+    }
+}
+
+static inline void GameState_NotifyObservers(GameplayData* gameState, GameEventType event, int playerId, int score) {
+    for (int i = 0; i < gameState->observerCount; i++) {
+        if (gameState->observers[i].callback != NULL) {
+            gameState->observers[i].callback(event, playerId, score, gameState);
+        }
+    }
+}
+*/
 #endif

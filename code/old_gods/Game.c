@@ -48,6 +48,7 @@ Standard start function to kick off init functions
 void Game_Start(AF_ECS* _ecs){
 	assert(_ecs != NULL && "Game_Start: passed null ecs reference \n");
     debugf("Game_Start\n");
+
     //PlayMusic();
 }
 
@@ -99,3 +100,16 @@ void Game_Shutdown(void){
 	debugf("Game_Shutdown");
 
 }
+
+/*
+void OnScoreUpdate(GameEventType event, int playerId, int score, GameplayData* _gameplayData) {
+    if (event == EVENT_SCORE_UPDATED) {
+        _gameplayData->playerScores[playerId] += score;
+        printf("Player %d score updated to %d\n", playerId, _gameplayData->playerScores[playerId]);
+    }
+}
+
+// Register this callback
+void RegisterScoreSystem(GameplayData* _gameplayData) {
+    GameState_RegisterObserver(_gameplayData, OnScoreUpdate);
+}*/

@@ -290,9 +290,10 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
     godEatCountLabelEntity->text->text = godsCountLabelText;
     // our UI text rendering needs to be told an element is dirty so it will rebuild the text paragraph (for performance)
     godEatCountLabelEntity->text->isDirty = TRUE;
+    
     // TODO, figure out how to reference the player entities
-    //sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", (int)player1Entity->playerData->score, (int)player2Entity->playerData->score, (int)player3Entity->playerData->score, (int)player4Entity->playerData->score);
-    sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", 123, 12, 123, 123);
+    sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", (int)gameplayData->playerEntities[0]->playerData->score, (int)gameplayData->playerEntities[1]->playerData->score, (int)gameplayData->playerEntities[2]->playerData->score, (int)gameplayData->playerEntities[3]->playerData->score);
+    //sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", 123, 12, 123, 123);
     //debugf("playerScore %s \n", playerCountCharBuff);
     
     playersCountUIEntity->text->text = playerCountCharBuff;
@@ -323,19 +324,19 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
 
     UI_Menu_MainMenuSetShowing(FALSE);
     UI_Menu_PlayingSetState(FALSE);
-    //UI_Menu_GameOverUISetShowing(TRUE);
+    
 
-    gameOverTitleEntity->text->isShowing = TRUE;
-    gameOverSubTitleEntity->text->isShowing = TRUE;
+    //gameOverTitleEntity->text->isShowing = TRUE;
+    //gameOverSubTitleEntity->text->isShowing = TRUE;
 
     GameplayData* gameplayData = &_appData->gameplayData;
      if(gameplayData->gameState == GAME_STATE_GAME_OVER_WIN){
-        // render game over win title
-        // render game over sub title showing what player won
         gameOverSubTitleEntity->text->text = gameOverSubTitleWinCharBuffer;
      }else if(gameplayData->gameState == GAME_STATE_GAME_OVER_LOSE){
         gameOverSubTitleEntity->text->text = gameOverSubTitleLoseCharBuffer;
      }
+
+     UI_Menu_GameOverUISetShowing(TRUE);
 
     // detect start button pressed
     if(_appData->input.keys[A_KEY].pressed == TRUE){

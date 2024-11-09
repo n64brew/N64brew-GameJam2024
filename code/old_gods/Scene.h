@@ -13,13 +13,13 @@ Contains functions and code relating to the scene including all the entities tha
 #define PLAYER_COUNT 4
 
 // public accessible init function
-void Scene_Awake(AF_ECS* _ecs);
-void Scene_Start(AF_ECS* _ecs);
+void Scene_Awake(AppData* _appData);
+void Scene_Start(AppData* _appData);
 void Scene_Update(AppData* _appData);
 void Scene_Destroy(AF_ECS* _ecs);
 
 // Setup the games entities
-void Scene_SetupEntities(AF_ECS* _ecs);
+void Scene_SetupEntities(AppData* _appData);
 
 
 AF_Entity* GetVillagerEntity();
@@ -38,9 +38,6 @@ AF_Entity* GetBucket1();
 AF_Entity* GetBucket2();
 AF_Entity* GetBucket3();
 AF_Entity* GetBucket4();
-
-// Forward Declare
-void Scene_SetupEntities(AF_ECS* _ecs);
 
 // Triggers
 void Scene_OnTrigger(AF_Collision* _collision);
