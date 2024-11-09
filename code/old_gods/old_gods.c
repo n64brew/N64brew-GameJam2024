@@ -5,11 +5,12 @@
 
 #include "App.h"
 #include "AF_Time.h"
+#include "GameplayData.h"
 
 #define WINDOW_WIDTH 320
 #define WINDOW_HEIGHT 240
 
-AF_Time gameTime;
+AppData g_appData;
 
 const MinigameDef minigame_def = {
     .gamename = "Old Gods",
@@ -27,9 +28,12 @@ const MinigameDef minigame_def = {
 ==============================*/
 void minigame_init()
 {
-    App_Init(WINDOW_WIDTH, WINDOW_HEIGHT, &gameTime);// Initialize lastTime before the loop
+    //Initialise the app data structure to default values or zero before use
+    AppData_Init(&g_appData, WINDOW_WIDTH, WINDOW_HEIGHT);
+    g_appData.gameTime.lastTime = timer_ticks();
 
-    gameTime.lastTime = timer_ticks();
+    // init the other app things
+    App_Init(&g_appData);// Initialize lastTime before the loop
 }
 
 /*==============================
@@ -42,7 +46,8 @@ void minigame_init()
 void minigame_fixedloop(float deltatime)
 {
     // set framerate to target 60fp and call the app update function
-    App_Update_Wrapper(1);
+    //App_Update_Wrapper(1);
+    App_Update(&g_appData);
 }
 
 /*==============================
@@ -52,11 +57,11 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-    gameTime.currentTime = timer_ticks();
-    gameTime.timeSinceLastFrame = deltatime;
-    gameTime.lastTime = gameTime.currentTime;
+    g_appData.gameTime.currentTime = timer_ticks();
+    g_appData.gameTime.timeSinceLastFrame = deltatime;
+    g_appData.gameTime.lastTime = g_appData.gameTime.currentTime;
     // render stuff as fast as possible, interdependent from other code
-    App_Render_Update(&gameTime);
+    App_Render_Update(&g_appData);
 }
 
 /*==============================
@@ -65,5 +70,5 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
-    App_Shutdown();
+    App_Shutdown(&g_appData);
 }

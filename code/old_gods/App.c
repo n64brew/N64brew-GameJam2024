@@ -8,38 +8,58 @@
 #include "AF_UI.h"
 // UFNLoader for n64
 #include "debug.h"
-
-AppData appData;
-AF_ECS ecs;
-AF_Input input;
-
-#define FRAME_BUFFER_SIZE 320*240*2
-display_context_t disp;
-char buffer[FRAME_BUFFER_SIZE];// = {0};
-const BOOL isDebug = TRUE;
-float deltaTime;
-int32_t curTick = 0;
-int32_t curFrame = 0;
+#include "Scene.h"
 
 
-float frameMeasure;
-float updateMeasure;
 
-AF_Time* timerPtr;
+//AF_Time* timerPtr;
+
+//#define FRAME_BUFFER_SIZE 320*240*2
+//display_context_t disp;
+//char buffer[FRAME_BUFFER_SIZE];// = {0};
+
+//const BOOL isDebug = TRUE;
+//float deltaTime;
+//int32_t curTick = 0;
+//int32_t curFrame = 0;
+
+
+//float frameMeasure;
+//float updateMeasure;
+
+
 
 // forward declare
 void App_Update_Wrapper(int _ovfl);
-float App_Measure(void (*func)(int, ...), int num_args, ...);
+//float App_Measure(void (*func)(int, ...), int num_args, ...);
 
-void App_Init(const uint16_t _windowWidth, const uint16_t _windowHeight, AF_Time* _time){
+void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeight){
+    _appData->windowWidth = _windowWidth;
+    _appData->windowHeight = _windowHeight;
+    _appData->gameTime = AF_Time_Init(0);
+    _appData->input = AF_Input_ZERO();
+    // initialise the gameplay data
+    _appData->gameplayData = GameplayData_INIT();
+    _appData->gameplayData.gameState = GAME_STATE_MAIN_MENU;
+    AF_ECS_Init(&_appData->ecs);
+    
+}
+
+void App_Init(AppData* _appData){
+    assert(_appData != NULL && "App_Init: argument is null");
     debug_initialize();
     debug_printf("USB UFNLoader Enabled!\n");
 
     debugf("App_Init\n");
 
-    //Initialise the app data structure
-    appData.windowWidth = _windowWidth;
-    appData.windowHeight = _windowHeight;
+    
+    // Init the ECS system
+    AF_ECS* ecs = &_appData->ecs;
+    assert(ecs != NULL && "App_Init: ecs is null");
+
+    AF_ECS_Init(ecs);
+
+    PrintAppDataSize(_appData);
 
     // Basic  setup for libdragon
     debug_init_isviewer(); // this enables the ISViewer debug channel
@@ -48,61 +68,57 @@ void App_Init(const uint16_t _windowWidth, const uint16_t _windowHeight, AF_Time
     console_set_debug(true);
     timer_init();
     
-    
-
-    // Init the ECS system
-    AF_ECS_Init(&ecs);
-
+    // Now do system specific initialisation
     // Init Input
     AF_Input_Init();
-    AF_Physics_Init(&ecs);
+    AF_Physics_Init(ecs);
     // Init Rendering
     
     // 3D rendering
-    AF_Renderer_Init(&ecs); 
+    AF_Renderer_Init(ecs); 
+    
+    Game_Awake(ecs);
+    Scene_Awake(ecs);
 
-    
-    
-    Game_Awake(&ecs);
-    Game_Start(&ecs);
+    Game_Start(ecs);
+    Scene_Start(ecs);
 
     // UI
-    AF_UI_Init(&ecs);
-
-    if(_time != NULL){
-        timerPtr = _time;
-    }else{
-        debugf("App: Init: recieved a null timer object\n");
-    }
+    AF_UI_Init(ecs);
     
     // set framerate to target 60fp and call the app update function
-    new_timer(TIMER_TICKS(1000000 / 60), TF_CONTINUOUS, App_Update_Wrapper);
+    //new_timer(TIMER_TICKS(1000000 / 60), TF_CONTINUOUS, App_Update_Wrapper);
+
+    // set the game state to player
+   // _appData->gameplayData.gameState = GAME_STATE_PLAYING;
 }
 
+/*
 void App_Update_Wrapper(int _ovfl){
     App_Update(&input, &ecs, timerPtr);
     //App_Measure(App_Update,&input, &ecs);
     //debugf("App_Update_Mesure(%f)\n", updateMeasure);
-}
+}*/
 
 
-void App_Update(AF_Input* _input, AF_ECS* _ecs, AF_Time* _time){
-    
+void App_Update(AppData* _appData){
+    assert(_appData != NULL && "App: App_Update: argument is null");
     //debugf("App_Update\n");
     //print to the screen
     // TODO: get input to retrun a struct of buttons pressed/held
-    AF_Input_Update(_input);
+    AF_Input_Update(&_appData->input);
 
     //AF_Physics_EarlyUpdate(&ecs);
 
     // TODO: pass input and ECS structs to the game to apply game logic
-    Game_Update(_input, _ecs, _time);
-
+    Game_Update(_appData);
+    AF_ECS* ecs = &_appData->ecs;
+    AF_Time* time = &_appData->gameTime;
     // Physics
-    AF_Physics_Update(_ecs, _time->timeSinceLastFrame);
+    AF_Physics_Update(ecs, time->timeSinceLastFrame);
 
     // late update for physics
-    AF_Physics_LateUpdate(_ecs);
+    AF_Physics_LateUpdate(ecs);
 
     // TODO: Pass ECS entities to renderer to render them
     //AF_Renderer_Update(&ecs);
@@ -113,29 +129,33 @@ void App_Update(AF_Input* _input, AF_ECS* _ecs, AF_Time* _time){
     }*/
     
 
-    Game_LateUpdate(_ecs);
+    Game_LateUpdate(ecs);
     //AF_Renderer_Finish(); 
     // update the tick
-    _time->currentTick++;
-    curTick++;
+    time->currentTick++;
+    //curTick++;
 }
 
 // Game Render Loop
 // NOTE: this is indipendent from the other update functions which are operating on CPU Tick
 // This render loop runs from a while loop in sandbox64.c
-void App_Render_Update(AF_Time* _time){
+void App_Render_Update(AppData* _appData){
+    assert(_appData != NULL && "App: App_Render_Update: argument is null");
+    AF_Time* time = &_appData->gameTime;
     // Start Render loop
-    AF_Renderer_Update(&ecs, _time);
+    AF_Renderer_Update(&_appData->ecs, time);
     //if(isDebug == TRUE){
         //AF_Physics_LateRenderUpdate(&ecs);
     //}
     // 
     AF_Renderer_Finish(); 
-    _time->currentFrame++;
+    time->currentFrame++;
 }
 
 
-void App_Shutdown(void){
+void App_Shutdown(AppData* _appData){
+    assert(_appData != NULL && "App: App_Shutdown: argument is null");
+    if(_appData){}
 	debugf("App_Shutdown\n");
     Game_Shutdown();
 	AF_Renderer_Shutdown();
@@ -147,6 +167,7 @@ void App_Shutdown(void){
 }
 
 // TODO: Get this working
+/*
 float App_Measure(void (*func)(int, ...), int num_args, ...)
 {
     uint64_t diff = 0;
@@ -166,4 +187,4 @@ float App_Measure(void (*func)(int, ...), int num_args, ...)
     diff += t1-t0;
     
     return TIMER_MICROS(diff) / 16.0f;
-}
+}*/

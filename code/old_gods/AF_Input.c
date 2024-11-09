@@ -5,6 +5,7 @@ Input contains everything needed to collect input from the system from Libdragon
 =================*/
 #include <libdragon.h>
 #include "AF_Input.h"
+#include "ECS/Entities/AF_ECS.h"
 
 // Key mappings for n64 controller to joypad_button struct, polled from libdragon
 #define A_KEY 0			// A Button		
@@ -119,22 +120,23 @@ void AF_Input_Update(AF_Input* _input){
 		float y4 = inputs4.stick_y / 128.0f;
 
 		//player 1
-		_input->stick_x = x;
-		_input->stick_y = y;	
+		_input->controlSticks[0].x = x;
+		_input->controlSticks[0].y = y;	
 
 		// Player 2
-		_input->stick_x2 = x2;
-		_input->stick_y2 = y2;
+		_input->controlSticks[1].x = x2;
+		_input->controlSticks[1].y= y2;
 
 		// Player 3
-		_input->stick_x3 = x3;
-		_input->stick_y3 = y3;
+		_input->controlSticks[2].x = x3;
+		_input->controlSticks[2].y = y3;
 
 		// Player 4
-		_input->stick_x4 = x4;
-		_input->stick_y4 = y4;
+		_input->controlSticks[3].x = x4;
+		_input->controlSticks[3].y = y4;
 
 
+		
 }
 
 /*

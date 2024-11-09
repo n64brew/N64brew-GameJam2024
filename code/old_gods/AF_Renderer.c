@@ -20,10 +20,11 @@ n64 Libdragon rendering functions
 #include "Skinned.h"
 
 #include "AF_Physics.h"
+#include "Assets.h"
+
 #define DEBUG_RDP 0
 
-
-
+// TODO: move this into the app data, perhaps under "RenderData"
 // Global Camera
 static camera_t camera;
 
@@ -40,30 +41,31 @@ static const GLfloat ambientLight[] = {0.75f, 0.75f, 0.75f, 1.0f};  // R, G, B, 
 
 
 // Textures
-#define TEXTURE_COUNT 10
 static GLuint textures[TEXTURE_COUNT];
-static const char *texture_path[TEXTURE_COUNT] = {
-    "rom:/old_gods/green.sprite",        // 0 player 1
-    "rom:/old_gods/red.sprite",          // 1 player 2
-    "rom:/old_gods/orange.sprite",       // 2 player 3
-    "rom:/old_gods/purple.sprite",       // 3 player 4
-    "rom:/old_gods/grey.sprite",         // 4 god
-    "rom:/old_gods/diamond0.sprite",     // 5 bucket
-    "rom:/old_gods/triangle0.sprite",    // 6 villages
-    "rom:/old_gods/checker.sprite",       // 7 level
-    "rom:/old_gods/dark.sprite",         // 8 level
-    "rom:/old_gods/god.sprite"           // 9 god
-
-};
 static sprite_t *sprites[TEXTURE_COUNT];
 
 // forward declare
-void InfrequenceGLEnable(void);
-void RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt);
+void Renderer_RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt);
 
 
+/*=================
+AF_LoadTexture
 
+Loads a texture from a file and creates an OpenGL texture.
 
+Parameters:
+- _texturePath: Path to the texture image file.
+
+Returns:
+- GLuint as uint32_t: The OpenGL texture ID.
+
+Steps:
+1. Load texture data. Log error if loading fails.
+2. Generate an OpenGL texture ID. Log error if generation fails.
+3. Bind the texture and set GL_NEAREST filtering.
+4. Apply texture data and parameters.
+
+=================*/
 uint32_t AF_LoadTexture(const char* _texturePath){
     sprite_t* textureData;
     textureData = sprite_load(_texturePath);
@@ -220,75 +222,7 @@ void AF_Renderer_Init(AF_ECS* _ecs){
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
 
         glSpriteTextureN64(GL_TEXTURE_2D, sprites[i], &(rdpq_texparms_t){.s.repeats = REPEAT_INFINITE, .t.repeats = REPEAT_INFINITE});
-    }/**/
-
-    
-
-
-    // ===== basic Texture ====
-
-    
-    sprite_t* textureData;
-    textureData = sprite_load("rom:/old_gods/circle0.sprite");
-    if(textureData == NULL)
-    {
-        debugf("Renderer:Init: Failed to load texture\n");
     }
-
-    GLuint textureID = 0;
-    glGenTextures(1, &textureID);
-    debugf("defaultTextureID %li \n", textureID);
-    if(textureID == 0)
-    {
-        debugf("Renderer:Init: Failed to create texture buffer in glGenTextures\n");
-    }
-
-    
-
-
-
-
-
-
-
-    // Check for OpenGL errors
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        debugf("OpenGL Error after glGenTextures: %u\n", (unsigned int)error);
-    }
-
-    // Default texture
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // Bind texture to textureData and set texture parameters
-    glSpriteTextureN64(GL_TEXTURE_2D, textureData, &(rdpq_texparms_t){.s.repeats = REPEAT_INFINITE, .t.repeats = REPEAT_INFINITE});
-
-   
-
-    for(int i = 0; i < _ecs->entitiesCount; ++i){
-        AF_CMesh* mesh = &_ecs->meshes[i];
-        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE)){
-            //_ecs->sprites->spriteData = (void*)textureData;
-            /*
-            if(mesh->material.textureID == 0){
-                mesh->material.textureID = textures[0];
-            }else if(mesh->material.textureID == 1){
-                mesh->material.textureID = textures[1];
-            }
-            else if(mesh->material.textureID == 2){
-                mesh->material.textureID = textures[2];
-            }
-            else if(mesh->material.textureID == 3){
-                mesh->material.textureID = textures[3];
-            }*/
-            //mesh->material.textureID = 0;//(uint32_t)textureID;
-        }
-    }
-
-    // ==========Remaining setup=============
-
 
     
 
@@ -349,7 +283,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
                 glBindTexture(GL_TEXTURE_2D, textures[mesh->material.textureID]);
             //}
             
-            RenderMesh(mesh, &_ecs->transforms[i], _time->currentFrame);
+            Renderer_RenderMesh(mesh, &_ecs->transforms[i], _time->currentFrame);
              AF_CCollider* collider = &_ecs->colliders[i];
             if(collider->showDebug == TRUE){
                
@@ -391,7 +325,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 
 
 // Mesh rendering switching
-void RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt){
+void Renderer_RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt){
     // is debug on
     if(_mesh->showDebug == TRUE){
         //render debug

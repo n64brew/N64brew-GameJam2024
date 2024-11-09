@@ -12,6 +12,7 @@ and helper functions
 #include "AF_Input.h"
 #include "ECS/Entities/AF_Entity.h"
 
-    void UpdatePlayerMovement(Vec2 _stick, AF_Entity* _ecs);
+void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _entities, uint8_t _entityCount);
+void PlayerController_UpdatePlayerMovement(Vec2 _stick, AF_Entity* _entity);
 
 #endif

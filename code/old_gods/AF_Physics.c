@@ -1,6 +1,6 @@
 /*
 ===============================================================================
-PHYSICS Implementation 
+AF_PHYSICS Implementation 
 n64 implementation of AF_Physics
 ===============================================================================
 */
@@ -11,11 +11,8 @@ n64 implementation of AF_Physics
 float collisionColor[4] = {255,0, 0, 1};
 // Physics Init
 void AF_Physics_Init(AF_ECS* _ecs){
+	assert(_ecs != NULL && "Physics: Physics_Init pass in a null reference\n");
 	debugf("Physics_Init: \n");
-	if(_ecs == NULL){
-		debugf("Physics: Physics_Init pass in a null reference to _ecs\n");
-		return;
-	}
 
 	// Setup Broadphase physics
 	/*
@@ -24,7 +21,7 @@ void AF_Physics_Init(AF_ECS* _ecs){
 	AF_Physics_BroadPhase
 	||
 	AF_Physics_NarrowPhase
-	*/
+	
 	for(int i = 0; i < _ecs->entitiesCount; ++i){
 		//AF_Physics_UpdateBroadphaseAABB(&_ecs->colliders[i]);
 	}
@@ -33,7 +30,7 @@ void AF_Physics_Init(AF_ECS* _ecs){
 
 	for(int i = 0; i < _ecs->entitiesCount; ++i){
 		//AF_Physics_NarrowPhase(&_ecs->colliders[i].collision, _ecs->entitiesCount, 1);
-	}
+	}*/
 	
 
 }
@@ -41,10 +38,7 @@ void AF_Physics_Init(AF_ECS* _ecs){
 
 // Physics Update
 void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
-	if(_ecs == NULL){
-		debugf("Physics: Physics_Update pass in a null reference to _ecs\n");
-		return;
-	}
+	assert(_ecs != NULL && "Physics: AF_Physics_Update pass in a null reference\n");
 	// loop through and update all transforms based on their velocities
 	for(int i = 0; i < _ecs->entitiesCount; ++i){
 	AF_C3DRigidbody* rigidbody = &_ecs->rigidbodies[i];
@@ -76,7 +70,7 @@ void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
 }
 
 void AF_Physics_LateUpdate(AF_ECS* _ecs){
-	
+	assert(_ecs != NULL && "Physics: AF_Physics_LateUpdate pass in a null reference\n");
 
 	// Do collision tests
 	AF_Physics_AABB_Test(_ecs);
@@ -87,6 +81,7 @@ void AF_Physics_LateUpdate(AF_ECS* _ecs){
 }
 
 void AF_Physics_LateRenderUpdate(AF_ECS* _ecs){
+	assert(_ecs != NULL && "Physics: AF_Physics_LateRenderUpdate pass in a null reference\n");
 	for(int i = 0; i < _ecs->entitiesCount; ++i){
 		AF_CCollider* collider = &_ecs->colliders[i];
 		if(collider->showDebug != TRUE){

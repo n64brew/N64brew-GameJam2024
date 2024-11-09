@@ -4,18 +4,56 @@ App will handle communication between the main entry point, update, input, rende
 ==================*/
 #ifndef APP_H
 #define APP_H
+#include <libdragon.h>
 #include <stdint.h>
 #include "AF_Input.h"
 #include "ECS/Entities/AF_ECS.h"
 #include "AF_Time.h"
-typedef struct {
+#include "GameplayData.h"
+
+typedef struct AppData {
     uint16_t windowWidth;
     uint16_t windowHeight;
-    
+    AF_Time gameTime;
+    AF_Input input;
+    GameplayData gameplayData;
+    AF_ECS ecs;
 }AppData;
-void App_Init(uint16_t _windowWidth,uint16_t _windowHeight, AF_Time* _time);
-void App_Update(AF_Input* _input, AF_ECS* _ecs, AF_Time* _time);
-void App_Update_Wrapper(int _ovfl);
-void App_Render_Update(AF_Time* _time);
-void App_Shutdown(void);
+
+
+
+
+static inline void PrintAppDataSize(AppData* _appData){
+    size_t windowSize = sizeof(_appData->windowWidth) + sizeof(_appData->windowHeight);
+    size_t gameTimeSize = sizeof(_appData->gameTime);
+    size_t inputSize = sizeof(_appData->input);
+    size_t gameplayDataSize = sizeof(_appData->gameplayData);
+    size_t ecsSize = sizeof(_appData->ecs);
+    size_t totalSize = sizeof(*_appData);
+
+    // Conversion factors to KB and MB
+    double windowSizeKB = windowSize / 1024.0;
+    double gameTimeSizeKB = gameTimeSize / 1024.0;
+    double inputSizeKB = inputSize / 1024.0;
+    double gameplayDataSizeKB = gameplayDataSize / 1024.0;
+    double ecsSizeKB = ecsSize / 1024.0;
+    double totalSizeKB = totalSize / 1024.0;
+
+    double totalSizeMB = totalSize / (1024.0 * 1024.0);
+
+    // Print sizes in bytes, KB, and MB for total
+    debugf("Size of window dimensions: %lu bytes (%.3f KB)\n", (unsigned long)windowSize, windowSizeKB);
+    debugf("Size of gameTime: %lu bytes (%.3f KB)\n", (unsigned long)gameTimeSize, gameTimeSizeKB);
+    debugf("Size of input: %lu bytes (%.3f KB)\n", (unsigned long)inputSize, inputSizeKB);
+    debugf("Size of gameplayData: %lu bytes (%.3f KB)\n", (unsigned long)gameplayDataSize, gameplayDataSizeKB);
+    debugf("Size of ecs: %lu bytes (%.3f KB)\n", (unsigned long)ecsSize, ecsSizeKB);
+    debugf("Total size of AppData: %lu bytes (%.3f KB, %.6f MB)\n", (unsigned long)totalSize, totalSizeKB, totalSizeMB);
+}
+
+void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeight);
+void App_Init(AppData* _appData);
+void App_Update(AppData* _appData);
+//void App_Update_Wrapper(int _ovfl);
+void App_Render_Update(AppData* _appData);
+void App_Shutdown(AppData* _appData);
 #endif

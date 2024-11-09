@@ -9,13 +9,14 @@ Game also will take in ECS Entities and then apply gameplay to those.
 #include "AF_Input.h"
 #include "AF_Time.h"
 #include "AF_Collision.h"
+#include "GameplayData.h"
+#include "App.h"
+
 void Game_Awake(AF_ECS* _ecs);
 void Game_Start(AF_ECS* _ecs);
-void Game_Update(AF_Input* _input, AF_ECS* _ecs, AF_Time* _time);
+void Game_Update(AppData* _appData);
 void Game_LateUpdate(AF_ECS* _ecs);
-
 void Game_OnCollision(AF_Collision* _collision);
-
 void Game_Shutdown(void);
 
 #endif
