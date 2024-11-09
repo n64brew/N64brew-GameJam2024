@@ -8,7 +8,7 @@
 #include "./assets.h"
 #include "./math/mathf.h"
 
-struct Vector2 tankRotateSpeed;
+struct Vector2 tank_rotate_speed;
 
 #define TANK_SPEED  SCALE_FIXED_POINT(0.5f)
 #define TANK_ACCEL  SCALE_FIXED_POINT(0.5f)
@@ -44,7 +44,7 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 
     collision_scene_add(&tank->dynamic_object);
 
-    vector2ComplexFromAngle(1.0f / 30.0f, &tankRotateSpeed);
+    vector2ComplexFromAngle(1.0f / 30.0f, &tank_rotate_speed);
 }
 
 void rampage_tank_destroy(struct RampageTank* tank) {
@@ -52,27 +52,54 @@ void rampage_tank_destroy(struct RampageTank* tank) {
 }
 
 void rampage_tank_update(struct RampageTank* tank, float delta_time) {
-    struct Vector2 target_vel = {
-        TANK_SPEED * tank->dynamic_object.rotation.y,
-        TANK_SPEED * tank->dynamic_object.rotation.x,
+    struct Vector2 offset = (struct Vector2){
+        tank->current_target.x - tank->dynamic_object.position.x,
+        tank->current_target.z - tank->dynamic_object.position.z,
     };
 
-    tank->dynamic_object.velocity.x = mathfMoveTowards(
-        tank->dynamic_object.velocity.x,
-        target_vel.x,
-        TANK_ACCEL * delta_time
-    );
-    tank->dynamic_object.velocity.z = mathfMoveTowards(
-        tank->dynamic_object.velocity.z,
-        target_vel.y,
-        TANK_ACCEL * delta_time
-    );
+    struct Vector2 dir;
+    vector2Normalize(&offset, &dir);
 
-    vector2ComplexMul(
-        &tank->dynamic_object.rotation,
-        &tankRotateSpeed,
-        &tank->dynamic_object.rotation
-    );
+    struct Vector2 current_dir = (struct Vector2){
+        tank->dynamic_object.rotation.y,
+        tank->dynamic_object.rotation.x,
+    };
+
+    if (vector2RotateTowards(
+        &current_dir,
+        &dir,
+        &tank_rotate_speed,
+        &current_dir
+    )) {
+        // float distance = vector2Dot(&offset, &dir);
+        // float speed = dir.x * tank->dynamic_object.velocity.x +
+        //     dir.y * tank->dynamic_object.velocity.z;
+
+        tank->dynamic_object.velocity.x = mathfMoveTowards(
+            tank->dynamic_object.velocity.x,
+            dir.x * TANK_SPEED,
+            TANK_ACCEL * delta_time
+        );
+        tank->dynamic_object.velocity.z = mathfMoveTowards(
+            tank->dynamic_object.velocity.z,
+            dir.y * TANK_SPEED,
+            TANK_ACCEL * delta_time
+        );
+    } else {
+        tank->dynamic_object.velocity.x = mathfMoveTowards(
+            tank->dynamic_object.velocity.x,
+            0.0f,
+            TANK_ACCEL * delta_time
+        );
+        tank->dynamic_object.velocity.z = mathfMoveTowards(
+            tank->dynamic_object.velocity.z,
+            0.0f,
+            TANK_ACCEL * delta_time
+        );
+    }
+
+    tank->dynamic_object.rotation.x = current_dir.y;
+    tank->dynamic_object.rotation.y = current_dir.x;
 }
 
 void rampage_tank_render(struct RampageTank* tank) {
