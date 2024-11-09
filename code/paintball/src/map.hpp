@@ -13,16 +13,22 @@
 #include "./constants.hpp"
 #include "./wrappers.hpp"
 
+#include "../../../core.h"
+
 class MapRenderer
 {
     private:
         RDPQSurface surface;
         U::T3DMat4FP matFP;
         U::RSPQBlock block;
+        U::Sprite sprite;
+
+        U::TLUT tlut;
 
     public:
         MapRenderer();
         void render();
+        void splash(int x, int y, PlyNum player);
 };
 
 #endif // __MAP_H

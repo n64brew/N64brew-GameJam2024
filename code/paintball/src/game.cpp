@@ -43,7 +43,7 @@ void Game::render(float deltaTime) {
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
-    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    t3d_screen_clear_color(RGBA32(255, 255, 255, 255));
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorAmbient);

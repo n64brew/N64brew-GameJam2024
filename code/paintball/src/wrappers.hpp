@@ -53,13 +53,16 @@ class RDPQFont
 class RDPQSurface
 {
     private:
-        surface_t surface;
+        surface_t s;
     public:
         RDPQSurface(tex_format_t format, uint16_t width, uint16_t height) {
-            surface = surface_alloc(format, width, height);
+            s = surface_alloc(format, width, height);
         };
         ~RDPQSurface() {
-            surface_free(&surface);
+            surface_free(&s);
+        };
+        surface_t* get() {
+            return &s;
         };
 };
 
@@ -70,6 +73,9 @@ namespace U {
     using T3DSkeleton = std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)>;
     using T3DModel = std::unique_ptr<T3DModel, decltype(&t3d_model_free)>;
     using Timer = std::unique_ptr<timer_link_t, decltype(&delete_timer)>;
+    using Sprite = std::unique_ptr<sprite_t, decltype(&sprite_free)>;
+    // Would be nice to use a vector, see https://stackoverflow.com/questions/11896960/custom-allocator-in-stdvector
+    using TLUT = std::unique_ptr<uint16_t, decltype(&free_uncached)>;
 }
 
 #endif // __WRAPPERS_H
