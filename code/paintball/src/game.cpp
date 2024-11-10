@@ -55,6 +55,11 @@ void Game::render(float deltaTime) {
     gameplayController.render(deltaTime, viewport);
     gameplayController.render2ndPass();
 
+    heap_stats_t heap_stats;
+    sys_get_heap_stats(&heap_stats);
+
+    debugf("FPS: %.2f, heap Mem: %d KiB\n", display_get_fps(), heap_stats.used/1024);
+
     rdpq_detach_show();
 }
 
