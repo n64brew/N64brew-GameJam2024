@@ -10,6 +10,8 @@ the game jam.
 #include "../../minigame.h"
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
+#include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
 
 #define COUNTDOWN_DELAY 4.0f
 #define FINISH_DELAY 10.0f
@@ -33,9 +35,17 @@ typedef struct
     int playerNumber;
     T3DMat4FP* modelMatFP;
     T3DModel* model;
+//    T3DAnim animAttack;
+//    T3DAnim animWalk;
+    T3DAnim animIdle;
+    T3DSkeleton skelBlend;
+    T3DSkeleton skel;
     rspq_block_t* dplPlayer;
+    T3DVec3 moveDir;
     T3DVec3 playerPos;
     float rotY;
+    float currSpeed;
+    float animBlend;
     bool isAi;
 } player_data;
 
@@ -86,23 +96,89 @@ void player_init(int playerNumber)
 {
     players[playerNumber].playerNumber = playerNumber;
     players[playerNumber].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    players[playerNumber].model = t3d_model_load("rom:/snake3d/snake.t3dm");
+    players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
+    // Instantiate skeletons, they will be used to draw skinned meshes
+    players[playerNumber].skel = t3d_skeleton_create(players[playerNumber].model);
+    players[playerNumber].skelBlend = t3d_skeleton_clone(&players[playerNumber].skel, false);
+//    players[playerNumber].animAttack = t3d_anim_create(players[playerNumber].model, "Snake_Attack");
+//    t3d_anim_set_looping(&players[playerNumber].animAttack, false);
+//    t3d_anim_set_playing(&players[playerNumber].animAttack, false);
+//    t3d_anim_attach(&players[playerNumber].animAttack, &players[playerNumber].skel);
+//    players[playerNumber].animWalk = t3d_anim_create(players[playerNumber].model, "Snake_Walk");
+//    t3d_anim_attach(&players[playerNumber].animWalk, &players[playerNumber].skel);
+    players[playerNumber].animIdle = t3d_anim_create(players[playerNumber].model, "Actor_Idle");
+    t3d_anim_attach(&players[playerNumber].animIdle, &players[playerNumber].skel);
     rspq_block_begin();
         t3d_matrix_push(players[playerNumber].modelMatFP);
         rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        t3d_model_draw(players[playerNumber].model);
+        t3d_model_draw_skinned(players[playerNumber].model, &players[playerNumber].skel);
         t3d_matrix_pop(1);
     players[playerNumber].dplPlayer = rspq_block_end();
+    players[playerNumber].moveDir = (T3DVec3){{0,0,0}};
     players[playerNumber].playerPos = (T3DVec3){{0.0f, 0.0f, 0.0f}};
     players[playerNumber].rotY = 0.0f;
+    players[playerNumber].currSpeed = 0.0f;
+    players[playerNumber].animBlend = 0.0f;
     players[playerNumber].isAi = false;
 }
 
 void player_cleanup(int playerNumber)
 {
     rspq_block_free(players[playerNumber].dplPlayer);
+
+    t3d_skeleton_destroy(&players[playerNumber].skel);
+    t3d_skeleton_destroy(&players[playerNumber].skelBlend);
+
+    t3d_anim_destroy(&players[playerNumber].animIdle);
+//    t3d_anim_destroy(&players[playerNumber].animWalk);
+//    t3d_anim_destroy(&players[playerNumber].animAttack);
+
     t3d_model_free(players[playerNumber].model);
     free_uncached(players[playerNumber].modelMatFP);
+}
+
+void player_fixedloop(float deltaTime, int playerNumber)
+{
+    if(gameStarting)
+    {
+        return;
+    }
+
+    T3DVec3 newDir = {0};
+    float speed = 0.0f;
+
+    joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
+    joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
+
+    newDir.v[0] = (float)joypad.stick_x * 0.05f;
+    newDir.v[2] = -(float)joypad.stick_y * 0.05f;
+    speed = sqrtf(t3d_vec3_len2(&newDir));
+
+    if(speed > 0.15f)
+    {
+        newDir.v[0] /= speed;
+        newDir.v[2] /= speed;
+        players[playerNumber].moveDir = newDir;
+
+        float newAngle = atan2f(-players[playerNumber].moveDir.v[0], players[playerNumber].moveDir.v[2]);
+        players[playerNumber].rotY = t3d_lerp_angle(players[playerNumber].rotY, newAngle, 0.5f);
+        players[playerNumber].currSpeed = t3d_lerp(players[playerNumber].currSpeed, speed * 0.3f, 0.15f);
+    }
+    else
+    {
+        players[playerNumber].currSpeed *= 0.64f;
+    }
+    
+    // move the player
+    players[playerNumber].playerPos.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
+    players[playerNumber].playerPos.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
+    // and limit movement inside bounding box
+    const float BOX_SIZE = 140.0f;
+    if(players[playerNumber].playerPos.v[0] < -BOX_SIZE)players[playerNumber].playerPos.v[0] = -BOX_SIZE;
+    if(players[playerNumber].playerPos.v[0] > BOX_SIZE)players[playerNumber].playerPos.v[0] = BOX_SIZE;
+    if(players[playerNumber].playerPos.v[2] < -BOX_SIZE)players[playerNumber].playerPos.v[2] = -BOX_SIZE;
+    if(players[playerNumber].playerPos.v[2] > BOX_SIZE)players[playerNumber].playerPos.v[2] = BOX_SIZE;
+
 }
 
 /*==============================
@@ -123,26 +199,22 @@ void player_loop(float deltaTime, int playerNumber)
 
     if(btn.start) minigame_end();
 
+    t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
+    t3d_anim_set_speed(&players[playerNumber].animIdle, 1.0f);
+//    t3d_anim_set_speed(&players[playerNumber].animWalk, players[playerNumber].animBlend + 0.15f);
+//    t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
+
+    t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
+
     if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
 
+    t3d_skeleton_update(&players[playerNumber].skel);
+    //update matrix
     t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
-        (float[3]){0.0f, 0.0f, 0},
+        (float[3]){0.0f, players[playerNumber].rotY, 0},
         players[playerNumber].playerPos.v
         );
-
-    //update matrix
-
-    // move camera with stick test
-
-    // stick left
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == -1) players[playerNumber].playerPos.v[0] += 1.0f;
-    // stick right
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_X) == 1) players[playerNumber].playerPos.v[0] -= 1.0f;
-    // stick up
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == 1) players[playerNumber].playerPos.v[2] += 1.0f;
-    // stick down
-    if(joypad_get_axis_held(controllerPort, JOYPAD_AXIS_STICK_Y) == -1) players[playerNumber].playerPos.v[2] -= 1.0f;
 
     // rumble pak test code
     if(joypad_get_rumble_supported(controllerPort) && btn.a)
@@ -174,7 +246,7 @@ void minigame_init()
     gameEnding = false;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS_DEDITHER);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -238,6 +310,12 @@ void minigame_init()
 
 void minigame_fixedloop(float deltatime)
 {
+    // update the player entities
+    for(int i = 0; i < core_get_playercount(); i++)
+    {
+        player_fixedloop(deltatime, i);
+    }
+
     if(gameStarting)
     {
         countdownTimer -= deltatime;
@@ -316,6 +394,7 @@ void minigame_loop(float deltatime)
     if(gameStarting)
     {
         rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
+        textparms.disable_aa_fix = true;
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 100, "Starting in %i...", (int)countdownTimer);
     }
     
