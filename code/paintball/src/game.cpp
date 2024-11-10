@@ -27,7 +27,7 @@ Game::~Game() {
 
 void Game::render(float deltaTime) {
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
-    uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
+    uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
     T3DVec3 camPos = (T3DVec3){{0, 125.0f, 100.0f}};
     T3DVec3 camTarget = (T3DVec3){{0, 0, 40}};

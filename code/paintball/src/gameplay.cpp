@@ -98,7 +98,7 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
 
             // Animation
             t3d_anim_set_playing(otherData.animWalk.get(), true);
-            t3d_anim_set_speed(otherData.animWalk.get(), t3d_vec3_len(velocityTarget) / SpeedLimit);
+            t3d_anim_set_speed(otherData.animWalk.get(), 2.f * t3d_vec3_len(velocityTarget) / SpeedLimit);
         }
 
         T3DVec3 posDiff = {0};
