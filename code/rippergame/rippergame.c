@@ -122,6 +122,12 @@ void player_init(int playerNumber)
     players[playerNumber].isAi = false;
 }
 
+/*==============================
+    player_cleanup
+    The player cleanup function, frees and unloads
+    anything that was allocated during the game
+==============================*/
+
 void player_cleanup(int playerNumber)
 {
     rspq_block_free(players[playerNumber].dplPlayer);
@@ -136,6 +142,11 @@ void player_cleanup(int playerNumber)
     t3d_model_free(players[playerNumber].model);
     free_uncached(players[playerNumber].modelMatFP);
 }
+
+/*==============================
+    player_fixedloop
+    Updates players at the exact tickrate of 30 tps
+==============================*/
 
 void player_fixedloop(float deltaTime, int playerNumber)
 {
@@ -183,9 +194,10 @@ void player_fixedloop(float deltaTime, int playerNumber)
 
 /*==============================
     player_loop
-    The scans player controllers and updates player entities
-    accordingly
+    Updates players in any way that is not required to be
+    on a fixed timebase
 ==============================*/
+
 void player_loop(float deltaTime, int playerNumber)
 {
     joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
@@ -264,7 +276,7 @@ void minigame_init()
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0,0,-10});
 
     // set camera position and target vectors
-    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
+    camPos = (T3DVec3){{0, 175.0f, 100.0f}};
     camTarget = (T3DVec3){{0, 0, 40}};
 
     // set up a vector for the directional light
