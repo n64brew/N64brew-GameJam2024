@@ -44,7 +44,7 @@ void BulletController::render(float deltaTime) {
             T3DVec3 {0.2f, 0.2f, 0.2f},
             // TODO: add some random rotation
             T3DVec3 {0.0f, 0.0f, 0.0f},
-            T3DVec3 {currentPos.v[0], BulletHeight, currentPos.v[2]}
+            T3DVec3 {currentPos.v[0], currentPos.v[1], currentPos.v[2]}
         );
 
         if (bullet.velocity.v[0] != 0 || bullet.velocity.v[1] != 0 || bullet.velocity.v[2] != 0) {
@@ -95,13 +95,17 @@ bool BulletController::applyDamage(PlayerGameplayData &gameplayData, PlyNum team
 void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
     bullet.prevPos = bullet.pos;
 
-    // TODO: add some gravity
+    T3DVec3 velocityDiff = {0};
+    t3d_vec3_scale(velocityDiff, T3DVec3 {0, -100, 0}, deltaTime);
+    t3d_vec3_add(bullet.velocity, bullet.velocity, velocityDiff);
+
     T3DVec3 posDiff = {0};
     t3d_vec3_scale(posDiff, bullet.velocity, deltaTime);
     t3d_vec3_add(bullet.pos, bullet.pos, posDiff);
 
-    if (bullet.pos.v[0] > 200.f || bullet.pos.v[0] < -200.f ||
-        bullet.pos.v[2] > 200.f || bullet.pos.v[2] < -200.f) {
+    if (bullet.pos.v[0] > 1000.f || bullet.pos.v[0] < -1000.f ||
+        bullet.pos.v[2] > 1000.f || bullet.pos.v[2] < -1000.f ||
+        bullet.pos.v[1] < 0.f) {
         killBullet(bullet);
     }
 }
@@ -133,7 +137,11 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
         int i = 0;
         for (auto& player : gameplayData)
         {
-            if (t3d_vec3_distance2(player.pos, bullet.pos) < PlayerRadius * PlayerRadius) {
+            auto colliderPosition = T3DVec3{player.pos.v[0], player.pos.v[1] + PlayerRadius, player.pos.v[2]};
+            auto colliderPosition2 = T3DVec3{player.pos.v[0], player.pos.v[1] + 2*PlayerRadius, player.pos.v[2]};
+
+            if (t3d_vec3_distance2(colliderPosition, bullet.pos) < PlayerRadius * PlayerRadius ||
+                t3d_vec3_distance2(colliderPosition2, bullet.pos) < PlayerRadius * PlayerRadius) {
                 playerHitStatus[i] = applyDamage(player, bullet.team);
                 killBullet(bullet);
             }

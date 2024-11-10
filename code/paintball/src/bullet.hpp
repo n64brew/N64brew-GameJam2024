@@ -20,7 +20,11 @@
 #include "./player.hpp"
 
 constexpr float BulletVelocity = 500;
-constexpr float BulletHeight = 15;
+constexpr float BulletHeight = 18.f;
+constexpr int BulletLimit = 100;
+constexpr float PlayerRadius = 8;
+constexpr int MaxHealth = 100;
+constexpr int Damage = 10;
 
 class Bullet
 {

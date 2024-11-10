@@ -53,7 +53,7 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
 
             T3DVec3 newAccel = {0};
             // a = F/m
-            t3d_vec3_scale(newAccel, force, invMass);
+            t3d_vec3_scale(newAccel, force, PlayerInvMass);
             t3d_vec3_add(newAccel, otherData.accel, newAccel);
 
             T3DVec3 velocityTarget = {0};
@@ -76,7 +76,7 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
 
             T3DVec3 newAccel = {0};
             // a = F/m
-            t3d_vec3_scale(newAccel, force, invMass);
+            t3d_vec3_scale(newAccel, force, PlayerInvMass);
             t3d_vec3_add(newAccel, otherData.accel, newAccel);
 
             T3DVec3 velocityTarget = {0};
@@ -119,19 +119,21 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) 
 
         if (pressed.start) minigame_end();
 
+        auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
+
         // Fire button
         if (pressed.c_up || pressed.d_up) {
-            bulletController.fireBullet(player.pos, (T3DVec3){0, 0, -BulletVelocity}, player.team);
+            bulletController.fireBullet(position, (T3DVec3){0, 0, -BulletVelocity}, player.team);
             // Max firing rate is 1 bullet per 2 frames & can't fire more than one bullet
             return;
         } else if (pressed.c_down || pressed.d_down) {
-            bulletController.fireBullet(player.pos, (T3DVec3){0, 0, BulletVelocity}, player.team);
+            bulletController.fireBullet(position, (T3DVec3){0, 0, BulletVelocity}, player.team);
             return;
         } else if (pressed.c_left || pressed.d_left) {
-            bulletController.fireBullet(player.pos, (T3DVec3){-BulletVelocity, 0, 0}, player.team);
+            bulletController.fireBullet(position, (T3DVec3){-BulletVelocity, 0, 0}, player.team);
             return;
         } else if (pressed.c_right || pressed.d_right) {
-            bulletController.fireBullet(player.pos, (T3DVec3){BulletVelocity, 0, 0}, player.team);
+            bulletController.fireBullet(position, (T3DVec3){BulletVelocity, 0, 0}, player.team);
             return;
         }
     }

@@ -15,6 +15,9 @@
 
 #include "../../../core.h"
 
+constexpr int MapWidth = 1024;
+constexpr int MapHeight = 1024;
+
 class MapRenderer
 {
     private:
