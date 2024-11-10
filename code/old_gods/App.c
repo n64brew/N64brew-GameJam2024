@@ -67,6 +67,10 @@ void App_Init(AppData* _appData){
     debug_init_usblog();
     console_set_debug(true);
     timer_init();
+
+    // Tiny 3d stuff but
+    asset_init_compression(2);  // if we are loading assets that have level 2 compression we need this
+    dfs_init(DFS_DEFAULT_LOCATION);
     
     // Now do system specific initialisation
     // Init Input
