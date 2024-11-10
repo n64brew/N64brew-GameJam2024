@@ -43,6 +43,7 @@ MapRenderer::MapRenderer() :
 
     splash(16, 16, PLAYER_1);
     splash(20, 20, PLAYER_2);
+    splash(25, 25, PLAYER_3);
 }
 
 void MapRenderer::render() {

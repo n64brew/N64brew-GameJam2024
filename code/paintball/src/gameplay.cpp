@@ -3,7 +3,7 @@
 GameplayController::GameplayController() :
     timer({ nullptr, delete_timer }),
     model({
-        t3d_model_load("rom:/paintball/Bat.t3dm"),
+        t3d_model_load("rom:/paintball/char.t3dm"),
         t3d_model_free
     }),
     gameFinished(false)
@@ -44,7 +44,9 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
         T3DVec3 force = {0};
         t3d_vec3_scale(force, direction, strength);
 
+        // TODO: move into static functions?
         if (strength < 10.0f) {
+            // Physics
             T3DVec3 force = otherData.velocity;
             t3d_vec3_norm(force);
             t3d_vec3_scale(force, force, -ForceLimit);
@@ -66,7 +68,10 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
                 otherData.velocity = velocityTarget;
             }
 
+            // Animation
+            t3d_anim_set_playing(otherData.animWalk.get(), false);
         } else  {
+            // Physics
             otherData.direction = t3d_lerp_angle(otherData.direction, -atan2f(direction.v[0], direction.v[2]), 0.5f);
 
             T3DVec3 newAccel = {0};
@@ -90,6 +95,10 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
             }
             otherData.accel = newAccel;
             otherData.velocity = velocityTarget;
+
+            // Animation
+            t3d_anim_set_playing(otherData.animWalk.get(), true);
+            t3d_anim_set_speed(otherData.animWalk.get(), t3d_vec3_len(velocityTarget) / SpeedLimit);
         }
 
         T3DVec3 posDiff = {0};
@@ -98,6 +107,9 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
         t3d_vec3_add(gameplay.pos, gameplay.pos, posDiff);
 
         otherData.accel = {0};
+    } else {
+        // AI
+        t3d_anim_set_playing(otherData.animWalk.get(), false);
     }
 }
 
@@ -119,7 +131,7 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) 
     }
 }
 
-void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport)
+void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime)
 {
     double interpolate = core_get_subtick();
     T3DVec3 currentPos {0};
@@ -135,15 +147,17 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
     assertf(playerOther.matFP.get(), "Player %lu matrix is null", id);
     assertf(playerOther.block.get(), "Player %lu block is null", id);
 
+    t3d_anim_update(playerOther.animWalk.get(), deltaTime);
+    t3d_skeleton_update(playerOther.skel.get());
+
     t3d_mat4fp_from_srt_euler(
         playerOther.matFP.get(),
-        (float[3]){0.2f, 0.2f, 0.2f},
+        (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, playerOther.direction, 0},
         currentPos.v
     );
 
     rdpq_set_prim_color(colors[playerGameplay.team]);
-
     rspq_block_run(playerOther.block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
@@ -186,13 +200,11 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport)
         auto& playerGameplay = playerGameplayData[i];
 
         handleActions(playerGameplay, i);
-        renderPlayer(playerGameplay, playerOther, i, viewport);
+        renderPlayer(playerGameplay, playerOther, i, viewport, deltaTime);
 
         i++;
     }
     bulletController.render(deltaTime);
-
-    debugf("FPS   : %.2f\n", display_get_fps());
 }
 
 void GameplayController::render2ndPass()

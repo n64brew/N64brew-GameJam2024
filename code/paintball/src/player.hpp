@@ -42,6 +42,9 @@ class PlayerOtherData
         // TODO: this wrapper is currently heap allocated
         U::T3DSkeleton skel;
 
+        U::T3DAnim animWalk;
+
+
         T3DVec3 screenPos;
 };
 

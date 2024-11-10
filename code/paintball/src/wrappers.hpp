@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
 
 class Display
 {
@@ -71,6 +72,7 @@ namespace U {
     using RSPQBlock = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>;
     using T3DMat4FP = std::unique_ptr<T3DMat4FP, decltype(&free_uncached)>;
     using T3DSkeleton = std::unique_ptr<T3DSkeleton, decltype(&t3d_skeleton_destroy)>;
+    using T3DAnim = std::unique_ptr<T3DAnim, decltype(&t3d_anim_destroy)>;
     using T3DModel = std::unique_ptr<T3DModel, decltype(&t3d_model_free)>;
     using Timer = std::unique_ptr<timer_link_t, decltype(&delete_timer)>;
     using Sprite = std::unique_ptr<sprite_t, decltype(&sprite_free)>;
