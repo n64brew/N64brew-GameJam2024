@@ -94,6 +94,13 @@ void debugInfoDraw(float deltaTime)
 ==============================*/
 void player_init(int playerNumber)
 {
+    const color_t colours[] = {
+    PLAYERCOLOR_1,
+    PLAYERCOLOR_2,
+    PLAYERCOLOR_3,
+    PLAYERCOLOR_4,
+    };
+
     players[playerNumber].playerNumber = playerNumber;
     players[playerNumber].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
@@ -110,7 +117,7 @@ void player_init(int playerNumber)
     t3d_anim_attach(&players[playerNumber].animIdle, &players[playerNumber].skel);
     rspq_block_begin();
         t3d_matrix_push(players[playerNumber].modelMatFP);
-        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        rdpq_set_prim_color(colours[playerNumber]);
         t3d_model_draw_skinned(players[playerNumber].model, &players[playerNumber].skel);
         t3d_matrix_pop(1);
     players[playerNumber].dplPlayer = rspq_block_end();
