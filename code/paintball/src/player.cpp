@@ -18,6 +18,7 @@ PlayerOtherData::PlayerOtherData(T3DModel *model) :
 
         rspq_block_begin();
             t3d_matrix_push(matFP.get());
+            rdpq_mode_zbuf(true, true);
             t3d_model_draw_skinned(model, skel.get());
             t3d_matrix_pop(1);
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
