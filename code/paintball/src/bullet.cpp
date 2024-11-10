@@ -10,7 +10,7 @@ Bullet::Bullet() :
 BulletController::BulletController() :
     newBulletCount(0),
     model({
-        t3d_model_load("rom:/paintball/Bat.t3dm"),
+        t3d_model_load("rom:/paintball/bullet.t3dm"),
         t3d_model_free
     }),
     block({nullptr, rspq_block_free}) {
@@ -41,10 +41,10 @@ void BulletController::render(float deltaTime) {
 
         t3d_mat4fp_from_srt_euler(
             bullet.matFP.get(),
-            (float[3]){0.1f, 0.1f, 0.1f},
-            /// TODO: add some random rotation & size
-            (float[3]){0.0f, 0.0f, 0.0f},
-            currentPos.v
+            T3DVec3 {0.2f, 0.2f, 0.2f},
+            // TODO: add some random rotation
+            T3DVec3 {0.0f, 0.0f, 0.0f},
+            T3DVec3 {currentPos.v[0], BulletHeight, currentPos.v[2]}
         );
 
         if (bullet.velocity.v[0] != 0 || bullet.velocity.v[1] != 0 || bullet.velocity.v[2] != 0) {

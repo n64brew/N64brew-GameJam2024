@@ -116,18 +116,24 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
 void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) {
     if (id < core_get_playercount()) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
+
+        if (pressed.start) minigame_end();
+
         // Fire button
         if (pressed.c_up || pressed.d_up) {
             bulletController.fireBullet(player.pos, (T3DVec3){0, 0, -BulletVelocity}, player.team);
+            // Max firing rate is 1 bullet per 2 frames & can't fire more than one bullet
+            return;
         } else if (pressed.c_down || pressed.d_down) {
             bulletController.fireBullet(player.pos, (T3DVec3){0, 0, BulletVelocity}, player.team);
+            return;
         } else if (pressed.c_left || pressed.d_left) {
             bulletController.fireBullet(player.pos, (T3DVec3){-BulletVelocity, 0, 0}, player.team);
+            return;
         } else if (pressed.c_right || pressed.d_right) {
             bulletController.fireBullet(player.pos, (T3DVec3){BulletVelocity, 0, 0}, player.team);
+            return;
         }
-
-        if (pressed.start) minigame_end();
     }
 }
 

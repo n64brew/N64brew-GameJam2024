@@ -19,6 +19,9 @@
 #include "./constants.hpp"
 #include "./player.hpp"
 
+constexpr float BulletVelocity = 500;
+constexpr float BulletHeight = 15;
+
 class Bullet
 {
     public:
