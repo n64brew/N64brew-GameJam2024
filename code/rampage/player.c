@@ -214,13 +214,15 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->damage_trigger.is_trigger = true;
     player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
 
+    player->skeleton = t3d_skeleton_create(rampage_assets_get()->player);
+
     collision_scene_add(&player->damage_trigger);
 
     player->type = type;
 
     rspq_block_begin();
         t3d_matrix_push(&player->mtx);
-        t3d_model_draw(rampage_assets_get()->player);
+        t3d_model_draw_skinned(rampage_assets_get()->player, &player->skeleton);
         t3d_matrix_pop(1);
     player->render_block = rspq_block_end();
 
@@ -241,6 +243,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
 
 void rampage_player_destroy(struct RampagePlayer* player) {
     rspq_block_free(player->render_block);
+    t3d_skeleton_destroy(&player->skeleton);
     collision_scene_remove(&player->dynamic_object);
     collision_scene_remove(&player->damage_trigger);
     health_unregister(player->dynamic_object.entity_id);
@@ -372,6 +375,9 @@ void rampage_player_render(struct RampagePlayer* player) {
     quatAxisComplex(&gUp, &player->dynamic_object.rotation, &quat);
     T3DVec3 scale = {{1.0f, 1.0f, 1.0f}};
 
+    // TODO sync point
+
+    t3d_skeleton_update(&player->skeleton);
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);
     rspq_block_run(player->render_block);
 }

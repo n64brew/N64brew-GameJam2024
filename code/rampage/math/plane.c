@@ -2,6 +2,9 @@
 #include "mathf.h"
 #include <math.h>
 
+#include <assert.h>
+#include <stdio.h>
+
 void planeInitWithNormalAndPoint(struct Plane* plane, struct Vector3* normal, struct Vector3* point) {
     plane->normal = *normal;
     plane->d = -vector3Dot(normal, point);
@@ -84,8 +87,16 @@ void calculateBarycentricCoords(struct Vector3* a, struct Vector3* b, struct Vec
     output->x = 1.0f - output->y - output->z;
 }
 
+int asIntTmp(void* data) {
+    return *(int*)data;
+}
+
 void evaluateBarycentricCoords(struct Vector3* a, struct Vector3* b, struct Vector3* c, struct Vector3* bary, struct Vector3* output) {
     vector3Scale(a, output, bary->x);
+    if (asIntTmp(&bary->y) == 1) {
+        fprintf(stderr, "%08x, %08x, %08x\n", asIntTmp(&bary->x), asIntTmp(&bary->y), asIntTmp(&bary->z));
+    }
+    // assert(asIntTmp(&bary->y) != 1);
     vector3AddScaled(output, b, bary->y, output);
     vector3AddScaled(output, c, bary->z, output);
 }

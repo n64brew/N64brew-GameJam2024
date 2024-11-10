@@ -36,7 +36,7 @@ void rampage_assets_init() {
     gRampageAssets.building = t3d_model_load("rom:/rampage/house.t3dm");
     rampage_model_separate_material(gRampageAssets.building, &gRampageAssets.buildingSplit);
 
-    gRampageAssets.player = t3d_model_load("rom:/rampage/player.t3dm");
+    gRampageAssets.player = t3d_model_load("rom:/rampage/Jira_01.t3dm");
     gRampageAssets.ground = t3d_model_load("rom://rampage/ground.t3dm");
     gRampageAssets.tank = t3d_model_load("rom://rampage/tank0.t3dm");
     rampage_model_separate_material(gRampageAssets.tank, &gRampageAssets.tankSplit);

@@ -2,6 +2,7 @@
 #define __RAMPAGE_PLAYER_H__
 
 #include <t3d/t3dmath.h>
+#include <t3d/t3dskeleton.h>
 #include <libdragon.h>
 
 #include "./math/vector2.h"
@@ -22,6 +23,7 @@ struct RampagePlayer {
     struct dynamic_object dynamic_object;
     struct dynamic_object damage_trigger;
     rspq_block_t* render_block;
+    T3DSkeleton skeleton;
     enum PlayerType type;
     T3DMat4FP mtx;
     struct health health;

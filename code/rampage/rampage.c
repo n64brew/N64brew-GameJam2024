@@ -167,8 +167,21 @@ enum PlayerType rampage_player_type(int index) {
 
 #define BUILDING_SPACING    3.0f
 
+union FInt {
+    int intVal;
+    float floatVal;
+};
+
 void rampage_init(struct Rampage* rampage) {
     rampage_assets_init();
+
+    // for (int i = 0; i < 100; i += 1) {
+    //     union FInt a = { .intVal = i };
+    //     union FInt b = { .intVal = 0xc06d1bc0 };
+
+    //     fprintf(stderr, "%08x\n", (int)C1_FCR31());
+    //     fprintf(stderr, "%f\n", a.floatVal * b.floatVal);
+    // }
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_init(&rampage->players[i], &gStartingPositions[i], i, rampage_player_type(i));
