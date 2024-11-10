@@ -29,6 +29,49 @@ struct dynamic_object_type tank_collider = {
     .friction = 0.0f,
 };
 
+static struct Vector3 move_direction[] = {
+    {0.0f, 0.0f, 1.0f},
+    {0.0f, 0.0f, -1.0f},
+    {1.0f, 0.0f, 0.0f},
+    {-1.0f, 0.0f, 0.0f},
+};
+
+void rampage_tank_next_target(struct RampageTank* tank) {
+    struct Vector3 forward = {
+        tank->dynamic_object.rotation.y,
+        0.0f,
+        tank->dynamic_object.rotation.x
+    };
+
+    int possible_options = 0;
+
+    for (int i = 0; i < 4; i += 1) {
+        if (vector3Dot(&move_direction[i], &forward) < -0.5f) {
+            continue;
+        }
+
+        possible_options += 1;
+    }
+
+    int option = randomInRange(0, possible_options);
+
+    for (int i = 0; i < 4; i += 1) {
+        if (vector3Dot(&move_direction[i], &forward) < -0.5f) {
+            continue;
+        }
+
+        if (i == option) {
+            vector3AddScaled(
+                &tank->current_target, 
+                &move_direction[i], 
+                BUILDING_SPACING, 
+                &tank->current_target
+            );
+            break;
+        }
+    }
+}
+
 void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position) {
     int entity_id = entity_id_next();
     dynamic_object_init(
@@ -40,7 +83,14 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
         &gRight2
     );
 
+    if (start_position->z < 0.0f) {
+        tank->dynamic_object.rotation.x = -1.0f;
+    }
+
     tank->dynamic_object.center.y = tank_collider.data.box.half_size.y;
+    tank->current_target = *start_position;
+
+    rampage_tank_next_target(tank);
 
     collision_scene_add(&tank->dynamic_object);
 
@@ -48,7 +98,7 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 }
 
 void rampage_tank_destroy(struct RampageTank* tank) {
-
+    collision_scene_remove(&tank->dynamic_object);
 }
 
 void rampage_tank_update(struct RampageTank* tank, float delta_time) {
@@ -71,18 +121,22 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
         &tank_rotate_speed,
         &current_dir
     )) {
-        // float distance = vector2Dot(&offset, &dir);
-        // float speed = dir.x * tank->dynamic_object.velocity.x +
-        //     dir.y * tank->dynamic_object.velocity.z;
+        float distance = vector2Dot(&offset, &dir);
+        float speed = dir.x * tank->dynamic_object.velocity.x +
+            dir.y * tank->dynamic_object.velocity.z;
+
+        float stopping_distance = stoppingDistance(fabsf(speed), TANK_ACCEL);
+
+        bool should_stop = stopping_distance > distance;
 
         tank->dynamic_object.velocity.x = mathfMoveTowards(
             tank->dynamic_object.velocity.x,
-            dir.x * TANK_SPEED,
+            should_stop ? 0.0f : dir.x * TANK_SPEED,
             TANK_ACCEL * delta_time
         );
         tank->dynamic_object.velocity.z = mathfMoveTowards(
             tank->dynamic_object.velocity.z,
-            dir.y * TANK_SPEED,
+            should_stop ? 0.0f : dir.y * TANK_SPEED,
             TANK_ACCEL * delta_time
         );
     } else {
@@ -100,6 +154,10 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
 
     tank->dynamic_object.rotation.x = current_dir.y;
     tank->dynamic_object.rotation.y = current_dir.x;
+
+    if (vector2MagSqr(&offset) < 0.5f) {
+        rampage_tank_next_target(tank);
+    }
 }
 
 void rampage_tank_render(struct RampageTank* tank) {

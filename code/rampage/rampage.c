@@ -13,6 +13,7 @@
 #include "./collision/collision_scene.h"
 #include "./health.h"
 #include "./assets.h"
+#include "./rampage.h"
 
 surface_t *depthBuffer;
 T3DViewport viewport;
@@ -151,10 +152,10 @@ static struct Vector3 gStartingPositions[] = {
 };
 
 static struct Vector3 gStartingTankPositions[] = {
-    {SCALE_FIXED_POINT(-1.5f), 0.0f, SCALE_FIXED_POINT(-2.0f)},
-    {SCALE_FIXED_POINT(1.5f), 0.0f, SCALE_FIXED_POINT(-2.0f)},
-    {SCALE_FIXED_POINT(-1.5f), 0.0f, SCALE_FIXED_POINT(2.0f)},
-    {SCALE_FIXED_POINT(1.5f), 0.0f, SCALE_FIXED_POINT(2.0f)},
+    {SCALE_FIXED_POINT(-1.5f), 0.0f, SCALE_FIXED_POINT(-3.0f)},
+    {SCALE_FIXED_POINT(1.5f), 0.0f, SCALE_FIXED_POINT(-3.0f)},
+    {SCALE_FIXED_POINT(-1.5f), 0.0f, SCALE_FIXED_POINT(3.0f)},
+    {SCALE_FIXED_POINT(1.5f), 0.0f, SCALE_FIXED_POINT(3.0f)},
 };
 
 enum PlayerType rampage_player_type(int index) {
@@ -165,23 +166,8 @@ enum PlayerType rampage_player_type(int index) {
     }
 }
 
-#define BUILDING_SPACING    3.0f
-
-union FInt {
-    int intVal;
-    float floatVal;
-};
-
 void rampage_init(struct Rampage* rampage) {
     rampage_assets_init();
-
-    // for (int i = 0; i < 100; i += 1) {
-    //     union FInt a = { .intVal = i };
-    //     union FInt b = { .intVal = 0xc06d1bc0 };
-
-    //     fprintf(stderr, "%08x\n", (int)C1_FCR31());
-    //     fprintf(stderr, "%f\n", a.floatVal * b.floatVal);
-    // }
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_init(&rampage->players[i], &gStartingPositions[i], i, rampage_player_type(i));
@@ -190,9 +176,9 @@ void rampage_init(struct Rampage* rampage) {
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
         for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
             T3DVec3 position = {{
-                SCALE_FIXED_POINT((x - (BUILDING_COUNT_X - 1) * 0.5f) * BUILDING_SPACING),
+                (x - (BUILDING_COUNT_X - 1) * 0.5f) * BUILDING_SPACING,
                 0.0f,
-                SCALE_FIXED_POINT((y - (BUILDING_COUNT_Y - 1) * 0.5f) * BUILDING_SPACING),
+                (y - (BUILDING_COUNT_Y - 1) * 0.5f) * BUILDING_SPACING,
             }};
             rampage_building_init(&rampage->buildings[y][x], &position);
         }

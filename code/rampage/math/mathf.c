@@ -95,6 +95,9 @@ float signf(float input) {
     }
 }
 
+float stoppingDistance(float speed, float accel) {
+    return 0.5f * speed * speed / accel;
+}
 
 int sign(int input) {
     if (input > 0) {

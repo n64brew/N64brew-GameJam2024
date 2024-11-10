@@ -4,6 +4,7 @@
 #include "../math/plane.h"
 #include "../math/mathf.h"
 #include <math.h>
+#include <stdio.h>
 
 #define MAX_ITERATIONS  10
 
@@ -411,18 +412,22 @@ void expandingSimplexExpand(struct ExpandingSimplex* expandingSimplex, int newPo
 void epaCalculateContact(struct ExpandingSimplex* simplex, struct SimplexTriangle* closestFace, struct Vector3* planePos, struct EpaResult* result) {
     struct Vector3 baryCoords;
 
+        struct Vector3* a = &simplex->points[closestFace->indexData.indices[0]];
+        struct Vector3* b = &simplex->points[closestFace->indexData.indices[1]];
+        struct Vector3* c = &simplex->points[closestFace->indexData.indices[2]];
+
     calculateBarycentricCoords(
-        &simplex->points[closestFace->indexData.indices[0]],
-        &simplex->points[closestFace->indexData.indices[1]],
-        &simplex->points[closestFace->indexData.indices[2]],
+        a,
+        b,
+        c,
         planePos,
         &baryCoords
     );
 
     evaluateBarycentricCoords(
-        &simplex->aPoints[closestFace->indexData.indices[0]],
-        &simplex->aPoints[closestFace->indexData.indices[1]],
-        &simplex->aPoints[closestFace->indexData.indices[2]],
+        a,
+        b,
+        c,
         &baryCoords,
         &result->contactA
     );

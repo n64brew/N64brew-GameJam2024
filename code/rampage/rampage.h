@@ -13,6 +13,8 @@
 
 #define SCALE_FIXED_POINT(value)    ((value) * 64.0f)
 
+#define BUILDING_SPACING    SCALE_FIXED_POINT(3.0f)
+
 struct Rampage {
     struct RampagePlayer players[PLAYER_COUNT];
     struct RampageBuilding buildings[BUILDING_COUNT_Y][BUILDING_COUNT_X];

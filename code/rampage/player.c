@@ -370,10 +370,12 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     player->was_jumping = input.do_jump;
 }
 
+#define PLAYER_SCALE    0.5f
+
 void rampage_player_render(struct RampagePlayer* player) {
     struct Quaternion quat;
     quatAxisComplex(&gUp, &player->dynamic_object.rotation, &quat);
-    T3DVec3 scale = {{1.0f, 1.0f, 1.0f}};
+    T3DVec3 scale = {{PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE}};
 
     // TODO sync point
 
