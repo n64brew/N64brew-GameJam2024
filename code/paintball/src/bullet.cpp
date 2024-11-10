@@ -18,6 +18,23 @@ BulletController::BulletController() :
 
         rspq_block_begin();
             t3d_model_draw(model.get());
+
+            // Outline
+            t3d_state_set_vertex_fx(T3D_VERTEX_FX_OUTLINE, (int16_t)5, (int16_t)5);
+                rdpq_set_prim_color(RGBA32(0, 0, 0, 0xFF));
+
+                // Is this necessary?
+                rdpq_sync_pipe();
+
+                rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+                t3d_state_set_drawflags((T3DDrawFlags)(T3D_FLAG_CULL_FRONT | T3D_FLAG_DEPTH));
+
+                T3DModelIter it = t3d_model_iter_create(model.get(), T3D_CHUNK_TYPE_OBJECT);
+                while(t3d_model_iter_next(&it))
+                {
+                    t3d_model_draw_object(it.object, nullptr);
+                }
+            t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
     }
 
