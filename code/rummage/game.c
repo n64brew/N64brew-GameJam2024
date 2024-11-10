@@ -4,6 +4,8 @@
 #include "../../minigame.h"
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
+#include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch"
@@ -64,9 +66,11 @@ typedef enum {
 
 typedef struct {
     actor_t;
-    // TODO rotation, speed, skeleton, animations, ...
     PlyNum plynum;
     color_t color;
+    T3DSkeleton skel;
+    T3DAnim anim_idle;
+    T3DAnim anim_walk;
     float speed;
     bool had_key;
     bool has_key;
@@ -326,7 +330,7 @@ bool open(int i, int j) {
         debugf("Player #%d trying open vault #%d!\n", i, j);
         // TODO play sfx?
         players[i].vaults[players[i].target_idx] = true;
-        players[i].action_playing_time = ACTION_TIME;
+        players[i].action_playing_time = ACTION_TIME;   // FIXME Player should not be able to move while trying to open the vault...
         if (vaults[j].is_target) {
             debugf("Player #%d opened the vault #%d!\n", i, j);
             players[i].has_won = true;
@@ -418,20 +422,25 @@ void game_init()
     };
     T3DModel* player_model = t3d_model_load("rom:/rummage/player.t3dm");
     for (int i=0; i<MAXPLAYERS; i++) {
-        players[i].w = 0.3f * T3D_MODEL_SCALE;
-        players[i].h = 0.3f * T3D_MODEL_SCALE;
-        players[i].scale = (T3DVec3){{1, 1, 1}};
+        players[i].w = 1.42f * 0.2f * T3D_MODEL_SCALE;
+        players[i].h = 1.42f * 0.2f * T3D_MODEL_SCALE;
+        players[i].scale = (T3DVec3){{0.2f, 0.2f, 0.2f}};
         players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         players[i].position = (T3DVec3){{ ((i-1)%2)*50, 0, ((i-2)%2)*50 }};
         players[i].direction = (T3DVec3){{0, 0, 0}};
         players[i].model = player_model;
         players[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
+        players[i].skel = t3d_skeleton_create(players[i].model);
+        players[i].anim_idle = t3d_anim_create(players[i].model, "Action_Base");
+        t3d_anim_attach(&players[i].anim_idle, &players[i].skel);
+        players[i].anim_walk = t3d_anim_create(players[i].model, "Action_Marche");
+        t3d_anim_attach(&players[i].anim_walk, &players[i].skel);
         players[i].color = colors[i];
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_begin();
             t3d_matrix_push(players[i].mat_fp);
             rdpq_set_prim_color(players[i].color);
-            t3d_model_draw(players[i].model);
+            t3d_model_draw_skinned(players[i].model, &players[i].skel);
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
         players[i].plynum = i;
@@ -789,6 +798,17 @@ void game_render(float deltatime)
 
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
+        t3d_anim_update(&players[i].anim_idle, deltatime);
+        t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);   // TODO Very animation depending on player's speed
+        t3d_anim_update(&players[i].anim_walk, deltatime);
+        // TODO only set anim when switching state ?
+        if (players[i].speed > 0.0f) {
+            t3d_anim_set_playing(&players[i].anim_walk, true);
+        } else {
+            t3d_anim_set_playing(&players[i].anim_idle, true);
+        }
+        t3d_skeleton_update(&players[i].skel);
+        // FIXME Need sync??
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_run(players[i].dpl);
         // Display key
@@ -822,6 +842,9 @@ void game_cleanup()
     t3d_model_free(vaults[0].model);
     for (int i=0; i<MAXPLAYERS; i++) {
         rspq_block_free(players[i].dpl);
+        t3d_skeleton_destroy(&players[i].skel);
+        t3d_anim_destroy(&players[i].anim_idle);
+        t3d_anim_destroy(&players[i].anim_walk);
         free_uncached(players[i].mat_fp);
     }
     t3d_model_free(players[0].model);
