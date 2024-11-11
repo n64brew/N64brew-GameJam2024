@@ -88,9 +88,11 @@ typedef struct {
     T3DSkeleton skel;
     T3DAnim anim_idle;
     T3DAnim anim_walk;
+    T3DAnim anim_act;
     float speed;
     bool had_key;
     bool has_key;
+    bool had_won;
     bool has_won;
     float action_playing_time;
     // AI players
@@ -318,6 +320,11 @@ void abort_path(int i) {
 }
 
 
+void start_player_action(int i) {
+    players[i].action_playing_time = ACTION_TIME;
+    t3d_anim_set_playing(&players[i].anim_act, true);
+    t3d_anim_set_time(&players[i].anim_act, 0.0f);
+}
 
 bool close_to_furniture(int i, int j) {
     c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
@@ -344,7 +351,7 @@ bool rummage(int i, int j) {
         debugf("Player #%d rummaging through furniture #%d!\n", i, j);
         wav64_play(&sfx_rummage, 31);
         players[i].furnitures[players[i].target_idx] = true;
-        players[i].action_playing_time = ACTION_TIME;
+        start_player_action(i);
         if (furnitures[j].has_key) {
             debugf("Player #%d found key in furniture #%d!\n", i, j);
             players[i].has_key = true;
@@ -389,7 +396,7 @@ bool open(int i, int j) {
         debugf("Player #%d trying open vault #%d!\n", i, j);
         // TODO play sfx?
         players[i].vaults[players[i].target_idx] = true;
-        players[i].action_playing_time = ACTION_TIME;   // FIXME Player should not be able to move while trying to open the vault...
+        start_player_action(i);
         if (vaults[j].is_target) {
             debugf("Player #%d opened the vault #%d!\n", i, j);
             players[i].has_won = true;
@@ -507,6 +514,10 @@ void game_init()
         t3d_anim_attach(&players[i].anim_idle, &players[i].skel);
         players[i].anim_walk = t3d_anim_create(players[i].model, "Action_Marche");
         t3d_anim_attach(&players[i].anim_walk, &players[i].skel);
+        players[i].anim_act = t3d_anim_create(players[i].model, "Action_Act");
+        t3d_anim_attach(&players[i].anim_act, &players[i].skel);
+        t3d_anim_set_looping(&players[i].anim_act, false);
+        t3d_anim_set_playing(&players[i].anim_act, false);
         players[i].color = colors[i];
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_begin();
@@ -519,6 +530,7 @@ void game_init()
         players[i].speed = 0.0f;
         players[i].had_key = false;
         players[i].has_key = false;
+        players[i].had_won = false;
         players[i].has_won = false;
         players[i].action_playing_time = 0;
         players[i].hidden = false;
@@ -586,6 +598,9 @@ void game_logic(float deltatime)
                     wav64_play(&sfx_key, 31);
                     players[i].had_key = true;
                     key.hidden = false;
+                }
+                if (players[i].has_won && !players[i].had_won) {
+                    players[i].had_won = true;
                 }
             }
             if (i < playercount) {  // Human player
@@ -878,11 +893,15 @@ void game_render(float deltatime)
         t3d_anim_update(&players[i].anim_idle, deltatime);
         t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);   // TODO Very animation depending on player's speed
         t3d_anim_update(&players[i].anim_walk, deltatime);
-        // TODO only set anim when switching state ?
-        if (players[i].speed > 0.0f) {
-            t3d_anim_set_playing(&players[i].anim_walk, true);
+        if (players[i].action_playing_time > 0) {
+            t3d_anim_update(&players[i].anim_act, deltatime);
         } else {
-            t3d_anim_set_playing(&players[i].anim_idle, true);
+            // TODO only set anim when switching state ?
+            if (players[i].speed > 0.0f) {
+                t3d_anim_set_playing(&players[i].anim_walk, true);
+            } else {
+                t3d_anim_set_playing(&players[i].anim_idle, true);
+            }
         }
         t3d_skeleton_update(&players[i].skel);
         // FIXME Need sync??
@@ -957,6 +976,7 @@ void game_cleanup()
         t3d_skeleton_destroy(&players[i].skel);
         t3d_anim_destroy(&players[i].anim_idle);
         t3d_anim_destroy(&players[i].anim_walk);
+        t3d_anim_destroy(&players[i].anim_act);
         free_uncached(players[i].mat_fp);
     }
     t3d_model_free(players[0].model);
@@ -1000,7 +1020,7 @@ bool is_playing() {
 
 bool has_winner() {
     for (int i=0; i<MAXPLAYERS; i++) {
-        if (players[i].has_won) {
+        if (players[i].has_won && players[i].had_won) {
             return true;
         }
     }
@@ -1009,7 +1029,7 @@ bool has_winner() {
 
 PlyNum winner() {
     for (int i=0; i<MAXPLAYERS; i++) {
-        if (players[i].has_won) {
+        if (players[i].has_won && players[i].had_won) {
             return players[i].plynum;
         }
     }
