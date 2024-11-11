@@ -316,7 +316,18 @@ bool follow_path(PlyNum i) {
 
 bool can_rummage(int i, int j) {
     c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
-    return c2AABBtoAABB(player_i, furnitures[j].zone_bbox);
+    if (c2AABBtoAABB(player_i, furnitures[j].zone_bbox)) {
+        // Is player looking at the furniture?
+        T3DVec3 diff;
+        t3d_vec3_diff(&diff, &furnitures[j].position, &players[i].position);
+        float s, c;
+        fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+        T3DVec3 dir = (T3DVec3){{c, 0, s}};
+        float dot = t3d_vec3_dot(&dir, &diff);
+        return dot > 0;
+    } else {
+        return false;
+    }
 }
 
 bool rummage(int i, int j) {
@@ -346,7 +357,18 @@ PlyNum leader() {
 
 bool can_open(int i, int j) {
     c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
-    return c2AABBtoAABB(player_i, vaults[j].zone_bbox);
+    if (c2AABBtoAABB(player_i, vaults[j].zone_bbox)) {
+        // Is player looking at the vault?
+        T3DVec3 diff;
+        t3d_vec3_diff(&diff, &vaults[j].position, &players[i].position);
+        float s, c;
+        fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+        T3DVec3 dir = (T3DVec3){{c, 0, s}};
+        float dot = t3d_vec3_dot(&dir, &diff);
+        return dot > 0;
+    } else {
+        return false;
+    }
 }
 
 bool open(int i, int j) {
@@ -667,6 +689,7 @@ void game_logic(float deltatime)
                                 //reset_idle_delay(i);
                                 players[i].state = IDLE;
                             } else {
+                                // TODO if in zone, need to rotate towards furniture !
                                 if (can_rummage(i, players[i].target_idx)) {
                                     // We have reached the target: search for key
                                     players[i].state = RUMMAGING;
@@ -738,6 +761,7 @@ void game_logic(float deltatime)
                                 //reset_idle_delay(i);
                                 players[i].state = IDLE;
                             } else {
+                                // TODO if in zone, need to rotate towards vault !
                                 if (can_open(i, players[i].target_idx)) {
                                     // We have reached the target: open vault
                                     players[i].state = OPENING_VAULT;
@@ -853,7 +877,7 @@ void render_actor_aabb(actor_t* actor) {
     draw_aabb(bbox.min.x, bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, bbox.min.y, bbox.max.y, 0.2f, 0.2f, 0.2f);
 }
 void render_usable_actor_aabb(usable_actor_t* actor) {
-    draw_aabb(actor->bbox.min.x, actor->bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, actor->bbox.min.y, actor->bbox.max.y, 0.2f, 0.2f, 0.2f);
+    draw_aabb(actor->bbox.min.x, actor->bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, actor->bbox.min.y, actor->bbox.max.y, 0.2f, 0.2f, 0.5f);
 }
 void render_usable_zone_aabb(usable_actor_t* actor) {
     draw_aabb(actor->zone_bbox.min.x, actor->zone_bbox.max.x, actor->position.v[1], actor->position.v[1], actor->zone_bbox.min.y, actor->zone_bbox.max.y, 0.2f, 0.5f, 0.2f);
