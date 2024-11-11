@@ -479,12 +479,12 @@ void draw_players_and_level(struct player** players, struct floorPiece** floors,
             rdpq_draw_one_floor_piece(&floors[i]->xPos, &floors[i]->yPos, &floors[i]->width, &floors[i]->height, WHITE);
         }
 
-        for(int i = 0; i < 4; i++){
-            // draw player if alive
-            if(players[i]->isAlive){
-                if(players[i]->id != 0){
-                    rdpq_draw_one_rectangle(&players[i]->xPos, &players[i]->yPos, &players[i]->width, &players[i]->height, players[i]->color);
-                }
-            }
-        }
+        // for(int i = 0; i < 4; i++){
+        //     // draw player if alive
+        //     if(players[i]->isAlive){
+        //         if(players[i]->id != 0){
+        //             rdpq_draw_one_rectangle(&players[i]->xPos, &players[i]->yPos, &players[i]->width, &players[i]->height, players[i]->color);
+        //         }
+        //     }
+        // }
 }

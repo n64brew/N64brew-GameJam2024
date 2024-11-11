@@ -59,26 +59,20 @@ bool playedWinnerSound;
 joypad_port_t pausePlayerPort;
 float pauseCheckDelay;
 
-//player 1 test sprite
+// player sprites
 // sprite_t *player_sprites[4];
 sprite_t *player1_sprite;
+sprite_t *player1_jump_sprite;
 
 void minigame_init(){
-    // player 1 sprite test
-    // char fn[64];
-    // sprintf(fn, "rom:/swordstrike/test-sprite.sprite");
-    // player_sprites[0] = sprite_load(fn);
-
-    //ness sprite
-    // int fp = dfs_open("/earthbound.sprite");
-    // sprite_t *ness = malloc( dfs_size( fp ) );
-    // dfs_read( ness, 1, dfs_size( fp ), fp );
-    // dfs_close( fp );
-
-    // player 1 sprite test
+    // test sprites
     char fn[64];
     sprintf(fn, "rom:/swordstrike/test-sprite.sprite");
     player1_sprite = sprite_load(fn);
+
+    char fn2[64];
+    sprintf(fn2, "rom:/swordstrike/test-sprite-jump.sprite");
+    player1_jump_sprite = sprite_load(fn2);
 
 
     // default to 0
@@ -340,8 +334,8 @@ void minigame_loop(float deltatime){
     // draw background
     graphics_fill_screen(disp, graphics_convert_color(DARK_GREY));
 
-    // draw players and floors
-    draw_players_and_level(players, floors, &numFloors, WHITE, player1_sprite);
+    // draw player bounding boxes and floors
+    draw_players_and_level(players, floors, &numFloors, WHITE);
 
     // draw hitboxs => REMOVE LATER
     if(game_state == 1){
@@ -359,15 +353,15 @@ void minigame_loop(float deltatime){
     void draw_debug_values(){
 
         // PLAYER 1 VARS
-        char msg1[100];
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        snprintf(msg1, sizeof(msg1), "%s: %i, %i", "POS", player1.xPos, player1.yPos);
-        graphics_draw_text(disp, 10, 10, msg1);
+        // char msg1[100];
+        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
+        // snprintf(msg1, sizeof(msg1), "%s: %i, %i", "POS", player1.xPos, player1.yPos);
+        // graphics_draw_text(disp, 10, 10, msg1);
 
-        char msg2[100];
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        snprintf(msg2, sizeof(msg2), "%s: %f, %f", "VEL", player1.horizontalVelocity, player1.verticalVelocity);
-        graphics_draw_text(disp, 10, 20, msg2);
+        // char msg2[100];
+        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
+        // snprintf(msg2, sizeof(msg2), "%s: %f, %f", "VEL", player1.horizontalVelocity, player1.verticalVelocity);
+        // graphics_draw_text(disp, 10, 20, msg2);
 
         // char msg3[100];
         // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
@@ -422,10 +416,10 @@ void minigame_loop(float deltatime){
         // snprintf(msg4, sizeof(msg4), "%s: %i", "PAUSE PRESSED", pausePressed);
         // graphics_draw_text(disp, 10, 40, msg4);
         
-        char msg4[100];
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        snprintf(msg4, sizeof(msg4), "%s: %i", "P1 onEnemy", player1.onTopOfEnemy);
-        graphics_draw_text(disp, 10, 30, msg4);
+        // char msg4[100];
+        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
+        // snprintf(msg4, sizeof(msg4), "%s: %i", "P1 onEnemy", player1.onTopOfEnemy);
+        // graphics_draw_text(disp, 10, 30, msg4);
 
         // char msg5[100];
         // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
@@ -436,7 +430,16 @@ void minigame_loop(float deltatime){
     draw_debug_values();
 
     // DRAW PLAYER SPRITES
-    graphics_draw_sprite(disp, player1->xPos, (player1->yPos + player1->height), player1_sprite);
+    for(int i = 0; i < MAXPLAYERS; i++){
+        // draw player if alive
+        if(players[i]->isAlive){
+            if(players[i]->onFloor || players[i]->onTopOfEnemy){
+                graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player1_sprite);
+            } else {
+                graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player1_jump_sprite);
+            }
+        }
+    }
 
     // COUNT DOWN
     if(game_state == 0){
@@ -484,7 +487,9 @@ void minigame_cleanup(){
     free_level_data(floors);
 
     // free sprites
-    sprite_free(player_sprites[0]);
+    // sprite_free(player_sprites[0]);
+    sprite_free(player1_sprite);
+    sprite_free(player1_jump_sprite);
 
     display_close();
 }
