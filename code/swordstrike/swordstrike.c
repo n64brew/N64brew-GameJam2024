@@ -59,7 +59,28 @@ bool playedWinnerSound;
 joypad_port_t pausePlayerPort;
 float pauseCheckDelay;
 
+//player 1 test sprite
+// sprite_t *player_sprites[4];
+sprite_t *player1_sprite;
+
 void minigame_init(){
+    // player 1 sprite test
+    // char fn[64];
+    // sprintf(fn, "rom:/swordstrike/test-sprite.sprite");
+    // player_sprites[0] = sprite_load(fn);
+
+    //ness sprite
+    // int fp = dfs_open("/earthbound.sprite");
+    // sprite_t *ness = malloc( dfs_size( fp ) );
+    // dfs_read( ness, 1, dfs_size( fp ), fp );
+    // dfs_close( fp );
+
+    // player 1 sprite test
+    char fn[64];
+    sprintf(fn, "rom:/swordstrike/test-sprite.sprite");
+    player1_sprite = sprite_load(fn);
+
+
     // default to 0
     pauseCheckDelay = 0.0f;
 
@@ -320,7 +341,7 @@ void minigame_loop(float deltatime){
     graphics_fill_screen(disp, graphics_convert_color(DARK_GREY));
 
     // draw players and floors
-    draw_players_and_level(players, floors, &numFloors, WHITE);
+    draw_players_and_level(players, floors, &numFloors, WHITE, player1_sprite);
 
     // draw hitboxs => REMOVE LATER
     if(game_state == 1){
@@ -414,6 +435,9 @@ void minigame_loop(float deltatime){
     }
     draw_debug_values();
 
+    // DRAW PLAYER SPRITES
+    graphics_draw_sprite(disp, player1->xPos, (player1->yPos + player1->height), player1_sprite);
+
     // COUNT DOWN
     if(game_state == 0){
         char msg1[100];
@@ -458,6 +482,9 @@ void minigame_cleanup(){
 
     // free level data
     free_level_data(floors);
+
+    // free sprites
+    sprite_free(player_sprites[0]);
 
     display_close();
 }
