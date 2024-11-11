@@ -3,9 +3,9 @@
 
 #include <GL/gl.h>
 
-void draw_aabb(float min_x, float max_x, float min_y, float max_y, float min_z, float max_z) {
+void draw_aabb(float min_x, float max_x, float min_y, float max_y, float min_z, float max_z, float r, float g, float b) {
     glBegin(GL_LINES);
-        glColor3f(0.0f, 0.0f, 0.0f); // Black color
+        glColor3f(r, g, b);
 
         // Bottom face
         glVertex3f(min_x, min_y, min_z);

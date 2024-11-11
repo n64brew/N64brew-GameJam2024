@@ -51,15 +51,23 @@ typedef struct actor_t {
     bool hidden;
 } actor_t;
 
-typedef struct {
+typedef struct usable_actor_t {
     actor_t;
     bool rotated;
+    c2AABB bbox;
+    // Usage zone
+    float zone_w;
+    float zone_h;
+    c2AABB zone_bbox;
+} usable_actor_t;
+
+typedef struct {
+    usable_actor_t;
     bool has_key;
 } furniture_t;
 
 typedef struct {
-    actor_t;
-    bool rotated;
+    usable_actor_t;
     bool is_target;
 } vault_t;
 
@@ -119,6 +127,37 @@ wav64_t sfx_rummage;
 wav64_t sfx_key;
 
 
+c2AABB usable_actor_bounding_box(usable_actor_t* actor) {
+    c2AABB bb;
+    float w = actor->rotated ? actor->h : actor->w;
+    float h = actor->rotated ? actor->w : actor->h;
+    bb.min = c2V(actor->position.v[0] - w/2.0f, actor->position.v[2] - h/2.0f);
+    bb.max = c2V(actor->position.v[0] + w/2.0f, actor->position.v[2] + h/2.0f);
+    return bb;
+}
+
+c2AABB usable_zone_bounding_box(usable_actor_t* actor) {
+    c2AABB bb;
+    T3DVec3 zone;
+    t3d_vec3_scale(&zone, &actor->direction, actor->h/2.0f + actor->zone_h/2.0f);
+    t3d_vec3_add(&zone, &zone, &actor->position);
+    float w = actor->rotated ? actor->zone_h : actor->zone_w;
+    float h = actor->rotated ? actor->zone_w : actor->zone_h;
+    bb.min = c2V(zone.v[0] - w/2.0f, zone.v[2] - h/2.0f);
+    bb.max = c2V(zone.v[0] + w/2.0f, zone.v[2] + h/2.0f);
+    return bb;
+}
+
+c2AABB actor_bounding_box(actor_t* actor) {
+    c2AABB bb;
+    float w = actor->w;
+    float h = actor->h;
+    bb.min = c2V(actor->position.v[0] - w/2.0f, actor->position.v[2] - h/2.0f);
+    bb.max = c2V(actor->position.v[0] + w/2.0f, actor->position.v[2] + h/2.0f);
+    return bb;
+}
+
+
 // Path finding
 
 int map_width;
@@ -139,12 +178,9 @@ inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
 void update_obstacles() {
     // Precompute obstacles in map coordinates (is_walkable takes 150-400 cyces vs 4000+ when computing on-the-fly)
     for (int i=0; i<FURNITURES_COUNT; i++) {
-        // FIXME Make a function to get a furniture's bounding box (also used for collisions)
-        float fw = furnitures[i].rotated ? furnitures[i].h : furnitures[i].w;
-        float fh = furnitures[i].rotated ? furnitures[i].w : furnitures[i].h;
-        T3DVec3 furniture_min = (T3DVec3){{furnitures[i].position.v[0] - fw/2.0f, 0, furnitures[i].position.v[2] - fh/2.0f}};
+        T3DVec3 furniture_min = (T3DVec3){{furnitures[i].bbox.min.x, 0, furnitures[i].bbox.min.y}};
         to_pathmap_coords(&furniture_min, &furniture_min);
-        T3DVec3 furniture_max = (T3DVec3){{furnitures[i].position.v[0] + fw/2.0f, 0, furnitures[i].position.v[2] + fh/2.0f}};
+        T3DVec3 furniture_max = (T3DVec3){{furnitures[i].bbox.max.x, 0, furnitures[i].bbox.max.y}};
         to_pathmap_coords(&furniture_max, &furniture_max);
         for (int x=furniture_min.v[0]+1; x<furniture_max.v[0]; x++) {
             for (int y=furniture_min.v[2]+1; y<furniture_max.v[2]; y++) {
@@ -279,17 +315,8 @@ bool follow_path(PlyNum i) {
 
 
 bool can_rummage(int i, int j) {
-    // Is player on the front side of furniture?
-    T3DVec3 diff;
-    t3d_vec3_diff(&diff, &players[i].position, &furnitures[j].position);
-    float dot = t3d_vec3_dot(&furnitures[j].direction, &diff);
-    if (dot > 0) {
-        // Is player close enough?
-        float center_distance = t3d_vec3_distance(&players[i].position, &furnitures[j].position);
-        float distance = center_distance - players[i].h/2.0f - furnitures[j].h/2.0f;
-        return distance <= ACTION_DISTANCE_THRESHOLD;
-    }
-    return false;
+    c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
+    return c2AABBtoAABB(player_i, furnitures[j].zone_bbox);
 }
 
 bool rummage(int i, int j) {
@@ -318,20 +345,8 @@ PlyNum leader() {
 }
 
 bool can_open(int i, int j) {
-    // Is player on the front side of vault?
-    T3DVec3 diff;
-    t3d_vec3_diff(&diff, &players[i].position, &vaults[j].position);
-    float dot = t3d_vec3_dot(&vaults[j].direction, &diff);
-    if (dot > 0) {
-        // Is player close enough?
-        float center_distance = t3d_vec3_distance(&players[i].position, &vaults[j].position);
-        float distance = center_distance - players[i].h/2.0f - vaults[j].h/2.0f;
-        if (distance <= ACTION_DISTANCE_THRESHOLD) {
-            debugf("Trying open vault #%d!\n", j);
-            return vaults[j].is_target;
-        }
-    }
-    return false;
+    c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
+    return c2AABBtoAABB(player_i, vaults[j].zone_bbox);
 }
 
 bool open(int i, int j) {
@@ -382,12 +397,16 @@ void game_init()
         furnitures[i].w = 0.92f * T3D_MODEL_SCALE;
         furnitures[i].h = 0.42f * T3D_MODEL_SCALE;
         furnitures[i].max_y = 0.70f * T3D_MODEL_SCALE;
+        furnitures[i].zone_w = furnitures[i].w/2.0f;
+        furnitures[i].zone_h = furnitures[i].h/4.0f;
         furnitures[i].scale = (T3DVec3){{1, 1, 1}};
         int rotated = rand() % 3;
         furnitures[i].rotated = rotated % 2;
         furnitures[i].rotation = (T3DVec3){{0, rotated * M_PI/2, 0}};
         furnitures[i].position = (T3DVec3){{ ((i%3)-1)*((room.w-furnitures[i].w-50)/2.0f), 0, (((i/3)%3)-1)*((room.h-furnitures[i].h-50)/2.0f) }};
         furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
+        furnitures[i].bbox = usable_actor_bounding_box((usable_actor_t*)&furnitures[i]);
+        furnitures[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&furnitures[i]);
         furnitures[i].model = furniture_model;
         furnitures[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         t3d_mat4fp_from_srt_euler(furnitures[i].mat_fp, furnitures[i].scale.v, furnitures[i].rotation.v, furnitures[i].position.v);
@@ -408,11 +427,15 @@ void game_init()
         vaults[i].w = 1.09f * T3D_MODEL_SCALE;
         vaults[i].h = 0.11f * T3D_MODEL_SCALE;
         vaults[i].max_y = 1.50f * T3D_MODEL_SCALE;
+        vaults[i].zone_w = vaults[i].w/1.5f;
+        vaults[i].zone_h = vaults[i].h/2.0f;
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
         vaults[i].rotated = (i-1) % 2;
         vaults[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         vaults[i].position = (T3DVec3){{ (i-1)*(room.w-vaults[i].h)/2.0f, 0, -1*(room.h-vaults[i].h)/2.0f*(i%2) }};
         vaults[i].direction = (T3DVec3){{1-i, 0, i%2}};
+        vaults[i].bbox = usable_actor_bounding_box((usable_actor_t*)&vaults[i]);
+        vaults[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&vaults[i]);
         vaults[i].model = vault_model;
         vaults[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         t3d_mat4fp_from_srt_euler(vaults[i].mat_fp, vaults[i].scale.v, vaults[i].rotation.v, vaults[i].position.v);
@@ -593,6 +616,7 @@ void game_logic(float deltatime)
                                 } while (players[i].vaults[target_idx]);
                                 players[i].target_idx = target_idx;
                                 // Go to a point in front of the vault
+                                // TODO Center of usable zone
                                 t3d_vec3_scale(&players[i].target, &vaults[target_idx].direction, vaults[target_idx].h/2.0f + players[i].h/2.0f);
                                 t3d_vec3_add(&players[i].target, &players[i].target, &vaults[target_idx].position);
                                 debugf("Player #%d now targeting vault #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
@@ -618,6 +642,7 @@ void game_logic(float deltatime)
                             } while (players[i].furnitures[target_idx]);
                             players[i].target_idx = target_idx;
                             // Go to a point in front of the furniture
+                            // TODO Center of usable zone
                             t3d_vec3_scale(&players[i].target, &furnitures[target_idx].direction, furnitures[target_idx].h/2.0f + players[i].h/2.0f);
                             t3d_vec3_add(&players[i].target, &players[i].target, &furnitures[target_idx].position);
                             debugf("Player #%d now targeting furniture #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
@@ -642,7 +667,7 @@ void game_logic(float deltatime)
                                 //reset_idle_delay(i);
                                 players[i].state = IDLE;
                             } else {
-                                if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
+                                if (can_rummage(i, players[i].target_idx)) {
                                     // We have reached the target: search for key
                                     players[i].state = RUMMAGING;
                                 } else {
@@ -713,8 +738,8 @@ void game_logic(float deltatime)
                                 //reset_idle_delay(i);
                                 players[i].state = IDLE;
                             } else {
-                                if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
-                                    // We have reached the target: attack player
+                                if (can_open(i, players[i].target_idx)) {
+                                    // We have reached the target: open vault
                                     players[i].state = OPENING_VAULT;
                                 } else {
                                     // We haven't reached the target, get more waypoints
@@ -749,30 +774,18 @@ void game_logic(float deltatime)
             if(players[i].position.v[2] < -(room.h/2.0f - players[i].h/2.0f))   players[i].position.v[2] = -(room.h/2.0f - players[i].h/2.0f);
             if(players[i].position.v[2] >  (room.h/2.0f - players[i].h/2.0f))   players[i].position.v[2] =  (room.h/2.0f - players[i].h/2.0f);
             // Static objects
-            c2AABB player_i;
-            player_i.min = c2V(players[i].position.v[0] - players[i].w/2.0f, players[i].position.v[2] - players[i].h/2.0f);
-            player_i.max = c2V(players[i].position.v[0] + players[i].w/2.0f, players[i].position.v[2] + players[i].h/2.0f);
+            c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
             for (int j=0; j<FURNITURES_COUNT; j++) {
-                c2AABB furniture_j;
-                float fw = furnitures[j].rotated ? furnitures[j].h : furnitures[j].w;
-                float fh = furnitures[j].rotated ? furnitures[j].w : furnitures[j].h;
-                furniture_j.min = c2V(furnitures[j].position.v[0] - fw/2.0f, furnitures[j].position.v[2] - fh/2.0f);
-                furniture_j.max = c2V(furnitures[j].position.v[0] + fw/2.0f, furnitures[j].position.v[2] + fh/2.0f);
                 c2Manifold m;
-                c2AABBtoAABBManifold(player_i, furniture_j, &m);
+                c2AABBtoAABBManifold(player_i, furnitures[j].bbox, &m);
                 if (m.count) {
                     players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
                     players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
                 }
             }
             for (int j=0; j<VAULTS_COUNT; j++) {
-                c2AABB vault_j;
-                float vw = vaults[j].rotated ? vaults[j].h : vaults[j].w;
-                float vh = vaults[j].rotated ? vaults[j].w : vaults[j].h;
-                vault_j.min = c2V(vaults[j].position.v[0] - vw/2.0f, vaults[j].position.v[2] - vh/2.0f);
-                vault_j.max = c2V(vaults[j].position.v[0] + vw/2.0f, vaults[j].position.v[2] + vh/2.0f);
                 c2Manifold m;
-                c2AABBtoAABBManifold(player_i, vault_j, &m);
+                c2AABBtoAABBManifold(player_i, vaults[j].bbox, &m);
                 if (m.count) {
                     players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
                     players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
@@ -781,9 +794,7 @@ void game_logic(float deltatime)
             // Other players
             for (int j=0; j<MAXPLAYERS; j++) {
                 if (i != j) {
-                    c2AABB player_j;
-                    player_j.min = c2V(players[j].position.v[0] - players[j].w/2.0f, players[j].position.v[2] - players[j].h/2.0f);
-                    player_j.max = c2V(players[j].position.v[0] + players[j].w/2.0f, players[j].position.v[2] + players[j].h/2.0f);
+                    c2AABB player_j = actor_bounding_box((actor_t*)&players[j]);
                     c2Manifold m;
                     c2AABBtoAABBManifold(player_i, player_j, &m);
                     if (m.count) {
@@ -837,16 +848,15 @@ void game_render(float deltatime)
 }
 
 #if ENABLE_WIREFRAME
-void render_actor_aabb(actor_t* actor, bool rotated) {
-    float w = rotated ? actor->h : actor->w;
-    float h = rotated ? actor->w : actor->h;
-    float min_x = actor->position.v[0] - w/2.0f;
-    float min_y = actor->position.v[1];
-    float min_z = actor->position.v[2] - h/2.0f;
-    float max_x = actor->position.v[0] + w/2.0f;
-    float max_y = actor->position.v[1] + actor->max_y;
-    float max_z = actor->position.v[2] + h/2.0f;
-    draw_aabb(min_x, max_x, min_y, max_y, min_z, max_z);
+void render_actor_aabb(actor_t* actor) {
+    c2AABB bbox = actor_bounding_box(actor);
+    draw_aabb(bbox.min.x, bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, bbox.min.y, bbox.max.y, 0.2f, 0.2f, 0.2f);
+}
+void render_usable_actor_aabb(usable_actor_t* actor) {
+    draw_aabb(actor->bbox.min.x, actor->bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, actor->bbox.min.y, actor->bbox.max.y, 0.2f, 0.2f, 0.2f);
+}
+void render_usable_zone_aabb(usable_actor_t* actor) {
+    draw_aabb(actor->zone_bbox.min.x, actor->zone_bbox.max.x, actor->position.v[1], actor->position.v[1], actor->zone_bbox.min.y, actor->zone_bbox.max.y, 0.2f, 0.5f, 0.2f);
 }
 #endif
 
@@ -855,17 +865,19 @@ void game_render_gl(float deltatime)
 #if ENABLE_WIREFRAME
     // Furnitures
     for (int i=0; i<FURNITURES_COUNT; i++) {
-        render_actor_aabb((actor_t*)&furnitures[i], furnitures[i].rotated);
+        render_usable_actor_aabb((usable_actor_t*)&furnitures[i]);
+        render_usable_zone_aabb((usable_actor_t*)&furnitures[i]);
     }
 
     // Vaults
     for (int i=0; i<VAULTS_COUNT; i++) {
-        render_actor_aabb((actor_t*)&vaults[i], vaults[i].rotated);
+        render_usable_actor_aabb((usable_actor_t*)&vaults[i]);
+        render_usable_zone_aabb((usable_actor_t*)&vaults[i]);
     }
 
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
-        render_actor_aabb((actor_t*)&players[i], false);
+        render_actor_aabb((actor_t*)&players[i]);
     }
 #endif
 }
