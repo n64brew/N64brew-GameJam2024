@@ -28,7 +28,8 @@ MapRenderer::MapRenderer() :
     block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
 
     rdpq_attach(surface.get(), nullptr);
-        rdpq_clear(RGBA32(255, 255, 255, 255));
+        rdpq_set_scissor(0, 0, 320, 240);
+        rdpq_clear(RGBA32(0, 0, 0, 0));
     rdpq_detach();
 
     // Initialize TLUT
