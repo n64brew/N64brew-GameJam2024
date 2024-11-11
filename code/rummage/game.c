@@ -31,7 +31,13 @@
 #define WAYPOINT_DELAY 60
 #define WAYPOINT_DISTANCE_THRESHOLD 5.0f
 #define ACTION_DISTANCE_THRESHOLD 10.0f
-#define ACTION_TIME 1.0f
+#define ACTION_TIME (50.0f/60.0f)
+#define ATTACK_TIME (50.0f/60.0f)
+#define ATTACK_START (35.0f/60.0f)
+#define ATTACK_END (10.0f/60.0f)
+#define ATTACK_OFFSET 10.0f
+#define ATTACK_RADIUS 5.0f
+#define STUNNED_TIME (50.0f/60.0f)
 #define FURNITURES_COUNT 9
 #define VAULTS_COUNT 3
 
@@ -89,12 +95,15 @@ typedef struct {
     T3DAnim anim_idle;
     T3DAnim anim_walk;
     T3DAnim anim_act;
+    T3DAnim anim_attack;
     float speed;
     bool had_key;
     bool has_key;
     bool had_won;
     bool has_won;
     float action_playing_time;
+    float attack_playing_time;
+    float stun_playing_time;
     // AI players
     int idle_delay;
     ai_state_t state;
@@ -326,6 +335,12 @@ void start_player_action(int i) {
     t3d_anim_set_time(&players[i].anim_act, 0.0f);
 }
 
+void start_player_attack(int i) {
+    players[i].attack_playing_time = ATTACK_TIME;
+    t3d_anim_set_playing(&players[i].anim_attack, true);
+    t3d_anim_set_time(&players[i].anim_attack, 0.0f);
+}
+
 bool close_to_furniture(int i, int j) {
     c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
     return c2AABBtoAABB(player_i, furnitures[j].zone_bbox);
@@ -394,7 +409,7 @@ bool can_open(int i, int j) {
 bool open(int i, int j) {
     if (players[i].has_key && can_open(i, j)) {
         debugf("Player #%d trying open vault #%d!\n", i, j);
-        // TODO play sfx?
+        wav64_play(&sfx_rummage, 31);   // TODO Vault sfx
         players[i].vaults[players[i].target_idx] = true;
         start_player_action(i);
         if (vaults[j].is_target) {
@@ -518,6 +533,10 @@ void game_init()
         t3d_anim_attach(&players[i].anim_act, &players[i].skel);
         t3d_anim_set_looping(&players[i].anim_act, false);
         t3d_anim_set_playing(&players[i].anim_act, false);
+        players[i].anim_attack = t3d_anim_create(players[i].model, "Action_Attack");
+        t3d_anim_attach(&players[i].anim_attack, &players[i].skel);
+        t3d_anim_set_looping(&players[i].anim_attack, false);
+        t3d_anim_set_playing(&players[i].anim_attack, false);
         players[i].color = colors[i];
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_begin();
@@ -533,6 +552,7 @@ void game_init()
         players[i].had_won = false;
         players[i].has_won = false;
         players[i].action_playing_time = 0;
+        players[i].attack_playing_time = 0;
         players[i].hidden = false;
         // AI player
         if (i >= playercount) {
@@ -589,8 +609,8 @@ void game_logic(float deltatime)
         // Player controls
         uint32_t playercount = core_get_playercount();
         for (size_t i = 0; i < MAXPLAYERS; i++) {
-            if (players[i].action_playing_time > deltatime) {
-                players[i].action_playing_time -= deltatime;
+            players[i].action_playing_time -= deltatime;
+            if (players[i].action_playing_time > 0) {
                 continue;
             } else {
                 players[i].action_playing_time = 0;
@@ -603,6 +623,32 @@ void game_logic(float deltatime)
                     players[i].had_won = true;
                 }
             }
+            players[i].attack_playing_time -= deltatime;
+            if (players[i].attack_playing_time > 0) {
+                if (players[i].attack_playing_time < ATTACK_START && players[i].attack_playing_time > ATTACK_END) {
+                    float s, c;
+                    fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+                    c2Circle attack_range;
+                    attack_range.p = c2V(players[i].position.v[0] + s * ATTACK_OFFSET, players[i].position.v[2] + c * ATTACK_OFFSET);
+                    attack_range.r = ATTACK_RADIUS;
+                    for (int j=0; j<MAXPLAYERS; j++) {
+                        if (i != j) {
+                            c2AABB player_j = actor_bounding_box((actor_t*)&players[j]);
+                            if (c2CircletoAABB(attack_range, player_j)) {
+                                // TODO Play stunned animation + disable movements for stunned player
+                                players[j].stun_playing_time = STUNNED_TIME;
+                                // Steal key, if any
+                                if (players[j].has_key) {
+                                    players[j].has_key = false;
+                                    players[j].had_key = false;
+                                    players[i].has_key = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
             if (i < playercount) {  // Human player
                 joypad_port_t port = core_get_playercontroller(i);
                 joypad_inputs_t joypad = joypad_get_inputs(port);
@@ -611,7 +657,7 @@ void game_logic(float deltatime)
                     minigame_end();
                 }
                 // Player actions: rummage, open vault, grab other player
-                if(joypad.btn.a || joypad.btn.b) {  // TODO use new key presses only ?
+                if(joypad.btn.a) {  // TODO use new key presses only ?
                     // If the player is close to a furniture, search for the key
                     for (int j=0; j<FURNITURES_COUNT; j++) {
                         rummage(i, j);
@@ -621,6 +667,9 @@ void game_logic(float deltatime)
                             open(i, j);
                         }
                     }
+                } else if (joypad.btn.b) {
+                    wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                    start_player_attack(i);
                 }
                 T3DVec3 newDir = {0};
                 newDir.v[0] = (float)joypad.stick_x * 0.10f;
@@ -895,13 +944,14 @@ void game_render(float deltatime)
         t3d_anim_update(&players[i].anim_walk, deltatime);
         if (players[i].action_playing_time > 0) {
             t3d_anim_update(&players[i].anim_act, deltatime);
+        } else if (players[i].attack_playing_time > 0) {
+            t3d_anim_update(&players[i].anim_attack, deltatime);
+        } else if (players[i].speed > 0.0f) {
+            // TODO only set anim when switching state ?
+            t3d_anim_set_playing(&players[i].anim_walk, true);
         } else {
             // TODO only set anim when switching state ?
-            if (players[i].speed > 0.0f) {
-                t3d_anim_set_playing(&players[i].anim_walk, true);
-            } else {
-                t3d_anim_set_playing(&players[i].anim_idle, true);
-            }
+            t3d_anim_set_playing(&players[i].anim_idle, true);
         }
         t3d_skeleton_update(&players[i].skel);
         // FIXME Need sync??
@@ -977,6 +1027,7 @@ void game_cleanup()
         t3d_anim_destroy(&players[i].anim_idle);
         t3d_anim_destroy(&players[i].anim_walk);
         t3d_anim_destroy(&players[i].anim_act);
+        t3d_anim_destroy(&players[i].anim_attack);
         free_uncached(players[i].mat_fp);
     }
     t3d_model_free(players[0].model);
