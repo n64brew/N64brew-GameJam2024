@@ -32,3 +32,13 @@ struct Vector3* find_nearest_target(struct Vector3* from, float error_tolerance)
 
     return result;
 }
+
+bool is_tank_target_used(struct Vector3* target) {
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        if (vector3DistSqrd(target, &gRampage.tanks[i].current_target) < 1.0f) {
+            return true;
+        }
+    }
+
+    return false;
+}

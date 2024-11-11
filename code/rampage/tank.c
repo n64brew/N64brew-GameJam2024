@@ -7,6 +7,7 @@
 #include "./math/quaternion.h"
 #include "./assets.h"
 #include "./math/mathf.h"
+#include "./scene_query.h"
 
 struct Vector2 tank_rotate_speed;
 
@@ -29,46 +30,67 @@ struct dynamic_object_type tank_collider = {
     .friction = 0.0f,
 };
 
-static struct Vector3 move_direction[] = {
+#define DIRECTION_COUNT 4
+
+static struct Vector3 move_direction[DIRECTION_COUNT] = {
     {0.0f, 0.0f, 1.0f},
     {0.0f, 0.0f, -1.0f},
     {1.0f, 0.0f, 0.0f},
     {-1.0f, 0.0f, 0.0f},
 };
 
-void rampage_tank_next_target(struct RampageTank* tank) {
+static float max_bound[DIRECTION_COUNT] = {
+    2.1f * BUILDING_SPACING,
+    -2.1f * BUILDING_SPACING,
+    2.6f * BUILDING_SPACING,
+    -2.6f * BUILDING_SPACING,
+};
+
+bool rampage_is_valid_target(struct RampageTank* tank, int dir_index) {
     struct Vector3 forward = {
         tank->dynamic_object.rotation.y,
         0.0f,
         tank->dynamic_object.rotation.x
     };
 
-    int possible_options = 0;
+    float dir_dot = vector3Dot(&move_direction[dir_index], &forward);
 
-    for (int i = 0; i < 4; i += 1) {
-        if (vector3Dot(&move_direction[i], &forward) < -0.5f) {
-            continue;
-        }
-
-        possible_options += 1;
+    if (dir_dot < -0.5f) {
+        return false;
     }
 
-    int option = randomInRange(0, possible_options);
+    float distance = vector3Dot(&tank->dynamic_object.position, &move_direction[dir_index]) + BUILDING_SPACING;
 
-    for (int i = 0; i < 4; i += 1) {
-        if (vector3Dot(&move_direction[i], &forward) < -0.5f) {
+    if (distance > max_bound[dir_index]) {
+        return false;
+    }
+
+    return true;
+}
+
+void rampage_tank_next_target(struct RampageTank* tank) {
+
+    int option = randomInRange(0, DIRECTION_COUNT);
+
+    for (int i = 0; i < DIRECTION_COUNT; i += 1) {
+        if (i != option || !rampage_is_valid_target(tank, i)) {
             continue;
         }
 
-        if (i == option) {
-            vector3AddScaled(
-                &tank->current_target, 
-                &move_direction[i], 
-                BUILDING_SPACING, 
-                &tank->current_target
-            );
-            break;
+        struct Vector3 next_target;
+
+        vector3AddScaled(
+            &tank->current_target, 
+            &move_direction[i], 
+            BUILDING_SPACING, 
+            &next_target
+        );
+
+        if (is_tank_target_used(&next_target)) {
+            continue;
         }
+
+        tank->current_target = next_target;
     }
 }
 
@@ -90,8 +112,6 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
     tank->dynamic_object.center.y = tank_collider.data.box.half_size.y;
     tank->current_target = *start_position;
 
-    rampage_tank_next_target(tank);
-
     collision_scene_add(&tank->dynamic_object);
 
     vector2ComplexFromAngle(1.0f / 30.0f, &tank_rotate_speed);
@@ -99,6 +119,22 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 
 void rampage_tank_destroy(struct RampageTank* tank) {
     collision_scene_remove(&tank->dynamic_object);
+}
+
+bool rampage_tank_has_forward_hit(struct RampageTank* tank, struct Vector2* offset, struct Vector2* current_dir) {
+    struct contact* curr = tank->dynamic_object.active_contacts;
+
+    while (curr) {
+        struct Vector2 normal = { curr->normal.x, curr->normal.z };
+
+        if (vector2Dot(offset, &normal) < 0.1f && vector2Dot(current_dir, offset) > 0.5f) {
+            return true;
+        }
+
+        curr = curr->next;
+    }
+
+    return false;
 }
 
 void rampage_tank_update(struct RampageTank* tank, float delta_time) {
@@ -115,7 +151,20 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
         tank->dynamic_object.rotation.x,
     };
 
-    if (vector2RotateTowards(
+    if (vector2MagSqr(&offset) < 0.5f) {
+        rampage_tank_next_target(tank);
+
+        tank->dynamic_object.velocity.x = mathfMoveTowards(
+            tank->dynamic_object.velocity.x,
+            0.0f,
+            TANK_ACCEL * delta_time
+        );
+        tank->dynamic_object.velocity.z = mathfMoveTowards(
+            tank->dynamic_object.velocity.z,
+            0.0f,
+            TANK_ACCEL * delta_time
+        );
+    } else if (vector2RotateTowards(
         &current_dir,
         &dir,
         &tank_rotate_speed,
@@ -154,10 +203,6 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
 
     tank->dynamic_object.rotation.x = current_dir.y;
     tank->dynamic_object.rotation.y = current_dir.x;
-
-    if (vector2MagSqr(&offset) < 0.5f) {
-        rampage_tank_next_target(tank);
-    }
 }
 
 void rampage_tank_render(struct RampageTank* tank) {

@@ -18,7 +18,7 @@
 surface_t *depthBuffer;
 T3DViewport viewport;
 
-T3DVec3 camPos = {{0.0f, SCALE_FIXED_POINT(8.0f), SCALE_FIXED_POINT(5.0f)}};
+T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(5.0f), SCALE_FIXED_POINT(4.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 
 struct Rampage gRampage;
@@ -96,6 +96,8 @@ void minigame_fixedloop(float deltatime) {
     }
 }
 
+#define ORTHO_SCALE     7.0f
+
 void minigame_loop(float deltatime) {   
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
@@ -103,7 +105,12 @@ void minigame_loop(float deltatime) {
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(14.0f));
+    t3d_viewport_set_ortho(
+        &viewport, 
+        SCALE_FIXED_POINT(-ORTHO_SCALE * 1.5f), SCALE_FIXED_POINT(ORTHO_SCALE * 1.5f),
+        SCALE_FIXED_POINT(-ORTHO_SCALE), SCALE_FIXED_POINT(ORTHO_SCALE),
+        SCALE_FIXED_POINT(-1.0f), SCALE_FIXED_POINT(20.0f)
+    );
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     rdpq_attach(display_get(), depthBuffer);
