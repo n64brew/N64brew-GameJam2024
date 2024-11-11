@@ -35,7 +35,7 @@
 #define ATTACK_TIME (50.0f/60.0f)
 #define ATTACK_START (35.0f/60.0f)
 #define ATTACK_END (10.0f/60.0f)
-#define ATTACK_OFFSET 10.0f
+#define ATTACK_OFFSET 15.0f
 #define ATTACK_RADIUS 10.0f
 #define HURT_TIME (50.0f/60.0f)
 #define FURNITURES_COUNT 9
@@ -643,12 +643,12 @@ void game_logic(float deltatime)
             }
             if (players[i].attack_playing_time > 0) {
                 players[i].attack_playing_time -= deltatime;
-                if (players[i].attack_playing_time < ATTACK_START && players[i].attack_playing_time > ATTACK_END) {
+                if (players[i].attack_playing_time <= ATTACK_START && players[i].attack_playing_time >= ATTACK_END) {
                     float s, c;
                     fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
                     // TODO attack range could be stored in player struct
                     c2Circle attack_range;
-                    attack_range.p = c2V(players[i].position.v[0] + s * ATTACK_OFFSET, players[i].position.v[2] + c * ATTACK_OFFSET);
+                    attack_range.p = c2V(players[i].position.v[0] + c * ATTACK_OFFSET, players[i].position.v[2] + s * ATTACK_OFFSET);
                     attack_range.r = ATTACK_RADIUS;
                     for (int j=0; j<MAXPLAYERS; j++) {
                         if (i != j && players[j].hurt_playing_time == 0) {
@@ -1025,6 +1025,15 @@ void game_render_gl(float deltatime)
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
         render_actor_aabb((actor_t*)&players[i]);
+        if (players[i].attack_playing_time <= ATTACK_START && players[i].attack_playing_time >= ATTACK_END) {
+            float s, c;
+            fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+            float x = players[i].position.v[0] + c * ATTACK_OFFSET;
+            float y = players[i].position.v[1];
+            float z = players[i].position.v[2] + s * ATTACK_OFFSET;
+            draw_aabb(x-ATTACK_RADIUS, x+ATTACK_RADIUS, y, y, z-ATTACK_RADIUS, z+ATTACK_RADIUS, 0.8f, 0.5f, 0.5f);
+            render_actor_aabb((actor_t*)&players[i]);
+        }
     }
 #endif
 }
