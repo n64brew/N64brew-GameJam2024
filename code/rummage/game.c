@@ -312,11 +312,20 @@ bool follow_path(PlyNum i) {
     return has_waypoints(i);
 }
 
+void abort_path(int i) {
+    //reset_idle_delay(i);
+    players[i].state = IDLE;
+}
 
+
+
+bool close_to_furniture(int i, int j) {
+    c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
+    return c2AABBtoAABB(player_i, furnitures[j].zone_bbox);
+}
 
 bool can_rummage(int i, int j) {
-    c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
-    if (c2AABBtoAABB(player_i, furnitures[j].zone_bbox)) {
+    if (close_to_furniture(i, j)) {
         // Is player looking at the furniture?
         T3DVec3 diff;
         t3d_vec3_diff(&diff, &furnitures[j].position, &players[i].position);
@@ -355,9 +364,13 @@ PlyNum leader() {
     return MAXPLAYERS;
 }
 
-bool can_open(int i, int j) {
+bool close_to_vault(int i, int j) {
     c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
-    if (c2AABBtoAABB(player_i, vaults[j].zone_bbox)) {
+    return c2AABBtoAABB(player_i, vaults[j].zone_bbox);
+}
+
+bool can_open(int i, int j) {
+    if (close_to_vault(i, j)) {
         // Is player looking at the vault?
         T3DVec3 diff;
         t3d_vec3_diff(&diff, &vaults[j].position, &players[i].position);
@@ -685,14 +698,21 @@ void game_logic(float deltatime)
                         if (!follow_path(i)) {
                             // No more waypoint
                             if (players[i].path_delay < 0) {
-                                // TODO Abandon path ? move back?
-                                //reset_idle_delay(i);
-                                players[i].state = IDLE;
+                                abort_path(i);
                             } else {
-                                // TODO if in zone, need to rotate towards furniture !
-                                if (can_rummage(i, players[i].target_idx)) {
-                                    // We have reached the target: search for key
-                                    players[i].state = RUMMAGING;
+                                if (close_to_furniture(i, players[i].target_idx)) {
+                                    // Rotate towards furniture
+                                    T3DVec3 diff;
+                                    t3d_vec3_diff(&diff, &furnitures[players[i].target_idx].position, &players[i].position);
+                                    float newAngle = -atan2f(diff.v[0], diff.v[2]);
+                                    players[i].rotation.v[1] = newAngle;
+                                    if (can_rummage(i, players[i].target_idx)) {
+                                        // We have reached the target: search for key
+                                        players[i].state = RUMMAGING;
+                                    } else {
+                                        // We have reached the target but something's wrong, find another target
+                                        abort_path(i);
+                                    }
                                 } else {
                                     // We haven't reached the target, get more waypoints
                                     update_path(i);
@@ -715,9 +735,7 @@ void game_logic(float deltatime)
                         if (!follow_path(i)) {
                             // No more waypoint
                             if (players[i].path_delay < 0) {
-                                // TODO Abandon path ? move back?
-                                //reset_idle_delay(i);
-                                players[i].state = IDLE;
+                                abort_path(i);
                             } else {
                                 if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
                                     // FIXME should use a smaller waypoints buffer for a moving target
@@ -757,14 +775,21 @@ void game_logic(float deltatime)
                         if (!follow_path(i)) {
                             // No more waypoint
                             if (players[i].path_delay < 0) {
-                                // TODO Abandon path ? move back?
-                                //reset_idle_delay(i);
-                                players[i].state = IDLE;
+                                abort_path(i);
                             } else {
-                                // TODO if in zone, need to rotate towards vault !
-                                if (can_open(i, players[i].target_idx)) {
-                                    // We have reached the target: open vault
-                                    players[i].state = OPENING_VAULT;
+                                if (close_to_vault(i, players[i].target_idx)) {
+                                    // Rotate towards vault
+                                    T3DVec3 diff;
+                                    t3d_vec3_diff(&diff, &vaults[players[i].target_idx].position, &players[i].position);
+                                    float newAngle = -atan2f(diff.v[0], diff.v[2]);
+                                    players[i].rotation.v[1] = newAngle;
+                                    if (can_open(i, players[i].target_idx)) {
+                                        // We have reached the target: open vault
+                                        players[i].state = OPENING_VAULT;
+                                    } else {
+                                        // We have reached the target but something's wrong, find another target
+                                        abort_path(i);
+                                    }
                                 } else {
                                     // We haven't reached the target, get more waypoints
                                     update_path(i);
