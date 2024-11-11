@@ -6,7 +6,14 @@
 #include <t3d/t3dmodel.h>
 
 #define ENABLE_MUSIC 0
-#define ENABLE_TEXT 1
+#define ENABLE_TEXT 0
+#define ENABLE_WIREFRAME 1
+
+#if ENABLE_WIREFRAME
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/gl_integration.h>
+#endif
 
 #define COUNTDOWN_DELAY     3.0f
 #define GO_DELAY            1.0f
@@ -55,9 +62,22 @@ wav64_t sfx_winner;
 
 void minigame_init()
 {
-    // Init display and 3D viewport
+    // Init display
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     depthBuffer = display_get_zbuf();
+
+#if ENABLE_WIREFRAME
+    // Init OpenGL, for wireframe
+    gl_init();
+    float aspect_ratio = (float)display_get_width() / (float)display_get_height();
+    float near_plane = 20.0f;
+    float far_plane = 320.0f;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glFrustum(-near_plane*aspect_ratio, near_plane*aspect_ratio, -near_plane, near_plane, near_plane, far_plane);
+#endif
+
+    // Init 3D viewport
     t3d_init((T3DInitParams){});
     viewport = t3d_viewport_create();
 
@@ -167,6 +187,20 @@ void minigame_loop(float deltatime)
 
     game_render(deltatime);
 
+#if ENABLE_WIREFRAME
+    gl_context_begin();
+	// Set the camera's position
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(
+		0, 200.0, 80.0,
+		0, 0, 0,
+		0, 1, 0
+		);
+    game_render_gl(deltatime);
+    gl_context_end();
+#endif
+
 #if ENABLE_TEXT
     rdpq_sync_tile();
     rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -211,5 +245,8 @@ void minigame_cleanup()
     rdpq_font_free(fonttext);
 #endif
     t3d_destroy();
+#if ENABLE_WIREFRAME
+    gl_close();
+#endif
     display_close();
 }

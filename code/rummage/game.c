@@ -7,6 +7,13 @@
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
 
+#define ENABLE_WIREFRAME 1
+
+#if ENABLE_WIREFRAME
+#include "draw.h"
+#include <GL/gl.h>
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch"
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -40,6 +47,7 @@ typedef struct actor_t {
     T3DVec3 direction;
     float w;
     float h;
+    float max_y;
     bool hidden;
 } actor_t;
 
@@ -51,6 +59,7 @@ typedef struct {
 
 typedef struct {
     actor_t;
+    bool rotated;
     bool is_target;
 } vault_t;
 
@@ -354,6 +363,7 @@ void game_init()
     room.position = (T3DVec3){{0, 0, 0}};
     room.w = 4.8 * T3D_MODEL_SCALE;
     room.h = 4.8 * T3D_MODEL_SCALE;
+    room.max_y = 1.81f * T3D_MODEL_SCALE;
     room.model = t3d_model_load("rom:/rummage/room.t3dm");
     room.mat_fp = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(room.mat_fp, room.scale.v, room.rotation.v, room.position.v);
@@ -371,6 +381,7 @@ void game_init()
     for (int i=0; i<FURNITURES_COUNT; i++) {
         furnitures[i].w = 0.92f * T3D_MODEL_SCALE;
         furnitures[i].h = 0.42f * T3D_MODEL_SCALE;
+        furnitures[i].max_y = 0.70f * T3D_MODEL_SCALE;
         furnitures[i].scale = (T3DVec3){{1, 1, 1}};
         int rotated = rand() % 3;
         furnitures[i].rotated = rotated % 2;
@@ -396,7 +407,9 @@ void game_init()
     for (int i=0; i<VAULTS_COUNT; i++) {
         vaults[i].w = 1.09f * T3D_MODEL_SCALE;
         vaults[i].h = 0.11f * T3D_MODEL_SCALE;
+        vaults[i].max_y = 1.50f * T3D_MODEL_SCALE;
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
+        vaults[i].rotated = (i-1) % 2;
         vaults[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         vaults[i].position = (T3DVec3){{ (i-1)*(room.w-vaults[i].h)/2.0f, 0, -1*(room.h-vaults[i].h)/2.0f*(i%2) }};
         vaults[i].direction = (T3DVec3){{1-i, 0, i%2}};
@@ -424,6 +437,7 @@ void game_init()
     for (int i=0; i<MAXPLAYERS; i++) {
         players[i].w = 1.42f * 0.2f * T3D_MODEL_SCALE;
         players[i].h = 1.42f * 0.2f * T3D_MODEL_SCALE;
+        players[i].max_y = 3.60f * 0.2f * T3D_MODEL_SCALE;
         players[i].scale = (T3DVec3){{0.2f, 0.2f, 0.2f}};
         players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         players[i].position = (T3DVec3){{ ((i-1)%2)*50, 0, ((i-2)%2)*50 }};
@@ -472,8 +486,9 @@ void game_init()
     key.scale = (T3DVec3){{1, 1, 1}};
     key.rotation = (T3DVec3){{0, 0, 0}};
     key.position = (T3DVec3){{0, 0, 0}};
-    key.w = 0.3f * T3D_MODEL_SCALE;
-    key.h = 0.3f * T3D_MODEL_SCALE;
+    key.w = 0.4f * T3D_MODEL_SCALE;
+    key.h = 0.4f * T3D_MODEL_SCALE;
+    key.max_y = 0.42f * T3D_MODEL_SCALE;
     key.model = t3d_model_load("rom:/rummage/key.t3dm");
     key.mat_fp = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, key.position.v);
@@ -752,8 +767,10 @@ void game_logic(float deltatime)
             }
             for (int j=0; j<VAULTS_COUNT; j++) {
                 c2AABB vault_j;
-                vault_j.min = c2V(vaults[j].position.v[0] - vaults[j].w/2.0f, vaults[j].position.v[2] - vaults[j].h/2.0f);
-                vault_j.max = c2V(vaults[j].position.v[0] + vaults[j].w/2.0f, vaults[j].position.v[2] + vaults[j].h/2.0f);
+                float vw = vaults[j].rotated ? vaults[j].h : vaults[j].w;
+                float vh = vaults[j].rotated ? vaults[j].w : vaults[j].h;
+                vault_j.min = c2V(vaults[j].position.v[0] - vw/2.0f, vaults[j].position.v[2] - vh/2.0f);
+                vault_j.max = c2V(vaults[j].position.v[0] + vw/2.0f, vaults[j].position.v[2] + vh/2.0f);
                 c2Manifold m;
                 c2AABBtoAABBManifold(player_i, vault_j, &m);
                 if (m.count) {
@@ -817,6 +834,40 @@ void game_render(float deltatime)
             rspq_block_run(key.dpl);
         }
     }
+}
+
+#if ENABLE_WIREFRAME
+void render_actor_aabb(actor_t* actor, bool rotated) {
+    float w = rotated ? actor->h : actor->w;
+    float h = rotated ? actor->w : actor->h;
+    float min_x = actor->position.v[0] - w/2.0f;
+    float min_y = actor->position.v[1];
+    float min_z = actor->position.v[2] - h/2.0f;
+    float max_x = actor->position.v[0] + w/2.0f;
+    float max_y = actor->position.v[1] + actor->max_y;
+    float max_z = actor->position.v[2] + h/2.0f;
+    draw_aabb(min_x, max_x, min_y, max_y, min_z, max_z);
+}
+#endif
+
+void game_render_gl(float deltatime)
+{
+#if ENABLE_WIREFRAME
+    // Furnitures
+    for (int i=0; i<FURNITURES_COUNT; i++) {
+        render_actor_aabb((actor_t*)&furnitures[i], furnitures[i].rotated);
+    }
+
+    // Vaults
+    for (int i=0; i<VAULTS_COUNT; i++) {
+        render_actor_aabb((actor_t*)&vaults[i], vaults[i].rotated);
+    }
+
+    // Players
+    for (int i=0; i<MAXPLAYERS; i++) {
+        render_actor_aabb((actor_t*)&players[i], false);
+    }
+#endif
 }
 
 
