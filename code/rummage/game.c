@@ -36,8 +36,8 @@
 #define ATTACK_START (35.0f/60.0f)
 #define ATTACK_END (10.0f/60.0f)
 #define ATTACK_OFFSET 10.0f
-#define ATTACK_RADIUS 5.0f
-#define STUNNED_TIME (50.0f/60.0f)
+#define ATTACK_RADIUS 10.0f
+#define HURT_TIME (50.0f/60.0f)
 #define FURNITURES_COUNT 9
 #define VAULTS_COUNT 3
 
@@ -96,6 +96,7 @@ typedef struct {
     T3DAnim anim_walk;
     T3DAnim anim_act;
     T3DAnim anim_attack;
+    T3DAnim anim_hurt;
     float speed;
     bool had_key;
     bool has_key;
@@ -103,7 +104,7 @@ typedef struct {
     bool has_won;
     float action_playing_time;
     float attack_playing_time;
-    float stun_playing_time;
+    float hurt_playing_time;
     // AI players
     int idle_delay;
     ai_state_t state;
@@ -341,6 +342,12 @@ void start_player_attack(int i) {
     t3d_anim_set_time(&players[i].anim_attack, 0.0f);
 }
 
+void start_player_hurt(int i) {
+    players[i].hurt_playing_time = HURT_TIME;
+    t3d_anim_set_playing(&players[i].anim_hurt, true);
+    t3d_anim_set_time(&players[i].anim_hurt, 0.0f);
+}
+
 bool close_to_furniture(int i, int j) {
     c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
     return c2AABBtoAABB(player_i, furnitures[j].zone_bbox);
@@ -537,6 +544,10 @@ void game_init()
         t3d_anim_attach(&players[i].anim_attack, &players[i].skel);
         t3d_anim_set_looping(&players[i].anim_attack, false);
         t3d_anim_set_playing(&players[i].anim_attack, false);
+        players[i].anim_hurt = t3d_anim_create(players[i].model, "Action_Hurt");
+        t3d_anim_attach(&players[i].anim_hurt, &players[i].skel);
+        t3d_anim_set_looping(&players[i].anim_hurt, false);
+        t3d_anim_set_playing(&players[i].anim_hurt, false);
         players[i].color = colors[i];
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_begin();
@@ -553,6 +564,7 @@ void game_init()
         players[i].has_won = false;
         players[i].action_playing_time = 0;
         players[i].attack_playing_time = 0;
+        players[i].hurt_playing_time = 0;
         players[i].hidden = false;
         // AI player
         if (i >= playercount) {
@@ -609,8 +621,14 @@ void game_logic(float deltatime)
         // Player controls
         uint32_t playercount = core_get_playercount();
         for (size_t i = 0; i < MAXPLAYERS; i++) {
-            players[i].action_playing_time -= deltatime;
+            if (players[i].hurt_playing_time > 0) {
+                players[i].hurt_playing_time -= deltatime;
+                continue;
+            } else {
+                players[i].hurt_playing_time = 0;
+            }
             if (players[i].action_playing_time > 0) {
+                players[i].action_playing_time -= deltatime;
                 continue;
             } else {
                 players[i].action_playing_time = 0;
@@ -623,20 +641,23 @@ void game_logic(float deltatime)
                     players[i].had_won = true;
                 }
             }
-            players[i].attack_playing_time -= deltatime;
             if (players[i].attack_playing_time > 0) {
+                players[i].attack_playing_time -= deltatime;
                 if (players[i].attack_playing_time < ATTACK_START && players[i].attack_playing_time > ATTACK_END) {
                     float s, c;
                     fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+                    // TODO attack range could be stored in player struct
                     c2Circle attack_range;
                     attack_range.p = c2V(players[i].position.v[0] + s * ATTACK_OFFSET, players[i].position.v[2] + c * ATTACK_OFFSET);
                     attack_range.r = ATTACK_RADIUS;
                     for (int j=0; j<MAXPLAYERS; j++) {
-                        if (i != j) {
+                        if (i != j && players[j].hurt_playing_time == 0) {
+                            // TODO All players' bounding boxes could be stored in player struct for each frame ?
                             c2AABB player_j = actor_bounding_box((actor_t*)&players[j]);
                             if (c2CircletoAABB(attack_range, player_j)) {
-                                // TODO Play stunned animation + disable movements for stunned player
-                                players[j].stun_playing_time = STUNNED_TIME;
+                                // TODO Hurt SFX ?
+                                debugf("player #%d hurting player #%d\n", i, j);
+                                start_player_hurt(j);
                                 // Steal key, if any
                                 if (players[j].has_key) {
                                     players[j].has_key = false;
@@ -648,6 +669,8 @@ void game_logic(float deltatime)
                     }
                 }
                 continue;
+            } else {
+                players[i].attack_playing_time = 0;
             }
             if (i < playercount) {  // Human player
                 joypad_port_t port = core_get_playercontroller(i);
@@ -805,7 +828,12 @@ void game_logic(float deltatime)
                                     // FIXME should use a smaller waypoints buffer for a moving target
                                     // FIXME should also limit pathfinder to a certain depth for better performances
                                     int target_idx = players[i].target_idx;
-                                    if (t3d_vec3_distance(&players[i].position, &players[target_idx].position) < ACTION_DISTANCE_THRESHOLD) {
+                                    if (t3d_vec3_distance(&players[i].position, &players[target_idx].position) - players[i].w < ATTACK_OFFSET+ATTACK_RADIUS) {
+                                        // Rotate towards player
+                                        T3DVec3 diff;
+                                        t3d_vec3_diff(&diff, &players[target_idx].position, &players[i].position);
+                                        float newAngle = -atan2f(diff.v[0], diff.v[2]);
+                                        players[i].rotation.v[1] = newAngle;
                                         // We have reached the target: attack player
                                         players[i].state = ATTACKING;
                                     } else {
@@ -825,9 +853,8 @@ void game_logic(float deltatime)
                     }
                     case ATTACKING:
                     {
-                        // TODO If key successfully stolen, go to unvisited vault
-                        // FIXME attack(i, players[i].target_idx);
-                        // TODO attacked player should be stunned and get back to IDLE
+                        wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                        start_player_attack(i);
                         reset_idle_delay(i);
                         players[i].state = IDLE;
                         break;
@@ -946,6 +973,8 @@ void game_render(float deltatime)
             t3d_anim_update(&players[i].anim_act, deltatime);
         } else if (players[i].attack_playing_time > 0) {
             t3d_anim_update(&players[i].anim_attack, deltatime);
+        } else if (players[i].hurt_playing_time > 0) {
+            t3d_anim_update(&players[i].anim_hurt, deltatime);
         } else if (players[i].speed > 0.0f) {
             // TODO only set anim when switching state ?
             t3d_anim_set_playing(&players[i].anim_walk, true);
@@ -1028,6 +1057,7 @@ void game_cleanup()
         t3d_anim_destroy(&players[i].anim_walk);
         t3d_anim_destroy(&players[i].anim_act);
         t3d_anim_destroy(&players[i].anim_attack);
+        t3d_anim_destroy(&players[i].anim_hurt);
         free_uncached(players[i].mat_fp);
     }
     t3d_model_free(players[0].model);
