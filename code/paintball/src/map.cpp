@@ -1,7 +1,7 @@
 #include "map.hpp"
 
 MapRenderer::MapRenderer() :
-    surface {FMT_I8, MapWidth, MapHeight},
+    surface {FMT_CI8, MapWidth, MapHeight},
     matFP {
         (T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)),
         free_uncached
@@ -48,9 +48,6 @@ MapRenderer::MapRenderer() :
 }
 
 void MapRenderer::render() {
-    // This is just a hack to convince the validator
-    surface_t _surface = surface_make(surface.get()->buffer, FMT_CI8, MapWidth, MapHeight, TEX_FORMAT_PIX2BYTES(FMT_CI8, MapWidth));
-
     rdpq_blitparms_t params {
         .width = 64,
         .height = 64,
@@ -61,7 +58,7 @@ void MapRenderer::render() {
     rdpq_sync_tile();
     rdpq_mode_tlut(TLUT_RGBA16);
     rdpq_tex_upload_tlut(tlut.get(), 0, 5);
-    rdpq_tex_blit(&_surface, 0, 0, &params);
+    rdpq_tex_blit(surface.get(), 0, 0, &params);
 }
 
 void MapRenderer::splash(int x, int y, PlyNum player) {
@@ -70,7 +67,6 @@ void MapRenderer::splash(int x, int y, PlyNum player) {
     // TODO: move this to its own block & batch all the blits
     rdpq_attach(surface.get(), nullptr);
         rdpq_set_mode_standard();
-        rdpq_clear(RGBA32(0, 0, 0, 0));
         rdpq_mode_antialias(AA_NONE);
         rdpq_mode_filter(FILTER_POINT);
         rdpq_set_scissor(0, 0, 32, 32);
