@@ -16,15 +16,6 @@ const MinigameDef minigame_def = {
     .instructions = "",
 };
 
-// Maximum target audio frequency.
-//
-// Needs to be 48 kHz if Opus audio compression is used.
-// In this example, we are using VADPCM audio compression
-// which means we can use the real frequency of the audio track.
-// #define AUDIO_HZ 32000.0f
-
-// wav64_t audio_track;
-
 // rdpq_font_t *font;
 
 bool sequence_1_libdragon = false;
@@ -45,14 +36,6 @@ void minigame_init()
 
     // font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     // rdpq_text_register_font(1, font);
-
-    ///////////////////////////////////////////////////////////
-    //                  Set up Audio                         //
-    ///////////////////////////////////////////////////////////
-
-    // Open the audio track and start playing it in channel 0.
-    // wav64_open(&audio_track, "rom:/mallard/video.wav64");
-    // wav64_play(&audio_track, 0);
 
     sequence_1_libdragon = true;
 }
@@ -137,12 +120,6 @@ void minigame_loop(float deltatime)
     //     int width = (int)(50 * (sequence3_b_btn_held_duration / 3.0f));
     //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 100 + width, 45);
     // }
-
-    //////////////////////////////////////////////////////////////
-    //                  Pause or Resume Audio                   //
-    //////////////////////////////////////////////////////////////
-
-    // TODO: Pause the audio. Or stop it and get it to start at the same spot.
 }
 
 /*==============================
@@ -151,7 +128,6 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
-    // wav64_close(&audio_track);
     // rdpq_text_unregister_font(1);
     // rdpq_font_free(font);
 }

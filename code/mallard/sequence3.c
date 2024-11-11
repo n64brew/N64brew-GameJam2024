@@ -13,6 +13,13 @@
 // More buffers help ensure smooth video playback at the cost of more memory.
 #define NUM_BUFFERS 8
 
+// Maximum target audio frequency.
+//
+// Needs to be 48 kHz if Opus audio compression is used.
+// In this example, we are using VADPCM audio compression
+// which means we can use the real frequency of the audio track.
+#define AUDIO_HZ 32000.0f
+
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
@@ -21,6 +28,8 @@ float fps;
 mpeg2_t *mp2;
 yuv_blitter_t yuvBlitter;
 yuv_frame_t sequence3_frame;
+
+wav64_t audio_track;
 
 bool sequence3_paused = false;
 bool sequence3_rewind = false;
@@ -78,6 +87,14 @@ void sequence3_init()
     fps = mpeg2_get_framerate(mp2);
     display_set_fps_limit(fps);
 
+    ///////////////////////////////////////////////////////////
+    //                  Set up Audio                         //
+    ///////////////////////////////////////////////////////////
+
+    // Open the audio track and start playing it in channel 31.
+    wav64_open(&audio_track, "rom:/mallard/video.wav64");
+    mixer_ch_play(31, &audio_track.wave);
+
     sequence3_initialized = true;
 }
 
@@ -88,6 +105,9 @@ void sequence3_cleanup()
     yuv_blitter_free(&yuvBlitter);
     rspq_wait();
     display_close();
+
+    // Close the audio track and free the allocated memory.
+    wav64_close(&audio_track);
 
     // Reset the state.
     sequence3_b_btn_held_duration = 0.0f;
@@ -121,6 +141,10 @@ void sequence_3(float deltatime)
 
     if (sequence3_rewind)
     {
+        // Rewind Audio.
+        mixer_ch_set_pos(31, 0.0f);
+
+        // Rewind Video.
         mpeg2_rewind(mp2);
         mpeg2_next_frame(mp2);
         sequence3_frame = mpeg2_get_frame(mp2);
@@ -129,16 +153,24 @@ void sequence_3(float deltatime)
 
     if (!sequence3_paused)
     {
+        mixer_throttle(AUDIO_HZ / fps); // Audio
 
         if (!mpeg2_next_frame(mp2))
         {
             sequence3_video_finished = true;
             return;
         }
+
+        mixer_try_play(); // Audio
+
         sequence3_frame = mpeg2_get_frame(mp2);
         rdpq_attach(display_get(), NULL);
         yuv_blitter_run(&yuvBlitter, &sequence3_frame);
         rdpq_detach_show();
+
+        mixer_try_play(); // Audio
+
+        rspq_wait(); // Audio
     }
     else
     {
