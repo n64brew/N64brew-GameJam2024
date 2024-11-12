@@ -2,9 +2,9 @@
 #include "../../core.h"
 #include "../../minigame.h"
 
-#include "sequence1.h"
-#include "sequence2.h"
-#include "sequence3.h"
+#include "sequence_1.h"
+#include "sequence_2.h"
+#include "sequence_3.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -97,7 +97,7 @@ void minigame_loop(float deltatime)
 
     // if (b_btn_held)
     // {
-    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, SCREEN_WIDTH - 100, 30, "Quitting in %.2f", 3.0f - sequence3_b_btn_held_duration);
+    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, SCREEN_WIDTH - 100, 30, "Quitting in %.2f", 3.0f - sequence_3_b_btn_held_duration);
 
     //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
@@ -117,7 +117,7 @@ void minigame_loop(float deltatime)
 
     //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     int width = (int)(50 * (sequence3_b_btn_held_duration / 3.0f));
+    //     int width = (int)(50 * (sequence_3_b_btn_held_duration / 3.0f));
     //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 100 + width, 45);
     // }
 }

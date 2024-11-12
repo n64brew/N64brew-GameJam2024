@@ -24,10 +24,11 @@
         "unistd.h": "c",
         "cstdint": "c",
         "strings.h": "c",
-        "sequence1.h": "c",
+        "sequence_1.h": "c",
         "input.h": "c",
         "ascii.h": "c",
-        "sequence3.h": "c",
-        "sequence3_input.h": "c"
+        "sequence_3.h": "c",
+        "sequence_3_input.h": "c",
+        "sequence_1_input.h": "c"
     }
 }

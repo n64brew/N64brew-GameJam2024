@@ -1,11 +1,11 @@
 #include <libdragon.h>
-#include "sequence1.h"
-#include "sequence1_input.h"
+#include "sequence_1.h"
+#include "sequence_1_input.h"
 
 #define NUM_DISPLAY 3
 #define FONT_TEXT 1
 #define BACKGROUND 0x000000FF
-#define SEQUENCE1_DURATION 1.0f
+#define SEQUENCE_1_DURATION 1.0f
 
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
@@ -13,33 +13,31 @@
 
 rdpq_font_t *font;
 sprite_t *libdragon;
+bool sequence_1_initialized = false;
+bool sequence_1_finished = false;
+float sequence_1_duration = 0.0f;
 
-bool sequence1_initialized = false;
-bool sequence1_finished = false;
-float sequence1_duration = 0.0f;
-
-void sequence1_init()
+void sequence_1_init()
 {
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, NUM_DISPLAY, GAMMA_NONE, FILTERS_RESAMPLE);
     libdragon = sprite_load("rom:/mallard/libdragon.rgba32.sprite");
     font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     rdpq_text_register_font(FONT_TEXT, font);
-    sequence1_initialized = true;
+    sequence_1_initialized = true;
 }
 
-void sequence1_cleanup()
+void sequence_1_cleanup()
 {
     rdpq_text_unregister_font(FONT_TEXT);
     rdpq_font_free(font);
     sprite_free(libdragon);
     rspq_wait();
     display_close();
-    fprintf(stderr, "Sequence 1 finished.\n");
 
     // Reset the state.
-    sequence1_initialized = false;
-    sequence1_finished = true;
-    sequence1_duration = 0.0f;
+    sequence_1_initialized = false;
+    sequence_1_finished = false;
+    sequence_1_duration = 0.0f;
 
     // End the sequence.
     sequence_1_libdragon = false;
@@ -50,16 +48,16 @@ void sequence_1(float deltatime)
 {
     sequence_1_process_controller(deltatime);
 
-    sequence1_duration += deltatime;
+    sequence_1_duration += deltatime;
 
-    if (sequence1_finished || sequence1_duration > SEQUENCE1_DURATION)
+    if (sequence_1_finished || sequence_1_duration > SEQUENCE_1_DURATION)
     {
-        sequence1_cleanup();
+        sequence_1_cleanup();
         return;
     }
 
-    if (!sequence1_initialized)
-        sequence1_init();
+    if (!sequence_1_initialized)
+        sequence_1_init();
 
     // Render the UI
     rdpq_attach(display_get(), NULL);

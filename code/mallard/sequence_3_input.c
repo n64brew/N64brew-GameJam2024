@@ -1,4 +1,4 @@
-#include "sequence3_input.h"
+#include "sequence_3_input.h"
 #include "../../core.h"
 #include "../../minigame.h"
 
@@ -18,32 +18,39 @@ void sequence_3_process_controller(float deltatime)
         // Exit the video.
         if (held.b)
         {
-            sequence3_b_btn_held_duration += deltatime;
-            fprintf(stderr, "Controller %u has held B for %f\n", controllerPort, sequence3_b_btn_held_duration);
+            sequence_3_b_btn_held_duration += deltatime;
+            fprintf(stderr, "Controller %u has held B for %f\n", controllerPort, sequence_3_b_btn_held_duration);
 
             // If the button is held for more than 3 seconds, end the minigame
-            if (sequence3_b_btn_held_duration > 3.0f)
+            if (sequence_3_b_btn_held_duration > 3.0f)
             {
-                sequence3_finished = true;
+                sequence_3_finished = true;
             }
         }
         else
         {
-            sequence3_b_btn_held_duration = 0;
+            sequence_3_b_btn_held_duration = 0;
         }
 
         // Pause the video.
         if (pressed.a)
         {
-            sequence3_paused = !sequence3_paused;
-            fprintf(stderr, "Controller %u pressed A. Video is now %s.\n", controllerPort, sequence3_paused ? "paused" : "unpaused");
+            sequence_3_paused = !sequence_3_paused;
+            fprintf(stderr, "Controller %u pressed A. Video is now %s.\n", controllerPort, sequence_3_paused ? "paused" : "unpaused");
         }
 
         // Rewind the video.
         if (pressed.z)
         {
-            sequence3_rewind = true;
+            sequence_3_rewind = true;
             fprintf(stderr, "Controller %u pressed Z. Video will now rewind.\n", controllerPort);
+        }
+
+        // Skip the sequence.
+        if (pressed.start)
+        {
+            fprintf(stderr, "Controller %u pressed Start. Sequence will now skip.\n", controllerPort);
+            sequence_3_finished = true;
         }
     }
 }

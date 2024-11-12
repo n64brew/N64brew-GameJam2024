@@ -1,6 +1,6 @@
 #include <libdragon.h>
-#include "sequence3.h"
-#include "sequence3_input.h"
+#include "sequence_3.h"
+#include "sequence_3_input.h"
 
 #include "../../minigame.h"
 
@@ -28,18 +28,18 @@
 float fps;
 mpeg2_t *mp2;
 yuv_blitter_t yuvBlitter;
-yuv_frame_t sequence3_frame;
+yuv_frame_t sequence_3_frame;
 
 wav64_t audio_track;
 
-bool sequence3_paused = false;
-bool sequence3_rewind = false;
-float sequence3_b_btn_held_duration = 0.0f;
+bool sequence_3_paused = false;
+bool sequence_3_rewind = false;
+float sequence_3_b_btn_held_duration = 0.0f;
 
-bool sequence3_initialized = false;
-bool sequence3_finished = false;
+bool sequence_3_initialized = false;
+bool sequence_3_finished = false;
 
-void sequence3_init()
+void sequence_3_init()
 {
     ///////////////////////////////////////////////////////////
     //                  Set up Display                       //
@@ -96,10 +96,10 @@ void sequence3_init()
     wav64_open(&audio_track, "rom:/mallard/video.wav64");
     mixer_ch_play(31, &audio_track.wave);
 
-    sequence3_initialized = true;
+    sequence_3_initialized = true;
 }
 
-void sequence3_cleanup()
+void sequence_3_cleanup()
 {
     // Close the video track and free the allocated memory.
     mpeg2_close(mp2);
@@ -111,11 +111,11 @@ void sequence3_cleanup()
     wav64_close(&audio_track);
 
     // Reset the state.
-    sequence3_b_btn_held_duration = 0.0f;
-    sequence3_paused = false;
-    sequence3_rewind = false;
-    sequence3_initialized = false;
-    sequence3_finished = false;
+    sequence_3_b_btn_held_duration = 0.0f;
+    sequence_3_paused = false;
+    sequence_3_rewind = false;
+    sequence_3_initialized = false;
+    sequence_3_finished = false;
 
     // End the sequence.
     sequence_3_video = false;
@@ -126,20 +126,20 @@ void sequence_3(float deltatime)
 {
     sequence_3_process_controller(deltatime);
 
-    if (sequence3_finished)
+    if (sequence_3_finished)
     {
-        sequence3_cleanup();
+        sequence_3_cleanup();
         return;
     }
 
-    if (!sequence3_initialized)
-        sequence3_init();
+    if (!sequence_3_initialized)
+        sequence_3_init();
 
     //////////////////////////////////////////////////////////////
     //                  Play Video                              //
     //////////////////////////////////////////////////////////////
 
-    if (sequence3_rewind)
+    if (sequence_3_rewind)
     {
         // Rewind Audio.
         mixer_ch_set_pos(31, 0.0f);
@@ -147,25 +147,25 @@ void sequence_3(float deltatime)
         // Rewind Video.
         mpeg2_rewind(mp2);
         mpeg2_next_frame(mp2);
-        sequence3_frame = mpeg2_get_frame(mp2);
-        sequence3_rewind = false;
+        sequence_3_frame = mpeg2_get_frame(mp2);
+        sequence_3_rewind = false;
     }
 
-    if (!sequence3_paused)
+    if (!sequence_3_paused)
     {
         // mixer_throttle(AUDIO_HZ / fps); // Audio
 
         if (!mpeg2_next_frame(mp2))
         {
-            sequence3_finished = true;
+            sequence_3_finished = true;
             return;
         }
 
         // mixer_try_play(); // Audio
 
-        sequence3_frame = mpeg2_get_frame(mp2);
+        sequence_3_frame = mpeg2_get_frame(mp2);
         rdpq_attach(display_get(), NULL);
-        yuv_blitter_run(&yuvBlitter, &sequence3_frame);
+        yuv_blitter_run(&yuvBlitter, &sequence_3_frame);
         rdpq_detach_show();
 
         // mixer_try_play(); // Audio
@@ -175,7 +175,7 @@ void sequence_3(float deltatime)
     else
     {
         rdpq_attach(display_get(), NULL);
-        yuv_blitter_run(&yuvBlitter, &sequence3_frame);
+        yuv_blitter_run(&yuvBlitter, &sequence_3_frame);
         rdpq_detach_show();
     }
 }

@@ -1,5 +1,4 @@
-#include "sequence1.h"
-#include "sequence1_input.h"
+#include "sequence_1_input.h"
 #include "../../core.h"
 #include "../../minigame.h"
 
@@ -19,7 +18,7 @@ void sequence_1_process_controller(float deltatime)
         if (pressed.start)
         {
             fprintf(stderr, "Controller %u pressed Start. Sequence will now skip.\n", controllerPort);
-            sequence1_finished = true;
+            sequence_1_finished = true;
         }
     }
 }
