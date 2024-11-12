@@ -1,7 +1,7 @@
 #include "ui.h"
 #include "hydra.h"
 
-#define SIGN_TEXT_X_OFFSET 6
+#define SIGN_TEXT_X_OFFSET 2
 #define SIGN_TEXT_Y_OFFSET 26
 
 #define BAR_INITIAL_HEIGHT 39
@@ -44,10 +44,14 @@ static void ui_signs_draw (void) {
 			}
 		);
 	}
-	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		// Draw the player numbers
+	rdpq_textparms_t sign_params = (rdpq_textparms_t) {
+		.width = score_sprite->width / PLAYER_MAX,
+		.align = ALIGN_CENTER
+	};
+	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		rdpq_text_printf(
-			NULL,
+			&sign_params,
 			FONT_CLARENDON,
 			hydras[i].x + SIGN_TEXT_X_OFFSET,
 			display_get_height() - score_sprite->height - PADDING_TOP + SIGN_TEXT_Y_OFFSET,

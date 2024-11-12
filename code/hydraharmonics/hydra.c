@@ -344,13 +344,13 @@ void hydra_draw (void) {
 			);
 		}
 	}
-
+/*
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		rdpq_text_printf(NULL, FONT_DEFAULT, hydras[i].x, HYDRA_SHELL_Y,
 			"%i", hydras[i].leg_offset_y
 		);
 	}
-
+*/
 }
 
 void hydra_clear (void) {
