@@ -105,6 +105,8 @@ typedef struct {
     float action_playing_time;
     float attack_playing_time;
     float hurt_playing_time;
+    c2AABB bbox;
+    c2Circle attack_range;
     // AI players
     int idle_delay;
     ai_state_t state;
@@ -337,6 +339,10 @@ void start_player_action(int i) {
 }
 
 void start_player_attack(int i) {
+    float s, c;
+    fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+    players[i].attack_range.p = c2V(players[i].position.v[0] + c * ATTACK_OFFSET, players[i].position.v[2] + s * ATTACK_OFFSET);
+    players[i].attack_range.r = ATTACK_RADIUS;
     players[i].attack_playing_time = ATTACK_TIME;
     t3d_anim_set_playing(&players[i].anim_attack, true);
     t3d_anim_set_time(&players[i].anim_attack, 0.0f);
@@ -349,8 +355,7 @@ void start_player_hurt(int i) {
 }
 
 bool close_to_furniture(int i, int j) {
-    c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
-    return c2AABBtoAABB(player_i, furnitures[j].zone_bbox);
+    return c2AABBtoAABB(players[i].bbox, furnitures[j].zone_bbox);
 }
 
 bool can_rummage(int i, int j) {
@@ -394,8 +399,7 @@ PlyNum leader() {
 }
 
 bool close_to_vault(int i, int j) {
-    c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
-    return c2AABBtoAABB(player_i, vaults[j].zone_bbox);
+    return c2AABBtoAABB(players[i].bbox, vaults[j].zone_bbox);
 }
 
 bool can_open(int i, int j) {
@@ -529,6 +533,11 @@ void game_init()
         players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
         players[i].position = (T3DVec3){{ ((i-1)%2)*50, 0, ((i-2)%2)*50 }};
         players[i].direction = (T3DVec3){{0, 0, 0}};
+        players[i].bbox = actor_bounding_box((actor_t*)&players[i]);
+        float s, c;
+        fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
+        players[i].attack_range.p = c2V(players[i].position.v[0] + c * ATTACK_OFFSET, players[i].position.v[2] + s * ATTACK_OFFSET);
+        players[i].attack_range.r = ATTACK_RADIUS;
         players[i].model = player_model;
         players[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         players[i].skel = t3d_skeleton_create(players[i].model);
@@ -644,17 +653,9 @@ void game_logic(float deltatime)
             if (players[i].attack_playing_time > 0) {
                 players[i].attack_playing_time -= deltatime;
                 if (players[i].attack_playing_time <= ATTACK_START && players[i].attack_playing_time >= ATTACK_END) {
-                    float s, c;
-                    fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
-                    // TODO attack range could be stored in player struct
-                    c2Circle attack_range;
-                    attack_range.p = c2V(players[i].position.v[0] + c * ATTACK_OFFSET, players[i].position.v[2] + s * ATTACK_OFFSET);
-                    attack_range.r = ATTACK_RADIUS;
                     for (int j=0; j<MAXPLAYERS; j++) {
                         if (i != j && players[j].hurt_playing_time == 0) {
-                            // TODO All players' bounding boxes could be stored in player struct for each frame ?
-                            c2AABB player_j = actor_bounding_box((actor_t*)&players[j]);
-                            if (c2CircletoAABB(attack_range, player_j)) {
+                            if (c2CircletoAABB(players[i].attack_range, players[j].bbox)) {
                                 // TODO Hurt SFX ?
                                 debugf("player #%d hurting player #%d\n", i, j);
                                 start_player_hurt(j);
@@ -712,7 +713,7 @@ void game_logic(float deltatime)
                 // Move player
                 players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
                 players[i].position.v[2] += players[i].direction.v[2] * players[i].speed;
-            } else {    // API Player
+            } else {    // AI Player
                 switch(players[i].state) {
                     case IDLE:
                     {
@@ -914,10 +915,9 @@ void game_logic(float deltatime)
             if(players[i].position.v[2] < -(room.h/2.0f - players[i].h/2.0f))   players[i].position.v[2] = -(room.h/2.0f - players[i].h/2.0f);
             if(players[i].position.v[2] >  (room.h/2.0f - players[i].h/2.0f))   players[i].position.v[2] =  (room.h/2.0f - players[i].h/2.0f);
             // Static objects
-            c2AABB player_i = actor_bounding_box((actor_t*)&players[i]);
             for (int j=0; j<FURNITURES_COUNT; j++) {
                 c2Manifold m;
-                c2AABBtoAABBManifold(player_i, furnitures[j].bbox, &m);
+                c2AABBtoAABBManifold(players[i].bbox, furnitures[j].bbox, &m);
                 if (m.count) {
                     players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
                     players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
@@ -925,7 +925,7 @@ void game_logic(float deltatime)
             }
             for (int j=0; j<VAULTS_COUNT; j++) {
                 c2Manifold m;
-                c2AABBtoAABBManifold(player_i, vaults[j].bbox, &m);
+                c2AABBtoAABBManifold(players[i].bbox, vaults[j].bbox, &m);
                 if (m.count) {
                     players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
                     players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
@@ -934,9 +934,8 @@ void game_logic(float deltatime)
             // Other players
             for (int j=0; j<MAXPLAYERS; j++) {
                 if (i != j) {
-                    c2AABB player_j = actor_bounding_box((actor_t*)&players[j]);
                     c2Manifold m;
-                    c2AABBtoAABBManifold(player_i, player_j, &m);
+                    c2AABBtoAABBManifold(players[i].bbox, players[j].bbox, &m);
                     if (m.count) {
                         players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
                         players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
@@ -945,6 +944,11 @@ void game_logic(float deltatime)
                     }
                 }
             }
+        }
+
+        // Update bounding boxes
+        for (size_t i = 0; i < MAXPLAYERS; i++) {
+            players[i].bbox = actor_bounding_box((actor_t*)&players[i]);
         }
     }
 }
@@ -995,9 +999,8 @@ void game_render(float deltatime)
 }
 
 #if ENABLE_WIREFRAME
-void render_actor_aabb(actor_t* actor) {
-    c2AABB bbox = actor_bounding_box(actor);
-    draw_aabb(bbox.min.x, bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, bbox.min.y, bbox.max.y, 0.2f, 0.2f, 0.2f);
+void render_player_aabb(player_t* actor) {
+    draw_aabb(actor->bbox.min.x, actor->bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, actor->bbox.min.y, actor->bbox.max.y, 0.2f, 0.2f, 0.2f);
 }
 void render_usable_actor_aabb(usable_actor_t* actor) {
     draw_aabb(actor->bbox.min.x, actor->bbox.max.x, actor->position.v[1], actor->position.v[1] + actor->max_y, actor->bbox.min.y, actor->bbox.max.y, 0.2f, 0.2f, 0.5f);
@@ -1024,15 +1027,13 @@ void game_render_gl(float deltatime)
 
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
-        render_actor_aabb((actor_t*)&players[i]);
+        render_player_aabb(&players[i]);
         if (players[i].attack_playing_time <= ATTACK_START && players[i].attack_playing_time >= ATTACK_END) {
-            float s, c;
-            fm_sincosf(players[i].rotation.v[1] + M_PI/2, &s, &c);
-            float x = players[i].position.v[0] + c * ATTACK_OFFSET;
+            float x = players[i].attack_range.p.x;
             float y = players[i].position.v[1];
-            float z = players[i].position.v[2] + s * ATTACK_OFFSET;
-            draw_aabb(x-ATTACK_RADIUS, x+ATTACK_RADIUS, y, y, z-ATTACK_RADIUS, z+ATTACK_RADIUS, 0.8f, 0.5f, 0.5f);
-            render_actor_aabb((actor_t*)&players[i]);
+            float z = players[i].attack_range.p.y;
+            float r= players[i].attack_range.r;
+            draw_aabb(x-r, x+r, y, y, z-r, z+r, 0.8f, 0.5f, 0.5f);
         }
     }
 #endif
