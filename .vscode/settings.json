@@ -26,6 +26,8 @@
         "strings.h": "c",
         "sequence1.h": "c",
         "input.h": "c",
-        "ascii.h": "c"
+        "ascii.h": "c",
+        "sequence3.h": "c",
+        "sequence3_input.h": "c"
     }
 }

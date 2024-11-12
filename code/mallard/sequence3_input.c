@@ -1,8 +1,8 @@
-#include "input.h"
+#include "sequence3_input.h"
 #include "../../core.h"
 #include "../../minigame.h"
 
-void process_controller(float deltatime)
+void sequence_3_process_controller(float deltatime)
 {
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
@@ -24,7 +24,7 @@ void process_controller(float deltatime)
             // If the button is held for more than 3 seconds, end the minigame
             if (sequence3_b_btn_held_duration > 3.0f)
             {
-                sequence3_video_finished = true;
+                sequence3_finished = true;
             }
         }
         else

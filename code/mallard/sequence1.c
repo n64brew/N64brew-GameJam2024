@@ -1,5 +1,6 @@
 #include <libdragon.h>
 #include "sequence1.h"
+#include "sequence1_input.h"
 
 #define NUM_DISPLAY 3
 #define FONT_TEXT 1
@@ -14,6 +15,7 @@ rdpq_font_t *font;
 sprite_t *libdragon;
 
 bool sequence1_initialized = false;
+bool sequence1_finished = false;
 float sequence1_duration = 0.0f;
 
 void sequence1_init()
@@ -32,9 +34,11 @@ void sequence1_cleanup()
     sprite_free(libdragon);
     rspq_wait();
     display_close();
+    fprintf(stderr, "Sequence 1 finished.\n");
 
     // Reset the state.
     sequence1_initialized = false;
+    sequence1_finished = true;
     sequence1_duration = 0.0f;
 
     // End the sequence.
@@ -44,9 +48,11 @@ void sequence1_cleanup()
 
 void sequence_1(float deltatime)
 {
+    sequence_1_process_controller(deltatime);
+
     sequence1_duration += deltatime;
 
-    if (sequence1_duration > SEQUENCE1_DURATION)
+    if (sequence1_finished || sequence1_duration > SEQUENCE1_DURATION)
     {
         sequence1_cleanup();
         return;

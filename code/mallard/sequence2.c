@@ -1,5 +1,6 @@
 #include <libdragon.h>
 #include "sequence2.h"
+
 #include "ascii.h"
 
 #define SEQUENCE2_DURATION 3.0f
@@ -15,6 +16,10 @@ float sequence2_duration = 0.0f;
 
 void sequence2_init()
 {
+    fprintf(stderr, "sequence2_init\n");
+
+    rsp_wait();
+
     console_init();
     console_set_render_mode(RENDER_MANUAL);
     sequence2_initialized = true;

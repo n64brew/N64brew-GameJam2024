@@ -1,7 +1,8 @@
 #include <libdragon.h>
-#include "../../minigame.h"
 #include "sequence3.h"
-#include "input.h"
+#include "sequence3_input.h"
+
+#include "../../minigame.h"
 
 // Target screen resolution that we render at.
 // Choosing a resolution above 240p (interlaced) can't be recommended for video playback.
@@ -36,7 +37,7 @@ bool sequence3_rewind = false;
 float sequence3_b_btn_held_duration = 0.0f;
 
 bool sequence3_initialized = false;
-bool sequence3_video_finished = false;
+bool sequence3_finished = false;
 
 void sequence3_init()
 {
@@ -114,7 +115,7 @@ void sequence3_cleanup()
     sequence3_paused = false;
     sequence3_rewind = false;
     sequence3_initialized = false;
-    sequence3_video_finished = false;
+    sequence3_finished = false;
 
     // End the sequence.
     sequence_3_video = false;
@@ -123,10 +124,9 @@ void sequence3_cleanup()
 
 void sequence_3(float deltatime)
 {
+    sequence_3_process_controller(deltatime);
 
-    process_controller(deltatime);
-
-    if (sequence3_video_finished)
+    if (sequence3_finished)
     {
         sequence3_cleanup();
         return;
@@ -153,24 +153,24 @@ void sequence_3(float deltatime)
 
     if (!sequence3_paused)
     {
-        mixer_throttle(AUDIO_HZ / fps); // Audio
+        // mixer_throttle(AUDIO_HZ / fps); // Audio
 
         if (!mpeg2_next_frame(mp2))
         {
-            sequence3_video_finished = true;
+            sequence3_finished = true;
             return;
         }
 
-        mixer_try_play(); // Audio
+        // mixer_try_play(); // Audio
 
         sequence3_frame = mpeg2_get_frame(mp2);
         rdpq_attach(display_get(), NULL);
         yuv_blitter_run(&yuvBlitter, &sequence3_frame);
         rdpq_detach_show();
 
-        mixer_try_play(); // Audio
+        // mixer_try_play(); // Audio
 
-        rspq_wait(); // Audio
+        // rspq_wait(); // Audio
     }
     else
     {
