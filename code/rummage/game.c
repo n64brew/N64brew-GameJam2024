@@ -90,6 +90,7 @@ typedef enum {
 typedef struct {
     actor_t;
     PlyNum plynum;
+    bool is_human;
     color_t color;
     T3DSkeleton skel;
     T3DAnim anim_idle;
@@ -566,6 +567,7 @@ void game_init()
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
         players[i].plynum = i;
+        players[i].is_human = (i < playercount);
         players[i].speed = 0.0f;
         players[i].had_key = false;
         players[i].has_key = false;
@@ -576,7 +578,7 @@ void game_init()
         players[i].hurt_playing_time = 0;
         players[i].hidden = false;
         // AI player
-        if (i >= playercount) {
+        if (!players[i].is_human) {
             reset_idle_delay(i);
             players[i].state = IDLE;
             memset(&players[i].furnitures, 0, sizeof(bool) * FURNITURES_COUNT);
@@ -628,7 +630,6 @@ void game_logic(float deltatime)
 {
     if (is_playing()) {
         // Player controls
-        uint32_t playercount = core_get_playercount();
         for (size_t i = 0; i < MAXPLAYERS; i++) {
             if (players[i].hurt_playing_time > 0) {
                 players[i].hurt_playing_time -= deltatime;
@@ -673,7 +674,7 @@ void game_logic(float deltatime)
             } else {
                 players[i].attack_playing_time = 0;
             }
-            if (i < playercount) {  // Human player
+            if (players[i].is_human) {  // Human player
                 joypad_port_t port = core_get_playercontroller(i);
                 joypad_inputs_t joypad = joypad_get_inputs(port);
                 // Exit minigame by pressing start
@@ -1028,11 +1029,37 @@ void game_render_gl(float deltatime)
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
         render_player_aabb(&players[i]);
+        // Draw direction/speed
+        if (players[i].speed > 0.0f) {
+            float factor = 10.0f;
+            draw_line(
+                players[i].position.v[0], players[i].position.v[0] + players[i].direction.v[0] * players[i].speed * factor,
+                players[i].position.v[1], players[i].position.v[1],
+                players[i].position.v[2], players[i].position.v[2] + players[i].direction.v[2] * players[i].speed * factor,
+                0.5f, 0.5f, 0.5f
+            );
+        }
+        // Draw path
+        if (!players[i].is_human && has_waypoints(i)) {
+            int j = 0;
+            T3DVec3 curr = players[i].position;
+            T3DVec3 next = players[i].path[players[i].path_pos+j];
+            while (next.v[0] != NO_PATH) {
+                T3DVec3 next_point = (T3DVec3){{next.v[0], 0, next.v[2]}};
+                from_pathmap_coords(&next_point, &next_point);
+                draw_line(curr.v[0], next_point.v[0], curr.v[1], next_point.v[1], curr.v[2], next_point.v[2], 0.5f, 0.5f, 0.5f);
+                // Draw waypoints
+                float r = 2.0f;
+                draw_aabb(next_point.v[0]-r, next_point.v[0]+r, next_point.v[1], next_point.v[1], next_point.v[2]-r, next_point.v[2]+r, 0.5f, 0.8f, 0.5f);
+                curr = next_point;
+                next = players[i].path[players[i].path_pos+(++j)];
+            }
+        }
         if (players[i].attack_playing_time <= ATTACK_START && players[i].attack_playing_time >= ATTACK_END) {
             float x = players[i].attack_range.p.x;
             float y = players[i].position.v[1];
             float z = players[i].attack_range.p.y;
-            float r= players[i].attack_range.r;
+            float r = players[i].attack_range.r;
             draw_aabb(x-r, x+r, y, y, z-r, z+r, 0.8f, 0.5f, 0.5f);
         }
     }
