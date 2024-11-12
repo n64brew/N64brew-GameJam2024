@@ -44,6 +44,7 @@ void scores_get_winner (void) {
 	for (i=0; i<PLAYER_MAX; i++){
 		if (i==0 || temp_scores[i] == temp_scores[i-1]) {
 			winners->winners[i] = temp_players[i];
+			winners->y_offset[i] = 0;
 			winners->length++;
 		} else {
 			break;
@@ -54,27 +55,6 @@ void scores_get_winner (void) {
 uint16_t scores_get(uint8_t hydra) {
 	assertf(hydra < PLAYER_MAX, "Invalid player number!");
 	return scores[hydra];
-}
-
-void scores_results_draw (scores_results_draw_t type) {
-	char scores_buffer[64] = "";
-	char winners_buffer[64] = "";
-	char mini_buffer[32];
-
-	// Get the player scores
-	for (uint8_t i=0; i<PLAYER_MAX; i++) {
-		sprintf(mini_buffer, "P %i: %i\n", i+1, type == SCORES_RESULTS_SHUFFLE ? rand()%100 : scores_get(i));
-		strcat(scores_buffer, mini_buffer);
-	}
-
-	// Get the winner(s)
-	for (uint8_t i=0; type == SCORES_RESULTS_FINAL && i<winners->length; i++) {
-		sprintf(mini_buffer, "Player %i wins!\n", winners->winners[i]+1);
-		strcat(winners_buffer, mini_buffer);
-	}
-
-	// Print it out
-	rdpq_text_printf(NULL, FONT_CLARENDON, 60, 50, "And the winner is...\n%s\n%s", scores_buffer, winners_buffer);
 }
 
 void scores_clear (void) {

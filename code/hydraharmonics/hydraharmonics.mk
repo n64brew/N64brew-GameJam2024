@@ -24,6 +24,9 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/signs.ci4.sprite \
 	filesystem/hydraharmonics/background.ci4.sprite \
 	filesystem/hydraharmonics/floor.ci4.sprite \
+	filesystem/hydraharmonics/curtain.ci4.sprite \
+	filesystem/hydraharmonics/sign-big.ci4.sprite \
+	filesystem/hydraharmonics/sign-small.ci4.sprite \
 	filesystem/hydraharmonics/Superclarendon-Regular-01.font64
 
-filesystem/hydraharmonics/Superclarendon-Regular-01.font64: MKFONT_FLAGS += --outline 1 --size 16
+filesystem/hydraharmonics/Superclarendon-Regular-01.font64: MKFONT_FLAGS += --outline 1 --size 12

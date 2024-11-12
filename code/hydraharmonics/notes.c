@@ -38,7 +38,7 @@ void notes_init(void) {
 }
 
 PlyNum note_get_free(void) {
-	uint8_t i, status;
+	uint8_t i;
 	uint16_t notes_left_total = 0;
 	// Get the sum of weights
 	for (i=0; i<NOTES_TOTAL_COUNT; i++) {

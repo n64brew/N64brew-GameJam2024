@@ -5,6 +5,8 @@
 #include "hydra.h"
 #include "notes.h"
 #include "logic.h"
+#include "intro.h"
+#include "outro.h"
 #include "ui.h"
 
 const MinigameDef minigame_def = {
@@ -14,7 +16,6 @@ const MinigameDef minigame_def = {
 	.instructions = "Grab the most notes to win."
 };
 
-#define TIMER_START 1
 #define TIMER_GAME (NOTES_PER_PLAYER * PLAYER_MAX) + (NOTES_PER_PLAYER_SPECIAL * NOTES_SPECIAL_TYPES) + (13 / NOTES_SPEED)
 #define TIMER_END_ANNOUNCE 2
 #define TIMER_END_DISPLAY 1
@@ -25,7 +26,7 @@ rdpq_font_t *font_default;
 rdpq_font_t *font_clarendon;
 
 float timer;
-uint8_t stage;
+hydraharmonics_stage_t stage = STAGE_START;
 
 /*==============================
 	minigame_init
@@ -37,7 +38,7 @@ void minigame_init()
 	display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
 
 	// Define some variables
-	timer = TIMER_START + TIMER_GAME + TIMER_END_TOTAL;
+	timer = TIMER_GAME + TIMER_END_TOTAL;
 	font_default = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
 	font_clarendon = rdpq_font_load("rom:/hydraharmonics/Superclarendon-Regular-01.font64");
 	rdpq_text_register_font(FONT_DEFAULT, font_default);
@@ -47,6 +48,8 @@ void minigame_init()
 	notes_init();
 	hydra_init();
 	ui_init ();
+	intro_init();
+	outro_init();
 }
 
 /*==============================
@@ -58,9 +61,18 @@ void minigame_init()
 ==============================*/
 void minigame_fixedloop(float deltatime)
 {
-	// Handle the timer to determine the part of the minigame we're at
-	if (timer <= TIMER_END_TOTAL && timer >= 0) {
-		if (stage != STAGE_END) {
+
+	// Handle the stages
+	if (stage == STAGE_START) {
+		intro_interact();
+	} else if (stage == STAGE_GAME) {
+		// Add a new note every second
+		timer -= deltatime;
+		if ((int)timer != (int)(timer - deltatime) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
+			notes_add();
+		}
+		// Skip to the end if there are no notes left
+		if (!notes_get_remaining(NOTES_GET_REMAINING_ALL)) {
 			notes_destroy_all();
 			scores_get_winner();
 			stage = STAGE_END;
@@ -68,25 +80,15 @@ void minigame_fixedloop(float deltatime)
 				hydra_animate (i, HYDRA_ANIMATION_SLEEP);
 			}
 		}
-	} else if (timer <= TIMER_END_TOTAL + TIMER_GAME && timer >= 0) {
-		stage = STAGE_GAME;
-		if ((int)timer != (int)(timer - deltatime) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
-			notes_add();
-		}
-		// Skip to the end if there are no notes left
-		if (!notes_get_remaining(NOTES_GET_REMAINING_ALL)) {
-			timer = TIMER_END_TOTAL;
-		}
+		// Do all the frame-by-frame tasks
 		notes_move();
 		note_hit_detection();
 		hydra_shell_bounce();
-	} else  if (timer >= 0) {
-		stage = STAGE_START;
-	} else {
+	} else if (stage == STAGE_END) {
+		outro_interact();
+	} else if (stage == STAGE_RETURN_TO_MENU) {
 		minigame_end();
 	}
-	timer -= deltatime;
-
 }
 
 /*==============================
@@ -109,36 +111,21 @@ void minigame_loop(float deltatime)
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	notes_draw();
 
-	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 200, "Timer: %f\nRemaining:%i", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL));
-
 	// Things that should only be drawn at particular stages
 	if (stage == STAGE_GAME) {
 		// Game stage
-	} else if (stage == STAGE_START) {
-		// Intro stage / countdown
-	} else if (stage == STAGE_END) {
-		// Announce a winner
-		if (timer < TIMER_END_FANFARE + TIMER_END_DISPLAY) {
-			scores_results_draw (SCORES_RESULTS_FINAL);
-		} else if (timer < TIMER_END_FANFARE) {
-			// Play a song
-		} else {
-			scores_results_draw (SCORES_RESULTS_SHUFFLE);
-		}
-	}
-
-	rdpq_detach_show();
-
-	// Handle the logic for the different stages
-	if (stage == STAGE_GAME) {
-		// Game stage
-		// Handle inputs
 		hydra_move();
 	} else if (stage == STAGE_START) {
 		// Intro stage / countdown
+		intro_draw();
 	} else if (stage == STAGE_END) {
 		// Announce a winner
+		outro_sign_draw();
 	}
+
+	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 180, "Timer: %f\nRemaining:%i\nStage:%i\nOutro timer: %li", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL), stage, outro_timer);
+
+	rdpq_detach_show();
 	hydra_adjust_hats();
 }
 
@@ -152,6 +139,8 @@ void minigame_cleanup()
 	notes_clear();
 	hydra_clear();
 	scores_clear();
+	intro_clear();
+	outro_clear();
 	ui_clear();
 
 	// Free the fonts

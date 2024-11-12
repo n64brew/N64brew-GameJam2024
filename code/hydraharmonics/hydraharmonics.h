@@ -22,6 +22,7 @@ typedef enum {
 	STAGE_START,
     STAGE_GAME,
     STAGE_END,
+    STAGE_RETURN_TO_MENU,
 } hydraharmonics_stage_t;
 
 typedef enum {
@@ -36,5 +37,7 @@ typedef enum {
 	NOTES_SPECIAL_GREY = 5,
 	NOTES_SPECIAL_BLACK = 6,
 } notes_special_t;
+
+extern hydraharmonics_stage_t stage;
 
 #endif
