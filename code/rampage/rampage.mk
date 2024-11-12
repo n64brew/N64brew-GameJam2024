@@ -13,6 +13,7 @@ ASSETS_LIST += \
 	filesystem/rampage/tank2_64x4.ci4.sprite \
 	filesystem/rampage/house_wall.ci4.sprite \
 	filesystem/rampage/Jira32.sprite \
+	filesystem/rampage/Jira_GS.i4.sprite \
 	filesystem/rampage/pavement_1.sprite \
 	filesystem/rampage/pavement_2.sprite \
 	filesystem/rampage/pavement_3.sprite \

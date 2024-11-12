@@ -63,6 +63,10 @@ struct RampageInput {
 };
 
 struct Vector2 max_rotate;
+struct Vector2 input_rotation = {
+    4.0f / 5.0f,
+    -3.0f / 5.0f,
+};
 
 float clamp_joy_input(int8_t input) {
     if (input < -80) {
@@ -115,6 +119,9 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
 
         result.direction.x = clamp_joy_input(inputs.stick_x);
         result.direction.y = -clamp_joy_input(inputs.stick_y);
+
+        vector2ComplexMul(&result.direction, &input_rotation, &result.direction);
+
         result.do_attack = inputs.btn.b;
         result.do_jump = inputs.btn.a;
         result.do_slam = inputs.btn.z;
@@ -185,7 +192,7 @@ void rampage_player_damage(void* data, int amount) {
     }
 }
 
-void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, int player_index, enum PlayerType type) {
+void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, struct Vector2* start_rotation, int player_index, enum PlayerType type) {
     int entity_id = entity_id_next();
     dynamic_object_init(
         entity_id,
@@ -193,7 +200,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
         &player_collider,
         COLLISION_LAYER_TANGIBLE,
         start_position,
-        &gRight2
+        start_rotation
     );
 
     player->dynamic_object.center.y = SCALE_FIXED_POINT(1.0f);
@@ -213,6 +220,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->damage_trigger.center.y = SCALE_FIXED_POINT(1.0f);
     player->damage_trigger.is_trigger = true;
     player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
+    player->player_index = player_index;
 
     player->skeleton = t3d_skeleton_create(rampage_assets_get()->player);
 
@@ -372,12 +380,21 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
 
 #define PLAYER_SCALE    0.5f
 
+static color_t player_colors[] = {
+    {0x00, 0x54, 0x74, 0xFF},
+    {0x74, 0x00, 0x37, 0xFF},
+    {0x74, 0x3B, 0x00, 0xFF},
+    {0x00, 0x0A, 0x74, 0xFF},
+};
+
 void rampage_player_render(struct RampagePlayer* player) {
     struct Quaternion quat;
     quatAxisComplex(&gUp, &player->dynamic_object.rotation, &quat);
     T3DVec3 scale = {{PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE}};
 
     // TODO sync point
+
+    rdpq_set_prim_color(player_colors[player->player_index]);
 
     t3d_skeleton_update(&player->skeleton);
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);

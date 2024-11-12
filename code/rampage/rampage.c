@@ -98,12 +98,34 @@ void minigame_fixedloop(float deltatime) {
 
 #define ORTHO_SCALE     7.0f
 
-void minigame_loop(float deltatime) {   
-    uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
-    uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
+uint8_t colorWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
-    T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
-    t3d_vec3_norm(&lightDirVec);
+uint8_t pointLightColors[][4] = {
+    {0xFF, 0xFF, 0xFF, 0xFF},
+    {0x80, 0x30, 0x20, 0xFF},
+    {0x80, 0x30, 0x20, 0xFF},
+    {0x80, 0x30, 0x20, 0xFF},
+    {0x80, 0x30, 0x20, 0xFF},
+};
+
+T3DVec3 pointLightPositions[] = {
+    {{0.0f, SCALE_FIXED_POINT(4.0f), 1.0f}},
+    {{SCALE_FIXED_POINT(7.0f), SCALE_FIXED_POINT(4.0f), SCALE_FIXED_POINT(5.5f)}},
+    {{SCALE_FIXED_POINT(-6.0f), SCALE_FIXED_POINT(4.0f), SCALE_FIXED_POINT(5.5f)}},
+    {{SCALE_FIXED_POINT(-6.0f), SCALE_FIXED_POINT(4.0f), SCALE_FIXED_POINT(-1.5f)}},
+    {{SCALE_FIXED_POINT(7.5f), SCALE_FIXED_POINT(4.0f), SCALE_FIXED_POINT(-6.0f)}},
+};
+
+float pointLightDistance[] = {
+    1.0f,
+    0.6f,
+    0.6f,
+    0.3f,
+    0.2f,
+};
+
+void minigame_loop(float deltatime) {   
+    uint8_t colorAmbient[4] = {0x60, 0x60, 0x60, 0xFF};
 
     t3d_viewport_set_ortho(
         &viewport, 
@@ -116,12 +138,15 @@ void minigame_loop(float deltatime) {
     rdpq_attach(display_get(), depthBuffer);
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
-    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    t3d_screen_clear_color(RGBA32(0, 0, 0, 0xFF));
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorAmbient);
-    t3d_light_set_directional(0, colorDir, &lightDirVec);
-    t3d_light_set_count(1);
+    t3d_light_set_count(sizeof(pointLightPositions) / sizeof(*pointLightPositions));
+
+    for (int i = 0; i < sizeof(pointLightPositions) / sizeof(*pointLightPositions); i += 1) {
+        t3d_light_set_point(i, pointLightColors[i], &pointLightPositions[i], pointLightDistance[i], false);
+    }
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_render(&gRampage.players[i]);
@@ -139,6 +164,9 @@ void minigame_loop(float deltatime) {
         rampage_tank_render(&gRampage.tanks[i]);
     }
 
+    t3d_light_set_ambient(colorWhite);
+    t3d_light_set_count(0);
+
     t3d_model_draw(rampage_assets_get()->ground);
 
     rdpq_detach_show();
@@ -152,10 +180,17 @@ void minigame_cleanup() {
 }
 
 static struct Vector3 gStartingPositions[] = {
-    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
-    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
+    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(-1.5f)},
+    {SCALE_FIXED_POINT(3.0f), 0.0f, SCALE_FIXED_POINT(-6.5f)},
+    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(1.5f)},
+    {SCALE_FIXED_POINT(-3.0f), 0.0f, SCALE_FIXED_POINT(6.5f)},
+};
+
+static struct Vector2 gStartingRotations[] = {
+    {0.0f, 1.0f},
+    {1.0f, 0.0f},
+    {0.0f, -1.0f},
+    {-1.0f, 0.0f},
 };
 
 static struct Vector3 gStartingTankPositions[] = {
@@ -177,7 +212,7 @@ void rampage_init(struct Rampage* rampage) {
     rampage_assets_init();
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
-        rampage_player_init(&rampage->players[i], &gStartingPositions[i], i, rampage_player_type(i));
+        rampage_player_init(&rampage->players[i], &gStartingPositions[i], &gStartingRotations[i], i, rampage_player_type(i));
     }
 
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {

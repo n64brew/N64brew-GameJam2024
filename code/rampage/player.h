@@ -33,13 +33,14 @@ struct RampagePlayer {
     uint32_t is_jumping: 1;
     uint32_t was_jumping: 1;
     uint32_t is_slamming: 1;
+    uint32_t player_index: 2;
 
     struct Vector3 current_target;
     float attack_timer;
     float stun_timer;
 };
 
-void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, int player_index, enum PlayerType type);
+void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, struct Vector2* start_rotation, int player_index, enum PlayerType type);
 void rampage_player_destroy(struct RampagePlayer* player);
 
 void rampage_player_update(struct RampagePlayer* player, float delta_time);
