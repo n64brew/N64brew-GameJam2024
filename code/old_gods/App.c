@@ -89,6 +89,9 @@ void App_Init(AppData* _appData){
 
     // UI
     AF_UI_Init(ecs);
+
+    // start renderer things that need to know about scene or game entities that have been setup
+    AF_Renderer_LateStart(ecs);
     
     // set framerate to target 60fp and call the app update function
     //new_timer(TIMER_TICKS(1000000 / 60), TF_CONTINUOUS, App_Update_Wrapper);
@@ -162,7 +165,7 @@ void App_Shutdown(AppData* _appData){
     if(_appData){}
 	debugf("App_Shutdown\n");
     Game_Shutdown();
-	AF_Renderer_Shutdown();
+	AF_Renderer_Shutdown(&_appData->ecs);
     AF_UI_Renderer_Shutdown();
 	AF_Physics_Shutdown();
 	AF_Input_Shutdown();	

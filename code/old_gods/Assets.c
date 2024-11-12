@@ -14,6 +14,16 @@ const char *texture_path[TEXTURE_COUNT] = {
 };
 
 
+// ============= Models ================
+const char *model_paths[MODEL_COUNT] = {
+    "rom:/old_gods/box.t3dm",
+    "rom:/old_gods/food.t3dm",
+    "rom:/old_gods/map.t3dm",
+    "rom:/old_gods/shadow.t3dm",
+    "rom:/old_gods/snake.t3dm"  // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
+};
+
+
 const char* cannonFXPath = "rom:/old_gods/cannon.wav64";
 const char* laserFXPath = "rom:/old_gods/laser.wav64";
 const char* musicFXPath = "rom:/old_gods/monosample8.wav64";

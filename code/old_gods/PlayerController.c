@@ -4,7 +4,7 @@
 #include <libdragon.h>
 
 #define STICK_DEAD_ZONE 0.01
-#define PLAYER_SPEED 10
+#define PLAYER_SPEED 65
 
 void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _entities, uint8_t _entityCount){
 	for(int i = 0; i < _entityCount; ++i){
