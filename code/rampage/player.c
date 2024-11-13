@@ -17,7 +17,7 @@
 #define PLAYER_MOVE_SPEED   128
 #define PLAYER_ACCEL        5000
 #define PLAYER_AIR_ACCEL    2000
-#define PLAYER_ATTACK_TIME  0.75f
+#define PLAYER_ATTACK_DAMAGE_DELAY  0.5f
 
 #define PLAYER_JUMP_IMPULSE 250
 #define PLAYER_JUMP_FLOAT   400
@@ -26,8 +26,9 @@
 
 #define FIRST_PLAYER_COLLIDER_GROUP 2
 
-#define PLAYER_STUN_TIME    3.0f
-#define PLAYER_STUN_IMPULSE 400
+#define PLAYER_STUN_TIME        3.0f
+#define PLAYER_STUN_IMPULSE     200
+#define PLAYER_ATTACK_VELOCITY  100
 
 struct dynamic_object_type player_collider = {
     .minkowsi_sum = capsule_minkowski_sum,
@@ -152,14 +153,9 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
         result.direction.y = offset.z;
 
         if (rampage_player_is_touching_target(player, &result.direction)) {
-            if (player->attack_timer <= 0.0f) {
+            if (!player->is_attacking) {
                 result.do_attack = true;
-                player->attack_timer = PLAYER_ATTACK_TIME;
-            } else {
-                player->attack_timer -= delta_time;
             }
-        } else {
-            player->attack_timer = 0.0f;
         }
     } else {
         struct Vector3* new_target = find_nearest_target(&player->dynamic_object.position, 1.3f);
@@ -183,12 +179,13 @@ void rampage_player_update_damager(struct RampagePlayer* player) {
     vector3Add(&player->dynamic_object.position, &offset, &player->damage_trigger.position);
 }
 
-void rampage_player_damage(void* data, int amount) {
+void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampagePlayer* player = (struct RampagePlayer*)data;
 
     if (player->stun_timer <= 0.0f) {
         player->stun_timer = PLAYER_STUN_TIME;
-        player->dynamic_object.velocity = (struct Vector3){0.0f, PLAYER_STUN_IMPULSE, 0.0f};
+        player->is_attacking = 0;
+        player->dynamic_object.velocity = (struct Vector3){velocity->x, PLAYER_STUN_IMPULSE, velocity->z};
     }
 }
 
@@ -221,8 +218,17 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->damage_trigger.is_trigger = true;
     player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
     player->player_index = player_index;
+    player->score = 0;
 
-    player->skeleton = t3d_skeleton_create(rampage_assets_get()->player);
+    T3DModel* model = rampage_assets_get()->player;
+
+    player->skeleton = t3d_skeleton_create(model);
+    player->animWalk = t3d_anim_create(model, "Walk");
+    t3d_anim_attach(&player->animWalk, &player->skeleton);
+    player->animAttack = t3d_anim_create(model, "Left_Swipe");
+    t3d_anim_attach(&player->animAttack, &player->skeleton);
+    t3d_anim_set_looping(&player->animAttack, false);
+    t3d_anim_set_playing(&player->animAttack, false);
 
     collision_scene_add(&player->damage_trigger);
 
@@ -230,7 +236,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
 
     rspq_block_begin();
         t3d_matrix_push(&player->mtx);
-        t3d_model_draw_skinned(rampage_assets_get()->player, &player->skeleton);
+        t3d_model_draw_skinned(model, &player->skeleton);
         t3d_matrix_pop(1);
     player->render_block = rspq_block_end();
 
@@ -245,12 +251,15 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->was_jumping = 1;
     player->is_slamming = 0;
     player->stun_timer = 0.0f;
+    player->is_attacking = 0;
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 }
 
 void rampage_player_destroy(struct RampagePlayer* player) {
     rspq_block_free(player->render_block);
+    t3d_anim_destroy(&player->animWalk);
+    t3d_anim_destroy(&player->animAttack);
     t3d_skeleton_destroy(&player->skeleton);
     collision_scene_remove(&player->dynamic_object);
     collision_scene_remove(&player->damage_trigger);
@@ -310,14 +319,14 @@ void rampage_player_handle_ground_movement(struct RampagePlayer* player, struct 
     );
 
     if (player->is_slamming) {
-        health_contact_damage(player->dynamic_object.active_contacts, 3);
+        health_contact_damage(player->dynamic_object.active_contacts, 3, &gZeroVec, player->dynamic_object.entity_id);
         player->is_slamming = false;
     }
 
-    if (input->do_jump && !player->was_jumping) {
-        player->dynamic_object.velocity.y = PLAYER_JUMP_IMPULSE;
-        player->is_jumping = 1;
-    }
+    // if (input->do_jump && !player->was_jumping) {
+    //     player->dynamic_object.velocity.y = PLAYER_JUMP_IMPULSE;
+    //     player->is_jumping = 1;
+    // }
 }
 
 void rampage_player_handle_air(struct RampagePlayer* player, struct RampageInput* input, float delta_time) {
@@ -359,9 +368,15 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
 
     if (player->stun_timer > 0.0f) {
         player->stun_timer -= delta_time;
+
+        if (is_grounded && player->dynamic_object.velocity.y < 0.0f) {
+            player->dynamic_object.velocity.x *= 0.5f;
+            player->dynamic_object.velocity.z *= 0.5f;
+        }
+        return;
+    } else if (player->is_attacking) {
         player->dynamic_object.velocity.x *= 0.5f;
         player->dynamic_object.velocity.z *= 0.5f;
-        return;
     } if (is_grounded) {
         rampage_player_handle_ground_movement(player, &input, delta_time);
     } else if (player->is_slamming) {
@@ -370,12 +385,39 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         rampage_player_handle_air(player, &input, delta_time);
     }
 
-    if (input.do_attack && !player->last_attack_state) {
-        health_contact_damage(player->damage_trigger.active_contacts, 1);
+    if (input.do_attack && !player->last_attack_state && !player->is_attacking) {
+        t3d_anim_set_playing(&player->animAttack, true);
+        t3d_anim_set_time(&player->animAttack, 0.0f);
+        player->is_attacking = 1;
+        player->attack_timer = PLAYER_ATTACK_DAMAGE_DELAY;
+    }
+
+    if (player->is_attacking && player->attack_timer > 0.0f) {
+        player->attack_timer -= delta_time;
+
+        if (player->attack_timer <= 0.0f) {
+            struct Vector3 attack_velocity = (struct Vector3){
+                player->dynamic_object.rotation.y * PLAYER_ATTACK_VELOCITY, 
+                0.0f, 
+                player->dynamic_object.rotation.x * PLAYER_ATTACK_VELOCITY
+            };
+            health_contact_damage(player->damage_trigger.active_contacts, 1, &attack_velocity, player->dynamic_object.entity_id);
+            player->attack_timer = 0.0f;
+        }
     }
 
     player->last_attack_state = input.do_attack;
     player->was_jumping = input.do_jump;
+
+    if (player->is_attacking) {
+        t3d_anim_update(&player->animAttack, delta_time);
+
+        if (!player->animAttack.isPlaying) {
+            player->is_attacking = 0;
+        }
+    } else {
+        t3d_anim_update(&player->animWalk, delta_time);
+    }
 }
 
 #define PLAYER_SCALE    0.5f

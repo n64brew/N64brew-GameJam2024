@@ -1,6 +1,7 @@
 #ifndef __RAMPAGE_PLAYER_H__
 #define __RAMPAGE_PLAYER_H__
 
+#include <t3d/t3danim.h>
 #include <t3d/t3dmath.h>
 #include <t3d/t3dskeleton.h>
 #include <libdragon.h>
@@ -24,6 +25,8 @@ struct RampagePlayer {
     struct dynamic_object damage_trigger;
     rspq_block_t* render_block;
     T3DSkeleton skeleton;
+    T3DAnim animWalk;
+    T3DAnim animAttack;
     enum PlayerType type;
     T3DMat4FP mtx;
     struct health health;
@@ -33,7 +36,10 @@ struct RampagePlayer {
     uint32_t is_jumping: 1;
     uint32_t was_jumping: 1;
     uint32_t is_slamming: 1;
+    uint32_t is_attacking: 1;
     uint32_t player_index: 2;
+
+    uint16_t score;
 
     struct Vector3 current_target;
     float attack_timer;

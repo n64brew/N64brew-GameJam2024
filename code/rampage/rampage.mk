@@ -23,8 +23,11 @@ ASSETS_LIST += \
 	filesystem/rampage/road_intersection.sprite \
 	filesystem/rampage/road_straight.sprite \
 	filesystem/rampage/road_tjunction.sprite \
-	filesystem/rampage/road_warning1.sprite
+	filesystem/rampage/road_warning1.sprite \
+	filesystem/rampage/QuirkyRobot.font64
 
 assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)
 	$(BLENDER_4) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
+
+filesystem/rampage/QuirkyRobot.font64: MKFONT_FLAGS += --size 16

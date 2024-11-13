@@ -21,6 +21,9 @@ T3DViewport viewport;
 T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(5.0f), SCALE_FIXED_POINT(4.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 
+rdpq_font_t* font;
+#define FONT_TEXT 1
+
 struct Rampage gRampage;
 
 const MinigameDef minigame_def = {
@@ -75,6 +78,24 @@ void minigame_init() {
     depthBuffer = display_get_zbuf();
     viewport = t3d_viewport_create();
 
+    font = rdpq_font_load("rom:/rampage/QuirkyRobot.font64");
+    rdpq_text_register_font(FONT_TEXT, font);
+    rdpq_font_style(font, 0, &(rdpq_fontstyle_t){
+        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
+    });
+    rdpq_font_style(font, 1, &(rdpq_fontstyle_t){
+        .color = RGBA32(0xFF, 0x00, 0x00, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
+    });
+    rdpq_font_style(font, 2, &(rdpq_fontstyle_t){
+        .color = RGBA32(0x00, 0xFF, 0x00, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
+    });
+    rdpq_font_style(font, 3, &(rdpq_fontstyle_t){
+        .color = RGBA32(0x00, 0x00, 0xFF, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
+    });
+    rdpq_font_style(font, 4, &(rdpq_fontstyle_t){
+        .color = RGBA32(0xFF, 0xFF, 0x00, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
+    });
+
     rampage_init(&gRampage);
 }
 
@@ -96,7 +117,7 @@ void minigame_fixedloop(float deltatime) {
     }
 }
 
-#define ORTHO_SCALE     7.0f
+#define ORTHO_SCALE     5.0f
 
 uint8_t colorWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -122,6 +143,13 @@ float pointLightDistance[] = {
     0.6f,
     0.3f,
     0.2f,
+};
+
+struct Vector2 scorePosition[] = {
+    {30.0f, 36.0f},
+    {230.0f, 36.0f},
+    {230.0f, 220.0f},
+    {30.0f, 220.0f},
 };
 
 void minigame_loop(float deltatime) {   
@@ -169,6 +197,19 @@ void minigame_loop(float deltatime) {
 
     t3d_model_draw(rampage_assets_get()->ground);
 
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        rdpq_text_printf(
+            &(rdpq_textparms_t){
+                .width = 60, 
+                .align = scorePosition[i].x < 160.0f ? ALIGN_LEFT : ALIGN_RIGHT,
+                .style_id = i + 1,
+            }, FONT_TEXT, 
+            scorePosition[i].x, scorePosition[i].y, 
+            "%d",
+            gRampage.players[i].score
+        );
+    }
+
     rdpq_detach_show();
 }
 
@@ -177,6 +218,8 @@ void minigame_cleanup() {
     t3d_destroy();
     collision_scene_destroy();
     health_destroy();
+    rdpq_text_unregister_font(FONT_TEXT);
+    rdpq_font_free(font);
 }
 
 static struct Vector3 gStartingPositions[] = {

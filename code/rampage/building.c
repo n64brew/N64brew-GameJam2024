@@ -7,6 +7,7 @@
 #include "./collision/box.h"
 #include "./collision/collision_scene.h"
 #include "./math/mathf.h"
+#include "./scene_query.h"
 
 #include "./rampage.h"
 
@@ -85,7 +86,7 @@ struct dynamic_object_type building_colliders[] = {
     },
 };
 
-void rampage_building_damage(void* data, int amount) {
+void rampage_building_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampageBuilding* building = (struct RampageBuilding*)data;
 
     if (building->hp == 0) {
@@ -96,6 +97,7 @@ void rampage_building_damage(void* data, int amount) {
     building->shake_timer = SHAKE_TIME;
 
     if (building->hp <= 0) {
+        give_player_score(source_id, building->height);
         building->health.is_dead = 1;
         building->is_collapsing = true;
     }

@@ -3,7 +3,7 @@
 
 #include "./collision/contact.h"
 
-typedef void (*DamageCallback)(void* data, int amount);
+typedef void (*DamageCallback)(void* data, int amount, struct Vector3* velocity, int source_id);
 
 enum HealthStatus {
     HEALTH_STATUS_NONE,
@@ -24,8 +24,8 @@ void health_destroy();
 void health_register(int entity_id, struct health* health, DamageCallback callback, void* data);
 void health_unregister(int entity_id);
 
-void health_apply_damage(int entity_id, int amount);
-void health_contact_damage(struct contact* contact, int amount);
+void health_apply_damage(int entity_id, int amount, struct Vector3* velocity, int source_id);
+void health_contact_damage(struct contact* contact, int amount, struct Vector3* velocity, int source_id);
 
 enum HealthStatus health_status(int entity_id);
 

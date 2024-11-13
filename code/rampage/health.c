@@ -24,17 +24,17 @@ void health_unregister(int entity_id) {
     hash_map_delete(&g_health_callbacks, entity_id);
 }
 
-void health_apply_damage(int entity_id, int amount) {
+void health_apply_damage(int entity_id, int amount, struct Vector3* velocity, int source_id) {
     struct health* target = hash_map_get(&g_health_callbacks, entity_id);
 
     if (target) {
-        target->callback(target->data, amount);
+        target->callback(target->data, amount, velocity, source_id);
     }
 }
 
-void health_contact_damage(struct contact* contact, int amount) {
+void health_contact_damage(struct contact* contact, int amount, struct Vector3* velocity, int source_id) {
     while (contact) {
-        health_apply_damage(contact->other_object, amount);
+        health_apply_damage(contact->other_object, amount, velocity, source_id);
         contact = contact->next;
     }
 }
