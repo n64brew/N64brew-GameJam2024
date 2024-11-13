@@ -28,9 +28,9 @@ void AF_UI_Init(AF_ECS* _ecs){
 		return;
 	} 
 
-    /*
+    
 	debugf("InitTextRendering\n");
-
+    /*
     for(int i = 0; i < _ecs->entitiesCount; i++){
         // find components that are text components and initialise them
 
@@ -67,7 +67,15 @@ void AF_UI_Init(AF_ECS* _ecs){
 }
 
 
+void AF_UI_Update(AF_ECS* _ecs, AF_Time* _time){
+    for(int i = 0; i < _ecs->entitiesCount; ++i){
+        AF_CText* text = &_ecs->texts[i];
+        AF_CSprite* sprite = &_ecs->sprites[i];
 
+        AF_UI_RendererText_Update(text);
+        AF_UI_RendererSprite_Update(sprite, _time);
+    }
+}
 
 /*
 ====================

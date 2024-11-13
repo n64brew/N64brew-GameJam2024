@@ -56,8 +56,7 @@ AF_Entity* CreatePlayer(AF_ECS* _ecs, uint8_t _playerID, Vec3 _pos, Vec2 _scale,
 AF_Entity* CreateBucket(AF_ECS* _ecs, uint8_t _bucketID, Vec3 _pos, Vec2 _scale, uint8_t _textureID);
 AF_Entity* CreateVillager(AF_ECS* _ecs, uint8_t _villagerID, Vec3 _pos, Vec2 _scale, uint8_t _textureID);
 
-// UI
-void Scene_CreateIU_Entities(AF_ECS* _ecs);
+
 
 
 #endif  // SCENE_H

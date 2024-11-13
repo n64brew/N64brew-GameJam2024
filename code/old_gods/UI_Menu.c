@@ -47,6 +47,8 @@ AF_Entity* gameOverSubTitleEntity = NULL;
 
 // Forward decalred functions
 //void Game_UpdatePlayerScoreText();
+
+
 void UI_Menu_RenderGameOverScreen(AppData* _appData);
 void RefreshCountdownTimer(AF_ECS* _ecs);
 // set ui states
@@ -56,12 +58,119 @@ void UI_Menu_MainMenuSetShowing(BOOL _state);
 void UI_Menu_GameOverUISetShowing(BOOL _state);
 void UI_Menu_PlayingSetState(BOOL _state);
 
-void UI_Menu_Awake(AF_ECS* _ecs){
+void UI_Menu_Awake(AppData* _appData){
 
 }
 
-void UI_Menu_Start(AF_ECS* _ecs){
 
+//======= SETUP ========
+
+void UI_Menu_Start(AppData* _appData){
+    
+    // TODO: get rid of magic numbers
+    // Create test Text
+    //int FONT1_ID = 1;
+    //int FONT2_ID = 2;
+    float whiteColor[4];
+    whiteColor[0] = 255;
+    whiteColor[1] = 255;
+    whiteColor[2] = 255;
+    whiteColor[3] = 255;
+
+    AF_LoadFont(FONT1_ID, fontPath, whiteColor);
+    AF_LoadFont(FONT2_ID, fontPath2, whiteColor); // title font
+	gameTitleEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	*gameTitleEntity->text = AF_CText_ADD();
+
+	gameTitleEntity->text->text = titleText;
+	gameTitleEntity->text->fontID = 1;
+	gameTitleEntity->text->fontPath = fontPath2;
+
+	// Text Color
+	//gameTitleEntity->text->textColor = whiteColor;
+    gameTitleEntity->text->fontID = FONT1_ID;
+
+	// Title Text position
+    int box_width = 262;
+    int box_height = 0;
+    int x0 = 10;
+	int y0 = 20;
+
+	Vec2 textScreenPos = {x0, y0};
+	Vec2 textBounds = {box_width, box_height};
+    gameTitleEntity->text->screenPos = textScreenPos;
+	gameTitleEntity->text->textBounds = textBounds;
+
+    // ======God Eat Label Text position
+    godEatCountLabelEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	*godEatCountLabelEntity->text = AF_CText_ADD();
+	godEatCountLabelEntity->text->text = godsCountLabelText;
+	godEatCountLabelEntity->text->fontID = FONT2_ID;
+	godEatCountLabelEntity->text->fontPath = fontPath2;
+
+	// Text Color
+    godEatCountLabelEntity->text->fontID = FONT2_ID;
+
+    int godLabelBox_width = 262;
+    int godLabelBox_height = 0;
+    int godLabelBoxPosX = 250;
+	int godLabelBoxPosY = 20;
+
+	Vec2 godLabelTextScreenPos = {godLabelBoxPosX, godLabelBoxPosY};
+	Vec2 godLabelTextBounds = {godLabelBox_width, godLabelBox_height};
+    godEatCountLabelEntity->text->screenPos = godLabelTextScreenPos;
+	godEatCountLabelEntity->text->textBounds = godLabelTextBounds;
+
+    // ======Count down timer Text position
+    countdownTimerLabelEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	*countdownTimerLabelEntity->text = AF_CText_ADD();
+
+	countdownTimerLabelEntity->text->text = countdownTimerLabelText;
+	countdownTimerLabelEntity->text->fontID = 2;
+	countdownTimerLabelEntity->text->fontPath = fontPath2;
+
+	// Text Color
+	//countdownTimerLabelEntity->text->textColor = whiteColor;
+    countdownTimerLabelEntity->text->fontID = FONT1_ID;
+
+    int countdownTimerBox_width = 262;
+    int countdownTimerBox_height = 0;//150;
+    int countdownTimerBoxPosX = 150;//(320-box_width);///2;
+	int countdownTimerBoxPosY = 20;//(240-box_height);///2; 
+
+	Vec2 countdownTimerLabelTextScreenPos = {countdownTimerBoxPosX, countdownTimerBoxPosY};
+	Vec2 countdownTimerLabelTextBounds = {countdownTimerBox_width, countdownTimerBox_height};
+    countdownTimerLabelEntity->text->screenPos = countdownTimerLabelTextScreenPos;
+	countdownTimerLabelEntity->text->textBounds = countdownTimerLabelTextBounds;
+ // Create Player 1 card
+    Vec2 playe1CountLabelPos = {20, 180};
+    Vec2 playe1CountLabelSize = {320, 50};
+    playersCountUIEntity = Entity_Factory_CreateUILabel(&_appData->ecs, playerCountCharBuff, FONT2_ID, fontPath2, whiteColor, playe1CountLabelPos, playe1CountLabelSize);
+
+    // game over
+    Vec2 gameOverTitlePos = {120, 100};
+    Vec2 gameOverTitleSize = {320, 50};
+    Vec2 gameOverSubTitlePos = {20, 140};
+    Vec2 gameOverSubTitleSize = {320, 50};
+    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, gameOverTitlePos, gameOverTitleSize);
+    gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitleLoseCharBuffer, FONT2_ID, fontPath2, whiteColor, gameOverSubTitlePos, gameOverSubTitleSize);
+    // disable at the start
+	gameOverTitleEntity->text->isShowing = FALSE;
+    gameOverSubTitleEntity->text->isShowing = FALSE;
+
+    // Create Main Menu
+    Vec2 mainMenuTitlePos = {120, 100};
+    Vec2 mainMenuTitleSize = {320, 50};
+    Vec2 mainMenuSubTitlePos = {80, 140};
+    Vec2 mainMenuSubTitleSize = {320, 50};
+    mainMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
+
+    mainMenuSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuSubTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, mainMenuSubTitlePos, mainMenuSubTitleSize);
+    // disable at the start
+	mainMenuTitleEntity->text->isShowing = FALSE;
+    mainMenuSubTitleEntity->text->isShowing = FALSE;
+
+    
 }
 
 void UI_Menu_Update(AppData* _appData){
@@ -94,117 +203,7 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
     
 }
 
-//======= SETUP ========
-
-void Scene_CreateIU_Entities(AF_ECS* _ecs){
-    
-    // TODO: get rid of magic numbers
-    // Create test Text
-    //int FONT1_ID = 1;
-    //int FONT2_ID = 2;
-    float whiteColor[4];
-    whiteColor[0] = 255;
-    whiteColor[1] = 255;
-    whiteColor[2] = 255;
-    whiteColor[3] = 255;
-
-    AF_LoadFont(FONT1_ID, fontPath, whiteColor);
-    AF_LoadFont(FONT2_ID, fontPath2, whiteColor); // title font
-	gameTitleEntity = AF_ECS_CreateEntity(_ecs);
-	*gameTitleEntity->text = AF_CText_ADD();
-
-	gameTitleEntity->text->text = titleText;
-	gameTitleEntity->text->fontID = 1;
-	gameTitleEntity->text->fontPath = fontPath2;
-
-	// Text Color
-	//gameTitleEntity->text->textColor = whiteColor;
-    gameTitleEntity->text->fontID = FONT1_ID;
-
-	// Title Text position
-    int box_width = 262;
-    int box_height = 0;
-    int x0 = 10;
-	int y0 = 20;
-
-	Vec2 textScreenPos = {x0, y0};
-	Vec2 textBounds = {box_width, box_height};
-    gameTitleEntity->text->screenPos = textScreenPos;
-	gameTitleEntity->text->textBounds = textBounds;
-
-    // ======God Eat Label Text position
-    godEatCountLabelEntity = AF_ECS_CreateEntity(_ecs);
-	*godEatCountLabelEntity->text = AF_CText_ADD();
-	godEatCountLabelEntity->text->text = godsCountLabelText;
-	godEatCountLabelEntity->text->fontID = FONT2_ID;
-	godEatCountLabelEntity->text->fontPath = fontPath2;
-
-	// Text Color
-    godEatCountLabelEntity->text->fontID = FONT2_ID;
-
-    int godLabelBox_width = 262;
-    int godLabelBox_height = 0;
-    int godLabelBoxPosX = 250;
-	int godLabelBoxPosY = 20;
-
-	Vec2 godLabelTextScreenPos = {godLabelBoxPosX, godLabelBoxPosY};
-	Vec2 godLabelTextBounds = {godLabelBox_width, godLabelBox_height};
-    godEatCountLabelEntity->text->screenPos = godLabelTextScreenPos;
-	godEatCountLabelEntity->text->textBounds = godLabelTextBounds;
-
-    // ======Count down timer Text position
-    countdownTimerLabelEntity = AF_ECS_CreateEntity(_ecs);
-	*countdownTimerLabelEntity->text = AF_CText_ADD();
-
-	countdownTimerLabelEntity->text->text = countdownTimerLabelText;
-	countdownTimerLabelEntity->text->fontID = 2;
-	countdownTimerLabelEntity->text->fontPath = fontPath2;
-
-	// Text Color
-	//countdownTimerLabelEntity->text->textColor = whiteColor;
-    countdownTimerLabelEntity->text->fontID = FONT1_ID;
-
-    int countdownTimerBox_width = 262;
-    int countdownTimerBox_height = 0;//150;
-    int countdownTimerBoxPosX = 150;//(320-box_width);///2;
-	int countdownTimerBoxPosY = 20;//(240-box_height);///2; 
-
-	Vec2 countdownTimerLabelTextScreenPos = {countdownTimerBoxPosX, countdownTimerBoxPosY};
-	Vec2 countdownTimerLabelTextBounds = {countdownTimerBox_width, countdownTimerBox_height};
-    countdownTimerLabelEntity->text->screenPos = countdownTimerLabelTextScreenPos;
-	countdownTimerLabelEntity->text->textBounds = countdownTimerLabelTextBounds;
- // Create Player 1 card
-    Vec2 playe1CountLabelPos = {20, 180};
-    Vec2 playe1CountLabelSize = {320, 50};
-    playersCountUIEntity = Entity_Factory_CreateUILabel(_ecs, playerCountCharBuff, FONT2_ID, fontPath2, whiteColor, playe1CountLabelPos, playe1CountLabelSize);
-
-    // game over
-    Vec2 gameOverTitlePos = {120, 100};
-    Vec2 gameOverTitleSize = {320, 50};
-    Vec2 gameOverSubTitlePos = {20, 140};
-    Vec2 gameOverSubTitleSize = {320, 50};
-    gameOverTitleEntity = Entity_Factory_CreateUILabel(_ecs, gameOverTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, gameOverTitlePos, gameOverTitleSize);
-    gameOverSubTitleEntity = Entity_Factory_CreateUILabel(_ecs, gameOverSubTitleLoseCharBuffer, FONT2_ID, fontPath2, whiteColor, gameOverSubTitlePos, gameOverSubTitleSize);
-    // disable at the start
-	gameOverTitleEntity->text->isShowing = FALSE;
-    gameOverSubTitleEntity->text->isShowing = FALSE;
-
-    // Create Main Menu
-    Vec2 mainMenuTitlePos = {120, 100};
-    Vec2 mainMenuTitleSize = {320, 50};
-    Vec2 mainMenuSubTitlePos = {80, 140};
-    Vec2 mainMenuSubTitleSize = {320, 50};
-    mainMenuTitleEntity = Entity_Factory_CreateUILabel(_ecs, mainMenuTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
-
-    mainMenuSubTitleEntity = Entity_Factory_CreateUILabel(_ecs, mainMenuSubTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, mainMenuSubTitlePos, mainMenuSubTitleSize);
-    // disable at the start
-	mainMenuTitleEntity->text->isShowing = FALSE;
-    mainMenuSubTitleEntity->text->isShowing = FALSE;
-
-    
-}
-
-// =====================
+// ===================== ===================== ===================== =====================
 
 
 void RefreshUIEntity(AF_Entity* _entity, const char* _text){

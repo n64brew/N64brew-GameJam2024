@@ -9,6 +9,7 @@
 // UFNLoader for n64
 #include "debug.h"
 #include "Scene.h"
+#include "UI_Menu.h"
 
 
 
@@ -88,7 +89,8 @@ void App_Init(AppData* _appData){
     Scene_Start(_appData);
 
     // UI
-    AF_UI_Init(ecs);
+    UI_Menu_Awake(_appData);
+    UI_Menu_Start(_appData);
 
     // start renderer things that need to know about scene or game entities that have been setup
     AF_Renderer_LateStart(ecs);
@@ -155,6 +157,11 @@ void App_Render_Update(AppData* _appData){
         //AF_Physics_LateRenderUpdate(&ecs);
     //}
     // 
+
+    // Render text
+    UI_Menu_Update(_appData);
+    AF_UI_Update(&_appData->ecs, &_appData->gameTime);
+
     AF_Renderer_Finish(); 
     time->currentFrame++;
 }

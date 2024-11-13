@@ -41,9 +41,9 @@ AF_Entity* bucket4 = NULL;
 
 // Villagers
 AF_Entity* villager1 = NULL;
-AF_Entity* villager2 = NULL;
-AF_Entity* villager3 = NULL;
-AF_Entity* villager4 = NULL;
+//AF_Entity* villager2 = NULL;
+//AF_Entity* villager3 = NULL;
+//AF_Entity* villager4 = NULL;
 
 // Audio
 AF_Entity* laserSoundEntity = NULL;
@@ -122,7 +122,6 @@ wav64_t sfx_winner;
 
 void Scene_Awake(AppData* _appData){
     Scene_SetupEntities(_appData);
-    Scene_CreateIU_Entities(&_appData->ecs);
 }
 
 void Scene_Start(AppData* _appData){
@@ -200,45 +199,6 @@ void Scene_SetupEntities(AppData* _appData){
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->showDebug = TRUE;
     
-    /*
-    
-    Vec3 godeye1Pos = {-2.5, 10, -12};
-	Vec3 godeye1Scale = {1,1,1};
-    godEye1 = Entity_Factory_CreatePrimative(_ecs, godeye1Pos, godeye1Scale, AF_MESH_TYPE_CUBE, AABB);
-    godEye1->rigidbody->inverseMass = zeroInverseMass;
-    godEye1->mesh->meshType = AF_MESH_TYPE_MESH;
-    godEye1->mesh->meshID = MODEL_FOOD;
-    godEye1->mesh->material.textureID = TEXTURE_ID_0;
-    godEye1->mesh->isAnimating = TRUE;
-
-    Vec3 godeye2Pos = {2.5, 10, -12};
-	Vec3 godeye2Scale = {1,1,1};
-    godEye2 = Entity_Factory_CreatePrimative(_ecs, godeye2Pos, godeye2Scale, AF_MESH_TYPE_CUBE, AABB);
-    godEye2->rigidbody->inverseMass = zeroInverseMass;
-    godEye2->mesh->material.textureID = TEXTURE_ID_1;
-    godEye2->mesh->meshType = AF_MESH_TYPE_MESH;
-    godEye2->mesh->meshID = MODEL_FOOD;
-    godEye2->mesh->isAnimating = TRUE;
-
-    Vec3 godeye3Pos = {2.5, 5, -12};
-	Vec3 godeye3Scale = {1,1,1};
-    godEye3 = Entity_Factory_CreatePrimative(_ecs, godeye3Pos, godeye3Scale, AF_MESH_TYPE_CUBE, AABB);
-    godEye3->rigidbody->inverseMass = zeroInverseMass;
-    godEye3->mesh->meshType = AF_MESH_TYPE_MESH;
-    godEye3->mesh->meshID = MODEL_FOOD;
-    godEye3->mesh->material.textureID = TEXTURE_ID_2;
-    godEye3->mesh->isAnimating = TRUE;
-
-    Vec3 godeye4Pos = {-2.5, 5, -12};
-	Vec3 godeye4Scale = {1,1,1};
-    godEye4 = Entity_Factory_CreatePrimative(_ecs, godeye4Pos, godeye4Scale, AF_MESH_TYPE_CUBE, AABB);
-    godEye4->rigidbody->inverseMass = zeroInverseMass;
-    godEye4->mesh->meshType = AF_MESH_TYPE_MESH;
-    godEye4->mesh->meshID = MODEL_FOOD;
-    godEye4->mesh->material.textureID = TEXTURE_ID_3;
-    godEye4->mesh->isAnimating = TRUE;
-    */
-    
     
 	// ---------Create Player1------------------
 	Vec3 player1Pos = {2.0f, .5f, 1.0f};
@@ -260,7 +220,7 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player2Entity = gameplayData->playerEntities[1];
-    player2Entity->mesh->material.textureID = TEXTURE_ID_1;
+    //player2Entity->mesh->material.textureID = TEXTURE_ID_1;
     player2Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player2Entity->mesh->meshID = MODEL_SNAKE;
     player2Entity->rigidbody->inverseMass = zeroInverseMass;
@@ -273,7 +233,6 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player3Entity = gameplayData->playerEntities[2];
-    player3Entity->mesh->material.textureID = TEXTURE_ID_2;
     player3Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player3Entity->mesh->meshID = MODEL_SNAKE;
 	player3Entity->rigidbody->isKinematic = TRUE;
@@ -286,7 +245,6 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
 	AF_Entity* player4Entity = gameplayData->playerEntities[3];
-    player4Entity->mesh->material.textureID = TEXTURE_ID_3;
     player4Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player4Entity->mesh->meshID = MODEL_SNAKE;
 	player4Entity->rigidbody->isKinematic = TRUE;
@@ -297,48 +255,9 @@ void Scene_SetupEntities(AppData* _appData){
     Vec3 levelMapPos = {0, 0, 2};
 	Vec3 levelMapScale = {2,1,1};
     levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_CUBE, AABB);
-    //levelMapEntity->mesh->material.textureID = TEXTURE_ID_7;
     levelMapEntity->mesh->meshType = AF_MESH_TYPE_MESH;
     levelMapEntity->mesh->meshID = MODEL_MAP;
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
-
-    /*
-	// Create Plane
-	Vec3 planePos = {0, -2, 0};
-	Vec3 planeScale = {40,1,40};
-    groundPlaneEntity = Entity_Factory_CreatePrimative(_ecs, planePos, planeScale, AF_MESH_TYPE_CUBE, AABB);
-    groundPlaneEntity->mesh->material.textureID = TEXTURE_ID_7;
-	groundPlaneEntity->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Left Wall
-    float wallHeight = 3;
-	Vec3 leftWallPos = {-40, 0, 0};
-	Vec3 leftWallScale = {1,wallHeight,40};
-	leftWall = Entity_Factory_CreatePrimative(_ecs, leftWallPos, leftWallScale, AF_MESH_TYPE_CUBE, AABB);
-    leftWall->mesh->material.textureID = TEXTURE_ID_8;
-	leftWall->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Right Wall
-	Vec3 rightWallPos = {40, 0, 0};
-	Vec3 rightWallScale = {1,wallHeight,40};    
-    rightWall = Entity_Factory_CreatePrimative(_ecs, rightWallPos, rightWallScale, AF_MESH_TYPE_CUBE, AABB);
-    rightWall->mesh->material.textureID = TEXTURE_ID_8;
-	rightWall->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Back Wall
-	Vec3 backWallPos = {0, 0, -30};
-	Vec3 backWallScale = {40,wallHeight,1};
-    backWall = Entity_Factory_CreatePrimative(_ecs, backWallPos, backWallScale, AF_MESH_TYPE_CUBE, AABB);
-    backWall->mesh->material.textureID = TEXTURE_ID_8;
-	backWall->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Front Wall
-	Vec3 frontWallPos = {0, 0, 20};
-	Vec3 frontWallScale = {40,wallHeight,1};
-    frontWall = Entity_Factory_CreatePrimative(_ecs, frontWallPos, frontWallScale, AF_MESH_TYPE_CUBE, AABB);
-    frontWall->mesh->material.textureID = TEXTURE_ID_8;
-	frontWall->rigidbody->inverseMass = zeroInverseMass;
-    */
 
     // ============Buckets=============
     // Bucket 1
@@ -346,7 +265,6 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket1Pos = {-5.0f, .5f, 0.0f};
 	Vec3 bucket1Scale = {1,1,1};
     bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucket1Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket1->mesh->material.textureID = TEXTURE_ID_0;
     bucket1->mesh->meshType = AF_MESH_TYPE_MESH;
     bucket1->mesh->meshID = MODEL_BOX;
     bucket1->rigidbody->inverseMass = zeroInverseMass;
@@ -358,7 +276,6 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket2Pos = {5.0f, .5f, 0.0f};
 	Vec3 bucket2Scale = {1,1,1};
 	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucket2Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket2->mesh->material.textureID = TEXTURE_ID_1;
     bucket2->mesh->meshType = AF_MESH_TYPE_MESH;
     bucket2->mesh->meshID = MODEL_BOX;
     bucket2->rigidbody->inverseMass = zeroInverseMass;
@@ -370,7 +287,6 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket3Pos = {5.0f, .5f, 5.0f};
 	Vec3 bucket3Scale = {1,1,1};
 	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucket3Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket3->mesh->material.textureID = TEXTURE_ID_2;
     bucket3->mesh->meshType = AF_MESH_TYPE_MESH;
     bucket3->mesh->meshID = MODEL_BOX;
     bucket3->rigidbody->inverseMass = zeroInverseMass;
@@ -381,7 +297,6 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket4Pos = {-5.0f, .5f, 5.0f};
 	Vec3 bucket4Scale = {1,1,1};
 	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucket4Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket4->mesh->material.textureID = TEXTURE_ID_3;
     bucket4->mesh->meshType = AF_MESH_TYPE_MESH;
     bucket4->mesh->meshID = MODEL_BOX;
     bucket4->rigidbody->inverseMass = zeroInverseMass;
@@ -392,7 +307,6 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 villager1Pos = {-1000.0f, 0, 0};
 	Vec3 villager1Scale = {1,1,1};
     villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_CUBE, AABB);
-    villager1->mesh->material.textureID = TEXTURE_ID_8;
     villager1->mesh->meshType = AF_MESH_TYPE_MESH;
     villager1->mesh->meshID = MODEL_FOOD;
 	villager1->rigidbody->inverseMass = zeroInverseMass;
@@ -401,38 +315,10 @@ void Scene_SetupEntities(AppData* _appData){
 
 
 	// Setup Audio
-	// TODO: put into audio function
-    // Already init from brew game jam structure
-	//audio_init(44100, 4);
-	//mixer_init(32);  // Initialize up to 16 channels
-
-/*
-	AF_AudioClip musicAudioClip = {0, musicFXPath, 12800};
-	laserSoundEntity = Entity_Factory_CreateAudio(_ecs, musicAudioClip, CHANNEL_MUSIC, (void*)&sfx_music, TRUE);
-
-	AF_AudioClip sfx1AudioClip = {0, laserFXPath, 128000};
-	laserSoundEntity = Entity_Factory_CreateAudio(_ecs, sfx1AudioClip, CHANNEL_SFX1, (void*)&sfx_laser, FALSE);
-
-	AF_AudioClip sfx2AudioClip = {0, cannonFXPath, 128000};
-	cannonSoundEntity = Entity_Factory_CreateAudio(_ecs, sfx2AudioClip, CHANNEL_SFX2, (void*)&sfx_cannon, FALSE);
-
-	
-
-	bool music = false;
-	//int music_frequency = sfx_music.wave.frequency;
-	music = !music;
-	if (music) {
-		//wav64_play(&sfx_music, CHANNEL_MUSIC);
-		//music_frequency = sfx_music.wave.frequency;
-	}
-
-*/	
-
     for(int i = 0; i < _ecs->entitiesCount; ++i){
         // scale everything
         _ecs->transforms[i].scale = Vec3_MULT_SCALAR(_ecs->transforms[i].scale, .0075f);//0.075f);
     }
-	
 }
 
 
@@ -452,66 +338,32 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
     {   debugf("Game: SpawnBucket: god or bucket entity is null \n");
         return;
     }
+
+    AF_Entity* bucket1 = GetBucket1();
+    AF_Entity* bucket2 = GetBucket2();
+    AF_Entity* bucket3 = GetBucket3();
+    AF_Entity* bucket4 = GetBucket4();
+
+
     if(randomNum == 0){
-        AF_Entity* bucket1 = GetBucket1();
-        AF_Entity* bucket2 = GetBucket2();
-        AF_Entity* bucket3 = GetBucket3();
-        AF_Entity* bucket4 = GetBucket4();
-
         *_currentBucket = 0;
-        GetGodEntity()->mesh->material.textureID = TEXTURE_ID_0;
+        Vec3 bucket1Pos = {bucket1->transform->pos.x, bucket1->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket1->transform->pos.z};
+        villager1->transform->pos = bucket1Pos;
 
-        /*
-        bucket1->mesh->material.textureID = TEXTURE_ID_0;
-        bucket2->mesh->material.textureID = TEXTURE_ID_5;
-        bucket3->mesh->material.textureID = TEXTURE_ID_5;
-        bucket4->mesh->material.textureID = TEXTURE_ID_5;
-        */
-        bucket1->mesh->meshID = MODEL_FOOD;
-        bucket2->mesh->meshID = MODEL_BOX;
-        bucket3->mesh->meshID = MODEL_BOX;
-        bucket4->mesh->meshID = MODEL_BOX;
     }else if( randomNum == 1){
         *_currentBucket = 1;
-        
-        godEntity->mesh->material.textureID = TEXTURE_ID_1;
-        /*
-        bucket1->mesh->material.textureID = TEXTURE_ID_5;
-        bucket2->mesh->material.textureID = TEXTURE_ID_1;
-        bucket3->mesh->material.textureID = TEXTURE_ID_5;
-        bucket4->mesh->material.textureID = TEXTURE_ID_5;
-        */
-        bucket1->mesh->meshID = MODEL_BOX;
-        bucket2->mesh->meshID = MODEL_FOOD;
-        bucket3->mesh->meshID = MODEL_BOX;
-        bucket4->mesh->meshID = MODEL_BOX;
+        Vec3 bucket2Pos = {bucket2->transform->pos.x, bucket2->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket2->transform->pos.z};
+        villager1->transform->pos = bucket2Pos;
+
     }else if( randomNum == 2){
         *_currentBucket = 2;
-        
-        godEntity->mesh->material.textureID = TEXTURE_ID_2;
-        /*
-        bucket1->mesh->material.textureID = TEXTURE_ID_5;
-        bucket2->mesh->material.textureID = TEXTURE_ID_5;
-        bucket3->mesh->material.textureID = TEXTURE_ID_2;
-        bucket4->mesh->material.textureID = TEXTURE_ID_5;
-        */
-        bucket1->mesh->meshID = MODEL_BOX;
-        bucket2->mesh->meshID = MODEL_BOX;
-        bucket3->mesh->meshID = MODEL_FOOD;
-        bucket4->mesh->meshID = MODEL_BOX;
+        Vec3 bucket3Pos = {bucket3->transform->pos.x, bucket3->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket3->transform->pos.z};
+        villager1->transform->pos = bucket3Pos;
+
     }else if( randomNum == 3){
         *_currentBucket = 3;
-        godEntity->mesh->material.textureID = TEXTURE_ID_3;
-        /*
-        bucket1->mesh->material.textureID = TEXTURE_ID_5;
-        bucket2->mesh->material.textureID = TEXTURE_ID_5;
-        bucket3->mesh->material.textureID = TEXTURE_ID_5;
-        bucket4->mesh->material.textureID = TEXTURE_ID_3;
-        */
-        bucket1->mesh->meshID = MODEL_BOX;
-        bucket2->mesh->meshID = MODEL_BOX;
-        bucket3->mesh->meshID = MODEL_BOX;
-        bucket4->mesh->meshID = MODEL_FOOD;
+        Vec3 bucket4Pos = {bucket4->transform->pos.x, bucket4->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket4->transform->pos.z};
+        villager1->transform->pos = bucket4Pos;
     }
 }
 
@@ -530,14 +382,7 @@ Scene_OnGodTrigger
 Callback Behaviour triggered when the player dropps off a sacrafice to the gods
 */
 void Scene_OnGodTrigger(AF_Collision* _collision){
-
-    
-	//AF_Entity* entity1 =  _collision->entity1;
 	AF_Entity* entity2 =  _collision->entity2;
-	//uint32_t entity1ID = AF_ECS_GetID(entity1->id_tag);
-	//uint32_t entity2ID = AF_ECS_GetID(entity2->id_tag);
-	//PACKED_UINT32 entity1Tag = AF_ECS_GetTag(entity1->id_tag);
-	//PACKED_UINT32 entity2Tag = AF_ECS_GetTag(entity2->id_tag);
 	
 
     // if entity is carrying, eat and shift the villager into the distance
@@ -557,21 +402,10 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         // randomly call for a colour bucket
         Scene_SpawnBucket(&g_currentBucket);
         // play sound
-		//AF_Audio_Play(cannonSoundEntity->audioSource, 0.5f, FALSE);
-
         // clear the players from carrying
-        debugf("Scene_OnGoTrigger: tell all the players they are not carrying");
-        //playerEntities[0]->playerData->isCarrying = FALSE;
-        //playerEntities[1]->playerData->isCarrying = FALSE;
-        //playerEntities[2]->playerData->isCarrying = FALSE;
-        //playerEntities[3]->playerData->isCarrying = FALSE;
     }
     
-	
 	// Play sound
-	//AF_Audio_Play(cannonSoundEntity->audioSource, 1.0f, FALSE);
-	//wav64_play(&sfx_cannon, CHANNEL_SFX1);
-    
 }
 
 
@@ -585,31 +419,17 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
     if(_currentBucket != _bucketID){
         return;
     }
-	AF_Entity* entity1 =  _collision->entity1;
+	//AF_Entity* entity1 =  _collision->entity1;
 	AF_Entity* entity2 =  _collision->entity2;
-	//uint32_t entity1ID = AF_ECS_GetID(entity1->id_tag);
-	//uint32_t entity2ID = AF_ECS_GetID(entity2->id_tag);
-	//PACKED_UINT32 entity1Tag = AF_ECS_GetTag(entity1->id_tag);
-	//PACKED_UINT32 entity2Tag = AF_ECS_GetTag(entity2->id_tag);
-	//debugf("Scene_OnBucketTrigger:  \n");
-    // attatch next villager
-    //AF_CPlayerData* playerData1 = entity1->playerData;
 
     // Second collision is the playable character
     AF_CPlayerData* playerData2 = entity2->playerData;
-    if(entity2->mesh->meshID == MODEL_FOOD){
-        debugf("entity 1 %f %i Entity 2 %i\n", entity2->transform->pos.x, entity1->mesh->meshID, entity2->mesh->meshID);
-    }
-    
-    //if((AF_Component_GetHas(playerData1->enabled) == TRUE) && (AF_Component_GetEnabled(playerData1->enabled) == TRUE)){
+   
         // attatch the villager to this player
         if(_villager->playerData->isCarried == FALSE){
-            //debugf("OnBucketTrigger: carry villager \n");
             playerData2->carryingEntity = _villager->id_tag;
             _villager->mesh->material.textureID = _godEntity->mesh->material.textureID;
             playerData2->isCarrying = TRUE;
-            // play sound
-		    //AF_Audio_Play(laserSoundEntity->audioSource, 0.5f, FALSE);
         }
 }
 

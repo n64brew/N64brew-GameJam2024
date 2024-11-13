@@ -66,7 +66,7 @@ void Game_Update(AppData* _appData)
 
 	//if(ecs == NULL){
 	//	debugf("Game_Update: passed null ecs reference \n");
-	//	return;
+	//	return;Scene
 	//}
 	// game update
 
@@ -77,7 +77,6 @@ void Game_Update(AppData* _appData)
 
     // if gamestate is playing, then accept player inputs
     Scene_Update(_appData);
-    UI_Menu_Update(_appData);
     
 }
 
