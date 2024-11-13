@@ -30,9 +30,16 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 T3DModel* modelMap;
 
+typedef enum
+{
+    teamThief,
+    teamGuard
+} player_team;
+
 typedef struct
 {
     int playerNumber;
+    player_team playerTeam;
     T3DMat4FP* modelMatFP;
     T3DModel* model;
 //    T3DAnim animAttack;
@@ -47,9 +54,22 @@ typedef struct
     float currSpeed;
     float animBlend;
     bool isAi;
+    //TODO: Remove, temp AI variable
+    int framesRemaining;
+    T3DVec3 aiDir;
 } player_data;
 
+typedef struct
+{
+    bool isActive;
+    T3DMat4FP* modelMatFP;
+    T3DModel* model;
+    rspq_block_t* dplObjective;
+    T3DVec3 objectivePos;
+} objective_data;
+
 player_data players[MAXPLAYERS];
+objective_data objectives[2];
 
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
@@ -82,9 +102,10 @@ const MinigameDef minigame_def = {
 
 void debugInfoDraw(float deltaTime)
 {
-    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
+    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320,  .disable_aa_fix = true, };
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 10, "Test Debug");
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "FPS: %i", (int)(1.0f/deltaTime));
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "FPS: %f", /*(int)*/(1.0f/deltaTime));
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
 }
 
 /*==============================
@@ -101,9 +122,47 @@ void player_init(int playerNumber)
     PLAYERCOLOR_4,
     };
 
+    if(playerNumber < core_get_playercount())
+    {
+        players[playerNumber].isAi = false;
+    }
+    else
+    {
+        players[playerNumber].isAi = true;
+    }
+
+    // remember that players are zero indexed
+    if(playerNumber == 0 || playerNumber == 2)
+    {
+        players[playerNumber].playerTeam = teamThief;
+        players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
+    }
+    else
+    {
+        players[playerNumber].playerTeam = teamGuard;
+        players[playerNumber].model = t3d_model_load("rom:/rippergame/testActorGuard.t3dm");
+    }
+
+    switch(playerNumber)
+    {
+        case 0:
+            players[playerNumber].playerPos = (T3DVec3){{-128, 0.0f, 128}};
+        break;
+        case 1:
+            players[playerNumber].playerPos = (T3DVec3){{128, 0.0f, 128}};
+        break;
+        case 2:
+            players[playerNumber].playerPos = (T3DVec3){{128, 0.0f, -128}};
+        break;
+        case 3:
+            players[playerNumber].playerPos = (T3DVec3){{-128, 0.0f, -128}};
+        default:
+        break;
+    }
+
     players[playerNumber].playerNumber = playerNumber;
+    players[playerNumber].playerTeam = teamThief;
     players[playerNumber].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
     // Instantiate skeletons, they will be used to draw skinned meshes
     players[playerNumber].skel = t3d_skeleton_create(players[playerNumber].model);
     players[playerNumber].skelBlend = t3d_skeleton_clone(&players[playerNumber].skel, false);
@@ -122,11 +181,10 @@ void player_init(int playerNumber)
         t3d_matrix_pop(1);
     players[playerNumber].dplPlayer = rspq_block_end();
     players[playerNumber].moveDir = (T3DVec3){{0,0,0}};
-    players[playerNumber].playerPos = (T3DVec3){{0.0f, 0.0f, 0.0f}};
     players[playerNumber].rotY = 0.0f;
     players[playerNumber].currSpeed = 0.0f;
     players[playerNumber].animBlend = 0.0f;
-    players[playerNumber].isAi = false;
+    players[playerNumber].framesRemaining = 0;
 }
 
 /*==============================
@@ -165,12 +223,37 @@ void player_fixedloop(float deltaTime, int playerNumber)
     T3DVec3 newDir = {0};
     float speed = 0.0f;
 
-    joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
-    joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
+    // only get controller inputs from actual players
+    if(!players[playerNumber].isAi)
+    {
+        joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
+        joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
 
-    newDir.v[0] = (float)joypad.stick_x * 0.05f;
-    newDir.v[2] = -(float)joypad.stick_y * 0.05f;
-    speed = sqrtf(t3d_vec3_len2(&newDir));
+        newDir.v[0] = (float)joypad.stick_x * 0.05f;
+        newDir.v[2] = -(float)joypad.stick_y * 0.05f;
+        speed = sqrtf(t3d_vec3_len2(&newDir));
+    }
+    else // is an AI
+    {
+        // super basic test AI
+        if(players[playerNumber].framesRemaining <= 0)
+        {
+            newDir.v[0] = (rand()%170-85) * 0.05f;
+            newDir.v[2] = (rand()%170-85) * 0.05f;
+
+            players[playerNumber].aiDir = newDir;
+            
+            players[playerNumber].framesRemaining = rand()%600;
+        }
+        else
+        {
+            newDir = players[playerNumber].aiDir;
+        
+            players[playerNumber].framesRemaining--;
+        }
+
+        speed = sqrtf(t3d_vec3_len2(&newDir));
+    }
 
     if(speed > 0.15f)
     {
@@ -191,6 +274,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
     players[playerNumber].playerPos.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
     players[playerNumber].playerPos.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
     // and limit movement inside bounding box
+    // do collision checks here
     const float BOX_SIZE = 140.0f;
     if(players[playerNumber].playerPos.v[0] < -BOX_SIZE)players[playerNumber].playerPos.v[0] = -BOX_SIZE;
     if(players[playerNumber].playerPos.v[0] > BOX_SIZE)players[playerNumber].playerPos.v[0] = BOX_SIZE;
@@ -232,8 +316,7 @@ void player_loop(float deltaTime, int playerNumber)
     t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, players[playerNumber].rotY, 0},
-        players[playerNumber].playerPos.v
-        );
+        players[playerNumber].playerPos.v);
 
     // rumble pak test code
     if(joypad_get_rumble_supported(controllerPort) && btn.a)
@@ -252,6 +335,57 @@ void player_draw(int playerNumber)
     rspq_block_run(players[playerNumber].dplPlayer);
 }
 
+void objective_init()
+{
+    objectives[0].isActive = true;
+    objectives[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    objectives[0].model = t3d_model_load("rom:/rippergame/testObjective.t3dm");
+    rspq_block_begin();
+        t3d_matrix_push(objectives[0].modelMatFP);
+        rdpq_set_prim_color(RGBA32(0,255,0,255));
+        t3d_model_draw(objectives[0].model);
+        t3d_matrix_pop(1);
+    objectives[0].dplObjective = rspq_block_end();
+    objectives[0].objectivePos = (T3DVec3){{-64, 0.0f, 64}};
+    
+    objectives[1].isActive = true;
+    objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    objectives[1].model = t3d_model_load("rom:/rippergame/testObjective.t3dm");
+    rspq_block_begin();
+        t3d_matrix_push(objectives[1].modelMatFP);
+        rdpq_set_prim_color(RGBA32(255,0,0,255));
+        t3d_model_draw(objectives[1].model);
+        t3d_matrix_pop(1);
+    objectives[1].dplObjective = rspq_block_end();
+    objectives[1].objectivePos = (T3DVec3){{64, 0.0f, -64}};
+}
+
+void objective_draw()
+{
+    //update matricies
+    t3d_mat4fp_from_srt_euler(objectives[0].modelMatFP,
+        (float[3]){0.125f, 0.125f, 0.125f},
+        (float[3]){0.0f, 0.0f, 0.0f},
+        objectives[0].objectivePos.v);
+        t3d_mat4fp_from_srt_euler(objectives[1].modelMatFP,
+        (float[3]){0.125f, 0.125f, 0.125f},
+        (float[3]){0.0f, 0.0f, 0.0f},
+        objectives[1].objectivePos.v);
+    rspq_block_run(objectives[0].dplObjective);
+    rspq_block_run(objectives[1].dplObjective);
+}
+
+void objective_cleanup()
+{
+    rspq_block_free(objectives[0].dplObjective);
+    t3d_model_free(objectives[0].model);
+    free_uncached(objectives[0].modelMatFP);
+
+    rspq_block_free(objectives[1].dplObjective);
+    t3d_model_free(objectives[1].model);
+    free_uncached(objectives[1].modelMatFP);
+}
+
 /*==============================
     minigame_init
     The minigame initialization function
@@ -265,7 +399,7 @@ void minigame_init()
     gameEnding = false;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS_DEDITHER);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -315,9 +449,11 @@ void minigame_init()
         player_init(i);
     }
 
+    // set up objectives
+    objective_init();
+
     return;
 }
-
 
 /*==============================
     minigame_fixedloop
@@ -330,11 +466,12 @@ void minigame_init()
 void minigame_fixedloop(float deltatime)
 {
     // update the player entities
-    for(int i = 0; i < core_get_playercount(); i++)
+    for(int i = 0; i < MAXPLAYERS; i++)
     {
         player_fixedloop(deltatime, i);
     }
 
+    // process pre-game countdown timer
     if(gameStarting)
     {
         countdownTimer -= deltatime;
@@ -358,7 +495,7 @@ void minigame_loop(float deltatime)
 {
 
     // update the player entities
-    for(int i = 0; i < core_get_playercount(); i++)
+    for(int i = 0; i < MAXPLAYERS; i++)
     {
         player_loop(deltatime, i);
     }
@@ -390,14 +527,17 @@ void minigame_loop(float deltatime)
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
-    // run the displaylist containing the map draw routine
-    rspq_block_run(dplMap);
-
     // draw the player entities
-    for(int i = 0; i < core_get_playercount(); i++)
+    for(int i = 0; i < MAXPLAYERS; i++)
     {
         player_draw(i);
     }
+
+    // run the displaylist containing the map draw routine
+    rspq_block_run(dplMap);
+
+    // draw the objectives
+    objective_draw();
 
     // set a sync point
     syncPoint = rspq_syncpoint_new();
@@ -412,8 +552,7 @@ void minigame_loop(float deltatime)
     // game starting countdown text draw
     if(gameStarting)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
-        textparms.disable_aa_fix = true;
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, .disable_aa_fix = true, };
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 100, "Starting in %i...", (int)countdownTimer);
     }
     
@@ -436,6 +575,9 @@ void minigame_cleanup()
     {
         player_cleanup(i);
     }
+
+    // clenaup objectives
+    objective_cleanup();
 
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);
