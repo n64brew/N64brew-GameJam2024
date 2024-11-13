@@ -69,6 +69,9 @@ bool rampage_is_valid_target(struct RampageTank* tank, int dir_index) {
 }
 
 void rampage_tank_next_target(struct RampageTank* tank) {
+    if (!tank->is_active) {
+        return;
+    }
 
     int option = randomInRange(0, DIRECTION_COUNT);
 
@@ -111,6 +114,7 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 
     tank->dynamic_object.center.y = tank_collider.data.box.half_size.y;
     tank->current_target = *start_position;
+    tank->is_active = 0;
 
     collision_scene_add(&tank->dynamic_object);
 
@@ -151,7 +155,7 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
         tank->dynamic_object.rotation.x,
     };
 
-    if (vector2MagSqr(&offset) < 0.5f) {
+    if (vector2MagSqr(&offset) < 5.0f) {
         rampage_tank_next_target(tank);
 
         tank->dynamic_object.velocity.x = mathfMoveTowards(

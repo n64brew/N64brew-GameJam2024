@@ -38,6 +38,7 @@ struct RampagePlayer {
     uint32_t is_slamming: 1;
     uint32_t is_attacking: 1;
     uint32_t player_index: 2;
+    uint32_t is_active: 1;
 
     uint16_t score;
 

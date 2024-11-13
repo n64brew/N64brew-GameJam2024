@@ -111,6 +111,10 @@ bool rampage_player_is_touching_target(struct RampagePlayer* player, struct Vect
 }
 
 struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float delta_time) {
+    if (!player->is_active) {
+        return (struct RampageInput){};
+    }
+
     if (player->type <= PLAYER_TYPE_3) {
         struct RampageInput result = {};
 
@@ -252,6 +256,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->is_slamming = 0;
     player->stun_timer = 0.0f;
     player->is_attacking = 0;
+    player->is_active = 0;
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 }

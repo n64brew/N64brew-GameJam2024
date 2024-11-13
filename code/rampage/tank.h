@@ -11,6 +11,7 @@ struct RampageTank {
     struct dynamic_object dynamic_object;
     T3DMat4FP mtx;
     struct Vector3 current_target;
+    uint32_t is_active: 1;
 };
 
 void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position);

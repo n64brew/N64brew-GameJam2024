@@ -134,6 +134,7 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position) 
 
     building->hp = building->height * BUILDING_HEALTH;
     building->shake_timer = 0.0f;
+    building->is_collapsing = false;
 
     collision_scene_add(&building->dynamic_object);
 

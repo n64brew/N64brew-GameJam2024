@@ -24,6 +24,10 @@ T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 rdpq_font_t* font;
 #define FONT_TEXT 1
 
+#define START_DELAY 4.0f
+#define FINISH_DELAY 3.0f
+#define END_SCREEN_DELAY    4.0f
+
 struct Rampage gRampage;
 
 const MinigameDef minigame_def = {
@@ -99,7 +103,89 @@ void minigame_init() {
     rampage_init(&gRampage);
 }
 
+void minigame_set_active(bool is_active) {
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        gRampage.players[i].is_active = is_active;
+    }
+
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        gRampage.tanks[i].is_active = is_active;
+    }
+}
+
+bool minigame_is_done() {
+    for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
+        for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
+            if (!gRampage.buildings[y][x].is_collapsing) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+void minigame_find_winners() {
+    gRampage.winner_count = 0;
+    gRampage.winner_mask = 0;
+
+    int winner_score = 0;
+
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        int current_score = gRampage.players[i].score;
+
+        if (current_score > winner_score) {
+            winner_score = current_score;
+            gRampage.winner_count = 1;
+            gRampage.winner_mask = 1 << i;
+        } else if (current_score == winner_score) {
+            gRampage.winner_count += 1;
+            gRampage.winner_mask |= 1 << i;
+        }
+    }
+
+    if (gRampage.winner_count == 4) {
+        return;
+    }
+
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        if (gRampage.winner_mask & (1 << 1)) {
+            core_set_winner(i);
+        }
+    }
+}
+
 void minigame_fixedloop(float deltatime) {
+    if (gRampage.state == RAMPAGE_STATE_START) {
+        gRampage.delay_timer -= deltatime;
+
+        if (gRampage.delay_timer < 0.0f) {
+            gRampage.delay_timer = 0.0f;
+            gRampage.state = RAMPAGE_STATE_PLAYING;
+            minigame_set_active(true);
+        }
+    } else if (gRampage.state == RAMPAGE_STATE_PLAYING) {
+        if (minigame_is_done()) {
+            gRampage.state = RAMPAGE_STATE_FINISHED;
+            gRampage.delay_timer = FINISH_DELAY;
+            minigame_set_active(false);
+        }
+    } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
+        gRampage.delay_timer -= deltatime;
+
+        if (gRampage.delay_timer < 0.0f) {
+            gRampage.state = RAMPAGE_STATE_END_SCREEN;
+            gRampage.delay_timer = END_SCREEN_DELAY;
+            minigame_find_winners();
+        }
+    } else if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
+        gRampage.delay_timer -= deltatime;
+
+        if (gRampage.delay_timer < 0.0f) {
+            minigame_end();
+        }
+    }
+
     collision_scene_collide(deltatime);
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
@@ -151,6 +237,20 @@ struct Vector2 scorePosition[] = {
     {230.0f, 220.0f},
     {30.0f, 220.0f},
 };
+
+int get_winner_index(int index) {
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        if (gRampage.winner_mask & (1 << i)) {
+            if (index == 0) {
+                return i + 1;
+            }
+
+            --index;
+        }
+    }
+
+    return 0;
+}
 
 void minigame_loop(float deltatime) {   
     uint8_t colorAmbient[4] = {0x60, 0x60, 0x60, 0xFF};
@@ -208,6 +308,75 @@ void minigame_loop(float deltatime) {
             "%d",
             gRampage.players[i].score
         );
+    }
+
+    if (gRampage.state == RAMPAGE_STATE_START) {
+        rdpq_text_printf(
+            &(rdpq_textparms_t){
+                .width = 320.0f, 
+                .align = ALIGN_CENTER,
+                .style_id = 0,
+            }, FONT_TEXT, 
+            0.0f, 120.0f, 
+            "%d",
+            (int)ceilf(gRampage.delay_timer)
+        );
+    }
+
+    if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
+        switch (gRampage.winner_count) {
+            case 1:
+                rdpq_text_printf(
+                    &(rdpq_textparms_t){
+                        .width = 320.0f, 
+                        .align = ALIGN_CENTER,
+                        .style_id = get_winner_index(0),
+                    }, FONT_TEXT, 
+                    0.0f, 120.0f, 
+                    "Player %d won!",
+                    get_winner_index(0)
+                );
+                break;
+            case 2:
+                rdpq_text_printf(
+                    &(rdpq_textparms_t){
+                        .width = 320.0f, 
+                        .align = ALIGN_CENTER,
+                        .style_id = 0,
+                    }, FONT_TEXT, 
+                    0.0f, 120.0f, 
+                    "Players %d and %d won!",
+                    get_winner_index(0),
+                    get_winner_index(1)
+                );
+                break;
+            case 3:
+                rdpq_text_printf(
+                    &(rdpq_textparms_t){
+                        .width = 320.0f, 
+                        .align = ALIGN_CENTER,
+                        .style_id = 0,
+                    }, FONT_TEXT, 
+                    0.0f, 120.0f, 
+                    "Player %d, %d and %d won!",
+                    get_winner_index(0),
+                    get_winner_index(1),
+                    get_winner_index(2)
+                );
+                break;
+            case 0:
+            case 4:
+                rdpq_text_printf(
+                    &(rdpq_textparms_t){
+                        .width = 320.0f, 
+                        .align = ALIGN_CENTER,
+                        .style_id = 0,
+                    }, FONT_TEXT, 
+                    0.0f, 120.0f, 
+                    "Draw"
+                );
+                break;
+        }
     }
 
     rdpq_detach_show();
@@ -272,6 +441,9 @@ void rampage_init(struct Rampage* rampage) {
     for (int i = 0; i < TANK_COUNT; i += 1) {
         rampage_tank_init(&gRampage.tanks[i], &gStartingTankPositions[i]);
     }
+
+    rampage->state = RAMPAGE_STATE_START;
+    rampage->delay_timer = START_DELAY;
 }
 
 void rampage_destroy(struct Rampage* rampage) {
