@@ -28,6 +28,8 @@ class MapRenderer
 
         U::TLUT tlut;
 
+        T3DVertPacked* vertices;
+
     public:
         MapRenderer();
         void render();

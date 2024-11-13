@@ -78,6 +78,7 @@ namespace U {
     using Sprite = std::unique_ptr<sprite_t, decltype(&sprite_free)>;
     // Would be nice to use a vector, see https://stackoverflow.com/questions/11896960/custom-allocator-in-stdvector
     using TLUT = std::unique_ptr<uint16_t, decltype(&free_uncached)>;
+    using T3DVertPacked = std::unique_ptr<T3DVertPacked, decltype(&free_uncached)>;
 }
 
 #endif // __WRAPPERS_H

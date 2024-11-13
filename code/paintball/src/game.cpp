@@ -43,6 +43,7 @@ void Game::render(float deltaTime) {
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
+    rdpq_set_scissor(0, 0, 320, 240);
     t3d_screen_clear_color(RGBA32(255, 255, 255, 255));
     t3d_screen_clear_depth();
 
