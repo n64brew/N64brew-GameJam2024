@@ -246,7 +246,7 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
         UI_Menu_PlayingSetState(FALSE);
 
         // detect start button pressed
-        if(_appData->input.keys[A_KEY].pressed == TRUE){
+        if(_appData->input.keys[A_KEY]->pressed == TRUE){
             GameplayData* gameplayData = &_appData->gameplayData;
             // gods count reset
             gameplayData->godEatCount = 0;
@@ -323,7 +323,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
      UI_Menu_GameOverUISetShowing(TRUE);
 
     // detect start button pressed
-    if(_appData->input.keys[A_KEY].pressed == TRUE){
+    if(_appData->input.keys[A_KEY]->pressed == TRUE){
         gameplayData->gameState = GAME_STATE_MAIN_MENU;
     }
 

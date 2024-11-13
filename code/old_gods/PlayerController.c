@@ -2,10 +2,16 @@
 #include "AF_Physics.h"
 #include "AF_Vec2.h"
 #include <libdragon.h>
+#include "AF_Input.h"
 
 #define STICK_DEAD_ZONE 0.01
 #define PLAYER_SPEED 10
 #define PI 3.14159265358979f
+#define PLAYER_COUNT 4
+
+#define A_KEY 0			// A Button		
+#define B_KEY 1			// B Button
+#define START_KEY 2		// Start Button
 
 void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _entities, uint8_t _entityCount){
 	for(int i = 0; i < _entityCount; ++i){
@@ -19,6 +25,34 @@ float Lerp_Angle(float a, float b, float t) {
   float angleDiff = fmodf((b - a), PI*2);
   float shortDist = fmodf(angleDiff*2, PI*2) - angleDiff;
   return a + shortDist * t;
+}
+
+void PlayerController_UpdatePlayerButtonPress(AF_Input* _input, AF_Entity* _entity){
+	// Handle attack
+	for(int i = 0; i < PLAYER_COUNT; ++i){
+		AF_CPlayerData* playerData = _entity->playerData;
+
+		// A to attack
+		if(_input->keys[i]->pressed == A_KEY){
+			playerData->isAttacking = TRUE;
+		}else{
+			playerData->isAttacking = FALSE;
+		}
+
+		// B to jump
+		if(_input->keys[i]->pressed == B_KEY){
+			playerData->isJumping = TRUE;
+		}else{
+			playerData->isJumping = FALSE;
+		}
+	}
+}
+
+void PlayerController_Attack(AF_Entity* _entity){
+	// do collision check in proximity.
+	// entity that is another player, then call a hit on that player
+
+	// Player attack animation
 }
 
  void PlayerController_UpdatePlayerMovement(Vec2 _stick, AF_Entity* _entity){

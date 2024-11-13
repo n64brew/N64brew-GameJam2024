@@ -34,7 +34,6 @@ Tiny3D rendering functions
 #define MODEL_SCALE_FACTOR 1.0f
 static T3DViewport viewport;
 
-
 //static T3DVec3 rotAxis;
 static uint8_t colorAmbient[4] = {80, 50, 50, 0xFF};
 static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
@@ -45,27 +44,21 @@ static T3DVec3 camTarget = {{0, 0,-10}};
 
 // TODO: i dont like this
 static T3DModel *models[MODEL_COUNT];
+T3DSkeleton skeletons[MODEL_COUNT];
+T3DSkeleton skeletonBlends[MODEL_COUNT];
+T3DAnim animIdles[MODEL_COUNT];
+T3DAnim animWalks[MODEL_COUNT];
+T3DAnim animAttacks[MODEL_COUNT];
 
-typedef struct Renderer_Animation{
-  BOOL has;
-  T3DModel* model; 
-  T3DSkeleton skeleton; 
-  T3DSkeleton skeletonBlend;
-  const char* animIdlePath;
-  T3DAnim animIdle;
-  const char* animWalkPath;
-  T3DAnim animWalk;
-  const char* animAttackPath;
-  T3DAnim animAttack;
-  float currentAnimationSpeed;
-  float blend;
-} Renderer_Animation;
-
-Renderer_Animation animations[MODEL_COUNT];
-
+// ============ ANIMATIONS ============
 const char* snakeIdlePath = "Snake_Idle";
 const char* snakeWalkPath = "Snake_Walk";
 const char* snakeAttackPath = "Snake_Attack";
+
+
+AF_Animation animations[MODEL_COUNT];
+
+
 
 // Holds our actor data, relevant for t3d is 'modelMat'.
 // add a void* called commandBuff to mesh component
@@ -73,7 +66,7 @@ const char* snakeAttackPath = "Snake_Attack";
 
 float get_time_s()  { return (float)((double)get_ticks_ms() / 1000.0); }
 float get_time_ms() { return (float)((double)get_ticks_us() / 1000.0); }
-void AF_Renderer_LoadAnimation(Renderer_Animation* _animation);
+void AF_Renderer_LoadAnimation(int i);
 
 // Animation stuff
 // TODO: move to component
@@ -113,7 +106,7 @@ static T3DModel *snakeModel;// = t3d_model_load("rom:/snake.t3dm");
 
 // forward declare
 void Renderer_RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt);
-
+void Renderer_UpdateAnimations(AF_Animation* _animation);
 
 /*=================
 AF_LoadTexture
@@ -164,37 +157,51 @@ uint32_t AF_LoadTexture(const char* _texturePath){
 }
 
 // TODO: turn the params into a struct to pass in
-void AF_Renderer_LoadAnimation(Renderer_Animation* _animation){  
-    assert(_animation->animIdlePath != NULL);
-    assert(_animation->animWalkPath != NULL);
-    assert(_animation->animAttackPath != NULL);
+void AF_Renderer_LoadAnimation(int i){  
+
+    // return if model doesn't have a skeleton
+    // TODO: fix this
+   
+    //assert(_animation->animIdlePath != NULL);
+    //assert(_animation->animWalkPath != NULL);
+    //assert(_animation->animAttackPath != NULL);
 
    // First instantiate skeletons, they will be used to draw models in a specific pose
-    // And serve as the target for animations to modify
-   _animation->skeleton = t3d_skeleton_create(_animation->model);
-   assert(&_animation->skeleton != NULL);
-   _animation->skeletonBlend = t3d_skeleton_clone(&_animation->skeleton, false); // optimized for blending, has no matrices
-   assert(&_animation->skeletonBlend != NULL);
-   // Now create animation instances (by name), the data in 'model' is fixed,
-   // whereas 'anim' contains all the runtime data.
-   // Note that tiny3d internally keeps no track of animations, it's up to the user to manage and play them.
-   _animation->animIdle = t3d_anim_create(_animation->model, _animation->animIdlePath);// "Snake_Idle");
-   assert(&_animation->animIdle != NULL);
-   t3d_anim_attach(&_animation->animIdle, &_animation->skeleton); // tells the animation which skeleton to modify
+   // model skeleton)
 
-  _animation->animWalk = t3d_anim_create(_animation->model, _animation->animWalkPath);//"Snake_Walk");
-  t3d_anim_attach(&_animation->animWalk, &_animation->skeletonBlend);
+    skeletons[i] = t3d_skeleton_create(models[i]);
+    animations[i].skeleton = &skeletons[i];
+    // Model skeletonblend
+    skeletonBlends[i] = t3d_skeleton_clone(&skeletons[i], false); // optimized for blending, has no matrices
+    animations[i].skeletonBlend = &skeletonBlends[i];
+    // Now create animation instances (by name), the data in 'model' is fixed,
+    // whereas 'anim' contains all the runtime data.
+    // Note that tiny3d internally keeps no track of animations, it's up to the user to manage and play them.
+    // create idle animation   
+    animIdles[i] = t3d_anim_create(models[i], snakeIdlePath);// "Snake_Idle");
+    animations[i].idleAnimationData = (void*)&animIdles[i];
+    // attatch idle animation
+    t3d_anim_attach(&animIdles[i], &skeletons[i]); // tells the animation which skeleton to modify
 
-  // multiple animations can attach to the same skeleton, this will NOT perform any blending
-  // rather the last animation that updates "wins", this can be useful if multiple animations touch different bones
-  _animation->animAttack = t3d_anim_create(_animation->model, _animation->animAttackPath);// "Snake_Attack");
-  assert(&_animation->animAttack != NULL);
-  t3d_anim_attach(&_animation->animAttack, &_animation->skeleton);
+    // Create walk animation
+    animWalks[i] = t3d_anim_create(models[i], snakeWalkPath);//"Snake_Walk");
+    animations[i].walkAnimationData = (void*)&animWalks[i];
+    // attatch walk animation
+    t3d_anim_attach(&animWalks[i], &skeletonBlends[i]);
 
+    // multiple animations can attach to the same skeleton, this will NOT perform any blending
+    // rather the last animation that updates "wins", this can be useful if multiple animations touch different bones
+    // Create attack animation
+    animAttacks[i] = t3d_anim_create(models[i], snakeAttackPath);// "Snake_Attack");
+    animations[i].attackAnimationData = (void*)&animAttacks[i];
 
-  t3d_anim_set_looping(&_animation->animAttack, false); // don't loop this animation
-  t3d_anim_set_playing(&_animation->animAttack, false); // start in a paused state
-  
+    // attatch attack animation
+    t3d_anim_attach(&animAttacks[i], &skeletons[i]);
+
+    // setup attack animation
+    t3d_anim_set_looping(&animAttacks[i], false); // don't loop this animation
+    t3d_anim_set_playing(&animAttacks[i], false); // start in a paused state
+    // model blend
 }
 
 // Init Rendering
@@ -215,8 +222,16 @@ void AF_Renderer_Init(AF_ECS* _ecs){
          // TODO read teh model scale from a variable in the mesh
          // load animations
          
+         
+         
     }
+    
+    // ========= Animation stuff
+    lastTime = get_time_s() - (1.0f / 60.0f);
+    syncPoint = 0;
 
+    animations[MODEL_SNAKE].animationSpeed= 0.0f;
+    animations[MODEL_SNAKE].animationSpeed = 0.0f;
     // setup the animations
     animations[MODEL_BOX].has = FALSE;
     animations[MODEL_FOOD].has = FALSE;
@@ -228,8 +243,9 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     animations[MODEL_SNAKE].animIdlePath = snakeIdlePath;
     animations[MODEL_SNAKE].animWalkPath = snakeWalkPath;
     animations[MODEL_SNAKE].animAttackPath = snakeAttackPath;
-    AF_Renderer_LoadAnimation(&animations[MODEL_SNAKE]);
-   
+    AF_Renderer_LoadAnimation(MODEL_SNAKE);
+    //debugf("AF_Renderer_T3d: Renderer_Init: loading animat again.\n");
+    //AF_Renderer_LoadAnimation(MODEL_SNAKE);
     
 
     // ===========Animation models
@@ -257,12 +273,7 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     //dplDraw = NULL;
 
 
-    // ========= Animation stuff
-    lastTime = get_time_s() - (1.0f / 60.0f);
-    syncPoint = 0;
-
-    animations[MODEL_SNAKE].currentAnimationSpeed = 0.0f;
-    animations[MODEL_SNAKE].blend = 0.0f;
+    
 }
 
 // rendering stuff that needs to happen after game start or awake
@@ -292,7 +303,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             // The snake model needs special color and call to skinned command
             if(mesh->meshID == MODEL_SNAKE){
                 rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-                t3d_model_draw_skinned(models[MODEL_SNAKE], &animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
+                t3d_model_draw_skinned(models[mesh->meshID], &skeletons[mesh->meshID]);//animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
             }
@@ -343,41 +354,10 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(45.0f), 1.0f, 1000.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
-    // ========== ANIM BLEND =========
-
-    // if mesh has animation
-    // update all the anim datas
-    // idle
-    // walk
-    // attack
-    // animIsPlaying
-    //animBlend = currSpeed / 0.51f;
-    animations[MODEL_SNAKE].blend = animations[MODEL_SNAKE].currentAnimationSpeed / 0.51f;
-    //if(animBlend > 1.0f)animBlend = 1.0f;
-    if(animations[MODEL_SNAKE].blend  > 1.0f){
-      animations[MODEL_SNAKE].blend = 1.0f;
-    }
-    // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
-    //t3d_anim_update(&animIdle, deltaTime);
-    t3d_anim_update(&animations[MODEL_SNAKE].animIdle, deltaTime);
-    
-    //t3d_anim_set_speed(&animWalk, animBlend + 0.15f);
-    t3d_anim_update(&animations[MODEL_SNAKE].animWalk, deltaTime);
-    
-    //t3d_anim_update(&animWalk, deltaTime);
-    t3d_anim_update(&animations[MODEL_SNAKE].animAttack, deltaTime);
-
-    // We now blend the walk animation with the idle/attack one
-    //t3d_skeleton_blend(&skel, &skel, &skelBlend, animBlend);
-    t3d_skeleton_blend(&animations[MODEL_SNAKE].skeleton, &animations[MODEL_SNAKE].skeleton, &animations[MODEL_SNAKE].skeletonBlend, animations[MODEL_SNAKE].blend);
-
-    
-
-    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
-
-    // Now recalc. the matrices, this will cause any model referencing them to use the new pose
-    //t3d_skeleton_update(&skel);
-    t3d_skeleton_update(&animations[MODEL_SNAKE].skeleton);
+    // update the animation skeleton
+    AF_Animation* animation = &animations[MODEL_SNAKE];
+    assert(animation != NULL);
+    Renderer_UpdateAnimations(animation);    
 
     // Update player matrix
     // ======== Draw (3D) ======== //
@@ -398,12 +378,12 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 
     
     // ======== Draw actors (3D) ======== //
-    
     for(int i = 0; i < _ecs->entitiesCount; ++i){
         // show debug
         AF_CMesh* mesh = &_ecs->meshes[i];
         
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+            
 
             // Update the mesh model matrix based on the entity transform.
             AF_CTransform3D* entityTransform = &_ecs->transforms[i];
@@ -466,6 +446,55 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 50, "Total Render: %.2fms", totalRenderTime);
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 60, "Entity Render: %.2fms", totalEntityRenderTime);
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 70, "FPS   : %.2f", display_get_fps());
+}
+
+void Renderer_UpdateAnimations(AF_Animation* _animation){
+    if(_animation->has == FALSE){
+      return;
+    }
+    // ========== ANIM BLEND =========
+
+    // if mesh has animation
+    // update all the anim datas
+    // idle
+    // walk
+    // attack
+    // animIsPlaying
+    //animBlend = currSpeed / 0.51f;
+    _animation->animationBlend = _animation->animationSpeed / 0.51f;
+    if(_animation->animationBlend  > 1.0f){
+      _animation->animationBlend = 1.0f;
+    }
+
+    // Player Attack
+    // if the current animation is set to attack and we are not already playing it
+    T3DAnim* animAttackData = (T3DAnim*)_animation->attackAnimationData;
+    if(_animation->animationType == ANIMATION_TYPE_ATTACK && !(animAttackData->isPlaying)) {
+      t3d_anim_set_playing(animAttackData, true);
+      t3d_anim_set_time(animAttackData, 0.0f);
+      animAttackData->isPlaying = true;
+      //player->isAttack = true;
+      //player->attackTimer = 0;
+    }
+
+    // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
+    T3DAnim* animIdleData = (T3DAnim*)_animation->idleAnimationData;
+    t3d_anim_update(animIdleData, deltaTime);
+    
+    T3DAnim* animWalkData = (T3DAnim*)_animation->walkAnimationData;
+    t3d_anim_set_speed(animWalkData, _animation->animationBlend + 0.15f);
+    t3d_anim_update(animWalkData, deltaTime);
+    
+    //t3d_anim_update(&animWalk, deltaTime);
+    //if attacking
+
+    // We now blend the walk animation with the idle/attack one
+    t3d_skeleton_blend(_animation->skeleton, _animation->skeleton, _animation->skeletonBlend, _animation->animationBlend);
+
+    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
+
+    // Now recalc. the matrices, this will cause any model referencing them to use the new pose
+    t3d_skeleton_update(_animation->skeleton);
 }
 
 
@@ -536,13 +565,14 @@ void AF_Renderer_Finish(){
 // Shutdown Renderer
 void AF_Renderer_Shutdown(AF_ECS* _ecs){
 
-    for(int i = 0; i < MODEL_COUNT; ++i){
-      t3d_skeleton_destroy(&animations[i].skeleton);
-      t3d_skeleton_destroy(&animations[i].skeletonBlend);
 
-      t3d_anim_destroy(&animations[i].animIdle);
-      t3d_anim_destroy(&animations[i].animWalk);
-      t3d_anim_destroy(&animations[i].animAttack);
+    for(int i = 0; i < MODEL_COUNT; ++i){
+      t3d_skeleton_destroy(animations[i].skeleton);
+      t3d_skeleton_destroy(animations[i].skeletonBlend);
+
+      t3d_anim_destroy(animations[i].idleAnimationData);
+      t3d_anim_destroy(animations[i].idleAnimationData);
+      t3d_anim_destroy(animations[i].idleAnimationData);
     }
     
    
@@ -572,6 +602,36 @@ int16_t clamp_to_int16(float value) {
     if (value > INT16_MAX) return INT16_MAX;
     if (value < INT16_MIN) return INT16_MIN;
     return (int16_t)value;
+}
+
+void AF_Renderer_PlayAnimation(AF_Entity* _entity, uint8_t _animationID){
+  /*
+  // play animation
+  AF_Animation* animation = &_entity->animation;
+
+  // Move towards the direction of the target
+  float dist, norm;
+  newDir.v[0] = (target->playerPos.v[0] - player->playerPos.v[0]);
+  newDir.v[2] = (target->playerPos.v[2] - player->playerPos.v[2]);
+  dist = sqrtf(newDir.v[0]*newDir.v[0] + newDir.v[2]*newDir.v[2]);
+  norm = 1/dist;
+  newDir.v[0] *= norm;
+  newDir.v[2] *= norm;
+  speed = 20;
+
+  // Attack if close, and the reaction time has elapsed
+  if (dist < 25 && !player->isAttack) {
+    if (player->ai_reactionspeed <= 0) {
+      t3d_anim_set_playing(&player->animAttack, true);
+      t3d_anim_set_time(&player->animAttack, 0.0f);
+      player->isAttack = true;
+      player->attackTimer = 0;
+      player->ai_reactionspeed = (2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3);
+    } else {
+      player->ai_reactionspeed--;
+    }
+  }
+  */
 }
 
 
