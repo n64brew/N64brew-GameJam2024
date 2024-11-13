@@ -5,6 +5,11 @@
 #include "Assets.h"
 #include "AF_Input.h"
 #include "PlayerController.h"
+// Needed for game jam
+#include "../../core.h"
+#include <t3d/t3dmath.h>
+#include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
 
 // ECS system
 AF_Entity* camera = NULL;
@@ -21,11 +26,12 @@ AF_Entity* godEyeInner2 = NULL;
 AF_Entity* godMouth = NULL;
 
 // Environment
-AF_Entity* leftWall = NULL;
-AF_Entity* rightWall = NULL;
-AF_Entity* backWall = NULL;
-AF_Entity* frontWall = NULL;
-AF_Entity* groundPlaneEntity = NULL;
+//AF_Entity* leftWall = NULL;
+//AF_Entity* rightWall = NULL;
+//AF_Entity* backWall = NULL;
+//AF_Entity* frontWall = NULL;
+//AF_Entity* groundPlaneEntity = NULL;
+AF_Entity* levelMapEntity = NULL;
 
 // Pickup
 AF_Entity* bucket1 = NULL;
@@ -46,6 +52,72 @@ AF_Entity* musicSoundEntity = NULL;
 
 // Gameplay Var
 uint8_t g_currentBucket = 0;
+
+
+#define VILLAGER_CARRY_HEIGHT 1
+
+// Minigame vars
+float countDownTimer;
+bool isEnding;
+float endTimer;
+PlyNum winner;
+
+
+
+#define FONT_TEXT           1
+#define FONT_BILLBOARD      2
+#define TEXT_COLOR          0x6CBB3CFF
+#define TEXT_OUTLINE        0x30521AFF
+
+#define HITBOX_RADIUS       10.f
+
+#define ATTACK_OFFSET       10.f
+#define ATTACK_RADIUS       5.f
+
+#define ATTACK_TIME_START   0.333f
+#define ATTACK_TIME_END     0.4f
+
+#define COUNTDOWN_DELAY     3.0f
+#define GO_DELAY            1.0f
+#define WIN_DELAY           5.0f
+#define WIN_SHOW_DELAY      2.0f
+
+#define BILLBOARD_YOFFSET   15.0f
+
+typedef struct
+{
+  PlyNum plynum;
+  T3DMat4FP* modelMatFP;
+  rspq_block_t *dplSnake;
+  T3DAnim animAttack;
+  T3DAnim animWalk;
+  T3DAnim animIdle;
+  T3DSkeleton skelBlend;
+  T3DSkeleton skel;
+  T3DVec3 moveDir;
+  T3DVec3 playerPos;
+  float rotY;
+  float currSpeed;
+  float animBlend;
+  bool isAttack;
+  bool isAlive;
+  float attackTimer;
+  PlyNum ai_target;
+  int ai_reactionspeed;
+} player_data;
+
+player_data players[MAXPLAYERS];
+
+float countDownTimer;
+bool isEnding;
+float endTimer;
+PlyNum winner;
+
+wav64_t sfx_start;
+wav64_t sfx_countdown;
+wav64_t sfx_stop;
+wav64_t sfx_winner;
+
 
 
 void Scene_Awake(AppData* _appData){
@@ -77,7 +149,7 @@ void Scene_Update(AppData* _appData){
         //if((AF_Component_GetHas(playerData->enabled) == TRUE) && (AF_Component_GetEnabled(playerData->enabled) == TRUE)){
         if(playerData->isCarrying == TRUE){
             // make villager match player transform
-            Vec3 villagerCarryPos = {entity->transform->pos.x, entity->transform->pos.y+3, entity->transform->pos.z};
+            Vec3 villagerCarryPos = {entity->transform->pos.x, entity->transform->pos.y+VILLAGER_CARRY_HEIGHT, entity->transform->pos.z};
             GetVillager()->transform->pos = villagerCarryPos;
             
             //debugf("entity carrying villager: x: %f y: %f x: %f \n", villagerCarryPos.x, villagerCarryPos.y, villagerCarryPos.z);
@@ -118,17 +190,17 @@ void Scene_SetupEntities(AppData* _appData){
     // also useful for mapping to a ui editor
     // Create God
     
-	Vec3 godPos = {0, 5, -12};
-	Vec3 godScale = {1,1,1};
+	Vec3 godPos = {0, 0, 0};
+	Vec3 godScale = {2,2,2};
     godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_SPHERE, AABB);
     godEntity->mesh->material.textureID = TEXTURE_ID_9;
     godEntity->mesh->meshType = AF_MESH_TYPE_MESH;
-    godEntity->mesh->meshID = MODEL_FOOD;
+    godEntity->mesh->meshID = MODEL_SNAKE;
     godEntity->rigidbody->inverseMass = zeroInverseMass;
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->showDebug = TRUE;
     
-
+    /*
     
     Vec3 godeye1Pos = {-2.5, 10, -12};
 	Vec3 godeye1Scale = {1,1,1};
@@ -165,12 +237,12 @@ void Scene_SetupEntities(AppData* _appData){
     godEye4->mesh->meshID = MODEL_FOOD;
     godEye4->mesh->material.textureID = TEXTURE_ID_3;
     godEye4->mesh->isAnimating = TRUE;
-
+    */
     
     
 	// ---------Create Player1------------------
-	Vec3 player1Pos = {2.5, 1.5, -5};
-	Vec3 player1Scale = {3,3,3};
+	Vec3 player1Pos = {2.0f, .5f, 1.0f};
+	Vec3 player1Scale = {.5f,.5f,.5f};
     
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
@@ -183,7 +255,7 @@ void Scene_SetupEntities(AppData* _appData){
 
 
     // Create Player2
-	Vec3 player2Pos = {-2.5, 1.5, -5};
+	Vec3 player2Pos = {-2.0f, .5f, 1.0f};
 	Vec3 player2Scale = {1,1,1};
     
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
@@ -196,8 +268,8 @@ void Scene_SetupEntities(AppData* _appData){
     *player2Entity->playerData = AF_CPlayerData_ADD();
 
     // Create Player3
-	Vec3 player3Pos = {-2.5, 1.5, 5};
-	Vec3 player3Scale = {1,1,1};
+	Vec3 player3Pos = {-2.0f, .5f, -1.0f};
+	Vec3 player3Scale = {.75f,.75f,.75f};
     
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player3Entity = gameplayData->playerEntities[2];
@@ -209,7 +281,7 @@ void Scene_SetupEntities(AppData* _appData){
     *player3Entity->playerData = AF_CPlayerData_ADD();
 
     // Create Player4
-	Vec3 player4Pos = {2.5, 1.5, 5};
+	Vec3 player4Pos = {2.0f, .5f, -1.0f};
 	Vec3 player4Scale = {1,1,1};
     
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
@@ -222,6 +294,14 @@ void Scene_SetupEntities(AppData* _appData){
     *player4Entity->playerData = AF_CPlayerData_ADD();
 
 	//=========ENVIRONMENT========
+    Vec3 levelMapPos = {0, 0, 2};
+	Vec3 levelMapScale = {2,1,1};
+    levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_CUBE, AABB);
+    //levelMapEntity->mesh->material.textureID = TEXTURE_ID_7;
+    levelMapEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    levelMapEntity->mesh->meshID = MODEL_MAP;
+	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
+
     /*
 	// Create Plane
 	Vec3 planePos = {0, -2, 0};
@@ -263,31 +343,31 @@ void Scene_SetupEntities(AppData* _appData){
     // ============Buckets=============
     // Bucket 1
     // World pos and scale for bucket
-	Vec3 bucket1Pos = {-20, 2, -15};
+	Vec3 bucket1Pos = {-5.0f, .5f, 0.0f};
 	Vec3 bucket1Scale = {1,1,1};
     bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucket1Scale,AF_MESH_TYPE_CUBE, AABB);
     bucket1->mesh->material.textureID = TEXTURE_ID_0;
     bucket1->mesh->meshType = AF_MESH_TYPE_MESH;
     bucket1->mesh->meshID = MODEL_BOX;
     bucket1->rigidbody->inverseMass = zeroInverseMass;
+
     // TODO: add details to scene_onBucketTrigger callback
     bucket1->collider->collision.callback = Scene_OnBucket1Trigger;
     // Bucket 2
     // World pos and scale for bucket
-	Vec3 bucket2Pos = {20, 2, -15};
+	Vec3 bucket2Pos = {5.0f, .5f, 0.0f};
 	Vec3 bucket2Scale = {1,1,1};
 	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucket2Scale,AF_MESH_TYPE_CUBE, AABB);
     bucket2->mesh->material.textureID = TEXTURE_ID_1;
     bucket2->mesh->meshType = AF_MESH_TYPE_MESH;
     bucket2->mesh->meshID = MODEL_BOX;
-    
     bucket2->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
     bucket2->collider->collision.callback = Scene_OnBucket2Trigger;
 
     // Bucket 3
     // World pos and scale for bucket
-	Vec3 bucket3Pos = {-20, 2, 15};
+	Vec3 bucket3Pos = {5.0f, .5f, 5.0f};
 	Vec3 bucket3Scale = {1,1,1};
 	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucket3Scale,AF_MESH_TYPE_CUBE, AABB);
     bucket3->mesh->material.textureID = TEXTURE_ID_2;
@@ -298,7 +378,7 @@ void Scene_SetupEntities(AppData* _appData){
     bucket3->collider->collision.callback = Scene_OnBucket3Trigger;
     // Bucket 4
     // World pos and scale for bucket
-	Vec3 bucket4Pos = {20, 2, 15};
+	Vec3 bucket4Pos = {-5.0f, .5f, 5.0f};
 	Vec3 bucket4Scale = {1,1,1};
 	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucket4Scale,AF_MESH_TYPE_CUBE, AABB);
     bucket4->mesh->material.textureID = TEXTURE_ID_3;
@@ -309,7 +389,7 @@ void Scene_SetupEntities(AppData* _appData){
     bucket4->collider->collision.callback = Scene_OnBucket4Trigger;
 
     /// Villages
-	Vec3 villager1Pos = {-1000, 0, 0};
+	Vec3 villager1Pos = {-1000.0f, 0, 0};
 	Vec3 villager1Scale = {1,1,1};
     villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_CUBE, AABB);
     villager1->mesh->material.textureID = TEXTURE_ID_8;
@@ -347,6 +427,11 @@ void Scene_SetupEntities(AppData* _appData){
 	}
 
 */	
+
+    for(int i = 0; i < _ecs->entitiesCount; ++i){
+        // scale everything
+        _ecs->transforms[i].scale = Vec3_MULT_SCALAR(_ecs->transforms[i].scale, .0075f);//0.075f);
+    }
 	
 }
 
@@ -376,31 +461,57 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
         *_currentBucket = 0;
         GetGodEntity()->mesh->material.textureID = TEXTURE_ID_0;
 
+        /*
         bucket1->mesh->material.textureID = TEXTURE_ID_0;
         bucket2->mesh->material.textureID = TEXTURE_ID_5;
         bucket3->mesh->material.textureID = TEXTURE_ID_5;
         bucket4->mesh->material.textureID = TEXTURE_ID_5;
+        */
+        bucket1->mesh->meshID = MODEL_FOOD;
+        bucket2->mesh->meshID = MODEL_BOX;
+        bucket3->mesh->meshID = MODEL_BOX;
+        bucket4->mesh->meshID = MODEL_BOX;
     }else if( randomNum == 1){
         *_currentBucket = 1;
+        
         godEntity->mesh->material.textureID = TEXTURE_ID_1;
+        /*
         bucket1->mesh->material.textureID = TEXTURE_ID_5;
         bucket2->mesh->material.textureID = TEXTURE_ID_1;
         bucket3->mesh->material.textureID = TEXTURE_ID_5;
         bucket4->mesh->material.textureID = TEXTURE_ID_5;
+        */
+        bucket1->mesh->meshID = MODEL_BOX;
+        bucket2->mesh->meshID = MODEL_FOOD;
+        bucket3->mesh->meshID = MODEL_BOX;
+        bucket4->mesh->meshID = MODEL_BOX;
     }else if( randomNum == 2){
         *_currentBucket = 2;
+        
         godEntity->mesh->material.textureID = TEXTURE_ID_2;
+        /*
         bucket1->mesh->material.textureID = TEXTURE_ID_5;
         bucket2->mesh->material.textureID = TEXTURE_ID_5;
         bucket3->mesh->material.textureID = TEXTURE_ID_2;
         bucket4->mesh->material.textureID = TEXTURE_ID_5;
+        */
+        bucket1->mesh->meshID = MODEL_BOX;
+        bucket2->mesh->meshID = MODEL_BOX;
+        bucket3->mesh->meshID = MODEL_FOOD;
+        bucket4->mesh->meshID = MODEL_BOX;
     }else if( randomNum == 3){
         *_currentBucket = 3;
         godEntity->mesh->material.textureID = TEXTURE_ID_3;
+        /*
         bucket1->mesh->material.textureID = TEXTURE_ID_5;
         bucket2->mesh->material.textureID = TEXTURE_ID_5;
         bucket3->mesh->material.textureID = TEXTURE_ID_5;
         bucket4->mesh->material.textureID = TEXTURE_ID_3;
+        */
+        bucket1->mesh->meshID = MODEL_BOX;
+        bucket2->mesh->meshID = MODEL_BOX;
+        bucket3->mesh->meshID = MODEL_BOX;
+        bucket4->mesh->meshID = MODEL_FOOD;
     }
 }
 
@@ -469,11 +580,12 @@ Scene_BucketCollisionBehaviour
 Perform gameplay logic if bucket has been collided with by a player character
 */
 void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision, AF_Entity* _villager, AF_Entity* _godEntity){
+      
     // Don't react if this bucket isn't activated
     if(_currentBucket != _bucketID){
         return;
     }
-	//AF_Entity* entity1 =  _collision->entity1;
+	AF_Entity* entity1 =  _collision->entity1;
 	AF_Entity* entity2 =  _collision->entity2;
 	//uint32_t entity1ID = AF_ECS_GetID(entity1->id_tag);
 	//uint32_t entity2ID = AF_ECS_GetID(entity2->id_tag);
@@ -485,6 +597,10 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
 
     // Second collision is the playable character
     AF_CPlayerData* playerData2 = entity2->playerData;
+    if(entity2->mesh->meshID == MODEL_FOOD){
+        debugf("entity 1 %f %i Entity 2 %i\n", entity2->transform->pos.x, entity1->mesh->meshID, entity2->mesh->meshID);
+    }
+    
     //if((AF_Component_GetHas(playerData1->enabled) == TRUE) && (AF_Component_GetEnabled(playerData1->enabled) == TRUE)){
         // attatch the villager to this player
         if(_villager->playerData->isCarried == FALSE){
@@ -506,6 +622,7 @@ void Scene_OnBucket1Trigger(AF_Collision* _collision){
     if(g_currentBucket != bucketID){
         return;
     }
+    
     Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, godEntity);
 }
 
