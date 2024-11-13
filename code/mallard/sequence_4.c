@@ -70,4 +70,9 @@ void sequence_4(float deltatime)
         sequence_4_init();
 
     // TODO: Implement sequence_4
+
+    // Draw "Press Start" text and the Start button
+    rdpq_attach(display_get(), NULL);
+    sequence_4_draw_press_start_to_skip();
+    rdpq_detach_show();
 }

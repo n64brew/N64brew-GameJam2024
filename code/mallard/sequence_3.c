@@ -188,7 +188,7 @@ void sequence_3(float deltatime)
 
         // Draw "Press Start" text and the Start button
         sequence_3_draw_press_start_to_skip();
-        
+
         rdpq_detach_show();
 
         // mixer_try_play(); // Audio
