@@ -29,6 +29,9 @@
         "ascii.h": "c",
         "sequence_3.h": "c",
         "sequence_3_input.h": "c",
-        "sequence_1_input.h": "c"
+        "sequence_1_input.h": "c",
+        "sequence_2_input.h": "c",
+        "sequence_1_graphics.h": "c",
+        "sequence_3_graphics.h": "c"
     }
 }

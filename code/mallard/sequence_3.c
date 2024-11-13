@@ -1,6 +1,7 @@
 #include <libdragon.h>
 #include "sequence_3.h"
 #include "sequence_3_input.h"
+#include "sequence_3_graphics.h"
 
 #include "../../minigame.h"
 
@@ -21,6 +22,8 @@
 // which means we can use the real frequency of the audio track.
 #define AUDIO_HZ 32000.0f
 
+#define FONT_TEXT 1
+
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
@@ -31,6 +34,9 @@ yuv_blitter_t yuvBlitter;
 yuv_frame_t sequence_3_frame;
 
 wav64_t audio_track;
+
+rdpq_font_t *sequence_3_font;
+sprite_t *sequence_3_sprite_start_button;
 
 bool sequence_3_paused = false;
 bool sequence_3_rewind = false;
@@ -52,6 +58,14 @@ void sequence_3_init()
         GAMMA_NONE,
         FILTERS_DISABLED // FILTERS_DISABLED disables all VI post-processing to achieve the sharpest possible image. If you'd like to soften the image a little bit, switch to FITLERS_RESAMPLE.
     );
+
+    ///////////////////////////////////////////////////////////
+    //                  Set up UI Elements                   //
+    ///////////////////////////////////////////////////////////
+
+    sequence_3_sprite_start_button = sprite_load("rom:/core/StartButton.sprite");
+    sequence_3_font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
+    rdpq_text_register_font(FONT_TEXT, sequence_3_font);
 
     ///////////////////////////////////////////////////////////
     //                  Set up Video                         //
@@ -101,6 +115,11 @@ void sequence_3_init()
 
 void sequence_3_cleanup()
 {
+    // Unregister the font and free the allocated memory.
+    rdpq_text_unregister_font(FONT_TEXT);
+    rdpq_font_free(sequence_3_font);
+    sprite_free(sequence_3_sprite_start_button);
+
     // Close the video track and free the allocated memory.
     mpeg2_close(mp2);
     yuv_blitter_free(&yuvBlitter);
@@ -119,7 +138,7 @@ void sequence_3_cleanup()
 
     // End the sequence.
     sequence_3_video = false;
-    sequence_4_BLANK = true;
+    sequence_4_story = true;
 }
 
 void sequence_3(float deltatime)
@@ -166,6 +185,10 @@ void sequence_3(float deltatime)
         sequence_3_frame = mpeg2_get_frame(mp2);
         rdpq_attach(display_get(), NULL);
         yuv_blitter_run(&yuvBlitter, &sequence_3_frame);
+
+        // Draw "Press Start" text and the Start button
+        sequence_3_draw_press_start_to_skip();
+        
         rdpq_detach_show();
 
         // mixer_try_play(); // Audio
@@ -176,6 +199,14 @@ void sequence_3(float deltatime)
     {
         rdpq_attach(display_get(), NULL);
         yuv_blitter_run(&yuvBlitter, &sequence_3_frame);
+
+        // Draw "Press Start" text and the Start button
+        sequence_3_draw_press_start_to_skip();
+
+        // Show the "Paused" text.
+        rdpq_set_mode_standard();
+        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 30, 30, "Paused");
+
         rdpq_detach_show();
     }
 }

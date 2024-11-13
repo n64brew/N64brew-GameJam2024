@@ -5,6 +5,7 @@
 #include "sequence_1.h"
 #include "sequence_2.h"
 #include "sequence_3.h"
+#include "sequence_4.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -16,12 +17,11 @@ const MinigameDef minigame_def = {
     .instructions = "",
 };
 
-// rdpq_font_t *font;
-
-bool sequence_1_libdragon = false;
+bool sequence_1_libdragon = true;
 bool sequence_2_ascii = false;
 bool sequence_3_video = false;
-bool sequence_4_BLANK = false;
+bool sequence_4_story = false;
+bool sequence_5_BLANK = false;
 
 /*==============================
     minigame_init
@@ -29,15 +29,6 @@ bool sequence_4_BLANK = false;
 ==============================*/
 void minigame_init()
 {
-
-    ///////////////////////////////////////////////////////////
-    //                  Set up Font                          //
-    ///////////////////////////////////////////////////////////
-
-    // font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
-    // rdpq_text_register_font(1, font);
-
-    sequence_1_libdragon = true;
 }
 
 /*==============================
@@ -76,20 +67,14 @@ void minigame_loop(float deltatime)
         return;
     }
 
+    if (sequence_4_story)
+    {
+        sequence_4(deltatime);
+        return;
+    }
+
     minigame_end();
     return;
-
-    // handle_input(deltatime);
-
-    ///////////////////////////////////////////////////////////
-    //                  Render UI - Pause                    //
-    ///////////////////////////////////////////////////////////
-
-    // rdpq_set_mode_standard();
-    // if (paused)
-    // {
-    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 30, 30, "Paused");
-    // }
 
     // ///////////////////////////////////////////////////////////
     // //                  Render UI - Quitting                 //
@@ -128,6 +113,4 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
-    // rdpq_text_unregister_font(1);
-    // rdpq_font_free(font);
 }
