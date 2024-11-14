@@ -71,6 +71,7 @@ typedef struct usable_actor_t {
     float zone_w;
     float zone_h;
     c2AABB zone_bbox;
+    T3DVec3 zone_target;
 } usable_actor_t;
 
 typedef struct {
@@ -199,7 +200,7 @@ inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
 void update_obstacles() {
     // Precompute obstacles in map coordinates (is_walkable takes 150-400 cyces vs 4000+ when computing on-the-fly)
     // Margin around walls and obstacles to account for players width
-    float margin = 5.0f;    // FIXME players[0].w/2.0f;
+    float margin = 0.0f;    // FIXME players[0].w/2.0f;
     // Walls
     for (int x=0; x<margin; x++) {
         for (int y=0; y<room.h; y++) {
@@ -349,7 +350,6 @@ bool follow_path(PlyNum i) {
     if (next->v[0] != NO_PATH) {
         // Follow path
         // Move towards next point in path
-        // TODO Change target when stuck? (may be blocked by a furniture or a player)
         T3DVec3 next_point = (T3DVec3){{next->v[0], 0, next->v[2]}};
         //debugf("next_point: %f %f\n", next_point.v[0], next_point.v[2]);
         from_pathmap_coords(&next_point, &next_point);
@@ -544,6 +544,8 @@ void game_init()
         furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
         furnitures[i].bbox = usable_actor_bounding_box((usable_actor_t*)&furnitures[i]);
         furnitures[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&furnitures[i]);
+        t3d_vec3_scale(&furnitures[i].zone_target, &furnitures[i].direction, furnitures[i].h/2.0f + furnitures[i].zone_h);
+        t3d_vec3_add(&furnitures[i].zone_target, &furnitures[i].zone_target, &furnitures[i].position);
         furnitures[i].model = furniture_model;
         furnitures[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         t3d_mat4fp_from_srt_euler(furnitures[i].mat_fp, furnitures[i].scale.v, furnitures[i].rotation.v, furnitures[i].position.v);
@@ -573,6 +575,8 @@ void game_init()
         vaults[i].direction = (T3DVec3){{1-i, 0, i%2}};
         vaults[i].bbox = usable_actor_bounding_box((usable_actor_t*)&vaults[i]);
         vaults[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&vaults[i]);
+        t3d_vec3_scale(&vaults[i].zone_target, &vaults[i].direction, vaults[i].h/2.0f + vaults[i].zone_h);
+        t3d_vec3_add(&vaults[i].zone_target, &vaults[i].zone_target, &vaults[i].position);
         vaults[i].model = vault_model;
         vaults[i].mat_fp = malloc_uncached(sizeof(T3DMat4FP));
         t3d_mat4fp_from_srt_euler(vaults[i].mat_fp, vaults[i].scale.v, vaults[i].rotation.v, vaults[i].position.v);
@@ -789,9 +793,7 @@ void game_logic(float deltatime)
                                 } while (players[i].vaults[target_idx]);
                                 players[i].target_idx = target_idx;
                                 // Go to a point in front of the vault
-                                // TODO Center of usable zone
-                                t3d_vec3_scale(&players[i].target, &vaults[target_idx].direction, vaults[target_idx].h/2.0f + players[i].h/2.0f);
-                                t3d_vec3_add(&players[i].target, &players[i].target, &vaults[target_idx].position);
+                                players[i].target = vaults[target_idx].zone_target;
                                 debugf("Player #%d now targeting vault #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
                                 next_state = MOVING_TO_VAULT;
                             } else {
@@ -815,9 +817,7 @@ void game_logic(float deltatime)
                             } while (players[i].furnitures[target_idx]);
                             players[i].target_idx = target_idx;
                             // Go to a point in front of the furniture
-                            // TODO Center of usable zone
-                            t3d_vec3_scale(&players[i].target, &furnitures[target_idx].direction, furnitures[target_idx].h/2.0f + players[i].h/2.0f);
-                            t3d_vec3_add(&players[i].target, &players[i].target, &furnitures[target_idx].position);
+                            players[i].target = furnitures[target_idx].zone_target;
                             debugf("Player #%d now targeting furniture #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
                             next_state = MOVING_TO_FURNITURE;
                         }
@@ -831,7 +831,6 @@ void game_logic(float deltatime)
                     }
                     case MOVING_TO_FURNITURE:
                     {
-                        // FIXME Don't get stuck!
                         // Move towards next waypoint
                         if (!follow_path(i)) {
                             // No more waypoint
@@ -868,7 +867,6 @@ void game_logic(float deltatime)
                     }
                     case MOVING_TO_PLAYER:
                     {
-                        // FIXME Don't get stuck!
                         // Move towards next waypoint
                         if (!follow_path(i)) {
                             // No more waypoint
@@ -912,7 +910,6 @@ void game_logic(float deltatime)
                     }
                     case MOVING_TO_VAULT:
                     {
-                        // FIXME Don't get stuck!
                         // Move towards next waypoint
                         if (!follow_path(i)) {
                             // No more waypoint
