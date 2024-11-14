@@ -100,7 +100,7 @@ typedef struct
 
 player_data players[MAXPLAYERS];
 objective_data objectives[2];
-collisionobject_data collisionObjects[2];
+collisionobject_data collisionObjects[10];
 
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
@@ -169,6 +169,54 @@ void collision_init()
     collisionObjects[1].collisionType = collisionGuardOnly;
     collisionObjects[1].sizeX = 20;
     collisionObjects[1].sizeZ = 100;
+
+    collisionObjects[2].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[2].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, -80.0f}};
+    collisionObjects[2].collisionType = collisionAll;
+    collisionObjects[2].sizeX = 12;
+    collisionObjects[2].sizeZ = 60;
+
+    collisionObjects[3].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[3].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, -106.0f}};
+    collisionObjects[3].collisionType = collisionAll;
+    collisionObjects[3].sizeX = 60;
+    collisionObjects[3].sizeZ = 12;
+
+    collisionObjects[4].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[4].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, -80.0f}};
+    collisionObjects[4].collisionType = collisionAll;
+    collisionObjects[4].sizeX = 12;
+    collisionObjects[4].sizeZ = 60;
+
+    collisionObjects[5].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[5].collisionCentrePos = (T3DVec3){{80.0f, 1.0f, -106.0f}};
+    collisionObjects[5].collisionType = collisionAll;
+    collisionObjects[5].sizeX = 60;
+    collisionObjects[5].sizeZ = 12;
+
+    collisionObjects[6].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[6].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, 80.0f}};
+    collisionObjects[6].collisionType = collisionAll;
+    collisionObjects[6].sizeX = 12;
+    collisionObjects[6].sizeZ = 60;
+
+    collisionObjects[7].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[7].collisionCentrePos = (T3DVec3){{80.0f, 1.0f, 106.0f}};
+    collisionObjects[7].collisionType = collisionAll;
+    collisionObjects[7].sizeX = 60;
+    collisionObjects[7].sizeZ = 12;
+
+    collisionObjects[8].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[8].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, 80.0f}};
+    collisionObjects[8].collisionType = collisionAll;
+    collisionObjects[8].sizeX = 12;
+    collisionObjects[8].sizeZ = 60;
+
+    collisionObjects[9].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[9].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, 106.0f}};
+    collisionObjects[9].collisionType = collisionAll;
+    collisionObjects[9].sizeX = 60;
+    collisionObjects[9].sizeZ = 12;
 }
 
 /*==============================
@@ -531,7 +579,6 @@ void player_loop(float deltaTime, int playerNumber)
 
         if(btn.start) minigame_end();
 
-        if(btn.a) players[2].stunTimer = 1.0f;
         if(btn.b && players[playerNumber].playerTeam == teamGuard)
         {
             // stun in an AoE
@@ -583,7 +630,7 @@ void objective_init()
         t3d_model_draw(objectives[0].model);
         t3d_matrix_pop(1);
     objectives[0].dplObjective = rspq_block_end();
-    objectives[0].objectivePos = (T3DVec3){{-64, 0.0f, 64}};
+    objectives[0].objectivePos = (T3DVec3){{96, 0.0f, 96}};
     
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
@@ -594,7 +641,7 @@ void objective_init()
         t3d_model_draw(objectives[1].model);
         t3d_matrix_pop(1);
     objectives[1].dplObjective = rspq_block_end();
-    objectives[1].objectivePos = (T3DVec3){{64, 0.0f, -64}};
+    objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
 }
 
 void objective_draw()
