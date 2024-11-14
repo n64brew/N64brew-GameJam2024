@@ -17,10 +17,10 @@ const MinigameDef minigame_def = {
     .instructions = "",
 };
 
-bool sequence_1_libdragon = true;
+bool sequence_1_libdragon = false;
 bool sequence_2_ascii = false;
 bool sequence_3_video = false;
-bool sequence_4_story = false;
+bool sequence_4_story = true;
 bool sequence_5_BLANK = false;
 
 /*==============================
