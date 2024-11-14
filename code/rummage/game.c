@@ -24,7 +24,6 @@
 
 
 #define T3D_MODEL_SCALE 64
-#define COLLISION_CORRECTIVE_FACTOR 1.3f
 #define MAP_REDUCTION_FACTOR 4
 #define MAX_PATH_VISIT 200
 #define PATH_LENGTH 10
@@ -965,17 +964,19 @@ void game_logic(float deltatime)
             for (int j=0; j<FURNITURES_COUNT; j++) {
                 c2Manifold m;
                 c2AABBtoAABBManifold(players[i].bbox, furnitures[j].bbox, &m);
-                if (m.count) {
-                    players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
-                    players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
+                if (m.count && m.depths[0] > 0) {
+                    players[i].position.v[0] -= m.n.x * m.depths[0];
+                    players[i].position.v[2] -= m.n.y * m.depths[0];
+                    players[i].bbox = actor_bounding_box((actor_t*)&players[i]);
                 }
             }
             for (int j=0; j<VAULTS_COUNT; j++) {
                 c2Manifold m;
                 c2AABBtoAABBManifold(players[i].bbox, vaults[j].bbox, &m);
-                if (m.count) {
-                    players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
-                    players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
+                if (m.count && m.depths[0] > 0) {
+                    players[i].position.v[0] -= m.n.x * m.depths[0];
+                    players[i].position.v[2] -= m.n.y * m.depths[0];
+                    players[i].bbox = actor_bounding_box((actor_t*)&players[i]);
                 }
             }
             // Other players
@@ -983,11 +984,13 @@ void game_logic(float deltatime)
                 if (i != j) {
                     c2Manifold m;
                     c2AABBtoAABBManifold(players[i].bbox, players[j].bbox, &m);
-                    if (m.count) {
-                        players[i].position.v[0] -= m.n.x * COLLISION_CORRECTIVE_FACTOR;
-                        players[i].position.v[2] -= m.n.y * COLLISION_CORRECTIVE_FACTOR;
-                        players[j].position.v[0] += m.n.x * COLLISION_CORRECTIVE_FACTOR;
-                        players[j].position.v[2] += m.n.y * COLLISION_CORRECTIVE_FACTOR;
+                    if (m.count && m.depths[0] > 0) {
+                        players[i].position.v[0] -= m.n.x * m.depths[0]/2.0f;
+                        players[i].position.v[2] -= m.n.y * m.depths[0]/2.0f;
+                        players[j].position.v[0] += m.n.x * m.depths[0]/2.0f;
+                        players[j].position.v[2] += m.n.y * m.depths[0]/2.0f;
+                        players[i].bbox = actor_bounding_box((actor_t*)&players[i]);
+                        players[j].bbox = actor_bounding_box((actor_t*)&players[j]);
                     }
                 }
             }
