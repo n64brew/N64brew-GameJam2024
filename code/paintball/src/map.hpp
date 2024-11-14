@@ -15,8 +15,9 @@
 
 #include "../../../core.h"
 
-constexpr int MapWidth = 1024;
-constexpr int MapHeight = 1024;
+constexpr int MapWidth = 512;
+constexpr int TileSize = 32;
+constexpr int SegmentSize = 50;
 
 class MapRenderer
 {
@@ -32,6 +33,7 @@ class MapRenderer
 
     public:
         MapRenderer();
+        ~MapRenderer();
         void render();
         void splash(int x, int y, PlyNum player);
 };
