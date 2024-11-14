@@ -26,6 +26,8 @@
 #define T3D_MODEL_SCALE 64
 #define MAP_REDUCTION_FACTOR 4
 #define MAX_PATH_VISIT 200
+#define PATH_8_WAYS 0
+#define PATH_LOOKUP 30
 #define PATH_LENGTH 10
 #define NO_PATH 9999
 #define WAYPOINT_DELAY 60
@@ -39,7 +41,7 @@
 #define ATTACK_RADIUS 10.0f
 #define HURT_TIME (50.0f/60.0f)
 #define FURNITURE_KEEPOUT 50
-#define FURNITURES_ROWS 3
+#define FURNITURES_ROWS 4
 #define FURNITURES_COLS 4
 #define FURNITURES_COUNT (FURNITURES_ROWS * FURNITURES_COLS)
 #define FURNITURE_SCALE 0.75f
@@ -123,6 +125,9 @@ typedef struct {
     T3DVec3 target;
     T3DVec3 path[PATH_LENGTH];  // Next points in path
     int path_pos;
+    int path_lookup;
+    int path_keep;
+    int path_keep_chase;
     int path_delay;
 } player_t;
 
@@ -199,7 +204,7 @@ inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
 void update_obstacles() {
     // Precompute obstacles in map coordinates (is_walkable takes 150-400 cyces vs 4000+ when computing on-the-fly)
     // Margin around walls and obstacles to account for players width
-    float margin = 0.0f;    // FIXME players[0].w/2.0f;
+    float margin = players[0].w/2.0f;
     // Walls
     for (int x=0; x<margin; x++) {
         for (int y=0; y<room.h; y++) {
@@ -273,8 +278,12 @@ void add_neighbours(node_list_t* list, cell_t cell) {
     for (int x=cell.x-1; x<=cell.x+1; x++) {
         for (int y=cell.y-1; y<=cell.y+1; y++) {
             if ((x != cell.x || y != cell.y) && is_walkable((cell_t){x, y})) {
+#if PATH_8_WAYS
                 float cost = (x == cell.x || y == cell.y) ? 1 : 1.414;
                 add_neighbour(list, (cell_t){x, y}, cost);
+#else
+                add_neighbour(list, (cell_t){x, y}, 1);
+#endif
             }
         }
     }
@@ -318,13 +327,13 @@ void update_path(PlyNum i) {
         debugf("Walk back %d cells to (%d %d)\n", steps, walkback.x, walkback.y);
         return;
     }
-    // TODO Adjust path length depending on ai player difficulty ?
-    // TODO Difficult AI should look further (higher max_cost) but refresh more often (don't follow the whole path length)
-    path_t* path = find_path(start_node, target_node, PATH_LENGTH-1, MAX_PATH_VISIT);
+    path_t* path = find_path(start_node, target_node, players[i].path_lookup, MAX_PATH_VISIT);
     if (get_path_count(path) > 1) {
         debugf("path points count: %d (complete: %d)\n", get_path_count(path), get_path_complete(path));
+            // Keep fexer waypoints when chasing a player
+            int keep = players[i].state == MOVING_TO_PLAYER ? players[i].path_keep_chase : players[i].path_keep;
         for (int j=0; j<get_path_count(path); j++) {
-            if (players[i].path_pos >= PATH_LENGTH-1)   break;
+            if (players[i].path_pos >= keep)   break;
             //debugf("getting point #%d\n", j);
             cell_t* node = get_path_cell(path, j);
             //debugf("add point: %d %d\n", node->x, node->y);
@@ -532,7 +541,7 @@ void game_init()
         furnitures[i].h = 0.42f * FURNITURE_SCALE * T3D_MODEL_SCALE;
         furnitures[i].max_y = 0.70f * FURNITURE_SCALE * T3D_MODEL_SCALE;
         furnitures[i].zone_w = furnitures[i].w/2.0f;
-        furnitures[i].zone_h = furnitures[i].h/4.0f;
+        furnitures[i].zone_h = 10.0f;
         furnitures[i].scale = (T3DVec3){{FURNITURE_SCALE, FURNITURE_SCALE, FURNITURE_SCALE}};
         int rotated = rand() % 4;
         furnitures[i].rotated = rotated % 2;
@@ -566,7 +575,7 @@ void game_init()
         vaults[i].h = 0.11f * T3D_MODEL_SCALE;
         vaults[i].max_y = 1.50f * T3D_MODEL_SCALE;
         vaults[i].zone_w = vaults[i].w/1.5f;
-        vaults[i].zone_h = vaults[i].h;
+        vaults[i].zone_h = 10.0f;
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
         vaults[i].rotated = (i-1) % 2;
         vaults[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
@@ -662,6 +671,9 @@ void game_init()
                 players[i].path[j].v[2] = NO_PATH;
             }
             players[i].path_pos = 0;
+            players[i].path_lookup = PATH_LOOKUP * (1+core_get_aidifficulty());
+            players[i].path_keep = (PATH_LENGTH-1) - 2*core_get_aidifficulty();
+            players[i].path_keep_chase = (PATH_LENGTH/2) - core_get_aidifficulty();
             players[i].path_delay = WAYPOINT_DELAY;
         }
     }
