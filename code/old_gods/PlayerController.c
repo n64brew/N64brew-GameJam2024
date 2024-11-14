@@ -3,6 +3,7 @@
 #include "AF_Vec2.h"
 #include <libdragon.h>
 #include "AF_Input.h"
+#include "AF_Renderer.h"
 
 #define STICK_DEAD_ZONE 0.01
 #define PLAYER_SPEED 10
@@ -17,6 +18,7 @@ void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _ent
 	for(int i = 0; i < _entityCount; ++i){
 		// player 1
 		PlayerController_UpdatePlayerMovement(_input->controlSticks[i], &_entities[i]);
+		PlayerController_UpdatePlayerButtonPress(_input, &_entities[i]);
 	}	
 }
 
@@ -32,15 +34,17 @@ void PlayerController_UpdatePlayerButtonPress(AF_Input* _input, AF_Entity* _enti
 	for(int i = 0; i < PLAYER_COUNT; ++i){
 		AF_CPlayerData* playerData = _entity->playerData;
 
+		
 		// A to attack
-		if(_input->keys[i]->pressed == A_KEY){
+		if(_input->keys[i][A_KEY].pressed == TRUE){
 			playerData->isAttacking = TRUE;
+			PlayerController_Attack(_entity);
 		}else{
 			playerData->isAttacking = FALSE;
 		}
 
 		// B to jump
-		if(_input->keys[i]->pressed == B_KEY){
+		if(_input->keys[i][B_KEY].pressed == TRUE){
 			playerData->isJumping = TRUE;
 		}else{
 			playerData->isJumping = FALSE;
@@ -51,8 +55,12 @@ void PlayerController_UpdatePlayerButtonPress(AF_Input* _input, AF_Entity* _enti
 void PlayerController_Attack(AF_Entity* _entity){
 	// do collision check in proximity.
 	// entity that is another player, then call a hit on that player
-
 	// Player attack animation
+	AF_CMesh* mesh = _entity->mesh;
+	// if this entity has animations, then call play animation
+	if(mesh->animation.has == TRUE){
+		AF_Renderer_PlayAnimation(&mesh->animation);
+	}
 }
 
  void PlayerController_UpdatePlayerMovement(Vec2 _stick, AF_Entity* _entity){

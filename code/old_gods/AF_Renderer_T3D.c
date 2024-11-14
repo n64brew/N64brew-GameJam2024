@@ -222,7 +222,7 @@ void AF_Renderer_Init(AF_ECS* _ecs){
          // TODO read teh model scale from a variable in the mesh
          // load animations
          
-         
+        
          
     }
     
@@ -244,6 +244,9 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     animations[MODEL_SNAKE].animWalkPath = snakeWalkPath;
     animations[MODEL_SNAKE].animAttackPath = snakeAttackPath;
     AF_Renderer_LoadAnimation(MODEL_SNAKE);
+  
+    // if mesh has animations
+    //AF_Renderer_LoadAnimation(//MODEL_SNAKE);
     //debugf("AF_Renderer_T3d: Renderer_Init: loading animat again.\n");
     //AF_Renderer_LoadAnimation(MODEL_SNAKE);
     
@@ -355,9 +358,9 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     // update the animation skeleton
-    AF_Animation* animation = &animations[MODEL_SNAKE];
-    assert(animation != NULL);
-    Renderer_UpdateAnimations(animation);    
+      AF_Animation* animation = &animations[MODEL_SNAKE];
+      assert(animation != NULL);
+      Renderer_UpdateAnimations(animation); 
 
     // Update player matrix
     // ======== Draw (3D) ======== //
@@ -465,19 +468,13 @@ void Renderer_UpdateAnimations(AF_Animation* _animation){
     if(_animation->animationBlend  > 1.0f){
       _animation->animationBlend = 1.0f;
     }
-
-    // Player Attack
-    // if the current animation is set to attack and we are not already playing it
     T3DAnim* animAttackData = (T3DAnim*)_animation->attackAnimationData;
-    if(_animation->animationType == ANIMATION_TYPE_ATTACK && !(animAttackData->isPlaying)) {
-      t3d_anim_set_playing(animAttackData, true);
-      t3d_anim_set_time(animAttackData, 0.0f);
-      animAttackData->isPlaying = true;
-      //player->isAttack = true;
-      //player->attackTimer = 0;
-    }
-
-    // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
+    if(animAttackData->isPlaying == true){
+      //t3d_anim_set_playing(animAttackData, true);
+      //t3d_anim_set_time(animAttackData, 0.0f);
+      //animAttackData->isPlaying = true;
+      t3d_anim_update(animAttackData, deltaTime);
+    }    // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
     T3DAnim* animIdleData = (T3DAnim*)_animation->idleAnimationData;
     t3d_anim_update(animIdleData, deltaTime);
     
@@ -604,7 +601,33 @@ int16_t clamp_to_int16(float value) {
     return (int16_t)value;
 }
 
-void AF_Renderer_PlayAnimation(AF_Entity* _entity, uint8_t _animationID){
+void AF_Renderer_PlayAnimation(AF_Animation* _animation){
+    //debugf("AF_Renderer_PlayAnimation: 1\n");
+    assert(_animation != NULL);
+  // if the current animation is set to attack and we are not already playing it
+
+    // this is comming back as null
+    T3DAnim* animAttackData = (T3DAnim*)_animation->attackAnimationData;
+    debugf("AF_Renderer_PlayAnimation: state %s\n", animAttacks[MODEL_SNAKE].isPlaying ? "true" : "false");
+    // Don't progress if animation data isn't setup
+    if(animAttackData == NULL){
+      //return;
+    }
+    //assert(animAttackData != NULL);
+   
+    //if(animAttackData->isPlaying == false) {
+    if(animAttacks[MODEL_SNAKE].isPlaying == false) {
+      
+      debugf("AF_Renderer_PlayAnimation: 1\n");
+      //t3d_anim_set_playing(animAttackData, true);
+      //t3d_anim_set_time(animAttackData, 0.0f);
+      t3d_anim_set_playing(&animAttacks[MODEL_SNAKE], true);
+      t3d_anim_set_time(&animAttacks[MODEL_SNAKE], 0.0f);
+      //animAttackData->isPlaying = true;
+      animAttacks[MODEL_SNAKE].isPlaying = true;
+      //player->isAttack = true;
+      //player->attackTimer = 0;
+    }
   /*
   // play animation
   AF_Animation* animation = &_entity->animation;

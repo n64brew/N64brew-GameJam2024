@@ -167,7 +167,6 @@ void Scene_Update(AppData* _appData){
         updatedTotalScore += playerData->score;
     }
     _appData->gameplayData.godEatCount = updatedTotalScore;
-    /**/
     
 }
 
@@ -191,23 +190,19 @@ void Scene_SetupEntities(AppData* _appData){
     
 	Vec3 godPos = {0, 0, 0};
 	Vec3 godScale = {2,2,2};
-    godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_SPHERE, AABB);
-    godEntity->mesh->material.textureID = TEXTURE_ID_9;
-    godEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_MESH, AABB);
     godEntity->mesh->meshID = MODEL_SNAKE;
     godEntity->rigidbody->inverseMass = zeroInverseMass;
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->showDebug = TRUE;
-    
-    
+
+    // setup animations
 	// ---------Create Player1------------------
 	Vec3 player1Pos = {2.0f, .5f, 1.0f};
 	Vec3 player1Scale = {.5f,.5f,.5f};
     
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
-    player1Entity->mesh->material.textureID = TEXTURE_ID_0;
-    player1Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player1Entity->mesh->meshID = MODEL_SNAKE;
     player1Entity->rigidbody->inverseMass = zeroInverseMass;
 	player1Entity->rigidbody->isKinematic = TRUE;
@@ -220,8 +215,6 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player2Entity = gameplayData->playerEntities[1];
-    //player2Entity->mesh->material.textureID = TEXTURE_ID_1;
-    player2Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player2Entity->mesh->meshID = MODEL_SNAKE;
     player2Entity->rigidbody->inverseMass = zeroInverseMass;
 	player2Entity->rigidbody->isKinematic = TRUE;
@@ -233,7 +226,6 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player3Entity = gameplayData->playerEntities[2];
-    player3Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player3Entity->mesh->meshID = MODEL_SNAKE;
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = zeroInverseMass;
@@ -245,7 +237,6 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
 	AF_Entity* player4Entity = gameplayData->playerEntities[3];
-    player4Entity->mesh->meshType = AF_MESH_TYPE_MESH;
     player4Entity->mesh->meshID = MODEL_SNAKE;
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = zeroInverseMass;
@@ -254,8 +245,7 @@ void Scene_SetupEntities(AppData* _appData){
 	//=========ENVIRONMENT========
     Vec3 levelMapPos = {0, 0, 2};
 	Vec3 levelMapScale = {2,1,1};
-    levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_CUBE, AABB);
-    levelMapEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_MESH, AABB);
     levelMapEntity->mesh->meshID = MODEL_MAP;
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
 
@@ -264,8 +254,7 @@ void Scene_SetupEntities(AppData* _appData){
     // World pos and scale for bucket
 	Vec3 bucket1Pos = {-5.0f, .5f, 0.0f};
 	Vec3 bucket1Scale = {1,1,1};
-    bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucket1Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket1->mesh->meshType = AF_MESH_TYPE_MESH;
+    bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucket1Scale,AF_MESH_TYPE_MESH, AABB);
     bucket1->mesh->meshID = MODEL_BOX;
     bucket1->rigidbody->inverseMass = zeroInverseMass;
 
@@ -275,8 +264,7 @@ void Scene_SetupEntities(AppData* _appData){
     // World pos and scale for bucket
 	Vec3 bucket2Pos = {5.0f, .5f, 0.0f};
 	Vec3 bucket2Scale = {1,1,1};
-	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucket2Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket2->mesh->meshType = AF_MESH_TYPE_MESH;
+	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucket2Scale,AF_MESH_TYPE_MESH, AABB);
     bucket2->mesh->meshID = MODEL_BOX;
     bucket2->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
@@ -286,8 +274,7 @@ void Scene_SetupEntities(AppData* _appData){
     // World pos and scale for bucket
 	Vec3 bucket3Pos = {5.0f, .5f, 5.0f};
 	Vec3 bucket3Scale = {1,1,1};
-	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucket3Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket3->mesh->meshType = AF_MESH_TYPE_MESH;
+	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucket3Scale,AF_MESH_TYPE_MESH, AABB);
     bucket3->mesh->meshID = MODEL_BOX;
     bucket3->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
@@ -296,8 +283,7 @@ void Scene_SetupEntities(AppData* _appData){
     // World pos and scale for bucket
 	Vec3 bucket4Pos = {-5.0f, .5f, 5.0f};
 	Vec3 bucket4Scale = {1,1,1};
-	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucket4Scale,AF_MESH_TYPE_CUBE, AABB);
-    bucket4->mesh->meshType = AF_MESH_TYPE_MESH;
+	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucket4Scale,AF_MESH_TYPE_MESH, AABB);
     bucket4->mesh->meshID = MODEL_BOX;
     bucket4->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
@@ -306,8 +292,7 @@ void Scene_SetupEntities(AppData* _appData){
     /// Villages
 	Vec3 villager1Pos = {-1000.0f, 0, 0};
 	Vec3 villager1Scale = {1,1,1};
-    villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_CUBE, AABB);
-    villager1->mesh->meshType = AF_MESH_TYPE_MESH;
+    villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_MESH, AABB);
     villager1->mesh->meshID = MODEL_FOOD;
 	villager1->rigidbody->inverseMass = zeroInverseMass;
 	villager1->rigidbody->isKinematic = TRUE;
