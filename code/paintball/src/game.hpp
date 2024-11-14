@@ -35,8 +35,8 @@ class Game
         // Controllers
         GameplayController gameplayController;
 
-        // Map
-        MapRenderer mapRenderer;
+        T3DVec3 camTarget;
+        T3DVec3 camPos;
 
     public:
         Game();

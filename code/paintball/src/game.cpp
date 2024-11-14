@@ -20,6 +20,9 @@ Game::Game() :
     rdpq_font_style(fnt, 2, &p3Style);
     rdpq_font_style(fnt, 3, &p4Style);
 
+    camTarget = (T3DVec3){{0, 0, 40}};
+    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
+
     debugf("Paintball minigame initialized\n");
 }
 
@@ -33,14 +36,12 @@ void Game::render(float deltaTime) {
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
-    T3DVec3 camPos = (T3DVec3){{0, 125.0f, 100.0f}};
-    T3DVec3 camTarget = (T3DVec3){{0, 0, 40}};
     T3DVec3 up = (T3DVec3){{0,1,0}};
 
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 200.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &up);
 
     rdpq_attach(display_get(), display.depthBuffer);
@@ -69,6 +70,8 @@ void Game::render(float deltaTime) {
 }
 
 void Game::fixedUpdate(float deltaTime) {
-    gameplayController.fixedUpdate(deltaTime);
+    T3DVec3 avPos = gameplayController.fixedUpdate(deltaTime);
+    t3d_vec3_add(camTarget, avPos, T3DVec3{0, 0, 40});
+    t3d_vec3_add(camPos, avPos, T3DVec3{0, 125.0f, 100.0f});
 }
 

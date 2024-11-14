@@ -228,12 +228,14 @@ void GameplayController::render2ndPass()
     }
 }
 
-void GameplayController::fixedUpdate(float deltaTime)
+T3DVec3 GameplayController::fixedUpdate(float deltaTime)
 {
+    T3DVec3 averagePos = {0};
     uint32_t i = 0;
     for (auto& player : playerOtherData)
     {
         auto& gameplayData = playerGameplayData[i];
+        t3d_vec3_add(averagePos, averagePos, gameplayData.pos);
         simulatePhysics(gameplayData, player, i, deltaTime);
         i++;
     }
@@ -265,6 +267,9 @@ void GameplayController::fixedUpdate(float deltaTime)
             delete_timer
         };
     }
+
+    t3d_vec3_scale(averagePos, averagePos, 0.25);
+    return averagePos;
 }
 
 void GameplayController::gameOver() {
