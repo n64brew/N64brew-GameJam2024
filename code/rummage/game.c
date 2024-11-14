@@ -39,10 +39,15 @@
 #define ATTACK_OFFSET 15.0f
 #define ATTACK_RADIUS 10.0f
 #define HURT_TIME (50.0f/60.0f)
-#define FURNITURES_COUNT 9
+#define FURNITURE_KEEPOUT 50
+#define FURNITURES_ROWS 3
+#define FURNITURES_COLS 4
+#define FURNITURES_COUNT (FURNITURES_ROWS * FURNITURES_COLS)
+#define FURNITURE_SCALE 0.75f
 #define VAULTS_COUNT 3
 
 bool playing = false;
+bool paused = false;
 
 typedef struct actor_t {
     T3DModel* model;
@@ -193,13 +198,59 @@ inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
 
 void update_obstacles() {
     // Precompute obstacles in map coordinates (is_walkable takes 150-400 cyces vs 4000+ when computing on-the-fly)
+    // Margin around walls and obstacles to account for players width
+    float margin = 5.0f;    // FIXME players[0].w/2.0f;
+    // Walls
+    for (int x=0; x<margin; x++) {
+        for (int y=0; y<room.h; y++) {
+            T3DVec3 coords = (T3DVec3){{-room.w/2+x, 0, -room.h/2+y}};
+            to_pathmap_coords(&coords, &coords);
+            *(map+((int)coords.v[2])*map_width+((int)coords.v[0])) = 1;
+        }
+    }
+    for (int x=room.w; x>room.w-margin; x--) {
+        for (int y=0; y<room.h; y++) {
+            T3DVec3 coords = (T3DVec3){{-room.w/2+x, 0, -room.h/2+y}};
+            to_pathmap_coords(&coords, &coords);
+            *(map+((int)coords.v[2])*map_width+((int)coords.v[0])) = 1;
+        }
+    }
+    for (int y=0; y<margin; y++) {
+        for (int x=0; x<room.w; x++) {
+            T3DVec3 coords = (T3DVec3){{-room.w/2+x, 0, -room.h/2+y}};
+            to_pathmap_coords(&coords, &coords);
+            *(map+((int)coords.v[2])*map_width+((int)coords.v[0])) = 1;
+        }
+    }
+    for (int y=room.h; y>room.h-margin; y--) {
+        for (int x=0; x<room.w; x++) {
+            T3DVec3 coords = (T3DVec3){{-room.w/2+x, 0, -room.h/2+y}};
+            to_pathmap_coords(&coords, &coords);
+            *(map+((int)coords.v[2])*map_width+((int)coords.v[0])) = 1;
+        }
+    }
+    // Furnitures
     for (int i=0; i<FURNITURES_COUNT; i++) {
-        T3DVec3 furniture_min = (T3DVec3){{furnitures[i].bbox.min.x, 0, furnitures[i].bbox.min.y}};
+        T3DVec3 furniture_min = (T3DVec3){{furnitures[i].bbox.min.x-margin, 0, furnitures[i].bbox.min.y-margin}};
         to_pathmap_coords(&furniture_min, &furniture_min);
-        T3DVec3 furniture_max = (T3DVec3){{furnitures[i].bbox.max.x, 0, furnitures[i].bbox.max.y}};
+        T3DVec3 furniture_max = (T3DVec3){{furnitures[i].bbox.max.x+margin, 0, furnitures[i].bbox.max.y+margin}};
         to_pathmap_coords(&furniture_max, &furniture_max);
         for (int x=furniture_min.v[0]+1; x<furniture_max.v[0]; x++) {
             for (int y=furniture_min.v[2]+1; y<furniture_max.v[2]; y++) {
+                if (x >= 0 && x < map_width && y >= 0 && y < map_height) {
+                    *(map+y*map_width+x) = 1;
+                }
+            }
+        }
+    }
+    // Vaults
+    for (int i=0; i<VAULTS_COUNT; i++) {
+        T3DVec3 vault_min = (T3DVec3){{vaults[i].bbox.min.x-margin, 0, vaults[i].bbox.min.y-margin}};
+        to_pathmap_coords(&vault_min, &vault_min);
+        T3DVec3 vault_max = (T3DVec3){{vaults[i].bbox.max.x+margin, 0, vaults[i].bbox.max.y+margin}};
+        to_pathmap_coords(&vault_max, &vault_max);
+        for (int x=vault_min.v[0]+1; x<vault_max.v[0]; x++) {
+            for (int y=vault_min.v[2]+1; y<vault_max.v[2]; y++) {
                 if (x >= 0 && x < map_width && y >= 0 && y < map_height) {
                     *(map+y*map_width+x) = 1;
                 }
@@ -252,7 +303,23 @@ void update_path(PlyNum i) {
     cell_t target_node = {(int)target.v[0], (int)target.v[2]};
     //debugf("find_path(%d %d, %d %d)\n", start_node.x, start_node.y, target_node.x, target_node.y);
     visited = 0;
+    // If start point is not walkable, walk back
+    if (!is_walkable(start_node)) {
+        debugf("Player #%d looking for a path from an unwalkable cell (%f %f) (%d %d): walk back a bit\n", i, players[i].position.v[0], players[i].position.v[2], start_node.x, start_node.y);
+        int steps=1;
+        cell_t walkback = {(int) start_node.x - steps * players[i].direction.v[0], (int) start_node.y - steps * players[i].direction.v[2]};
+        while (steps < 5 && !is_walkable(walkback)) {
+            steps++;
+            walkback.x = (int) start_node.x - steps * players[i].direction.v[0];
+            walkback.y = (int) start_node.y - steps * players[i].direction.v[2];
+        }
+        players[i].path[players[i].path_pos].v[0] = walkback.x;
+        players[i].path[players[i].path_pos].v[2] = walkback.y;
+        debugf("Walk back %d cells to (%d %d)\n", steps, walkback.x, walkback.y);
+        return;
+    }
     // TODO Adjust path length depending on ai player difficulty ?
+    // TODO Difficult AI should look further (higher max_cost) but refresh more often (don't follow the whole path length)
     path_t* path = find_path(start_node, target_node, PATH_LENGTH-1, MAX_PATH_VISIT);
     if (get_path_count(path) > 1) {
         debugf("path points count: %d (complete: %d)\n", get_path_count(path), get_path_complete(path));
@@ -462,16 +529,18 @@ void game_init()
     debugf("Key is in furniture #%d!\n", hideout);
     T3DModel* furniture_model = t3d_model_load("rom:/rummage/furniture.t3dm");
     for (int i=0; i<FURNITURES_COUNT; i++) {
-        furnitures[i].w = 0.92f * T3D_MODEL_SCALE;
-        furnitures[i].h = 0.42f * T3D_MODEL_SCALE;
-        furnitures[i].max_y = 0.70f * T3D_MODEL_SCALE;
+        furnitures[i].w = 0.92f * FURNITURE_SCALE * T3D_MODEL_SCALE;
+        furnitures[i].h = 0.42f * FURNITURE_SCALE * T3D_MODEL_SCALE;
+        furnitures[i].max_y = 0.70f * FURNITURE_SCALE * T3D_MODEL_SCALE;
         furnitures[i].zone_w = furnitures[i].w/2.0f;
         furnitures[i].zone_h = furnitures[i].h/4.0f;
-        furnitures[i].scale = (T3DVec3){{1, 1, 1}};
-        int rotated = rand() % 3;
+        furnitures[i].scale = (T3DVec3){{FURNITURE_SCALE, FURNITURE_SCALE, FURNITURE_SCALE}};
+        int rotated = rand() % 4;
         furnitures[i].rotated = rotated % 2;
         furnitures[i].rotation = (T3DVec3){{0, rotated * M_PI/2, 0}};
-        furnitures[i].position = (T3DVec3){{ ((i%3)-1)*((room.w-furnitures[i].w-50)/2.0f), 0, (((i/3)%3)-1)*((room.h-furnitures[i].h-50)/2.0f) }};
+        float slot_w = (room.w-2*FURNITURE_KEEPOUT)/(FURNITURES_COLS-1);
+        float slot_h = (room.h-2*FURNITURE_KEEPOUT)/(FURNITURES_ROWS-1);
+        furnitures[i].position = (T3DVec3){{ -room.w/2.0f + FURNITURE_KEEPOUT + slot_w*(i%FURNITURES_COLS), 0, -room.h/2.0f + FURNITURE_KEEPOUT + slot_h*(i/FURNITURES_COLS) }};
         furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
         furnitures[i].bbox = usable_actor_bounding_box((usable_actor_t*)&furnitures[i]);
         furnitures[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&furnitures[i]);
@@ -496,7 +565,7 @@ void game_init()
         vaults[i].h = 0.11f * T3D_MODEL_SCALE;
         vaults[i].max_y = 1.50f * T3D_MODEL_SCALE;
         vaults[i].zone_w = vaults[i].w/1.5f;
-        vaults[i].zone_h = vaults[i].h/2.0f;
+        vaults[i].zone_h = vaults[i].h;
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
         vaults[i].rotated = (i-1) % 2;
         vaults[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
@@ -627,7 +696,7 @@ void game_init()
 
 void game_logic(float deltatime)
 {
-    if (is_playing()) {
+    if (is_playing() && !paused) {
         // Player controls
         for (size_t i = 0; i < MAXPLAYERS; i++) {
             if (players[i].hurt_playing_time > 0) {
@@ -947,22 +1016,25 @@ void game_render(float deltatime)
                 joypad_buttons_t btn = joypad_get_buttons_pressed(port);
                 // Exit minigame by pressing start
                 if (btn.start) {
-                    minigame_end();
+                    // FIXME minigame_end();
+                    paused = !paused;
                 }
-                // Player actions: rummage, open vault, grab other player
-                if(btn.a) {
-                    // If the player is close to a furniture, search for the key
-                    for (int j=0; j<FURNITURES_COUNT; j++) {
-                        rummage(i, j);
-                    }
-                    if (players[i].has_key) {
-                        for (int j=0; j<VAULTS_COUNT; j++) {
-                            open(i, j);
+                if (!paused) {
+                    // Player actions: rummage, open vault, grab other player
+                    if(btn.a) {
+                        // If the player is close to a furniture, search for the key
+                        for (int j=0; j<FURNITURES_COUNT; j++) {
+                            rummage(i, j);
                         }
+                        if (players[i].has_key) {
+                            for (int j=0; j<VAULTS_COUNT; j++) {
+                                open(i, j);
+                            }
+                        }
+                    } else if (btn.b) {
+                        wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                        start_player_attack(i);
                     }
-                } else if (btn.b) {
-                    wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
-                    start_player_attack(i);
                 }
             }
         }
@@ -1026,6 +1098,24 @@ void render_usable_zone_aabb(usable_actor_t* actor) {
 void game_render_gl(float deltatime)
 {
 #if ENABLE_WIREFRAME
+    // Map
+    /*
+    for (int x=0; x<map_width; x++) {
+        for (int y=0; y<map_height; y++) {
+            char walkable = *(map+y*map_width+x) == 0;
+            T3DVec3 point = (T3DVec3){{x, 0, y}};
+            from_pathmap_coords(&point, &point);
+            float r = 1.0f;
+            draw_aabb(
+                point.v[0]-r, point.v[0]+r,
+                point.v[1], point.v[1],
+                point.v[2]-r, point.v[2]+r,
+                walkable ? 0.0f : 1.0f, 0.5f, 0.5f
+            );
+        }
+    }
+    */
+
     // Furnitures
     for (int i=0; i<FURNITURES_COUNT; i++) {
         render_usable_actor_aabb((usable_actor_t*)&furnitures[i]);
