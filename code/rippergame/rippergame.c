@@ -49,6 +49,7 @@ typedef enum
 // The player struct, all info needed by guards and thieves go in here
 typedef struct
 {
+    bool isActive;
     int playerNumber;
     player_team playerTeam;
     T3DMat4FP* modelMatFP;
@@ -111,6 +112,7 @@ wav64_t sfx_start;
 wav64_t sfx_countdown;
 
 // Gameplay globals
+int lastCountdownNumber;
 float countdownTimer;
 bool gameStarting;
 bool gameEnding;
@@ -266,7 +268,7 @@ void player_init(int playerNumber)
     }
 
     // remember that players are zero indexed
-    if(playerNumber == 0 || playerNumber == 2)
+    if(playerNumber == 1 || playerNumber == 2)
     {
         players[playerNumber].playerTeam = teamThief;
         players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
@@ -294,6 +296,7 @@ void player_init(int playerNumber)
         break;
     }
 
+    players[playerNumber].isActive = true;
     players[playerNumber].playerNumber = playerNumber;
     players[playerNumber].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     // Instantiate skeletons, they will be used to draw skinned meshes
@@ -355,6 +358,8 @@ void player_fixedloop(float deltaTime, int playerNumber)
         return;
     }
 
+    if(!players[playerNumber].isActive) return;
+
     // process timers on player
     
     if(players[playerNumber].stunTimer > 0.0f)
@@ -408,7 +413,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
         speed = sqrtf(t3d_vec3_len2(&newDir));
     }
 
-    if(players[playerNumber].isAi) // is an AI
+    if(players[playerNumber].isAi && !(players[playerNumber].stunTimer > 0.0f)) // is an AI
     {
         // super basic test AI
         if(players[playerNumber].framesRemainingAi <= 0)
@@ -486,6 +491,21 @@ void player_fixedloop(float deltaTime, int playerNumber)
             if(t3d_vec3_len(&tempVec) < 10) objectives[iDx].isActive = false;
         }
     }
+
+    // do thief catching check
+    if(players[playerNumber].playerTeam == teamGuard)
+    {
+        for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+        {
+            if(players[iDx].isActive == false || players[iDx].playerTeam == teamGuard)
+            {
+                continue;
+            }
+            T3DVec3 tempVec = {0};
+            t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
+            if(t3d_vec3_len(&tempVec) < 10 && players[iDx].stunTimer > 0.0f) players[iDx].isActive = false;
+        }
+    }
 }
 
 /*==============================
@@ -496,6 +516,8 @@ void player_fixedloop(float deltaTime, int playerNumber)
 
 void player_loop(float deltaTime, int playerNumber)
 {
+    if(!players[playerNumber].isActive) return;
+
     joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
     
     if(!joypad_is_connected(controllerPort))
@@ -509,7 +531,21 @@ void player_loop(float deltaTime, int playerNumber)
 
         if(btn.start) minigame_end();
 
-        if(btn.a) players[playerNumber].stunTimer = 1.0f;
+        if(btn.a) players[2].stunTimer = 1.0f;
+        if(btn.b && players[playerNumber].playerTeam == teamGuard)
+        {
+            // stun in an AoE
+            for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+            {
+                if(players[iDx].isActive == false || players[iDx].playerTeam == teamGuard)
+                {
+                    continue;
+                }
+                T3DVec3 tempVec = {0};
+                t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
+                if(t3d_vec3_len(&tempVec) < 100 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 10.0f;
+            }
+        }
     }
 
     t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
@@ -531,6 +567,8 @@ void player_loop(float deltaTime, int playerNumber)
 
 void player_draw(int playerNumber)
 {
+    if(!players[playerNumber].isActive) return;
+
     rspq_block_run(players[playerNumber].dplPlayer);
 }
 
@@ -594,6 +632,7 @@ void objective_cleanup()
 void minigame_init()
 {
     // initialise gameplay variables
+    lastCountdownNumber = COUNTDOWN_DELAY;
     countdownTimer = COUNTDOWN_DELAY;
     gameStarting = true;
     gameEnding = false;
@@ -682,10 +721,18 @@ void minigame_fixedloop(float deltatime)
     {
         countdownTimer -= deltatime;
 
-        if(countdownTimer < 0.0f)
+        if(countdownTimer < lastCountdownNumber)
+        {
+            lastCountdownNumber = countdownTimer;
+            wav64_play(&sfx_countdown, 31);
+        }
+
+        if(countdownTimer < 1.0f)
         {
             wav64_play(&sfx_start, 31);
             gameStarting = false;
+
+            // TODO: start playing music
         }
     }
     return;
