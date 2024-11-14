@@ -374,7 +374,7 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     if (player->stun_timer > 0.0f) {
         player->stun_timer -= delta_time;
 
-        if (is_grounded && player->dynamic_object.velocity.y < 0.0f) {
+        if (is_grounded) {
             player->dynamic_object.velocity.x *= 0.5f;
             player->dynamic_object.velocity.z *= 0.5f;
         }

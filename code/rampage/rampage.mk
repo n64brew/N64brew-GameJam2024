@@ -1,5 +1,11 @@
 
 ASSETS_LIST += \
+	filesystem/rampage/0.sprite \
+	filesystem/rampage/1.sprite \
+	filesystem/rampage/2.sprite \
+	filesystem/rampage/3.sprite \
+	filesystem/rampage/4.sprite \
+	filesystem/rampage/5.sprite \
 	filesystem/rampage/building.t3dm \
 	filesystem/rampage/player.t3dm \
 	filesystem/rampage/ground.t3dm \

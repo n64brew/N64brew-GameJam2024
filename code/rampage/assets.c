@@ -40,6 +40,12 @@ void rampage_assets_init() {
     gRampageAssets.ground = t3d_model_load("rom://rampage/level.t3dm");
     gRampageAssets.tank = t3d_model_load("rom://rampage/tank0.t3dm");
     rampage_model_separate_material(gRampageAssets.tank, &gRampageAssets.tankSplit);
+
+    for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
+        char filename[32];
+        sprintf(filename, "rom:/rampage/%d.sprite", i);
+        gRampageAssets.countdown_numbers[i] = sprite_load(filename);
+    }
 }
 
 void rampage_assets_destroy() {
@@ -50,6 +56,10 @@ void rampage_assets_destroy() {
     t3d_model_free(gRampageAssets.player);
     t3d_model_free(gRampageAssets.ground);
     t3d_model_free(gRampageAssets.tank);
+
+    for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
+        sprite_free(gRampageAssets.countdown_numbers[i]);
+    }
 }
 
 struct RampageAssets* rampage_assets_get() {

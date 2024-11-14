@@ -10,7 +10,7 @@
 
 struct RampageBuilding {
     struct dynamic_object dynamic_object;
-    short hp:3;
+    short hp:5;
     short is_destroyed:1;
     short is_collapsing:1;
     short height: 3;

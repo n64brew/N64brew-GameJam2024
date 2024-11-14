@@ -311,15 +311,14 @@ void minigame_loop(float deltatime) {
     }
 
     if (gRampage.state == RAMPAGE_STATE_START) {
-        rdpq_text_printf(
-            &(rdpq_textparms_t){
-                .width = 320.0f, 
-                .align = ALIGN_CENTER,
-                .style_id = 0,
-            }, FONT_TEXT, 
-            0.0f, 120.0f, 
-            "%d",
-            (int)ceilf(gRampage.delay_timer)
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,TEX0), (0,0,0,TEX0)));
+        rdpq_sprite_blit(
+            rampage_assets_get()->countdown_numbers[(int)ceilf(gRampage.delay_timer)],
+            160 - 9,
+            120 - 16,
+            NULL
         );
     }
 
@@ -333,7 +332,7 @@ void minigame_loop(float deltatime) {
                         .style_id = get_winner_index(0),
                     }, FONT_TEXT, 
                     0.0f, 120.0f, 
-                    "Player %d won!",
+                    "Player %d wins!",
                     get_winner_index(0)
                 );
                 break;
@@ -345,7 +344,7 @@ void minigame_loop(float deltatime) {
                         .style_id = 0,
                     }, FONT_TEXT, 
                     0.0f, 120.0f, 
-                    "Players %d and %d won!",
+                    "Players %d and %d wins!",
                     get_winner_index(0),
                     get_winner_index(1)
                 );
@@ -358,7 +357,7 @@ void minigame_loop(float deltatime) {
                         .style_id = 0,
                     }, FONT_TEXT, 
                     0.0f, 120.0f, 
-                    "Player %d, %d and %d won!",
+                    "Player %d, %d and %d wins!",
                     get_winner_index(0),
                     get_winner_index(1),
                     get_winner_index(2)

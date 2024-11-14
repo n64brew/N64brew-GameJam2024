@@ -3,6 +3,8 @@
 
 #include <t3d/t3dmodel.h>
 
+#define COUNTDOWN_NUMBER_COUNT  6
+
 struct RampageSplitMesh {
     rspq_block_t* mesh;
     rspq_block_t* material;
@@ -15,6 +17,8 @@ struct RampageAssets {
     T3DModel* ground;
     T3DModel* tank;
     struct RampageSplitMesh tankSplit;
+
+    sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
 };
 
 void rampage_assets_init();
