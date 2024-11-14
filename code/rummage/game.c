@@ -548,7 +548,11 @@ void game_init()
         furnitures[i].rotation = (T3DVec3){{0, rotated * M_PI/2, 0}};
         float slot_w = (room.w-2*FURNITURE_KEEPOUT)/(FURNITURES_COLS-1);
         float slot_h = (room.h-2*FURNITURE_KEEPOUT)/(FURNITURES_ROWS-1);
-        furnitures[i].position = (T3DVec3){{ -room.w/2.0f + FURNITURE_KEEPOUT + slot_w*(i%FURNITURES_COLS), 0, -room.h/2.0f + FURNITURE_KEEPOUT + slot_h*(i/FURNITURES_COLS) }};
+        furnitures[i].position = (T3DVec3){{
+            -room.w/2.0f + FURNITURE_KEEPOUT + slot_w*(i%FURNITURES_COLS),
+            0,
+            -room.h/2.0f + FURNITURE_KEEPOUT + slot_h*(i/FURNITURES_COLS)
+        }};
         furnitures[i].direction = (T3DVec3){{furnitures[i].rotated ? rotated-2 : 0, 0, furnitures[i].rotated ? 0 : 1-rotated}};
         furnitures[i].bbox = usable_actor_bounding_box((usable_actor_t*)&furnitures[i]);
         furnitures[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&furnitures[i]);
@@ -611,8 +615,14 @@ void game_init()
         players[i].h = players[i].w;    // Player is expected to be a square for collisions and pathfinding
         players[i].max_y = 3.60f * 0.2f * T3D_MODEL_SCALE;
         players[i].scale = (T3DVec3){{0.2f, 0.2f, 0.2f}};
-        players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
-        players[i].position = (T3DVec3){{ ((i-1)%2)*50, 0, ((i-2)%2)*50 }};
+        players[i].rotation = (T3DVec3){{0, ((i%2==0) ? -1 : 1) * ((i/2==0) ? 1 : 3) * M_PI/4, 0}};
+        float slot_w = (room.w-2*FURNITURE_KEEPOUT)/(FURNITURES_COLS-1);
+        float slot_h = (room.h-2*FURNITURE_KEEPOUT)/(FURNITURES_ROWS-1);
+        players[i].position = (T3DVec3){{
+            ((i%2==0) ? -1 : 1) * (room.w/2.0f - FURNITURE_KEEPOUT - slot_w/2.0f),
+            0,
+            ((i/2==0) ? -1 : 1) * (room.h/2.0f - FURNITURE_KEEPOUT - slot_h/2.0f)
+        }};
         players[i].direction = (T3DVec3){{0, 0, 0}};
         players[i].bbox = actor_bounding_box((actor_t*)&players[i]);
         float s, c;
