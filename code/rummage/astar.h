@@ -258,18 +258,20 @@ void add_neighbour(node_list_t* list, cell_t cell, float edgeCost) {
     list->count++;
 }
 
+// TODO Add limit of visited nodes (return incomplete path)
 path_t* find_path(cell_t start, cell_t target) {
     visited_nodes_t* visited_nodes = calloc(1, sizeof(visited_nodes_t));
     node_list_t* neighbours = calloc(1, sizeof(node_list_t));
     node_t current = get_node(visited_nodes, start);
     node_t goal = get_node(visited_nodes, target);
+    node_t best = current;
     path_t* path = NULL;
     
     set_target(goal);
     get_record(current)->estimated_cost = estimate_cost(current, goal);
     add_to_open(current, 0, empty_node);
-    
-    while (visited_nodes->open_capacity > 0 && !is_target((current = make_node(visited_nodes, visited_nodes->open[0])))) {
+
+    while (visited_nodes->open_count > 0 && !is_target((current = make_node(visited_nodes, visited_nodes->open[0])))) {
         remove_from_open(current);
         get_record(current)->closed = true;
         
@@ -279,9 +281,17 @@ path_t* find_path(cell_t start, cell_t target) {
         for (size_t n=0; n<neighbours->count; n++) {
             const float cost = get_record(current)->cost + neighbours->costs[n];
             node_t neighbour = get_node(visited_nodes, neighbours->cells[n]);
+            float neighbour_estimated_cost = estimate_cost(neighbour, goal);
+
+            // Keep track of the cheapest path
+            if (cost + neighbour_estimated_cost <= get_record(best)->cost + get_record(best)->estimated_cost) {
+                if (neighbour_estimated_cost < get_record(best)->estimated_cost) {
+                    best = neighbour;
+                }
+            }
             
             if (!has_estimated_cost(neighbour)) {
-                get_record(neighbour)->estimated_cost = estimate_cost(neighbour, goal);
+                get_record(neighbour)->estimated_cost = neighbour_estimated_cost;
             }
             
             if (get_record(neighbour)->open && cost < get_record(neighbour)->cost) {
@@ -297,9 +307,10 @@ path_t* find_path(cell_t start, cell_t target) {
             }
         }
     }
-    
-    if (is_empty(goal)) {
-        set_target(current);
+
+    // If goal is unreachable, return cheapest path to the closest cell
+    if (!is_target(current)) {
+        set_target(best);
     }
     
     if (is_target(current)) {
