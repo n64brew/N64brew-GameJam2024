@@ -15,6 +15,8 @@ the game jam.
 
 #define COUNTDOWN_DELAY 4.0f
 #define FINISH_DELAY 10.0f
+#define CONTROLLER_LOWER_DEADZONE 4
+#define CONTROLLER_UPPER_DEADZONE 60
 
 #define DEBUG_FONT 1
 
@@ -61,8 +63,10 @@ typedef struct
     float currSpeed;
     float animBlend;
     bool isAi;
+    float stunTimer; // stunTimer stops players from taking action while count is != 0
+    float abilityTimer; // cooldown timer for abilities
     //TODO: Remove, temp AI variable
-    int framesRemaining;
+    int framesRemainingAi;
     T3DVec3 aiDir;
 } player_data;
 
@@ -130,6 +134,17 @@ void debugInfoDraw(float deltaTime)
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 10, "Test Debug");
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "FPS: %f", 1.0f/deltaTime);
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
+    joypad_port_t controllerPort = core_get_playercontroller(0);
+    
+    if(!joypad_is_connected(controllerPort))
+    {
+        return;
+    }
+    else
+    {
+        joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 40, "p1 stick x: %i, p1 stick y: %i", joypad.stick_x, joypad.stick_y);
+    }
 }
 
 // create and set collisions
@@ -279,7 +294,9 @@ void player_init(int playerNumber)
     players[playerNumber].rotY = 0.0f;
     players[playerNumber].currSpeed = 0.0f;
     players[playerNumber].animBlend = 0.0f;
-    players[playerNumber].framesRemaining = 0;
+    players[playerNumber].stunTimer = 0.0f;
+    players[playerNumber].abilityTimer = 0.0f;
+    players[playerNumber].framesRemainingAi = 0;
 }
 
 /*==============================
@@ -315,36 +332,76 @@ void player_fixedloop(float deltaTime, int playerNumber)
         return;
     }
 
+    // process timers on player
+    
+    if(players[playerNumber].stunTimer > 0.0f)
+    {
+        players[playerNumber].stunTimer -= deltaTime;
+        if(players[playerNumber].stunTimer <= 0.0f) players[playerNumber].stunTimer = 0.0f;
+    }
+
+    if(players[playerNumber].abilityTimer > 0.0f)
+    {
+        players[playerNumber].abilityTimer -= deltaTime;
+        if(players[playerNumber].abilityTimer <= 0.0f) players[playerNumber].abilityTimer = 0.0f;
+    }
+
     T3DVec3 newDir = {0};
     float speed = 0.0f;
 
     // only get controller inputs from actual players
-    if(!players[playerNumber].isAi)
+    if(!players[playerNumber].isAi && !(players[playerNumber].stunTimer > 0.0f))
     {
         joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
         joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
 
-        newDir.v[0] = (float)joypad.stick_x * 0.05f;
-        newDir.v[2] = -(float)joypad.stick_y * 0.05f;
+        // upper and lower deadzones
+        float tempJoypadStickX;
+        float tempJoypadStickY;
+
+        if(joypad.stick_x > -CONTROLLER_LOWER_DEADZONE && joypad.stick_x < CONTROLLER_LOWER_DEADZONE)
+        {   
+            tempJoypadStickX = 0.0f;
+        }
+        else if(joypad.stick_x < -CONTROLLER_UPPER_DEADZONE) tempJoypadStickX = -6.35f;
+        else if(joypad.stick_x >  CONTROLLER_UPPER_DEADZONE) tempJoypadStickX =  6.35f;
+        else
+        {
+            tempJoypadStickX = (float)joypad.stick_x * 0.05f;
+        }
+
+        if(joypad.stick_y > -CONTROLLER_LOWER_DEADZONE && joypad.stick_y < CONTROLLER_LOWER_DEADZONE)
+        {   
+            tempJoypadStickY = 0.0f;
+        }
+        else if(joypad.stick_y < -CONTROLLER_UPPER_DEADZONE) tempJoypadStickY = -6.35f;
+        else if(joypad.stick_y >  CONTROLLER_UPPER_DEADZONE) tempJoypadStickY =  6.35f;
+        else
+        {
+            tempJoypadStickY = (float)joypad.stick_y * 0.05f;
+        }
+        newDir.v[0] = tempJoypadStickX;
+        newDir.v[2] = -tempJoypadStickY;
         speed = sqrtf(t3d_vec3_len2(&newDir));
     }
-    else // is an AI
+
+    if(players[playerNumber].isAi) // is an AI
     {
         // super basic test AI
-        if(players[playerNumber].framesRemaining <= 0)
+        if(players[playerNumber].framesRemainingAi <= 0)
         {
             newDir.v[0] = (rand()%170-85) * 0.05f;
             newDir.v[2] = (rand()%170-85) * 0.05f;
 
             players[playerNumber].aiDir = newDir;
             
-            players[playerNumber].framesRemaining = rand()%600;
+            players[playerNumber].framesRemainingAi = rand()%300;
         }
         else
         {
             newDir = players[playerNumber].aiDir;
         
-            players[playerNumber].framesRemaining--;
+            players[playerNumber].framesRemainingAi--;
         }
 
         speed = sqrtf(t3d_vec3_len2(&newDir));
@@ -390,6 +447,20 @@ void player_fixedloop(float deltaTime, int playerNumber)
     if(players[playerNumber].playerPos.v[2] < -BOX_SIZE)players[playerNumber].playerPos.v[2] = -BOX_SIZE;
     if(players[playerNumber].playerPos.v[2] > BOX_SIZE)players[playerNumber].playerPos.v[2] = BOX_SIZE;
 
+    // do objective touching check
+    if(players[playerNumber].playerTeam == teamThief)
+    {
+        for(int iDx = 0; iDx < sizeof(objectives) / sizeof(objectives[0]); iDx++)
+        {
+            if(objectives[iDx].isActive == false)
+            {
+                continue;
+            }
+            T3DVec3 tempVec = {0};
+            t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &objectives[iDx].objectivePos);
+            if(t3d_vec3_len(&tempVec) < 10) objectives[iDx].isActive = false;
+        }
+    }
 }
 
 /*==============================
@@ -412,6 +483,8 @@ void player_loop(float deltaTime, int playerNumber)
         joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
 
         if(btn.start) minigame_end();
+
+        if(btn.a) players[playerNumber].stunTimer = 1.0f;
         // rumble pak test code
 
         /*if(joypad_get_rumble_supported(controllerPort) && btn.a)
@@ -486,8 +559,8 @@ void objective_draw()
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, 0.0f, 0.0f},
         objectives[1].objectivePos.v);
-    rspq_block_run(objectives[0].dplObjective);
-    rspq_block_run(objectives[1].dplObjective);
+    if(objectives[0].isActive) rspq_block_run(objectives[0].dplObjective);
+    if(objectives[1].isActive) rspq_block_run(objectives[1].dplObjective);
 }
 
 void objective_cleanup()
