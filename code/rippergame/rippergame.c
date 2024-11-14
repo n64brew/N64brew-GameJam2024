@@ -29,12 +29,19 @@ T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 T3DModel* modelMap;
+T3DModel* modelCollision;
 
 typedef enum
 {
     teamThief,
     teamGuard
 } player_team;
+
+typedef enum
+{
+    collisionAll,
+    collisionGuardOnly
+} collision_type;
 
 typedef struct
 {
@@ -68,8 +75,25 @@ typedef struct
     T3DVec3 objectivePos;
 } objective_data;
 
+typedef struct
+{
+    T3DMat4FP* modelMatFP;
+    //rspq_block_t* dplCollision;
+    T3DVec3 collisionCentrePos;
+    collision_type collisionType;
+    int sizeX;
+    int sizeZ;
+} collisionobject_data;
+
+typedef struct
+{
+    bool didCollide;
+    collision_type collisionType;
+} collisionresult_data;
+
 player_data players[MAXPLAYERS];
 objective_data objectives[2];
+collisionobject_data collisionObjects[2];
 
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
@@ -102,10 +126,82 @@ const MinigameDef minigame_def = {
 
 void debugInfoDraw(float deltaTime)
 {
-    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320,  .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 10, "Test Debug");
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "FPS: %f", /*(int)*/(1.0f/deltaTime));
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "FPS: %f", 1.0f/deltaTime);
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
+}
+
+// create and set collisions
+void collision_init()
+{
+    collisionObjects[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[0].collisionCentrePos = (T3DVec3){{0.0f, 1.0f, 0.0f}};
+    collisionObjects[0].collisionType = collisionAll;
+    collisionObjects[0].sizeX = 100;
+    collisionObjects[0].sizeZ = 20;
+    
+    collisionObjects[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    collisionObjects[1].collisionCentrePos = (T3DVec3){{0.0f, 1.0f, 0.0f}};
+    collisionObjects[1].collisionType = collisionGuardOnly;
+    collisionObjects[1].sizeX = 20;
+    collisionObjects[1].sizeZ = 100;
+}
+
+void collision_draw()
+{
+    int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
+
+    for(int iDx = 0; iDx < numberOfObjects; iDx++)
+    {
+        //update matrix
+        t3d_mat4fp_from_srt_euler(collisionObjects[iDx].modelMatFP,
+            (float[3]){collisionObjects[iDx].sizeX * 0.00625f, 1.0f,collisionObjects[iDx].sizeZ *  0.00625f},
+            (float[3]){0.0f, 0, 0},
+            collisionObjects[iDx].collisionCentrePos.v);
+
+        t3d_matrix_push(collisionObjects[iDx].modelMatFP);
+        if(collisionObjects[iDx].collisionType == collisionGuardOnly) rdpq_set_prim_color(RGBA32(0,0,255,255));
+        else
+            rdpq_set_prim_color(RGBA32(255,0,0,255));
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    }
+}
+
+// pass in position to check if intersecting
+// adjust the passed in vector accordingly
+// return true if colliding
+void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
+{
+    returnStruct->didCollide = false; returnStruct->collisionType = collisionAll;
+
+    int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
+
+    for(int iDx = 0; iDx < numberOfObjects; iDx++)
+    {
+        
+        if( pos->v[0] > collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2) &&
+            pos->v[0] < collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2) &&
+            pos->v[2] > collisionObjects[iDx].collisionCentrePos.v[2] - (collisionObjects[iDx].sizeZ / 2) &&
+            pos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2))
+        {
+            returnStruct->didCollide = true; returnStruct->collisionType = collisionObjects[iDx].collisionType;
+            return;
+        }
+    }
+    // iterate over every collision box to check
+    return;
+}
+
+void collision_cleanup()
+{
+    int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
+
+    for(int iDx = 0; iDx < numberOfObjects; iDx++)
+    {
+        free_uncached(collisionObjects[iDx].modelMatFP);
+    }
 }
 
 /*==============================
@@ -161,7 +257,6 @@ void player_init(int playerNumber)
     }
 
     players[playerNumber].playerNumber = playerNumber;
-    players[playerNumber].playerTeam = teamThief;
     players[playerNumber].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     // Instantiate skeletons, they will be used to draw skinned meshes
     players[playerNumber].skel = t3d_skeleton_create(players[playerNumber].model);
@@ -271,8 +366,22 @@ void player_fixedloop(float deltaTime, int playerNumber)
     }
     
     // move the player
-    players[playerNumber].playerPos.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
-    players[playerNumber].playerPos.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
+    T3DVec3 tempPosition = players[playerNumber].playerPos;
+    tempPosition.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
+    tempPosition.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
+
+    collisionresult_data collisionResult;
+    
+    collision_check(&collisionResult, &tempPosition);
+
+    if(!collisionResult.didCollide)
+    {
+        players[playerNumber].playerPos = tempPosition;
+    }
+    if(collisionResult.didCollide && collisionResult.collisionType == collisionGuardOnly && players[playerNumber].playerTeam == teamThief)
+    {
+        players[playerNumber].playerPos = tempPosition;
+    }
     // and limit movement inside bounding box
     // do collision checks here
     const float BOX_SIZE = 140.0f;
@@ -298,9 +407,26 @@ void player_loop(float deltaTime, int playerNumber)
         return;
     }
 
-    joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
+    if(!players[playerNumber].isAi)
+    {
+        joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
 
-    if(btn.start) minigame_end();
+        if(btn.start) minigame_end();
+        // rumble pak test code
+
+        /*if(joypad_get_rumble_supported(controllerPort) && btn.a)
+        {
+            joypad_set_rumble_active(controllerPort, true);
+        }
+        else
+        {
+            joypad_set_rumble_active(controllerPort, false);
+        }*/
+        /*if(joypad_get_rumble_supported(controllerPort) && btn.b)
+        {
+            joypad_set_rumble_active(controllerPort, false);
+        }*/
+    }
 
     t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
     t3d_anim_set_speed(&players[playerNumber].animIdle, 1.0f);
@@ -317,17 +443,6 @@ void player_loop(float deltaTime, int playerNumber)
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, players[playerNumber].rotY, 0},
         players[playerNumber].playerPos.v);
-
-    // rumble pak test code
-    if(joypad_get_rumble_supported(controllerPort) && btn.a)
-    {
-        joypad_set_rumble_active(controllerPort, true);
-    }
-
-    if(joypad_get_rumble_supported(controllerPort) && btn.b)
-    {
-        joypad_set_rumble_active(controllerPort, false);
-    }
 }
 
 void player_draw(int playerNumber)
@@ -399,7 +514,7 @@ void minigame_init()
     gameEnding = false;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_640x480, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -435,6 +550,9 @@ void minigame_init()
         t3d_matrix_pop(1);
     dplMap = rspq_block_end();
 
+    // load a model from ROM for the collision square
+    modelCollision = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
+
     // clear the sync point
     syncPoint = 0;
 
@@ -451,6 +569,9 @@ void minigame_init()
 
     // set up objectives
     objective_init();
+
+    // initialise and setup collisions
+    collision_init();
 
     return;
 }
@@ -527,6 +648,9 @@ void minigame_loop(float deltatime)
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
+    // draw collision squares
+    collision_draw();
+
     // draw the player entities
     for(int i = 0; i < MAXPLAYERS; i++)
     {
@@ -552,8 +676,8 @@ void minigame_loop(float deltatime)
     // game starting countdown text draw
     if(gameStarting)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, .disable_aa_fix = true, };
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 100, "Starting in %i...", (int)countdownTimer);
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 235, "Starting in %i...", (int)countdownTimer);
     }
     
     //detach the queue to flip the buffers and show it on screen
@@ -576,11 +700,16 @@ void minigame_cleanup()
         player_cleanup(i);
     }
 
+    // destroy collisions
+    collision_cleanup();
+
     // clenaup objectives
     objective_cleanup();
 
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);
+
+    t3d_model_free(modelCollision);
 
     rspq_block_free(dplMap);
 
