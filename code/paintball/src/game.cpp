@@ -2,7 +2,9 @@
 
 Game::Game() :
     viewport(t3d_viewport_create()),
-    font("rom:/squarewave.font64", MainFont)
+    font("rom:/squarewave.font64", MainFont),
+    mapRenderer(std::make_shared<MapRenderer>()),
+    gameplayController(mapRenderer)
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
@@ -26,6 +28,8 @@ Game::~Game() {
 }
 
 void Game::render(float deltaTime) {
+    assertf(mapRenderer.get(), "Map renderer is null");
+
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -51,7 +55,7 @@ void Game::render(float deltaTime) {
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
-    mapRenderer.render();
+    mapRenderer->render();
 
     gameplayController.render(deltaTime, viewport);
     gameplayController.render2ndPass();

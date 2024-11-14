@@ -1,6 +1,7 @@
 #include "./gameplay.hpp"
 
-GameplayController::GameplayController() :
+GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
+    bulletController(map),
     timer({ nullptr, delete_timer }),
     model({
         t3d_model_load("rom:/paintball/char.t3dm"),
@@ -18,10 +19,10 @@ GameplayController::GameplayController() :
         playerOtherData.emplace_back(PlayerOtherData {model.get()});
 
         playerGameplayData.reserve(PlayerCount);
-        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0.15f,0}, PLAYER_1, {MaxHealth, 0, 0, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,-100}, PLAYER_2, {0, MaxHealth, 0, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{100,0.15f,0}, PLAYER_3, {0, 0, MaxHealth, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0.15f,100}, PLAYER_4, {0, 0, 0, MaxHealth}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0,0}, PLAYER_1, {MaxHealth, 0, 0, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,-100}, PLAYER_2, {0, MaxHealth, 0, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{100,0,0}, PLAYER_3, {0, 0, MaxHealth, 0}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,100}, PLAYER_4, {0, 0, 0, MaxHealth}});
     }
 
 void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
@@ -144,6 +145,7 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
     double interpolate = core_get_subtick();
     T3DVec3 currentPos {0};
     t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
+    t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 10, 0});
 
     const color_t colors[] = {
         PLAYERCOLOR_1,

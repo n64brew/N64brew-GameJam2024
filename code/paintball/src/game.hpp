@@ -29,6 +29,9 @@ class Game
         T3DViewport viewport;
         RDPQFont font;
 
+        // Map
+        std::shared_ptr<MapRenderer> mapRenderer;
+
         // Controllers
         GameplayController gameplayController;
 

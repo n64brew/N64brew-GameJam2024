@@ -17,7 +17,13 @@
 
 constexpr int MapWidth = 512;
 constexpr int TileSize = 32;
-constexpr int SegmentSize = 50;
+constexpr int SegmentSize = 75;
+
+struct Splash {
+    float x;
+    float y;
+    PlyNum team;
+};
 
 class MapRenderer
 {
@@ -25,17 +31,23 @@ class MapRenderer
         RDPQSurface surface;
         U::T3DMat4FP matFP;
         U::RSPQBlock block;
+        // U::RSPQBlock paintBlock;
         U::Sprite sprite;
 
         U::TLUT tlut;
 
+        int newSplashCount;
+        // TODO: is it possible to have more?
+        std::array<Splash, MAXPLAYERS * 2> newSplashes;
+
         T3DVertPacked* vertices;
 
+        void __splash(int x, int y, PlyNum player);
     public:
         MapRenderer();
         ~MapRenderer();
         void render();
-        void splash(int x, int y, PlyNum player);
+        void splash(float x, float y, PlyNum team);
 };
 
 #endif // __MAP_H

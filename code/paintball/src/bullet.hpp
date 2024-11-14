@@ -18,11 +18,12 @@
 #include "./wrappers.hpp"
 #include "./constants.hpp"
 #include "./player.hpp"
+#include "./map.hpp"
 
 constexpr float BulletVelocity = 500;
-constexpr float BulletHeight = 18.f;
+constexpr float BulletHeight = 25.f;
 constexpr int BulletLimit = 100;
-constexpr float PlayerRadius = 8;
+constexpr float PlayerRadius = 12;
 constexpr int MaxHealth = 100;
 constexpr int Damage = 10;
 
@@ -44,16 +45,19 @@ class BulletController
         U::T3DModel model;
         U::RSPQBlock block;
 
+        // TODO: MAXPLAYERS here is not correct for more than 4 players
         std::array<Bullet, MAXPLAYERS> newBullets;
 
         std::array<Bullet, BulletLimit> bullets;
+
+        std::shared_ptr<MapRenderer> map;
 
         void simulatePhysics(float deltaTime, Bullet &bullet);
         void killBullet(Bullet &bullet);
         bool applyDamage(PlayerGameplayData &gameplayData, PlyNum team);
 
     public:
-        BulletController();
+        BulletController(std::shared_ptr<MapRenderer> map);
         void render(float deltaTime);
         std::array<bool, PlayerCount> fixedUpdate(float deltaTime, std::vector<PlayerGameplayData> &gameplayData);
         void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum player);

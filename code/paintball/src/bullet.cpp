@@ -7,13 +7,14 @@ Bullet::Bullet() :
     team {PLAYER_1},
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
 
-BulletController::BulletController() :
+BulletController::BulletController(std::shared_ptr<MapRenderer> map) :
     newBulletCount(0),
     model({
         t3d_model_load("rom:/paintball/bullet.t3dm"),
         t3d_model_free
     }),
-    block({nullptr, rspq_block_free}) {
+    block({nullptr, rspq_block_free}),
+    map(map) {
         assertf(model.get(), "Bullet model is null");
 
         rspq_block_begin();
@@ -50,21 +51,21 @@ void BulletController::render(float deltaTime) {
 
     for (auto& bullet : bullets)
     {
-        assertf(bullet.matFP.get(), "Bullet matrix is null");
-        assertf(block.get(), "Bullet dl is null");
-
-        T3DVec3 currentPos {0};
-        t3d_vec3_lerp(currentPos, bullet.prevPos, bullet.pos, interpolate);
-
-        t3d_mat4fp_from_srt_euler(
-            bullet.matFP.get(),
-            T3DVec3 {0.2f, 0.2f, 0.2f},
-            // TODO: add some random rotation
-            T3DVec3 {0.0f, 0.0f, 0.0f},
-            T3DVec3 {currentPos.v[0], currentPos.v[1], currentPos.v[2]}
-        );
-
         if (bullet.velocity.v[0] != 0 || bullet.velocity.v[1] != 0 || bullet.velocity.v[2] != 0) {
+            assertf(bullet.matFP.get(), "Bullet matrix is null");
+            assertf(block.get(), "Bullet dl is null");
+
+            T3DVec3 currentPos {0};
+            t3d_vec3_lerp(currentPos, bullet.prevPos, bullet.pos, interpolate);
+
+            t3d_mat4fp_from_srt_euler(
+                bullet.matFP.get(),
+                T3DVec3 {0.2f, 0.2f, 0.2f},
+                // TODO: add some random rotation
+                T3DVec3 {0.0f, 0.0f, 0.0f},
+                T3DVec3 {currentPos.v[0], currentPos.v[1], currentPos.v[2]}
+            );
+
             t3d_matrix_push(bullet.matFP.get());
                 rdpq_set_prim_color(colors[bullet.team]);
                 rspq_block_run(block.get());
@@ -75,9 +76,11 @@ void BulletController::render(float deltaTime) {
 
 // TODO: shift everything to left to fill in holes & gain performance
 void BulletController::killBullet(Bullet &bullet) {
+    assertf(map.get(), "Map renderer is null");
     bullet.velocity.v[0] = 0;
     bullet.velocity.v[1] = 0;
     bullet.velocity.v[2] = 0;
+    map->splash(bullet.pos.v[0], bullet.pos.v[2], bullet.team);
 }
 
 /**
@@ -152,10 +155,11 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
         simulatePhysics(deltaTime, bullet);
 
         int i = 0;
+        // TODO: if we could delegate this to player.cpp, b/c collider doesn't belong here
         for (auto& player : gameplayData)
         {
-            auto colliderPosition = T3DVec3{player.pos.v[0], player.pos.v[1] + PlayerRadius, player.pos.v[2]};
-            auto colliderPosition2 = T3DVec3{player.pos.v[0], player.pos.v[1] + 2*PlayerRadius, player.pos.v[2]};
+            auto colliderPosition = T3DVec3{player.pos.v[0], player.pos.v[1] + BulletHeight, player.pos.v[2]};
+            auto colliderPosition2 = T3DVec3{player.pos.v[0], player.pos.v[1] + BulletHeight-PlayerRadius, player.pos.v[2]};
 
             if (t3d_vec3_distance2(colliderPosition, bullet.pos) < PlayerRadius * PlayerRadius ||
                 t3d_vec3_distance2(colliderPosition2, bullet.pos) < PlayerRadius * PlayerRadius) {
