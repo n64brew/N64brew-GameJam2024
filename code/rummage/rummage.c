@@ -48,11 +48,17 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 rdpq_font_t* fontdbg;
 rdpq_font_t *fonttext;
+rdpq_font_t *font_t3ddbg;
 wav64_t music;
 wav64_t sfx_start;
 wav64_t sfx_countdown;
 wav64_t sfx_stop;
 wav64_t sfx_winner;
+
+#if ENABLE_WIREFRAME
+bool show_wireframe = false;
+#endif
+bool show_debug_text = false;
 
 
 /*==============================
@@ -168,6 +174,19 @@ void minigame_fixedloop(float deltatime)
 
 void minigame_loop(float deltatime)
 {
+    joypad_port_t port = core_get_playercontroller(0);
+    joypad_buttons_t pressed = joypad_get_buttons_pressed(port);
+#if ENABLE_WIREFRAME
+    // Show/hide wireframe by pressing Z
+    if (pressed.z) {
+        show_wireframe = !show_wireframe;
+    }
+#endif
+    // Show/hide debug text by pressing R
+    if (pressed.r) {
+        show_debug_text = !show_debug_text;
+    }
+
     // 3D viewport
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
@@ -188,34 +207,38 @@ void minigame_loop(float deltatime)
     game_render(deltatime);
 
 #if ENABLE_WIREFRAME
-    gl_context_begin();
-	// Set the camera's position
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(
-		0, 200.0, 80.0,
-		0, 0, 0,
-		0, 1, 0
-		);
-    game_render_gl(deltatime);
-    gl_context_end();
+    if (show_wireframe) {
+        gl_context_begin();
+        // Set the camera's position
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        gluLookAt(
+            0, 200.0, 80.0,
+            0, 0, 0,
+            0, 1, 0
+            );
+        game_render_gl(deltatime);
+        gl_context_end();
+    }
 #endif
 
 #if ENABLE_TEXT
-    rdpq_sync_tile();
-    rdpq_sync_pipe(); // Hardware crashes otherwise
+    if (show_debug_text) {
+        rdpq_sync_tile();
+        rdpq_sync_pipe(); // Hardware crashes otherwise
 
-    // Display FPS
-    rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
+        // Display FPS
+        rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
 
-    // Display game data
-    rdpq_text_printf(NULL, FONT_DEBUG, 10, 30, "Key: %d", game_key());
-    rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
+        // Display game data
+        rdpq_text_printf(NULL, FONT_DEBUG, 10, 30, "Key: %d", game_key());
+        rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
 
-    // Display winner
-    if (is_ending && end_timer >= WIN_SHOW_DELAY) {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
-        rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins!", winner()+1);
+        // Display winner
+        if (is_ending && end_timer >= WIN_SHOW_DELAY) {
+            rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
+            rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins!", winner()+1);
+        }
     }
 #endif
 

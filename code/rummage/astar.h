@@ -52,6 +52,7 @@ typedef struct {
     size_t capacity;
     size_t count;
     float cost;
+    bool incomplete;
     cell_t cells[];
 } path_t;
 
@@ -258,20 +259,20 @@ void add_neighbour(node_list_t* list, cell_t cell, float edgeCost) {
     list->count++;
 }
 
-// TODO Add limit of visited nodes (return incomplete path)
-path_t* find_path(cell_t start, cell_t target) {
+path_t* find_path(cell_t start, cell_t target, int max_cost, int max_visit) {
     visited_nodes_t* visited_nodes = calloc(1, sizeof(visited_nodes_t));
     node_list_t* neighbours = calloc(1, sizeof(node_list_t));
     node_t current = get_node(visited_nodes, start);
     node_t goal = get_node(visited_nodes, target);
     node_t best = current;
+    int remaining = max_visit;
     path_t* path = NULL;
     
     set_target(goal);
     get_record(current)->estimated_cost = estimate_cost(current, goal);
     add_to_open(current, 0, empty_node);
 
-    while (visited_nodes->open_count > 0 && !is_target((current = make_node(visited_nodes, visited_nodes->open[0])))) {
+    while ((max_visit == -1 || remaining-- > 0) && visited_nodes->open_count > 0 && !is_target((current = make_node(visited_nodes, visited_nodes->open[0])))) {
         remove_from_open(current);
         get_record(current)->closed = true;
         
@@ -288,6 +289,11 @@ path_t* find_path(cell_t start, cell_t target) {
                 if (neighbour_estimated_cost < get_record(best)->estimated_cost) {
                     best = neighbour;
                 }
+            }
+
+            // Stop as soon as the best path reached the targeted cost
+            if (max_cost != -1 && get_record(best)->cost >= max_cost) {
+                break;
             }
             
             if (!has_estimated_cost(neighbour)) {
@@ -311,6 +317,11 @@ path_t* find_path(cell_t start, cell_t target) {
     // If goal is unreachable, return cheapest path to the closest cell
     if (!is_target(current)) {
         set_target(best);
+        current = best;
+    }
+    
+    if (is_empty(goal)) {
+        set_target(current);
     }
     
     if (is_target(current)) {
@@ -325,6 +336,8 @@ path_t* find_path(cell_t start, cell_t target) {
         path = malloc(sizeof(path_t) + (count * sizeof(cell_t)));
         path->count = count;
         path->cost = get_record(current)->cost;
+        cell_t best_cell = get_record(best)->cell;
+        path->incomplete = (target.x != best_cell.x || target.y != best_cell.y);
 
         n = current;
         for (size_t i=count; i>0; i--) {
@@ -351,6 +364,10 @@ void free_path(path_t* path) {
 
 size_t get_path_count(path_t* path) {
     return path ? path->count : 0;
+}
+
+bool get_path_complete(path_t* path) {
+    return path ? !path->incomplete : false;
 }
 
 cell_t* get_path_cell(path_t* path, size_t index) {

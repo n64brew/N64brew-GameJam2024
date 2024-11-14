@@ -26,6 +26,7 @@
 #define T3D_MODEL_SCALE 64
 #define COLLISION_CORRECTIVE_FACTOR 1.3f
 #define MAP_REDUCTION_FACTOR 4
+#define MAX_PATH_VISIT 200
 #define PATH_LENGTH 10
 #define NO_PATH 9999
 #define WAYPOINT_DELAY 60
@@ -235,9 +236,6 @@ float heuristic(cell_t from, cell_t to) {
 
 
 
-// FIXME DON'T GET STUCK WHEN THERE IS NO PATH !!!
-// FIXME (fix find_path() ??? issue with empty node maybe ?)
-// FIXME implement early exit / depth limit? --> ALWAYS LIMIT !!!
 void update_path(PlyNum i) {
     // Clear path
     for (int j=0; j<PATH_LENGTH; j++) {
@@ -254,9 +252,10 @@ void update_path(PlyNum i) {
     cell_t target_node = {(int)target.v[0], (int)target.v[2]};
     //debugf("find_path(%d %d, %d %d)\n", start_node.x, start_node.y, target_node.x, target_node.y);
     visited = 0;
-    path_t* path = find_path(start_node, target_node);
+    // TODO Adjust path length depending on ai player difficulty ?
+    path_t* path = find_path(start_node, target_node, PATH_LENGTH-1, MAX_PATH_VISIT);
     if (get_path_count(path) > 1) {
-        //debugf("path points count: %d\n", get_path_count(path));
+        debugf("path points count: %d (complete: %d)\n", get_path_count(path), get_path_complete(path));
         for (int j=0; j<get_path_count(path); j++) {
             if (players[i].path_pos >= PATH_LENGTH-1)   break;
             //debugf("getting point #%d\n", j);
@@ -528,7 +527,7 @@ void game_init()
     T3DModel* player_model = t3d_model_load("rom:/rummage/player.t3dm");
     for (int i=0; i<MAXPLAYERS; i++) {
         players[i].w = 1.42f * 0.2f * T3D_MODEL_SCALE;
-        players[i].h = 1.42f * 0.2f * T3D_MODEL_SCALE;
+        players[i].h = players[i].w;    // Player is expected to be a square for collisions and pathfinding
         players[i].max_y = 3.60f * 0.2f * T3D_MODEL_SCALE;
         players[i].scale = (T3DVec3){{0.2f, 0.2f, 0.2f}};
         players[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
@@ -661,7 +660,7 @@ void game_logic(float deltatime)
                                 debugf("player #%d hurting player #%d\n", i, j);
                                 start_player_hurt(j);
                                 // Steal key, if any
-                                if (players[j].has_key) {
+                                if (players[j].has_key && !players[j].has_won) {
                                     players[j].has_key = false;
                                     players[j].had_key = false;
                                     players[i].has_key = true;
@@ -677,25 +676,6 @@ void game_logic(float deltatime)
             if (players[i].is_human) {  // Human player
                 joypad_port_t port = core_get_playercontroller(i);
                 joypad_inputs_t joypad = joypad_get_inputs(port);
-                // Exit minigame by pressing start
-                if (joypad.btn.start) {
-                    minigame_end();
-                }
-                // Player actions: rummage, open vault, grab other player
-                if(joypad.btn.a) {  // TODO use new key presses only ?
-                    // If the player is close to a furniture, search for the key
-                    for (int j=0; j<FURNITURES_COUNT; j++) {
-                        rummage(i, j);
-                    }
-                    if (players[i].has_key) {
-                        for (int j=0; j<VAULTS_COUNT; j++) {
-                            open(i, j);
-                        }
-                    }
-                } else if (joypad.btn.b) {
-                    wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
-                    start_player_attack(i);
-                }
                 T3DVec3 newDir = {0};
                 newDir.v[0] = (float)joypad.stick_x * 0.10f;
                 newDir.v[2] = -(float)joypad.stick_y * 0.10f;
@@ -956,6 +936,38 @@ void game_logic(float deltatime)
 
 void game_render(float deltatime)
 {
+    if (is_playing()) {
+        // Player controls
+        for (size_t i = 0; i < MAXPLAYERS; i++) {
+            if (players[i].is_human) {  // Human player
+                if (players[i].hurt_playing_time > 0 || players[i].action_playing_time > 0 || players[i].attack_playing_time > 0) {
+                    continue;
+                }
+                joypad_port_t port = core_get_playercontroller(i);
+                joypad_buttons_t btn = joypad_get_buttons_pressed(port);
+                // Exit minigame by pressing start
+                if (btn.start) {
+                    minigame_end();
+                }
+                // Player actions: rummage, open vault, grab other player
+                if(btn.a) {
+                    // If the player is close to a furniture, search for the key
+                    for (int j=0; j<FURNITURES_COUNT; j++) {
+                        rummage(i, j);
+                    }
+                    if (players[i].has_key) {
+                        for (int j=0; j<VAULTS_COUNT; j++) {
+                            open(i, j);
+                        }
+                    }
+                } else if (btn.b) {
+                    wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                    start_player_attack(i);
+                }
+            }
+        }
+    }
+
     // Room
     rspq_block_run(room.dpl);
 
@@ -1050,11 +1062,25 @@ void game_render_gl(float deltatime)
                 draw_line(curr.v[0], next_point.v[0], curr.v[1], next_point.v[1], curr.v[2], next_point.v[2], 0.5f, 0.5f, 0.5f);
                 // Draw waypoints
                 float r = 2.0f;
-                draw_aabb(next_point.v[0]-r, next_point.v[0]+r, next_point.v[1], next_point.v[1], next_point.v[2]-r, next_point.v[2]+r, 0.5f, 0.8f, 0.5f);
+                draw_aabb(
+                    next_point.v[0]-r, next_point.v[0]+r,
+                    next_point.v[1], next_point.v[1],
+                    next_point.v[2]-r, next_point.v[2]+r,
+                    0.5f, 0.8f, 0.5f
+                );
                 curr = next_point;
                 next = players[i].path[players[i].path_pos+(++j)];
             }
+            // Target
+            float r = 4.0f;
+            draw_aabb(
+                players[i].target.v[0]-r, players[i].target.v[0]+r,
+                players[i].target.v[1], players[i].target.v[1],
+                players[i].target.v[2]-r, players[i].target.v[2]+r,
+                players[i].color.r/255.0f, players[i].color.g/255.0f, players[i].color.b/255.0f
+            );
         }
+        // Draw attack range
         if (players[i].attack_playing_time <= ATTACK_START && players[i].attack_playing_time >= ATTACK_END) {
             float x = players[i].attack_range.p.x;
             float y = players[i].position.v[1];
