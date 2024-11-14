@@ -1,8 +1,7 @@
 /***************************************************************
-                         examplegame.c
+                         rippergame.c
                                
-An example minigame to demonstrate how to use the template for
-the game jam.
+RiPpEr253's entry into the N64Brew 2024 Gamejam
 ***************************************************************/
 
 #include <libdragon.h>
@@ -16,7 +15,7 @@ the game jam.
 #define COUNTDOWN_DELAY 4.0f
 #define FINISH_DELAY 10.0f
 #define CONTROLLER_LOWER_DEADZONE 4
-#define CONTROLLER_UPPER_DEADZONE 60
+#define CONTROLLER_UPPER_DEADZONE 50
 
 #define DEBUG_FONT 1
 
@@ -33,18 +32,21 @@ T3DVec3 lightDirVec;
 T3DModel* modelMap;
 T3DModel* modelCollision;
 
+// Enumerator for teams
 typedef enum
 {
     teamThief,
     teamGuard
 } player_team;
 
+// Enumerator for collision channels
 typedef enum
 {
     collisionAll,
     collisionGuardOnly
 } collision_type;
 
+// The player struct, all info needed by guards and thieves go in here
 typedef struct
 {
     int playerNumber;
@@ -65,7 +67,7 @@ typedef struct
     bool isAi;
     float stunTimer; // stunTimer stops players from taking action while count is != 0
     float abilityTimer; // cooldown timer for abilities
-    //TODO: Remove, temp AI variable
+    // TODO: Remove, temp AI variable
     int framesRemainingAi;
     T3DVec3 aiDir;
 } player_data;
@@ -82,7 +84,7 @@ typedef struct
 typedef struct
 {
     T3DMat4FP* modelMatFP;
-    //rspq_block_t* dplCollision;
+    // rspq_block_t* dplCollision;
     T3DVec3 collisionCentrePos;
     collision_type collisionType;
     int sizeX;
@@ -147,7 +149,11 @@ void debugInfoDraw(float deltaTime)
     }
 }
 
-// create and set collisions
+/*==============================
+    collision_init
+    Initialises collision objects array manually
+    with positions, sizes and collision types
+==============================*/
 void collision_init()
 {
     collisionObjects[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
@@ -163,13 +169,20 @@ void collision_init()
     collisionObjects[1].sizeZ = 100;
 }
 
+/*==============================
+    collision_draw
+    Iterates over all collision objects
+    and draws them out
+    Could be more optimised with display lists,
+    but it's intended for debugging
+==============================*/
 void collision_draw()
 {
     int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
 
     for(int iDx = 0; iDx < numberOfObjects; iDx++)
     {
-        //update matrix
+        // update matrix
         t3d_mat4fp_from_srt_euler(collisionObjects[iDx].modelMatFP,
             (float[3]){collisionObjects[iDx].sizeX * 0.00625f, 1.0f,collisionObjects[iDx].sizeZ *  0.00625f},
             (float[3]){0.0f, 0, 0},
@@ -187,15 +200,21 @@ void collision_draw()
 // pass in position to check if intersecting
 // adjust the passed in vector accordingly
 // return true if colliding
+
+/*==============================
+    collision_check
+    pass in a collisionresult_data struct
+    and a position to check if intersecting
+==============================*/
 void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
 {
     returnStruct->didCollide = false; returnStruct->collisionType = collisionAll;
 
     int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
 
+    // iterate over every collision box to check
     for(int iDx = 0; iDx < numberOfObjects; iDx++)
     {
-        
         if( pos->v[0] > collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2) &&
             pos->v[0] < collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2) &&
             pos->v[2] > collisionObjects[iDx].collisionCentrePos.v[2] - (collisionObjects[iDx].sizeZ / 2) &&
@@ -205,10 +224,14 @@ void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
             return;
         }
     }
-    // iterate over every collision box to check
     return;
 }
 
+/*==============================
+    collision_cleanup
+    The collision object cleanup function,
+    frees any memory allocated to collision objects
+==============================*/
 void collision_cleanup()
 {
     int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
@@ -422,25 +445,27 @@ void player_fixedloop(float deltaTime, int playerNumber)
         players[playerNumber].currSpeed *= 0.64f;
     }
     
-    // move the player
+    // simulate a move for the player
     T3DVec3 tempPosition = players[playerNumber].playerPos;
     tempPosition.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
     tempPosition.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
 
+    // do collision checks here
     collisionresult_data collisionResult;
     
     collision_check(&collisionResult, &tempPosition);
 
+    // use collisionResult data to determine if to apply simulated move
     if(!collisionResult.didCollide)
     {
         players[playerNumber].playerPos = tempPosition;
     }
+    // Check if the player is a thief and so ignores Guard Only collision
     if(collisionResult.didCollide && collisionResult.collisionType == collisionGuardOnly && players[playerNumber].playerTeam == teamThief)
     {
         players[playerNumber].playerPos = tempPosition;
     }
     // and limit movement inside bounding box
-    // do collision checks here
     const float BOX_SIZE = 140.0f;
     if(players[playerNumber].playerPos.v[0] < -BOX_SIZE)players[playerNumber].playerPos.v[0] = -BOX_SIZE;
     if(players[playerNumber].playerPos.v[0] > BOX_SIZE)players[playerNumber].playerPos.v[0] = BOX_SIZE;
@@ -485,20 +510,6 @@ void player_loop(float deltaTime, int playerNumber)
         if(btn.start) minigame_end();
 
         if(btn.a) players[playerNumber].stunTimer = 1.0f;
-        // rumble pak test code
-
-        /*if(joypad_get_rumble_supported(controllerPort) && btn.a)
-        {
-            joypad_set_rumble_active(controllerPort, true);
-        }
-        else
-        {
-            joypad_set_rumble_active(controllerPort, false);
-        }*/
-        /*if(joypad_get_rumble_supported(controllerPort) && btn.b)
-        {
-            joypad_set_rumble_active(controllerPort, false);
-        }*/
     }
 
     t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
@@ -511,7 +522,7 @@ void player_loop(float deltaTime, int playerNumber)
     if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
 
     t3d_skeleton_update(&players[playerNumber].skel);
-    //update matrix
+    // update matrix
     t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, players[playerNumber].rotY, 0},
@@ -550,7 +561,7 @@ void objective_init()
 
 void objective_draw()
 {
-    //update matricies
+    // update matricies
     t3d_mat4fp_from_srt_euler(objectives[0].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, 0.0f, 0.0f},
@@ -559,6 +570,7 @@ void objective_draw()
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, 0.0f, 0.0f},
         objectives[1].objectivePos.v);
+    // if objective is active, then go ahead and draw it
     if(objectives[0].isActive) rspq_block_run(objectives[0].dplObjective);
     if(objectives[1].isActive) rspq_block_run(objectives[1].dplObjective);
 }
@@ -587,7 +599,7 @@ void minigame_init()
     gameEnding = false;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_640x480, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_640x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -605,8 +617,8 @@ void minigame_init()
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0,0,-10});
 
     // set camera position and target vectors
-    camPos = (T3DVec3){{0, 175.0f, 100.0f}};
-    camTarget = (T3DVec3){{0, 0, 40}};
+    camPos = (T3DVec3){{0, 175.0f, 60.0f}};
+    camTarget = (T3DVec3){{0, 0, 20}};
 
     // set up a vector for the directional light
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
@@ -699,7 +711,8 @@ void minigame_loop(float deltatime)
     uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
 
     // set the projection matrix for the viewport
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 260.0f);
+    float aspectRatio = (float)viewport.size[0] / ((float)viewport.size[1]*2);
+    t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), aspectRatio, 20.0f, 260.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     // Draw our 3D frame
@@ -753,7 +766,7 @@ void minigame_loop(float deltatime)
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 235, "Starting in %i...", (int)countdownTimer);
     }
     
-    //detach the queue to flip the buffers and show it on screen
+    // detach the queue to flip the buffers and show it on screen
     rdpq_detach_show();
 
     return;
