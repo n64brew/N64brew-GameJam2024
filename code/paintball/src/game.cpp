@@ -66,7 +66,7 @@ void Game::render(float deltaTime) {
     t3d_light_set_count(1);
 
     // 3D
-    mapRenderer->render();
+    mapRenderer->render(viewport);
     gameplayController.render(deltaTime, viewport, state);
 
     // 2D

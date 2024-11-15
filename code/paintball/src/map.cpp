@@ -2,10 +2,6 @@
 
 MapRenderer::MapRenderer() :
     surface {FMT_CI8, MapWidth, MapWidth},
-    matFP {
-        (T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)),
-        free_uncached
-    },
     block {nullptr, rspq_block_free},
     sprite {sprite_load("rom:/paintball/splash.ia4.sprite"), sprite_free},
     tlut {
@@ -16,14 +12,6 @@ MapRenderer::MapRenderer() :
 {
     debugf("Map renderer initialized\n");
     assertf(surface.get(), "surface is null");
-    assertf(matFP.get(), "Map matrix is null");
-
-    t3d_mat4fp_from_srt_euler(
-        matFP.get(),
-        T3DVec3 {1.f, 1.f, 1.f},
-        T3DVec3 {0 , 0 , 0},
-        T3DVec3 {-SegmentSize * MapWidth/TileSize / 2, 0, -SegmentSize * MapWidth/TileSize / 2}
-    );
 
     rdpq_attach(surface.get(), nullptr);
         rdpq_set_scissor(0, 0, MapWidth, MapWidth);
@@ -53,8 +41,8 @@ MapRenderer::MapRenderer() :
             int pixelX = ix * TileSize;
             int pixelY = iy * TileSize;
 
-            int16_t x = ix * SegmentSize;
-            int16_t y = iy * SegmentSize;
+            int16_t x = ix * SegmentSize-SegmentSize * MapWidth/TileSize / 2;
+            int16_t y = iy * SegmentSize-SegmentSize * MapWidth/TileSize / 2;
 
             // TODO: convert to tri strip
             vertices[idx * 2] = (T3DVertPacked){
@@ -80,11 +68,11 @@ MapRenderer::MapRenderer() :
         }
     }
 
-
-    rspq_block_begin();
-
-    block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
-
+    // for (int i = 0; i < MapWidth/TileSize * MapWidth/TileSize; i++) {
+    //     int x = i % (MapWidth/TileSize) * TileSize;
+    //     int y = i / (MapWidth/TileSize) * TileSize;
+    //     __splash(x + 16, y + 16, PLAYER_1);
+    // }
 }
 
 MapRenderer::~MapRenderer() {
@@ -93,9 +81,7 @@ MapRenderer::~MapRenderer() {
     free_uncached(vertices);
 }
 
-void MapRenderer::render() {
-    // assertf(block.get(), "Map block is null");
-
+void MapRenderer::render(const T3DViewport &viewport) {
     for (std::size_t i = 0; i < newSplashCount; i++) {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
         int finalX = (newSplashes[i].x/distancePerSegment) * MapWidth + MapWidth/2;
@@ -116,10 +102,13 @@ void MapRenderer::render() {
     rdpq_mode_filter(FILTER_POINT);
     rdpq_mode_persp(true);
 
-    t3d_matrix_push(matFP.get());
     for (int iy = 0; iy < MapWidth/TileSize; iy++) {
         for (int ix = 0; ix < MapWidth/TileSize; ix++ ) {
             int idx = iy * (MapWidth/TileSize) + ix;
+
+            // This assumes zero height
+            bool visible = t3d_frustum_vs_aabb_s16(&viewport.viewFrustum, vertices[idx * 2].posA, vertices[idx * 2+1].posB);
+            if (!visible) continue;
 
             int pixelX = ix * TileSize;
             int pixelY = iy * TileSize;
@@ -136,8 +125,6 @@ void MapRenderer::render() {
             t3d_tri_draw(2, 1, 3);
         }
     }
-    t3d_matrix_pop(1);
-    // rspq_block_run(block.get());
 }
 
 void MapRenderer::__splash(int x, int y, PlyNum player) {

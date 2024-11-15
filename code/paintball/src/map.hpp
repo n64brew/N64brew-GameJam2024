@@ -29,7 +29,6 @@ class MapRenderer
 {
     private:
         RDPQSurface surface;
-        U::T3DMat4FP matFP;
         U::RSPQBlock block;
         // U::RSPQBlock paintBlock;
         U::Sprite sprite;
@@ -47,7 +46,7 @@ class MapRenderer
     public:
         MapRenderer();
         ~MapRenderer();
-        void render();
+        void render(const T3DViewport &viewport);
         void splash(float x, float y, PlyNum team);
 };
 
