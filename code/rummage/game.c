@@ -25,7 +25,7 @@
 
 #define T3D_MODEL_SCALE 64
 #define MAP_REDUCTION_FACTOR 4
-#define MAX_PATH_VISIT 200
+#define MAX_PATH_VISIT 300
 #define PATH_8_WAYS 0
 #define PATH_LOOKUP 30
 #define PATH_LENGTH 10
@@ -40,12 +40,13 @@
 #define ATTACK_OFFSET 15.0f
 #define ATTACK_RADIUS 10.0f
 #define HURT_TIME (50.0f/60.0f)
-#define FURNITURE_KEEPOUT 50
+#define ROOM_SCALE 1.25f
+#define FURNITURE_KEEPOUT 60
 #define FURNITURES_ROWS 4
 #define FURNITURES_COLS 4
 #define FURNITURES_COUNT (FURNITURES_ROWS * FURNITURES_COLS)
 #define FURNITURE_SCALE 0.75f
-#define VAULTS_COUNT 3
+#define VAULTS_COUNT (2*(FURNITURES_ROWS-1) + (FURNITURES_COLS-1))
 
 bool playing = false;
 bool paused = false;
@@ -92,7 +93,8 @@ typedef enum {
     MOVING_TO_PLAYER,
     ATTACKING,
     MOVING_TO_VAULT,
-    OPENING_VAULT
+    OPENING_VAULT,
+    DEADFISH = 99
 } ai_state_t;
 
 typedef struct {
@@ -204,7 +206,7 @@ inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
 void update_obstacles() {
     // Precompute obstacles in map coordinates (is_walkable takes 150-400 cyces vs 4000+ when computing on-the-fly)
     // Margin around walls and obstacles to account for players width
-    float margin = players[0].w/2.0f;
+    float margin = MAP_REDUCTION_FACTOR + players[0].w/2.0f;
     // Walls
     for (int x=0; x<margin; x++) {
         for (int y=0; y<room.h; y++) {
@@ -282,7 +284,9 @@ void add_neighbours(node_list_t* list, cell_t cell) {
                 float cost = (x == cell.x || y == cell.y) ? 1 : 1.414;
                 add_neighbour(list, (cell_t){x, y}, cost);
 #else
-                add_neighbour(list, (cell_t){x, y}, 1);
+                if (x == cell.x || y == cell.y) {
+                    add_neighbour(list, (cell_t){x, y}, 1);
+                }
 #endif
             }
         }
@@ -297,6 +301,11 @@ float heuristic(cell_t from, cell_t to) {
 
 
 void update_path(PlyNum i) {
+    // Keep track of latest waypoint, if any
+    T3DVec3 latest_waypoint = (T3DVec3){{NO_PATH, 0, NO_PATH}};
+    if (players[i].path_pos > 0) {
+        latest_waypoint = players[i].path[players[i].path_pos-1];
+    }
     // Clear path
     for (int j=0; j<PATH_LENGTH; j++) {
         players[i].path[j].v[0] = NO_PATH;
@@ -312,8 +321,9 @@ void update_path(PlyNum i) {
     cell_t target_node = {(int)target.v[0], (int)target.v[2]};
     //debugf("find_path(%d %d, %d %d)\n", start_node.x, start_node.y, target_node.x, target_node.y);
     visited = 0;
-    // If start point is not walkable, walk back
+    // If start point is not walkable, start from last waypoint
     if (!is_walkable(start_node)) {
+        /*
         debugf("Player #%d looking for a path from an unwalkable cell (%f %f) (%d %d): walk back a bit\n", i, players[i].position.v[0], players[i].position.v[2], start_node.x, start_node.y);
         int steps=1;
         cell_t walkback = {(int) start_node.x - steps * players[i].direction.v[0], (int) start_node.y - steps * players[i].direction.v[2]};
@@ -325,7 +335,15 @@ void update_path(PlyNum i) {
         players[i].path[players[i].path_pos].v[0] = walkback.x;
         players[i].path[players[i].path_pos].v[2] = walkback.y;
         debugf("Walk back %d cells to (%d %d)\n", steps, walkback.x, walkback.y);
+        //start_node = walkback;
         return;
+        */
+
+        debugf("Player #%d looking for a path from an unwalkable cell (%f %f) (%d %d): search path from latest waypoint %f %f\n", i, players[i].position.v[0], players[i].position.v[2], start_node.x, start_node.y, latest_waypoint.v[0], latest_waypoint.v[2]);
+        start_node.x = (int)latest_waypoint.v[0];
+        start_node.y = (int)latest_waypoint.v[2];
+
+        //players[i].state = DEADFISH;
     }
     path_t* path = find_path(start_node, target_node, players[i].path_lookup, MAX_PATH_VISIT);
     if (get_path_count(path) > 1) {
@@ -336,16 +354,31 @@ void update_path(PlyNum i) {
             if (players[i].path_pos >= keep)   break;
             //debugf("getting point #%d\n", j);
             cell_t* node = get_path_cell(path, j);
-            //debugf("add point: %d %d\n", node->x, node->y);
+            if (players[i].state == DEADFISH) {
+                debugf("add point: %d %d\n", node->x, node->y);
+            }
             players[i].path[players[i].path_pos].v[0] = node->x;
             players[i].path[players[i].path_pos].v[2] = node->y;
             players[i].path_pos++;
         }
         players[i].path_pos = 0;
+        if (players[i].state == DEADFISH) {
+            for (int x=0; x<map_width; x++) {
+                debugf("%s", (x%10==0) ? "|" : " ");
+            }
+            debugf("\n");
+            for (int y=0; y<map_height; y++) {
+                debugf("%s", (y%10==0) ? ">" : " ");
+                for (int x=0; x<map_width; x++) {
+                    debugf("%d", *(map+y*map_width+x));
+                }
+                debugf("\n");
+            }
+        }
     } else {
-        //debugf("No path from %d %d to %d %d\n", start_node.x, start_node.y, target_node.x, target_node.y);
+        debugf("No path from %d %d to %d %d\n", start_node.x, start_node.y, target_node.x, target_node.y);
     }
-    //debugf("visited: %d\n", visited);
+    debugf("visited: %d\n", visited);
     free_path(path);
 }
 
@@ -516,12 +549,12 @@ void reset_idle_delay(int i) {
 void game_init()
 {
     // Init room
-    room.scale = (T3DVec3){{1, 1, 1}};
+    room.scale = (T3DVec3){{ROOM_SCALE, ROOM_SCALE, ROOM_SCALE}};
     room.rotation = (T3DVec3){{0, 0, 0}};
     room.position = (T3DVec3){{0, 0, 0}};
-    room.w = 4.8 * T3D_MODEL_SCALE;
-    room.h = 4.8 * T3D_MODEL_SCALE;
-    room.max_y = 1.81f * T3D_MODEL_SCALE;
+    room.w = 4.8 * ROOM_SCALE * T3D_MODEL_SCALE;
+    room.h = 4.8 * ROOM_SCALE * T3D_MODEL_SCALE;
+    room.max_y = 1.81f * ROOM_SCALE * T3D_MODEL_SCALE;
     room.model = t3d_model_load("rom:/rummage/room.t3dm");
     room.mat_fp = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(room.mat_fp, room.scale.v, room.rotation.v, room.position.v);
@@ -581,10 +614,31 @@ void game_init()
         vaults[i].zone_w = vaults[i].w/1.5f;
         vaults[i].zone_h = 10.0f;
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
-        vaults[i].rotated = (i-1) % 2;
-        vaults[i].rotation = (T3DVec3){{0, (i-1)*M_PI/2, 0}};
-        vaults[i].position = (T3DVec3){{ (i-1)*(room.w-vaults[i].h)/2.0f, 0, -1*(room.h-vaults[i].h)/2.0f*(i%2) }};
-        vaults[i].direction = (T3DVec3){{1-i, 0, i%2}};
+        // Vaults are place in-between furniture rows
+        float slot_w = (room.w-2*FURNITURE_KEEPOUT)/(FURNITURES_COLS-1);
+        float slot_h = (room.h-2*FURNITURE_KEEPOUT)/(FURNITURES_ROWS-1);
+        if (i < FURNITURES_ROWS-1) {
+            // (rows-1) vaults on the left
+            int y = FURNITURES_ROWS - 2 - i;
+            vaults[i].rotated = true;
+            vaults[i].rotation = (T3DVec3){{0, -1*M_PI/2, 0}};
+            vaults[i].position = (T3DVec3){{ -1*(room.w-vaults[i].h)/2.0f, 0, -room.h/2.0f + FURNITURE_KEEPOUT + (slot_h/2.0f) * (1+2*y) }};
+            vaults[i].direction = (T3DVec3){{1, 0, 0}};
+        } else if (i < FURNITURES_ROWS-1+FURNITURES_COLS-1) {
+            // (cols-1) vaults on top
+            int x = i - (FURNITURES_ROWS-1);
+            vaults[i].rotated = false;
+            vaults[i].rotation = (T3DVec3){{0, 0, 0}};
+            vaults[i].position = (T3DVec3){{ -room.w/2.0f + FURNITURE_KEEPOUT + (slot_w/2.0f) * (1+2*x), 0, -1*(room.h-vaults[i].h)/2.0f }};
+            vaults[i].direction = (T3DVec3){{0, 0, 1}};
+        } else {
+            // (rows-1) vaults on the right
+            int y = VAULTS_COUNT - 1 - i;
+            vaults[i].rotated = true;
+            vaults[i].rotation = (T3DVec3){{0, M_PI/2, 0}};
+            vaults[i].position = (T3DVec3){{ (room.w-vaults[i].h)/2.0f, 0, -room.h/2.0f + FURNITURE_KEEPOUT + (slot_h/2.0f) * (1+2*y) }};
+            vaults[i].direction = (T3DVec3){{-1, 0, 0}};
+        }
         vaults[i].bbox = usable_actor_bounding_box((usable_actor_t*)&vaults[i]);
         vaults[i].zone_bbox = usable_zone_bounding_box((usable_actor_t*)&vaults[i]);
         t3d_vec3_scale(&vaults[i].zone_target, &vaults[i].direction, vaults[i].h/2.0f + vaults[i].zone_h);
@@ -965,6 +1019,11 @@ void game_logic(float deltatime)
                         players[i].state = IDLE;
                         break;
                     }
+                    case DEADFISH:
+                    {
+                        // Do nothing, player out
+                        break;
+                    }
                     default:
                     {
                         reset_idle_delay(i);
@@ -1142,12 +1201,30 @@ void game_render_gl(float deltatime)
     for (int i=0; i<FURNITURES_COUNT; i++) {
         render_usable_actor_aabb((usable_actor_t*)&furnitures[i]);
         render_usable_zone_aabb((usable_actor_t*)&furnitures[i]);
+        if (furnitures[i].has_key) {
+            float r = 3.0f;
+            draw_aabb(
+                furnitures[i].position.v[0]-r, furnitures[i].position.v[0]+r,
+                furnitures[i].max_y, furnitures[i].max_y,
+                furnitures[i].position.v[2]-r, furnitures[i].position.v[2]+r,
+                0.8f, 0.2f, 0.2f
+            );
+        }
     }
 
     // Vaults
     for (int i=0; i<VAULTS_COUNT; i++) {
         render_usable_actor_aabb((usable_actor_t*)&vaults[i]);
         render_usable_zone_aabb((usable_actor_t*)&vaults[i]);
+        if (vaults[i].is_target) {
+            float r = 3.0f;
+            draw_aabb(
+                vaults[i].position.v[0]-r, vaults[i].position.v[0]+r,
+                vaults[i].max_y, vaults[i].max_y,
+                vaults[i].position.v[2]-r, vaults[i].position.v[2]+r,
+                0.8f, 0.2f, 0.2f
+            );
+        }
     }
 
     // Players
