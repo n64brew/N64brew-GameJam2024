@@ -3,8 +3,14 @@
 Game::Game() :
     viewport(t3d_viewport_create()),
     font("rom:/squarewave.font64", MainFont),
+    timer({nullptr, delete_timer}),
     mapRenderer(std::make_shared<MapRenderer>()),
-    gameplayController(mapRenderer)
+    gameplayController(mapRenderer),
+    state({
+        .gameTime = 0.0f,
+        .isCountdown = true,
+        .gameFinished = false
+    })
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
@@ -36,8 +42,11 @@ void Game::render(float deltaTime) {
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
-    T3DVec3 up = (T3DVec3){{0,1,0}};
+    // Update camera
+    t3d_vec3_add(camTarget, state.avPos, T3DVec3{0, 0, 40});
+    t3d_vec3_add(camPos, state.avPos, T3DVec3{0, 125.0f, 100.0f});
 
+    T3DVec3 up = (T3DVec3){{0,1,0}};
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
@@ -56,22 +65,42 @@ void Game::render(float deltaTime) {
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
+    // 3D
     mapRenderer->render();
+    gameplayController.render(deltaTime, viewport, state);
 
-    gameplayController.render(deltaTime, viewport);
+    // 2D
     gameplayController.renderUI();
+    uiRenderer.render(state);
+    rdpq_detach_show();
 
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
     debugf("FPS: %.2f, heap Mem: %d KiB\n", display_get_fps(), heap_stats.used/1024);
-
-    rdpq_detach_show();
 }
 
 void Game::fixedUpdate(float deltaTime) {
-    T3DVec3 avPos = gameplayController.fixedUpdate(deltaTime);
-    t3d_vec3_add(camTarget, avPos, T3DVec3{0, 0, 40});
-    t3d_vec3_add(camPos, avPos, T3DVec3{0, 125.0f, 100.0f});
+    state.gameTime += deltaTime;
+    gameplayController.fixedUpdate(deltaTime, state);
+
+    updateState();
+}
+
+void Game::updateState() {
+    if (state.isCountdown && state.gameTime > 3.0f) {
+        state.isCountdown = false;
+    }
+
+    if (state.gameFinished && timer.get() == nullptr) {
+        timer = {
+            new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
+            delete_timer
+        };
+    }
+}
+
+void Game::gameOver() {
+    minigame_end();
 }
 

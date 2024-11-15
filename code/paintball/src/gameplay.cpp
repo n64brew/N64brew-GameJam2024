@@ -2,12 +2,10 @@
 
 GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
     bulletController(map),
-    timer({ nullptr, delete_timer }),
     model({
         t3d_model_load("rom:/paintball/char.t3dm"),
         t3d_model_free
-    }),
-    gameFinished(false)
+    })
     {
         assertf(model.get(), "Player model is null");
 
@@ -214,8 +212,9 @@ void GameplayController::renderPlayerUI(PlayerGameplayData &playerGameplay, Play
     );
 }
 
-void GameplayController::render(float deltaTime, T3DViewport &viewport)
+void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
+    state.avPos = {0};
     int i = 0;
     for (auto& playerOther : playerOtherData)
     {
@@ -224,8 +223,11 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport)
         handleActions(playerGameplay, i);
         renderPlayer(playerGameplay, playerOther, i, viewport, deltaTime);
 
+        t3d_vec3_add(state.avPos, state.avPos, playerGameplay.pos);
+
         i++;
     }
+    t3d_vec3_scale(state.avPos, state.avPos, 0.25);
     bulletController.render(deltaTime);
 }
 
@@ -240,20 +242,24 @@ void GameplayController::renderUI()
     }
 }
 
-T3DVec3 GameplayController::fixedUpdate(float deltaTime)
+void GameplayController::fixedUpdate(float deltaTime, GameState &state)
 {
-    T3DVec3 averagePos = {0};
     uint32_t i = 0;
     for (auto& player : playerOtherData)
     {
         auto& gameplayData = playerGameplayData[i];
-        t3d_vec3_add(averagePos, averagePos, gameplayData.pos);
         simulatePhysics(gameplayData, player, i, deltaTime);
         i++;
     }
 
     std::array<bool, PlayerCount>playerHitStatus = bulletController.fixedUpdate(deltaTime, playerGameplayData);
 
+    // TODO: do this check less frequently
+    checkGameFinished(state, playerHitStatus);
+}
+
+void GameplayController::checkGameFinished(GameState &state, std::array<bool, PlayerCount> &playerHitStatus)
+{
     PlyNum team = playerGameplayData[0].team;
     bool isFinished = true;
     for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
@@ -265,25 +271,15 @@ T3DVec3 GameplayController::fixedUpdate(float deltaTime)
     }
 
     // If you died last, you lose!
-    if (isFinished && !gameFinished) {
-        i = 0;
+    if (isFinished && !state.gameFinished) {
+        uint32_t i = 0;
         for (auto& died : playerHitStatus) {
             if (i < core_get_playercount() && !died) {
+                // TODO: probably better to do this in Game
                 core_set_winner((PlyNum)i);
             }
             i++;
         }
-        gameFinished = true;
-        timer = {
-            new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((GameplayController*)self)->gameOver(); }, this),
-            delete_timer
-        };
+        state.gameFinished = true;
     }
-
-    t3d_vec3_scale(averagePos, averagePos, 0.25);
-    return averagePos;
-}
-
-void GameplayController::gameOver() {
-    minigame_end();
 }

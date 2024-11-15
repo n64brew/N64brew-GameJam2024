@@ -17,6 +17,8 @@
 #include "./constants.hpp"
 #include "./gameplay.hpp"
 #include "./map.hpp"
+#include "./ui.hpp"
+#include "./gamestate.hpp"
 
 #include <functional>
 #include <memory>
@@ -24,10 +26,12 @@
 class Game
 {
     private:
+        // Resources
         Display display;
         T3D t3d;
         T3DViewport viewport;
         RDPQFont font;
+        U::Timer timer;
 
         // Map
         std::shared_ptr<MapRenderer> mapRenderer;
@@ -35,8 +39,17 @@ class Game
         // Controllers
         GameplayController gameplayController;
 
+        // UI
+        UIRenderer uiRenderer;
+
+        // Camera
         T3DVec3 camTarget;
         T3DVec3 camPos;
+
+        GameState state;
+
+        void gameOver();
+        void updateState();
 
     public:
         Game();
