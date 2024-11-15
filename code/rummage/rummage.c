@@ -45,6 +45,7 @@ surface_t* depthBuffer;
 T3DViewport viewport;
 T3DVec3 camPos;
 T3DVec3 camTarget;
+T3DVec3 camUp;
 T3DVec3 lightDirVec;
 rdpq_font_t* fontdbg;
 rdpq_font_t *fonttext;
@@ -59,6 +60,7 @@ wav64_t sfx_winner;
 bool show_wireframe = false;
 #endif
 bool show_debug_text = false;
+int camera_angle = 0;
 
 
 /*==============================
@@ -77,7 +79,7 @@ void minigame_init()
     gl_init();
     float aspect_ratio = (float)display_get_width() / (float)display_get_height();
     float near_plane = 20.0f;
-    float far_plane = 320.0f;
+    float far_plane = 400.0f;
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(-near_plane*aspect_ratio, near_plane*aspect_ratio, -near_plane, near_plane, near_plane, far_plane);
@@ -88,8 +90,9 @@ void minigame_init()
     viewport = t3d_viewport_create();
 
     // Init camera and lighting
-    camPos = (T3DVec3){{0, 200.0f, 80.0f}};
-    camTarget = (T3DVec3){{0, 0, 0}};
+    camPos = (T3DVec3){{0, 160.0f, 200.0f}};
+    camTarget = (T3DVec3){{0, 0, 40.0f}};
+    camUp = (T3DVec3){{0, 1, 0}};
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
@@ -186,13 +189,24 @@ void minigame_loop(float deltatime)
     if (pressed.r) {
         show_debug_text = !show_debug_text;
     }
+    // Switch camera position by pressing C-Up
+    if (pressed.c_up) {
+        camera_angle = (camera_angle+1) % 2;
+        if (camera_angle == 0) {
+            camPos = (T3DVec3){{0, 160.0f, 200.0f}};
+            camTarget = (T3DVec3){{0, 0, 40.0f}};
+        } else {
+            camPos = (T3DVec3){{0, 200.0f, 80.0f}};
+            camTarget = (T3DVec3){{0, 0, 0}};
+        }
+    }
 
     // 3D viewport
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
-    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 200.0f);
+    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &camUp);
 
     // Render the UI
     rdpq_attach(display_get(), depthBuffer);
@@ -213,10 +227,10 @@ void minigame_loop(float deltatime)
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         gluLookAt(
-            0, 200.0, 80.0,
-            0, 0, 0,
-            0, 1, 0
-            );
+            camPos.v[0], camPos.v[1], camPos.v[2],
+            camTarget.v[0], camTarget.v[1], camTarget.v[2],
+            camUp.v[0], camUp.v[1], camUp.v[2]
+        );
         game_render_gl(deltatime);
         gl_context_end();
     }
