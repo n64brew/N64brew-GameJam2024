@@ -16,6 +16,7 @@ Game::Game() :
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
     rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
     rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
+    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 0, 255) };
 
     auto fnt = font.font.get();
     assertf(fnt, "Font is null");
@@ -25,6 +26,8 @@ Game::Game() :
     rdpq_font_style(fnt, 1, &p2Style);
     rdpq_font_style(fnt, 2, &p3Style);
     rdpq_font_style(fnt, 3, &p4Style);
+    rdpq_font_style(fnt, 3, &p4Style);
+    rdpq_font_style(fnt, 4, &style);
 
     camTarget = (T3DVec3){{0, 0, 40}};
     camPos = (T3DVec3){{0, 125.0f, 100.0f}};
@@ -43,8 +46,8 @@ void Game::render(float deltaTime) {
     uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
     // Update camera
-    t3d_vec3_add(camTarget, state.avPos, T3DVec3{0, 0, 40});
-    t3d_vec3_add(camPos, state.avPos, T3DVec3{0, 125.0f, 100.0f});
+    t3d_vec3_add(camTarget, state.avPos, T3DVec3{0, 0, 30});
+    t3d_vec3_add(camPos, state.avPos, T3DVec3{0, 150.0f, 100.0f});
 
     T3DVec3 up = (T3DVec3){{0,1,0}};
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
@@ -58,7 +61,7 @@ void Game::render(float deltaTime) {
     t3d_viewport_attach(&viewport);
 
     rdpq_set_scissor(0, 0, ScreenWidth, ScreenHeight);
-    t3d_screen_clear_color(RGBA32(255, 255, 255, 255));
+    t3d_screen_clear_color(RGBA32(0, 0, 0, 255));
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorAmbient);
