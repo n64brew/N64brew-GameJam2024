@@ -44,12 +44,12 @@ class GameplayController
         void simulatePhysics(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, float deltaTime);
         void handleActions(PlayerGameplayData &gameplayData, uint32_t id);
         void renderPlayer(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, T3DViewport &viewport, float deltaTime);
-        void renderPlayer2ndPass(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id);
+        void renderPlayerUI(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id);
 
     public:
         GameplayController(std::shared_ptr<MapRenderer> map);
         void render(float deltaTime, T3DViewport &viewport);
-        void render2ndPass();
+        void renderUI();
         T3DVec3 fixedUpdate(float deltaTime);
 };
 

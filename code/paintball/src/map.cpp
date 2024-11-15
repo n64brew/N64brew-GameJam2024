@@ -25,7 +25,7 @@ MapRenderer::MapRenderer() :
     );
 
     rdpq_attach(surface.get(), nullptr);
-        rdpq_set_scissor(0, 0, 320, 240);
+        rdpq_set_scissor(0, 0, MapWidth, MapWidth);
         rdpq_clear(RGBA32(0, 0, 0, 0));
     rdpq_detach();
 

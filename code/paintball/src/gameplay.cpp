@@ -172,27 +172,39 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
 
     T3DVec3 billboardPos = (T3DVec3){{
         currentPos.v[0],
-        currentPos.v[1] + 15,
+        currentPos.v[1] + 20,
         currentPos.v[2]
     }};
 
     t3d_viewport_calc_viewspace_pos(viewport,  playerOther.screenPos, billboardPos);
 }
 
-void GameplayController::renderPlayer2ndPass(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id)
+void GameplayController::renderPlayerUI(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id)
 {
-    int x = floorf(playerOther.screenPos.v[0]);
-    int y = floorf(playerOther.screenPos.v[1]);
+    constexpr int margin = ScreenWidth / 16;
+    constexpr int textHalfWidth = 10;
+    constexpr int textHalfHeight = 6;
+    int x = floorf(playerOther.screenPos.v[0]) - textHalfWidth;
+    int y = floorf(playerOther.screenPos.v[1]) - textHalfHeight;
+
+    if (x < margin) x = margin;
+    if (x > (ScreenWidth-margin-2*textHalfWidth) ) x = (ScreenWidth-margin-2*textHalfWidth);
+
+    if (y < (margin + textHalfHeight)) y = (margin + textHalfHeight);
+    if (y > (ScreenHeight-margin-2*textHalfHeight) ) y = (ScreenHeight-margin-2*textHalfHeight);
 
     rdpq_sync_pipe(); // Hardware crashes otherwise
     rdpq_sync_tile(); // Hardware crashes otherwise
 
-    rdpq_textparms_t fontParams { .style_id = playerGameplay.team, .disable_aa_fix = false };
+    rdpq_textparms_t fontParams {
+        .style_id = playerGameplay.team,
+        .width = 20,
+        .align = ALIGN_CENTER, .disable_aa_fix = false };
     rdpq_text_printf(
         &fontParams,
         MainFont,
-        x-5,
-        y-16,
+        x,
+        y,
         "P%lu", //  (%u, %u, %u, %u)
         id + 1//,
         // playerGameplay.health[0],
@@ -217,13 +229,13 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport)
     bulletController.render(deltaTime);
 }
 
-void GameplayController::render2ndPass()
+void GameplayController::renderUI()
 {
     int i = 0;
     for (auto& playerOther : playerOtherData)
     {
         auto& playerGameplay = playerGameplayData[i];
-        renderPlayer2ndPass(playerGameplay, playerOther, i);
+        renderPlayerUI(playerGameplay, playerOther, i);
         i++;
     }
 }
