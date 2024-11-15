@@ -47,6 +47,7 @@
 #define FURNITURES_COUNT (FURNITURES_ROWS * FURNITURES_COLS)
 #define FURNITURE_SCALE 0.75f
 #define VAULTS_COUNT (2*(FURNITURES_ROWS-1) + (FURNITURES_COLS-1))
+#define PLAYER_SCALE 0.2f
 
 bool playing = false;
 bool paused = false;
@@ -298,8 +299,6 @@ float heuristic(cell_t from, cell_t to) {
     return (fabs(from.x - to.x) + fabs(from.y - to.y));
 }
 
-
-
 void update_path(PlyNum i) {
     // Keep track of latest waypoint, if any
     T3DVec3 latest_waypoint = (T3DVec3){{NO_PATH, 0, NO_PATH}};
@@ -439,6 +438,8 @@ void abort_path(int i) {
     players[i].state = IDLE;
 }
 
+
+// Gameplay
 
 void start_player_action(int i) {
     players[i].action_playing_time = ACTION_TIME;
@@ -665,10 +666,10 @@ void game_init()
     };
     T3DModel* player_model = t3d_model_load("rom:/rummage/player.t3dm");
     for (int i=0; i<MAXPLAYERS; i++) {
-        players[i].w = 1.42f * 0.2f * T3D_MODEL_SCALE;
+        players[i].w = 1.42f * PLAYER_SCALE * T3D_MODEL_SCALE;
         players[i].h = players[i].w;    // Player is expected to be a square for collisions and pathfinding
-        players[i].max_y = 3.60f * 0.2f * T3D_MODEL_SCALE;
-        players[i].scale = (T3DVec3){{0.2f, 0.2f, 0.2f}};
+        players[i].max_y = 3.60f * PLAYER_SCALE * T3D_MODEL_SCALE;
+        players[i].scale = (T3DVec3){{PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE}};
         players[i].rotation = (T3DVec3){{0, ((i%2==0) ? -1 : 1) * ((i/2==0) ? 1 : 3) * M_PI/4, 0}};
         float slot_w = (room.w-2*FURNITURE_KEEPOUT)/(FURNITURES_COLS-1);
         float slot_h = (room.h-2*FURNITURE_KEEPOUT)/(FURNITURES_ROWS-1);
@@ -810,6 +811,10 @@ void game_logic(float deltatime)
                                 // Steal key, if any
                                 if (players[j].has_key && !players[j].has_won) {
                                     players[j].has_key = false;
+                                    if (!players[j].is_human) {
+                                        // Stop moving towards vault if the key is lost
+                                        players[j].state = IDLE;
+                                    }
                                     players[j].had_key = false;
                                     players[i].has_key = true;
                                 }
@@ -943,34 +948,29 @@ void game_logic(float deltatime)
                     case MOVING_TO_PLAYER:
                     {
                         // Move towards next waypoint
-                        if (!follow_path(i)) {
+                        bool has_more_waypoints = follow_path(i);
+                        // Attack player if in range, even if the path is not empty
+                        int target_idx = players[i].target_idx;
+                        if (t3d_vec3_distance(&players[i].position, &players[target_idx].position) - players[i].w < ATTACK_OFFSET+ATTACK_RADIUS) {
+                            // Rotate towards player
+                            T3DVec3 diff;
+                            t3d_vec3_diff(&diff, &players[target_idx].position, &players[i].position);
+                            float newAngle = -atan2f(diff.v[0], diff.v[2]);
+                            players[i].rotation.v[1] = newAngle;
+                            // We have reached the target: attack player
+                            players[i].state = ATTACKING;
+                            // TODO Need to abort the path ?
+                        } else if (!has_more_waypoints) {
                             // No more waypoint
                             if (players[i].path_delay < 0) {
                                 abort_path(i);
                             } else {
-                                if (t3d_vec3_distance(&players[i].position, &players[i].target) < ACTION_DISTANCE_THRESHOLD) {
-                                    // FIXME should use a smaller waypoints buffer for a moving target
-                                    // FIXME should also limit pathfinder to a certain depth for better performances
-                                    int target_idx = players[i].target_idx;
-                                    if (t3d_vec3_distance(&players[i].position, &players[target_idx].position) - players[i].w < ATTACK_OFFSET+ATTACK_RADIUS) {
-                                        // Rotate towards player
-                                        T3DVec3 diff;
-                                        t3d_vec3_diff(&diff, &players[target_idx].position, &players[i].position);
-                                        float newAngle = -atan2f(diff.v[0], diff.v[2]);
-                                        players[i].rotation.v[1] = newAngle;
-                                        // We have reached the target: attack player
-                                        players[i].state = ATTACKING;
-                                    } else {
-                                        // TODO Player has moved --> find new position and keep moving
-                                        players[i].target.v[0] = players[target_idx].position.v[0];
-                                        players[i].target.v[1] = players[target_idx].position.v[1];
-                                        players[i].target.v[2] = players[target_idx].position.v[2];
-                                        debugf("Player #%d now chasing player #%d at *new* coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
-                                    }
-                                } else {
-                                    // We haven't reached the target, get more waypoints
-                                    update_path(i);
-                                }
+                                // No need to find remaining waypoints for our original target: find path to the player's new position
+                                players[i].target.v[0] = players[target_idx].position.v[0];
+                                players[i].target.v[1] = players[target_idx].position.v[1];
+                                players[i].target.v[2] = players[target_idx].position.v[2];
+                                debugf("Player #%d now chasing player #%d at *new* coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                update_path(i);
                             }
                         }
                         break;
