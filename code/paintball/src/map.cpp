@@ -95,7 +95,7 @@ MapRenderer::~MapRenderer() {
 void MapRenderer::render() {
     // assertf(block.get(), "Map block is null");
 
-    for (int i = 0; i < newSplashCount; i++) {
+    for (std::size_t i = 0; i < newSplashCount; i++) {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
         int finalX = (newSplashes[i].x/distancePerSegment) * MapWidth + MapWidth/2;
         int finalY = (newSplashes[i].y/distancePerSegment) * MapWidth + MapWidth/2;
@@ -180,6 +180,8 @@ void MapRenderer::__splash(int x, int y, PlyNum player) {
 }
 
 void MapRenderer::splash(float x, float y, PlyNum team) {
+    if (newSplashCount >= newSplashes.size()) return;
+
     newSplashes[newSplashCount].x = x;
     newSplashes[newSplashCount].y = y;
     newSplashes[newSplashCount].team = team;

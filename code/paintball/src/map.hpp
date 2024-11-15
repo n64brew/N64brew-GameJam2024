@@ -36,9 +36,10 @@ class MapRenderer
 
         U::TLUT tlut;
 
-        int newSplashCount;
-        // TODO: is it possible to have more?
-        std::array<Splash, MAXPLAYERS * 2> newSplashes;
+        std::size_t newSplashCount;
+        // Assume all players firing in all possible directions
+        // in reality, they can pop in subticks but should be fine
+        std::array<Splash, PlayerCount * 4> newSplashes;
 
         T3DVertPacked* vertices;
 

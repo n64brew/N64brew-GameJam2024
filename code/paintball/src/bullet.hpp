@@ -42,12 +42,12 @@ class Bullet
 class BulletController
 {
     private:
-        int newBulletCount;
+        std::size_t newBulletCount;
         U::T3DModel model;
         U::RSPQBlock block;
 
-        // TODO: MAXPLAYERS here is not correct for more than 4 players
-        std::array<Bullet, MAXPLAYERS> newBullets;
+        // Assume all players firing in all possible directions
+        std::array<Bullet, PlayerCount * 4> newBullets;
 
         std::array<Bullet, BulletLimit> bullets;
 

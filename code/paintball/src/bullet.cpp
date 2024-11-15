@@ -174,6 +174,8 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
 }
 
 void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum team) {
+    if (newBulletCount >= newBullets.size()) return;
+
     newBullets[newBulletCount].pos = pos;
     newBullets[newBulletCount].velocity = velocity;
     newBullets[newBulletCount].team = team;
