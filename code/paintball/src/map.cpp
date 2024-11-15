@@ -11,7 +11,8 @@ MapRenderer::MapRenderer() :
     tlut {
         (uint16_t*)malloc_uncached(sizeof(uint16_t[256])),
         free_uncached
-    }
+    },
+    newSplashCount(0)
 {
     debugf("Map renderer initialized\n");
     assertf(surface.get(), "surface is null");
