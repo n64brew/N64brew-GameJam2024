@@ -32,6 +32,7 @@ class GameplayController
         // Resources
         BulletController bulletController;
         U::T3DModel model;
+        U::T3DModel shadowModel;
 
         // Player data
         std::vector<PlayerOtherData> playerOtherData;

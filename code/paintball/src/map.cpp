@@ -102,6 +102,8 @@ void MapRenderer::render(const T3DViewport &viewport) {
     rdpq_mode_filter(FILTER_POINT);
     rdpq_mode_persp(true);
 
+    rdpq_mode_zbuf(false, false);
+
     for (int iy = 0; iy < MapWidth/TileSize; iy++) {
         for (int ix = 0; ix < MapWidth/TileSize; ix++ ) {
             int idx = iy * (MapWidth/TileSize) + ix;

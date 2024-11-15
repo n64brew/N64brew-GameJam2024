@@ -5,16 +5,20 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
     model({
         t3d_model_load("rom:/paintball/char.t3dm"),
         t3d_model_free
+    }),
+    shadowModel({
+        t3d_model_load("rom:/paintball/shadow.t3dm"),
+        t3d_model_free
     })
     {
         assertf(model.get(), "Player model is null");
 
         playerOtherData.reserve(PlayerCount);
 
-        playerOtherData.emplace_back(PlayerOtherData {model.get()});
-        playerOtherData.emplace_back(PlayerOtherData {model.get()});
-        playerOtherData.emplace_back(PlayerOtherData {model.get()});
-        playerOtherData.emplace_back(PlayerOtherData {model.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
 
         playerGameplayData.reserve(PlayerCount);
         playerGameplayData.emplace_back(PlayerGameplayData {{-100,0,0}, PLAYER_1, {MaxHealth, 0, 0, 0}});
@@ -145,7 +149,7 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
     double interpolate = core_get_subtick();
     T3DVec3 currentPos {0};
     t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
-    t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 10, 0});
+    t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 0, 0});
 
     const color_t colors[] = {
         PLAYERCOLOR_1,
@@ -162,7 +166,7 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
 
     t3d_mat4fp_from_srt_euler(
         playerOther.matFP.get(),
-        (float[3]){0.125f, 0.125f, 0.125f},
+        (float[3]){0.12f, 0.12f, 0.12f},
         (float[3]){0.0f, playerOther.direction, 0},
         currentPos.v
     );
@@ -172,7 +176,7 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
 
     T3DVec3 billboardPos = (T3DVec3){{
         currentPos.v[0],
-        currentPos.v[1] + 20,
+        currentPos.v[1] + 40,
         currentPos.v[2]
     }};
 

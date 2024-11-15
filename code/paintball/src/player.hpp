@@ -29,7 +29,7 @@ struct PlayerGameplayData
 class PlayerOtherData
 {
     public:
-        PlayerOtherData(T3DModel *model);
+        PlayerOtherData(T3DModel *model, T3DModel *shadowModel);
 
         // Physics
         T3DVec3 accel;

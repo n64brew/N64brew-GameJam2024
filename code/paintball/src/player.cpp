@@ -3,7 +3,7 @@
 PlayerGameplayData::PlayerGameplayData(T3DVec3 pos, PlyNum team, std::array<int, MAXPLAYERS> health) :
     pos(pos), prevPos(pos), team(team), health(health) {}
 
-PlayerOtherData::PlayerOtherData(T3DModel *model) :
+PlayerOtherData::PlayerOtherData(T3DModel *model, T3DModel *shadowModel) :
     accel({0}),
     velocity({0}),
     direction(0),
@@ -39,6 +39,9 @@ PlayerOtherData::PlayerOtherData(T3DModel *model) :
                         t3d_model_draw_object(it.object, skel.get()->boneMatricesFP);
                     }
                 t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
+
+                rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
+                t3d_model_draw(shadowModel);
 
             t3d_matrix_pop(1);
         block = U::RSPQBlock(rspq_block_end(), rspq_block_free);
