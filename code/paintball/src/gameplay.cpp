@@ -193,12 +193,12 @@ void GameplayController::renderPlayer2ndPass(PlayerGameplayData &playerGameplay,
         MainFont,
         x-5,
         y-16,
-        "P%lu (%u, %u, %u, %u)",
-        id + 1,
-        playerGameplay.health[0],
-        playerGameplay.health[1],
-        playerGameplay.health[2],
-        playerGameplay.health[3]
+        "P%lu", //  (%u, %u, %u, %u)
+        id + 1//,
+        // playerGameplay.health[0],
+        // playerGameplay.health[1],
+        // playerGameplay.health[2],
+        // playerGameplay.health[3]
     );
 }
 

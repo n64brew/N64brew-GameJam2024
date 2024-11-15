@@ -116,7 +116,7 @@ void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
     bullet.prevPos = bullet.pos;
 
     T3DVec3 velocityDiff = {0};
-    t3d_vec3_scale(velocityDiff, T3DVec3 {0, -100, 0}, deltaTime);
+    t3d_vec3_scale(velocityDiff, T3DVec3 {0, Gravity, 0}, deltaTime);
     t3d_vec3_add(bullet.velocity, bullet.velocity, velocityDiff);
 
     T3DVec3 posDiff = {0};

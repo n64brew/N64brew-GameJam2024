@@ -26,6 +26,7 @@ constexpr int BulletLimit = 100;
 constexpr float PlayerRadius = 12;
 constexpr int MaxHealth = 100;
 constexpr int Damage = 10;
+constexpr float Gravity = -300;
 
 class Bullet
 {
