@@ -163,12 +163,15 @@ void minigame_fixedloop(float deltatime) {
             gRampage.delay_timer = 0.0f;
             gRampage.state = RAMPAGE_STATE_PLAYING;
             minigame_set_active(true);
+            wav64_set_loop(&rampage_assets_get()->music, true);
+            wav64_play(&rampage_assets_get()->music, 1);
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING) {
         if (minigame_is_done()) {
             gRampage.state = RAMPAGE_STATE_FINISHED;
             gRampage.delay_timer = FINISH_DELAY;
             minigame_set_active(false);
+            mixer_ch_stop(1);
         }
     } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
         gRampage.delay_timer -= deltatime;

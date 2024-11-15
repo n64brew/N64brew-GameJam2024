@@ -41,9 +41,9 @@ static struct Vector3 move_direction[DIRECTION_COUNT] = {
 
 static float max_bound[DIRECTION_COUNT] = {
     2.1f * BUILDING_SPACING,
-    -2.1f * BUILDING_SPACING,
+    2.1f * BUILDING_SPACING,
     2.6f * BUILDING_SPACING,
-    -2.6f * BUILDING_SPACING,
+    2.6f * BUILDING_SPACING,
 };
 
 bool rampage_is_valid_target(struct RampageTank* tank, int dir_index) {

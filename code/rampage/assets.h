@@ -19,6 +19,8 @@ struct RampageAssets {
     struct RampageSplitMesh tankSplit;
 
     sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
+
+    wav64_t music;
 };
 
 void rampage_assets_init();

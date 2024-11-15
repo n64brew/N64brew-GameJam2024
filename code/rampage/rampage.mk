@@ -30,7 +30,8 @@ ASSETS_LIST += \
 	filesystem/rampage/road_straight.sprite \
 	filesystem/rampage/road_tjunction.sprite \
 	filesystem/rampage/road_warning1.sprite \
-	filesystem/rampage/QuirkyRobot.font64
+	filesystem/rampage/QuirkyRobot.font64 \
+	filesystem/rampage/latin_poppy.wav64
 
 assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)

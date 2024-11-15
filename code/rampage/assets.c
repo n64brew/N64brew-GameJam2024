@@ -46,6 +46,8 @@ void rampage_assets_init() {
         sprintf(filename, "rom:/rampage/%d.sprite", i);
         gRampageAssets.countdown_numbers[i] = sprite_load(filename);
     }
+
+    wav64_open(&gRampageAssets.music, "rom:/rampage/latin_poppy.wav64");
 }
 
 void rampage_assets_destroy() {
@@ -60,6 +62,8 @@ void rampage_assets_destroy() {
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         sprite_free(gRampageAssets.countdown_numbers[i]);
     }
+
+    wav64_close(&gRampageAssets.music);
 }
 
 struct RampageAssets* rampage_assets_get() {
