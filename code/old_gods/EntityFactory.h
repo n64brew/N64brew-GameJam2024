@@ -19,7 +19,7 @@ static inline AF_Entity* Entity_Factory_CreatePrimative(AF_ECS* _ecs, Vec3 _pos,
 	*entity->collider = AF_CCollider_ADD_TYPE(_collisionType);//AF_CCollider_Box_ADD();
 	*entity->mesh = AF_CMesh_ADD();
 	entity->mesh->meshType = _meshType;
-	entity->collider->boundingVolume = Vec3_MULT_SCALAR(_scale, 2);
+	entity->collider->boundingVolume = _scale;//Vec3_MULT_SCALAR(_scale, 2);
 	return entity;
 }
 
