@@ -35,6 +35,10 @@
         "sequence_3_graphics.h": "c",
         "sequence_4_graphics.h": "c",
         "rdpq_paragraph.h": "c",
-        "sequence_4.h": "c"
+        "sequence_4.h": "c",
+        "random": "cpp",
+        "sequence_4_input.h": "c",
+        "audio.h": "c",
+        "xm64.h": "c"
     }
 }

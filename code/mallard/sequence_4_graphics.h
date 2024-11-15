@@ -3,6 +3,7 @@
 
 #include <libdragon.h>
 
+extern float sequence_4_time;
 extern int sequence_4_frame;
 extern sprite_t *sequence_4_mallard_idle_sprite;
 extern sprite_t *sequence_4_start_button_sprite;

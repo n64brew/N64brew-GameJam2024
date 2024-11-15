@@ -25,20 +25,36 @@
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
+sprite_t *sequence_4_mallard_logo_black_sprite;
 
 sprite_t *sequence_4_start_button_sprite;
 
 sprite_t *sequence_4_mallard_idle_sprite;
 
+xm64player_t xm;
+// Chunk 1: Loop 4
+// Chunk 2: Loop 14
+// Chunk 3: Loop 18
+// Chunk 4: Loop 23
+// Chunk 5: Loop 30
+// Chunk 6: End on 31
+int sequence_4_currentXMPattern = 4;
+
 rdpq_font_t *sequence_4_font_pacifico;
 rdpq_font_t *sequence_4_font_celtic_garamond_the_second;
 rdpq_font_t *sequence_4_font_halo_dek;
 
+float sequence_4_time = 0.0f;
 int sequence_4_frame;
 bool sequence_4_initialized = false;
 bool sequence_4_finished = false;
 int sequence_4_drawn_characters = 0;
-float sequence_4_paragraph_delay_duration = 0.0f;
+
+float sequence_4_time_to_fade_in_mallard_logo = 1.0f;
+float sequence_4_time_to_show_mallard_logo = 2.0f;
+float sequence_4_time_to_fade_out_mallard_logo = 1.0f;
+
+float sequence_4_time_to_fade_in_paragraph = 1.0f;
 
 void sequence_4_init()
 {
@@ -75,6 +91,12 @@ void sequence_4_init()
     rdpq_text_register_font(FONT_HALODEK, sequence_4_font_halo_dek);
 
     ///////////////////////////////////////////////////////////
+    //                  Set up Graphics                      //
+    ///////////////////////////////////////////////////////////
+
+    sequence_4_mallard_logo_black_sprite = sprite_load("rom:/mallard/mallard_logo_black.rgba32.sprite");
+
+    ///////////////////////////////////////////////////////////
     //                  Set up UI Elements                   //
     ///////////////////////////////////////////////////////////
 
@@ -85,6 +107,14 @@ void sequence_4_init()
     ///////////////////////////////////////////////////////////
 
     sequence_4_mallard_idle_sprite = sprite_load("rom:/mallard/mallard_idle.rgba32.sprite");
+
+    ///////////////////////////////////////////////////////////
+    //                  Set up Audio                         //
+    ///////////////////////////////////////////////////////////
+
+    xm64player_open(&xm, "rom:/mallard/mallard_intro_music.xm64");
+    xm64player_play(&xm, 0);
+    xm64player_seek(&xm, sequence_4_currentXMPattern, 0, 0);
 
     sequence_4_frame = 0;
     sequence_4_initialized = true;
@@ -104,11 +134,16 @@ void sequence_4_cleanup()
     sprite_free(sequence_4_start_button_sprite);
     sprite_free(sequence_4_mallard_idle_sprite);
 
+    // Stop the music and free the allocated memory.
+    xm64player_stop(&xm);
+    xm64player_close(&xm);
+
     // Close the display and free the allocated memory.
     rspq_wait();
     display_close();
 
     // Reset the state.
+    // TODO: Check to make sure that we're resetting the state of a lot of things...
     sequence_4_initialized = false;
     sequence_4_finished = false;
 
@@ -131,51 +166,32 @@ int fade_in_color(float percentage)
     return (int)((1.0f - percentage) * 255.0f);
 }
 
-void sequence_4(float deltatime)
+color_t background_color()
 {
-    sequence_4_frame++;
-    sequence_4_paragraph_delay_duration += deltatime;
-
-    sequence_4_process_controller(deltatime);
-
-    if (!sequence_4_initialized)
+    // Time: 0.0 - 3.0 = White for mallard logo
+    // Time: 3.0 - 4.0 = Fade to Black for paragraph.
+    // Time: 4.0 - ??? = Black for paragraph.
+    if (sequence_4_time < 3.0f)
     {
-        sequence_4_init();
+        return WHITE;
+    }
+    else if (sequence_4_time >= 3.0f && sequence_4_time <= 4.0f)
+    {
+        float percentage = (sequence_4_time - 3.0f) / 1.0f;
+        uint8_t color = fade_in_color(percentage);
+        uint8_t alpha = fade_in_alpha(percentage);
+        return RGBA32(color, color, color, alpha);
     }
 
-    if (sequence_4_finished)
-    {
-        sequence_4_cleanup();
-        return;
-    }
+    return BLACK;
+}
 
-    surface_t *disp = display_get();
-
-    rdpq_attach(disp, NULL);
-
-    float percentage = sequence_4_paragraph_delay_duration > 2.0f ? 1.0f : sequence_4_paragraph_delay_duration / 2.0f;
-    rdpq_clear(
-        RGBA32(
-            fade_in_color(percentage),
-            fade_in_color(percentage),
-            fade_in_color(percentage),
-            fade_in_alpha(percentage)));
-
-    ///////////////////////////////////////////////////////////
-    //                  Draw UI Elements                     //
-    ///////////////////////////////////////////////////////////
-
-    sequence_4_draw_press_start_to_skip();
-    sequence_4_draw_mallard_idle_sprite();
-
-    ///////////////////////////////////////////////////////////
-    //                  Draw Paragraph                       //
-    ///////////////////////////////////////////////////////////
-
+void draw_paragraph()
+{
     int total_chars = strlen(SEQEUENCE_4_PARARGAPH_01);
 
-    // Delay the drawing of the paragraph by 2 seconds.
-    if (sequence_4_paragraph_delay_duration > 2.0f)
+    // Delay the drawing of the paragraph by 5 seconds.
+    if (sequence_4_time > 5.0f)
     {
         // Draw the paragraph one character at a time. Modulo is used to slow down the drawing.
         if ((sequence_4_frame % 4) == 0)
@@ -194,8 +210,8 @@ void sequence_4(float deltatime)
         // .line_spacing = -3,
         .align = ALIGN_CENTER,
         .valign = VALIGN_CENTER,
-        .width = disp->width - (2 * x_margin),
-        .height = disp->height - (2 * y_margin),
+        .width = RESOLUTION_320x240.width - (2 * x_margin),
+        .height = RESOLUTION_320x240.height - (2 * y_margin),
         .wrap = WRAP_WORD,
     };
 
@@ -204,6 +220,100 @@ void sequence_4(float deltatime)
     rdpq_paragraph_t *par = rdpq_paragraph_build(&params, FONT_CELTICGARMONDTHESECOND, SEQEUENCE_4_PARARGAPH_01, &sequence_4_drawn_characters);
     rdpq_paragraph_render(par, x_margin, y_margin);
     rdpq_paragraph_free(par);
+}
 
+void draw_mallard_logo()
+{
+    // if (sequence_4_time < 1.0f)
+    // {
+    //     // TODO: Fade in the mallard logo.
+    //     rdpq_set_mode_standard();
+    //     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    //     rdpq_sprite_blit(sequence_4_mallard_logo_black_sprite,
+    //                      RESOLUTION_320x240.width / 2 - sequence_4_mallard_logo_black_sprite->width / 2,
+    //                      RESOLUTION_320x240.height / 2 - sequence_4_mallard_logo_black_sprite->height / 2,
+    //                      &(rdpq_blitparms_t){
+    //                          .scale_x = 1.0f,
+    //                          .scale_y = 1.0f,
+    //                      });
+    // }
+    if (sequence_4_time < 3.0f)
+    {
+        float percentage = sequence_4_time / 3.0f;
+        float scale = 0.75f + 0.10 * percentage;
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_sprite_blit(sequence_4_mallard_logo_black_sprite,
+                         RESOLUTION_320x240.width / 2 - sequence_4_mallard_logo_black_sprite->width * scale / 2,   // TODO: Center the logo.
+                         RESOLUTION_320x240.height / 2 - sequence_4_mallard_logo_black_sprite->height * scale / 2, // TODO: Center the logo.
+                         &(rdpq_blitparms_t){
+                             .scale_x = scale,
+                             .scale_y = scale,
+                         });
+    }
+    // else if (sequence_4_time > 2.0f && sequence_4_time < 3.0f)
+    // {
+    //     // TODO: Fade out the mallard logo.
+    //     rdpq_set_mode_standard();
+    //     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    //     rdpq_sprite_blit(sequence_4_mallard_logo_black_sprite,
+    //                      RESOLUTION_320x240.width / 2 - sequence_4_mallard_logo_black_sprite->width / 2,
+    //                      RESOLUTION_320x240.height / 2 - sequence_4_mallard_logo_black_sprite->height / 2,
+    //                      &(rdpq_blitparms_t){
+    //                          .scale_x = 1.0f,
+    //                          .scale_y = 1.0f,
+    //                      });
+    // }
+}
+
+void sequence_4(float deltatime)
+{
+    sequence_4_frame++;
+    sequence_4_time += deltatime;
+
+    sequence_4_process_controller(deltatime);
+
+    if (!sequence_4_initialized)
+    {
+        sequence_4_init();
+    }
+
+    if (sequence_4_finished)
+    {
+        sequence_4_cleanup();
+        return;
+    }
+
+    rdpq_attach(display_get(), NULL);
+    rdpq_clear(background_color());
+
+    draw_mallard_logo();
+
+    ///////////////////////////////////////////////////////////
+    //                  Draw UI Elements                     //
+    ///////////////////////////////////////////////////////////
+
+    sequence_4_draw_press_start_to_skip();
+    // sequence_4_draw_mallard_idle_sprite();
+
+    ///////////////////////////////////////////////////////////
+    //                  Draw Paragraph                       //
+    ///////////////////////////////////////////////////////////
+
+    draw_paragraph();
     rdpq_detach_show();
+
+    ///////////////////////////////////////////////////////////
+    //                  Handle Audio                         //
+    ///////////////////////////////////////////////////////////
+
+    int patidx, row;
+
+    xm64player_tell(&xm, &patidx, &row, NULL);
+
+    fprintf(stderr, "Patidx: %d, Row: %d\n", patidx, row);
+
+    // If the pattern index is greater than the currently allowed pattern, loop back to the start of the currently allowed pattern.
+    if (patidx > sequence_4_currentXMPattern)
+        xm64player_seek(&xm, sequence_4_currentXMPattern, 0, 0);
 }

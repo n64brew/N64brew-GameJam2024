@@ -4,7 +4,10 @@ ASSETS_LIST += \
 	filesystem/mallard/Pacifico.font64 \
 	filesystem/mallard/CelticGaramondTheSecond.font64 \
 	filesystem/mallard/HaloDek.font64 \
-	filesystem/mallard/libdragon.rgba32.sprite\
+	filesystem/mallard/mallard_intro_music.xm64 \
+	filesystem/mallard/libdragon.rgba32.sprite \
+	filesystem/mallard/mallard_logo.rgba32.sprite \
+	filesystem/mallard/mallard_logo_black.rgba32.sprite \
 	filesystem/mallard/mallard_idle.rgba32.sprite
 
 filesystem/mallard/video.wav64: build/code/mallard/video.wav
