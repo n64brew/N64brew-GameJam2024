@@ -18,8 +18,9 @@ void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _ent
 	for(int i = 0; i < _entityCount; ++i){
 		// player 1
 		PlayerController_UpdatePlayerMovement(_input->controlSticks[i], &_entities[i]);
-		PlayerController_UpdatePlayerButtonPress(_input, &_entities[i]);
+		PlayerController_UpdatePlayerButtonPress(i, _input, &_entities[i]);
 	}	
+	
 }
 
 /// @brief Interpolates between two angles (radians) by 't', from T3D
@@ -29,14 +30,14 @@ float Lerp_Angle(float a, float b, float t) {
   return a + shortDist * t;
 }
 
-void PlayerController_UpdatePlayerButtonPress(AF_Input* _input, AF_Entity* _entity){
+void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _input, AF_Entity* _entity){
 	// Handle attack
-	for(int i = 0; i < PLAYER_COUNT; ++i){
+	//for(int i = 0; i < PLAYER_COUNT; ++i){
 		AF_CPlayerData* playerData = _entity->playerData;
 
 		
 		// A to attack
-		if(_input->keys[i][A_KEY].pressed == TRUE){
+		if(_input->keys[_playerIndex][A_KEY].pressed == 1){
 			playerData->isAttacking = TRUE;
 			PlayerController_Attack(_entity);
 		}else{
@@ -44,12 +45,12 @@ void PlayerController_UpdatePlayerButtonPress(AF_Input* _input, AF_Entity* _enti
 		}
 
 		// B to jump
-		if(_input->keys[i][B_KEY].pressed == TRUE){
+		if(_input->keys[_playerIndex][B_KEY].pressed == TRUE){
 			playerData->isJumping = TRUE;
 		}else{
 			playerData->isJumping = FALSE;
 		}
-	}
+	//}
 }
 
 void PlayerController_Attack(AF_Entity* _entity){

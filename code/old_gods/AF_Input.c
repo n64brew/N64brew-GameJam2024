@@ -77,19 +77,20 @@ void AF_Input_Update(AF_Input* _input){
 		_input->keys[3][B_KEY].held = held4.b;
 	
 		// ==== PRESSED ====
-		// Held A key
+		// Pressed A key
         _input->keys[0][A_KEY].pressed = pressed1.a;
 		_input->keys[1][A_KEY].pressed = pressed2.a;
 		_input->keys[2][A_KEY].pressed = pressed3.a;
 		_input->keys[3][A_KEY].pressed = pressed4.a;
+		//debugf("Pressed: %i, %i, %i, %i \n", _input->keys[0][A_KEY].pressed, _input->keys[1][A_KEY].pressed, _input->keys[2][A_KEY].pressed, _input->keys[3][A_KEY].pressed);
         
-		// Held B key
+		// Pressed B key
         _input->keys[0][B_KEY].pressed = pressed1.b;
 		_input->keys[1][B_KEY].pressed = pressed2.b;
 		_input->keys[2][B_KEY].pressed = pressed3.b;
 		_input->keys[3][B_KEY].pressed = pressed4.b;
 
-		// Held Start key
+		// Pressed Start key
         _input->keys[0][START_KEY].pressed = pressed1.start;
 		_input->keys[1][START_KEY].pressed = pressed2.start;
 		_input->keys[2][START_KEY].pressed = pressed3.start;
