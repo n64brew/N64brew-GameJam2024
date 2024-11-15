@@ -13,7 +13,7 @@
 // #define VERT_KNOCKBACK -2.0
 // #define HORIZ_KNOCKBACK -2.0
 #define TOLERANCE 2 // general tolerance for bounding box detection
-#define VERT_TOLERANCE 2  // tolerance for vertical overlap check
+#define FLOOR_TOLERANCE 5 // tolerance for floor detection
 #define SLIDE_COOLDOWN 15
 
 // SCREEN EDGES

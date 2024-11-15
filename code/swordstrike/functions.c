@@ -14,6 +14,7 @@ void initPlayer(struct player* p, struct weapon* weapon){
     p->floorDroppable = false;
     p->moveLeft = false;
     p->moveRight = false;
+    p->attackDirection = 1;
     p->attackTimer = 0;
     p->weapon = *weapon;
     p->weapon.xPos = p->xPos;
@@ -93,11 +94,9 @@ void updateWeaponHitbox(struct weapon *weapon) {
 // PLAYER FIXED LOOP FUNCTIONS 
 // ############################################################################################################################
 bool isPlayerOnFloor(struct player *p, struct floorPiece *f) {
-    int tolerance = 5; // tolerance for collision detection
-
     // only check if they are on a floor if they are moving downward or if they are not moving vertically 
     if(p->verticalVelocity >= 0) {
-        if (abs(p->colBot.p1.y - f->colTop.p1.y) <= tolerance) {
+        if (abs(p->colBot.p1.y - f->colTop.p1.y) <= FLOOR_TOLERANCE) {
             // Check if the x-ranges of the player's bottom and floor's top lines overlap
             if ((p->colBot.p1.x < f->colTop.p2.x && p->colBot.p2.x > f->colTop.p1.x) ||
                 (f->colTop.p1.x < p->colBot.p2.x && f->colTop.p2.x > p->colBot.p1.x)) {
@@ -206,7 +205,7 @@ void updatePlayerPos(struct player* p, struct floorPiece** floors, int* numFloor
         }
 
         // Extend weapon hitbox in correct direction
-        p->weapon.xPos = (p->direction == 0) ? (p->xPos - p->weapon.width) : 
+        p->weapon.xPos = (p->attackDirection == 0) ? (p->xPos - p->weapon.width) : 
                           (p->xPos + p->width);
     }
 }
@@ -233,12 +232,12 @@ bool validateAndMovePlayer(struct player* p, struct player** players, int newX, 
 
 // check if player2 is beneath player1
 bool onTopOfEnemy(struct player *player1, struct player *player2){
-    if (player2->yPos < player1->yPos - VERT_TOLERANCE) {
+    if (player2->yPos < player1->yPos - TOLERANCE) {
         return false;
     }
 
     return checkBoundingBoxOverlap(
-            player1->xPos, player1->yPos+2, player1->width, player1->height,
+            player1->xPos, player1->yPos+TOLERANCE, player1->width, player1->height,
             player2->xPos, player2->yPos, player2->width, player2->height);
 }
 
@@ -313,6 +312,7 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
         if (dist < 45) {
             if(ai->attackTimer <= 0){
                 if (ai->ai_reactionspeed <= 0) {
+                    ai->attackDirection = ai->direction;
                     ai->attackTimer = ai->weapon.attackTimer;
                     ai->ai_reactionspeed = (2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3);
                 } else {
@@ -444,7 +444,8 @@ void pollAttackInput(struct player *p, joypad_buttons_t *joypad_held){
     if(p->attackTimer == 0 && p->attackCooldown == 0){
         // ATTACK FORWARD
         if(joypad_held->b){
-            // set timer
+            // set timer + direction
+            p->attackDirection = p->direction;
             p->attackTimer = p->weapon.attackTimer;
 
             //extend weapon hitbox in correct direction

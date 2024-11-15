@@ -61,19 +61,23 @@ float pauseCheckDelay;
 
 // player sprites
 // sprite_t *player_sprites[4];
-sprite_t *player1_sprite;
-sprite_t *player1_jump_sprite;
+sprite_t *player_left_sprite;
+sprite_t *player_right_sprite;
+sprite_t *player_jump_sprite;
 
 void minigame_init(){
-    // test sprites
-    char fn[64];
-    sprintf(fn, "rom:/swordstrike/test-sprite.sprite");
-    player1_sprite = sprite_load(fn);
+    // load sprites from rom
+    char fn1[64];
+    sprintf(fn1, "rom:/swordstrike/fighter_left_neutral.sprite");
+    player_left_sprite = sprite_load(fn1);
 
     char fn2[64];
-    sprintf(fn2, "rom:/swordstrike/test-sprite-jump.sprite");
-    player1_jump_sprite = sprite_load(fn2);
+    sprintf(fn2, "rom:/swordstrike/fighter_right_neutral.sprite");
+    player_right_sprite = sprite_load(fn2);
 
+    char fn3[64];
+    sprintf(fn3, "rom:/swordstrike/fighter_jumping.sprite");
+    player_jump_sprite = sprite_load(fn3);
 
     // default to 0
     pauseCheckDelay = 0.0f;
@@ -101,7 +105,7 @@ void minigame_init(){
     weapons[0] = basicSword;
     weapons[1] = heavySword;
 
-    player1.height = 20;
+    player1.height = 25;
     player1.width = 20;
     player1.xPos = 20;
     player1.yPos = 60;
@@ -111,7 +115,7 @@ void minigame_init(){
     updatePlayerBoundingBox(&player1);
     updateWeaponHitbox(&player1.weapon);
 
-    player2.height = 20;
+    player2.height = 25;
     player2.width = 20;
     player2.xPos = 275;
     player2.yPos = 60;
@@ -121,7 +125,7 @@ void minigame_init(){
     updatePlayerBoundingBox(&player2);
     updateWeaponHitbox(&player2.weapon);
 
-    player3.height = 20;
+    player3.height = 25;
     player3.width = 20;
     player3.xPos = 20;
     player3.yPos = 140;
@@ -131,7 +135,7 @@ void minigame_init(){
     updatePlayerBoundingBox(&player3);
     updateWeaponHitbox(&player3.weapon);
 
-    player4.height = 20;
+    player4.height = 25;
     player4.width = 20;
     player4.xPos = 275;
     player4.yPos = 140;
@@ -434,9 +438,21 @@ void minigame_loop(float deltatime){
         // draw player if alive
         if(players[i]->isAlive){
             if(players[i]->onFloor || players[i]->onTopOfEnemy){
-                graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player1_sprite);
+                if(players[i]->attackTimer > 0){
+                    if(players[i]->attackDirection == 0){
+                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_left_sprite);
+                    } else if(players[i]->attackDirection == 1){
+                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_right_sprite);
+                    }
+                } else {
+                    if(players[i]->direction == 0){
+                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_left_sprite);
+                    } else if(players[i]->direction == 1){
+                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_right_sprite);
+                    }
+                }
             } else {
-                graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player1_jump_sprite);
+                graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_jump_sprite);
             }
         }
     }
@@ -487,9 +503,9 @@ void minigame_cleanup(){
     free_level_data(floors);
 
     // free sprites
-    // sprite_free(player_sprites[0]);
-    sprite_free(player1_sprite);
-    sprite_free(player1_jump_sprite);
+    sprite_free(player_left_sprite);
+    sprite_free(player_right_sprite);
+    sprite_free(player_jump_sprite);
 
     display_close();
 }

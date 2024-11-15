@@ -83,6 +83,7 @@ struct player {
 
     // weapon
     struct weapon weapon;
+    int attackDirection;
     int attackTimer;
     int attackCooldown;
 
