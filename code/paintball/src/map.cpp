@@ -99,7 +99,6 @@ void MapRenderer::render() {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
         int finalX = (newSplashes[i].x/distancePerSegment) * MapWidth + MapWidth/2;
         int finalY = (newSplashes[i].y/distancePerSegment) * MapWidth + MapWidth/2;
-        debugf("Splash at %d, %d\n", finalX, finalY);
         __splash(finalX, finalY, newSplashes[i].team);
     }
     newSplashCount = 0;

@@ -21,6 +21,6 @@ void UIRenderer::render(const GameState &state)
         rdpq_text_printf(&textparms, BigFont, 0, 0, "%d", (int)ceilf(3.f - state.gameTime));
 
         rdpq_textparms_t textparms2 = { .width = ScreenWidth, .height = ScreenHeight / 2, .align = ALIGN_CENTER, .valign = VALIGN_CENTER };
-        rdpq_text_printf(&textparms2, MainFont, 0, ScreenHeight / 2, "Start moving");
+        rdpq_text_printf(&textparms2, MainFont, 0, ScreenHeight / 2, "Prepare to paint!");
     }
 }

@@ -112,11 +112,13 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
     }
 }
 
-void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id) {
+void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id, GameState &state) {
     if (id < core_get_playercount()) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
 
         if (pressed.start) minigame_end();
+
+        if (state.isCountdown) return;
 
         auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
 
@@ -220,7 +222,7 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
     {
         auto& playerGameplay = playerGameplayData[i];
 
-        handleActions(playerGameplay, i);
+        handleActions(playerGameplay, i, state);
         renderPlayer(playerGameplay, playerOther, i, viewport, deltaTime);
 
         t3d_vec3_add(state.avPos, state.avPos, playerGameplay.pos);

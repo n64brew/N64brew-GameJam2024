@@ -39,7 +39,7 @@ class GameplayController
 
         // Player calculations
         void simulatePhysics(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, float deltaTime);
-        void handleActions(PlayerGameplayData &gameplayData, uint32_t id);
+        void handleActions(PlayerGameplayData &gameplayData, uint32_t id, GameState &state);
         void renderPlayer(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, T3DViewport &viewport, float deltaTime);
         void renderPlayerUI(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id);
 
