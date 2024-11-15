@@ -195,6 +195,7 @@ void Scene_SetupEntities(AppData* _appData){
     godEntity->rigidbody->inverseMass = zeroInverseMass;
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->showDebug = TRUE;
+    *godEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // setup animations
 	// ---------Create Player1------------------
@@ -207,6 +208,7 @@ void Scene_SetupEntities(AppData* _appData){
     player1Entity->rigidbody->inverseMass = zeroInverseMass;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
+    *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
 
     // Create Player2
@@ -219,6 +221,7 @@ void Scene_SetupEntities(AppData* _appData){
     player2Entity->rigidbody->inverseMass = zeroInverseMass;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
+    *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // Create Player3
 	Vec3 player3Pos = {-2.0f, .5f, -1.0f};
@@ -230,6 +233,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = zeroInverseMass;
     *player3Entity->playerData = AF_CPlayerData_ADD();
+    *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // Create Player4
 	Vec3 player4Pos = {2.0f, .5f, -1.0f};
@@ -241,6 +245,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = zeroInverseMass;
     *player4Entity->playerData = AF_CPlayerData_ADD();
+    *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
 	//=========ENVIRONMENT========
     Vec3 levelMapPos = {0, 0, 2};

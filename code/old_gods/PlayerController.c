@@ -55,11 +55,12 @@ void PlayerController_UpdatePlayerButtonPress(AF_Input* _input, AF_Entity* _enti
 void PlayerController_Attack(AF_Entity* _entity){
 	// do collision check in proximity.
 	// entity that is another player, then call a hit on that player
-	// Player attack animation
-	AF_CMesh* mesh = _entity->mesh;
+	AF_CSkeletalAnimation*  animation = _entity->skeletalAnimation;
 	// if this entity has animations, then call play animation
-	if(mesh->animation.has == TRUE){
-		AF_Renderer_PlayAnimation(&mesh->animation);
+	BOOL hasMeshComponent = AF_Component_GetHas(animation->enabled);
+	BOOL isEnabled = AF_Component_GetEnabled(animation->enabled);
+	if(hasMeshComponent == TRUE && isEnabled == TRUE){
+		AF_Renderer_PlayAnimation(animation);
 	}
 }
 
