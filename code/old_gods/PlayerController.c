@@ -6,7 +6,7 @@
 #include "AF_Renderer.h"
 
 #define STICK_DEAD_ZONE 0.01
-#define PLAYER_SPEED 10
+#define PLAYER_SPEED 1
 #define PI 3.14159265358979f
 #define PLAYER_COUNT 4
 
@@ -20,7 +20,6 @@ void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _ent
 		PlayerController_UpdatePlayerMovement(_input->controlSticks[i], &_entities[i]);
 		PlayerController_UpdatePlayerButtonPress(i, _input, &_entities[i]);
 	}	
-	
 }
 
 /// @brief Interpolates between two angles (radians) by 't', from T3D
@@ -40,6 +39,9 @@ void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _i
 		if(_input->keys[_playerIndex][A_KEY].pressed == 1){
 			playerData->isAttacking = TRUE;
 			PlayerController_Attack(_entity);
+			// deal damage to enemies in range
+
+
 		}else{
 			playerData->isAttacking = FALSE;
 		}
@@ -97,9 +99,10 @@ void PlayerController_Attack(AF_Entity* _entity){
 	}
 
     // update the cube rigidbody velocity
-	Vec3 newVelocity = {PLAYER_SPEED * vecX, 0, PLAYER_SPEED * vecY};
-	_entity->rigidbody->velocity = newVelocity;//newVelocity; 
-
+	Vec3 movementForce = {PLAYER_SPEED * vecX, 0, PLAYER_SPEED * vecY};
+	
+	//_entity->rigidbody->velocity = newVelocity;//newVelocity; 
+	AF_Physics_ApplyLinearImpulse(_entity->rigidbody, movementForce);
 	// adjust rotation
 	float newAngle = atan2f(-vecX, vecY);
 	_entity->transform->rot.y = Lerp_Angle(_entity->transform->rot.y, newAngle, 0.25f);

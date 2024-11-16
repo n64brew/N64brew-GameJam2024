@@ -10,6 +10,7 @@
 #include <t3d/t3dmath.h>
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
+#include "AF_Physics.h"
 
 // ECS system
 AF_Entity* camera = NULL;
@@ -26,10 +27,10 @@ AF_Entity* godEyeInner2 = NULL;
 AF_Entity* godMouth = NULL;
 
 // Environment
-//AF_Entity* leftWall = NULL;
-//AF_Entity* rightWall = NULL;
-//AF_Entity* backWall = NULL;
-//AF_Entity* frontWall = NULL;
+AF_Entity* leftWall = NULL;
+AF_Entity* rightWall = NULL;
+AF_Entity* backWall = NULL;
+AF_Entity* frontWall = NULL;
 //AF_Entity* groundPlaneEntity = NULL;
 AF_Entity* levelMapEntity = NULL;
 
@@ -72,7 +73,7 @@ PlyNum winner;
 #define HITBOX_RADIUS       10.f
 
 #define ATTACK_OFFSET       10.f
-#define ATTACK_RADIUS       5.f
+#define ATTACK_RADIUS       5.0f
 
 #define ATTACK_TIME_START   0.333f
 #define ATTACK_TIME_END     0.4f
@@ -118,6 +119,43 @@ wav64_t sfx_countdown;
 wav64_t sfx_stop;
 wav64_t sfx_winner;
 
+void PlayerController_DamageHandler(AppData* _appData);
+
+void PlayerController_DamageHandler(AppData* _appData){
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        AF_Entity* playerEntity = _appData->gameplayData.playerEntities[i];
+        AF_CPlayerData* playerData = playerEntity->playerData;
+
+        // are any players attacking
+        if(playerData->isAttacking == TRUE){
+            
+            Vec3* playerPos = &playerEntity->transform->pos;
+            // check if any players are close to each other in a radius
+            for(int x = 0; x < PLAYER_COUNT; ++x){
+                
+                if (i != x){
+                    // skip the player chekcing against itself
+                    AF_Entity* otherPlayerEntity = _appData->gameplayData.playerEntities[x];
+                    Vec3* otherPlayerPos = &otherPlayerEntity->transform->pos;
+                    float playersInRange = Vec3_DISTANCE(*playerPos, *otherPlayerPos);
+                    debugf("Player is attatcking %f \n" , playersInRange);
+                    if(playersInRange < ATTACK_RADIUS){
+                        // Other player is in range
+                        // attack
+                        AF_C3DRigidbody* otherPlayerRigidbody = otherPlayerEntity->rigidbody;
+                        Vec3 forceVector = Vec3_ADD(*playerPos, *otherPlayerPos);
+                        debugf("PlayerController: damage x: %f, y: %f, z: %f \n", forceVector.x, forceVector.y, forceVector.z);
+                        AF_Physics_ApplyLinearImpulse(otherPlayerRigidbody, forceVector);
+                        //*otherPlayerPos = Vec3_ADD(forceVector, *otherPlayerPos);
+                        playerData->isAttacking = FALSE;
+                    }
+                }
+            }
+        }
+        
+
+    }
+}
 
 
 void Scene_Awake(AppData* _appData){
@@ -135,6 +173,9 @@ void Scene_Update(AppData* _appData){
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
         
         PlayerController_UpdateAllPlayerMovements(&_appData->input, *_appData->gameplayData.playerEntities, PLAYER_COUNT);
+        // Check if any players are "attatcking" if yes, then deal damage.
+        PlayerController_DamageHandler(_appData);
+
     }
 
     AF_ECS* ecs = &_appData->ecs;
@@ -146,7 +187,7 @@ void Scene_Update(AppData* _appData){
         
         // TODO: move this out of this function
         //if((AF_Component_GetHas(playerData->enabled) == TRUE) && (AF_Component_GetEnabled(playerData->enabled) == TRUE)){
-        if(playerData->isCarrying == TRUE){
+        if(AF_Component_GetHas(playerData->enabled) == TRUE && playerData->isCarrying == TRUE){
             // make villager match player transform
             Vec3 villagerCarryPos = {entity->transform->pos.x, entity->transform->pos.y+VILLAGER_CARRY_HEIGHT, entity->transform->pos.z};
             GetVillager()->transform->pos = villagerCarryPos;
@@ -190,60 +231,62 @@ void Scene_SetupEntities(AppData* _appData){
     
 	Vec3 godPos = {0, 0, 0};
 	Vec3 godScale = {2,2,2};
+    Vec3 godBoundingScale = {1,1,1};
     godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_MESH, AABB);
     godEntity->mesh->meshID = MODEL_SNAKE;
     godEntity->rigidbody->inverseMass = zeroInverseMass;
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
+    godEntity->collider->boundingVolume = godBoundingScale;
     godEntity->collider->showDebug = TRUE;
     *godEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // setup animations
 	// ---------Create Player1------------------
-	Vec3 player1Pos = {2.0f, .5f, 1.0f};
-	Vec3 player1Scale = {.5f,.5f,.5f};
+	Vec3 player1Pos = {2.0f, 1.0f, 1.0f};
+	Vec3 player1Scale = {1.0f,1.0f,1.0f};
     
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
     player1Entity->mesh->meshID = MODEL_SNAKE;
-    player1Entity->rigidbody->inverseMass = zeroInverseMass;
+    player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
 
     // Create Player2
-	Vec3 player2Pos = {-2.0f, .5f, 1.0f};
+	Vec3 player2Pos = {-2.0f, 1.0f, 1.0f};
 	Vec3 player2Scale = {1,1,1};
     
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player2Entity = gameplayData->playerEntities[1];
     player2Entity->mesh->meshID = MODEL_SNAKE;
-    player2Entity->rigidbody->inverseMass = zeroInverseMass;
+    player2Entity->rigidbody->inverseMass = 1.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // Create Player3
-	Vec3 player3Pos = {-2.0f, .5f, -1.0f};
+	Vec3 player3Pos = {-2.0f, 1.0f, -1.0f};
 	Vec3 player3Scale = {.75f,.75f,.75f};
     
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player3Entity = gameplayData->playerEntities[2];
     player3Entity->mesh->meshID = MODEL_SNAKE;
 	player3Entity->rigidbody->isKinematic = TRUE;
-    player3Entity->rigidbody->inverseMass = zeroInverseMass;
+    player3Entity->rigidbody->inverseMass = 1.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
     *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // Create Player4
-	Vec3 player4Pos = {2.0f, .5f, -1.0f};
+	Vec3 player4Pos = {2.0f, 1.0f, -1.0f};
 	Vec3 player4Scale = {1,1,1};
     
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
 	AF_Entity* player4Entity = gameplayData->playerEntities[3];
     player4Entity->mesh->meshID = MODEL_SNAKE;
 	player4Entity->rigidbody->isKinematic = TRUE;
-    player4Entity->rigidbody->inverseMass = zeroInverseMass;
+    player4Entity->rigidbody->inverseMass = 1.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
     *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
@@ -253,7 +296,8 @@ void Scene_SetupEntities(AppData* _appData){
     levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_MESH, AABB);
     levelMapEntity->mesh->meshID = MODEL_MAP;
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
-
+    Vec3 mapBoundingVolume = {12,.1, 12};
+    levelMapEntity->collider->boundingVolume = mapBoundingVolume;
     // ============Buckets=============
     // Bucket 1
     // World pos and scale for bucket
@@ -303,8 +347,37 @@ void Scene_SetupEntities(AppData* _appData){
 	villager1->rigidbody->isKinematic = TRUE;
     villager1->collider->collision.callback = Scene_OnCollision;
 
+   float wallHeight = 3;
+    // Create Left Wall
+	Vec3 leftWallPos = {-8, 0, 3};
+	Vec3 leftWallScale = {1,wallHeight,10};
+	leftWall = Entity_Factory_CreatePrimative(_ecs, leftWallPos, leftWallScale,AF_MESH_TYPE_MESH, AABB);
+    leftWall->mesh->meshID = MODEL_BOX;
+    leftWall->rigidbody->inverseMass = zeroInverseMass;
 
-	// Setup Audio
+    // Create Right Wall
+	Vec3 rightWallPos = {8, 0, 3};
+	Vec3 rightWallScale = {1,wallHeight,10};
+	rightWall = Entity_Factory_CreatePrimative(_ecs, rightWallPos, rightWallScale,AF_MESH_TYPE_MESH, AABB);
+    rightWall->mesh->meshID = MODEL_BOX;
+    rightWall->rigidbody->inverseMass = zeroInverseMass;
+
+    // Create Back Wall
+	Vec3 backWallPos = {0, 0, -1.5};
+	Vec3 backWallScale = {18, wallHeight, 0};
+	backWall = Entity_Factory_CreatePrimative(_ecs, backWallPos, backWallScale, AF_MESH_TYPE_MESH, AABB);
+    backWall->mesh->meshID = MODEL_BOX;
+    backWall->rigidbody->inverseMass = zeroInverseMass;
+
+    // Create Front Wall
+	Vec3 frontWallPos = {0, 0, 7};
+	Vec3 frontWallScale = {8,wallHeight,1};
+	frontWall = Entity_Factory_CreatePrimative(_ecs, frontWallPos, frontWallScale,AF_MESH_TYPE_MESH, AABB);
+    frontWall->mesh->meshID = MODEL_BOX;
+    frontWall->rigidbody->inverseMass = zeroInverseMass;
+    
+
+	// Scale everything due to strange model sizes exported from blender
     for(int i = 0; i < _ecs->entitiesCount; ++i){
         // scale everything
         _ecs->transforms[i].scale = Vec3_MULT_SCALAR(_ecs->transforms[i].scale, .0075f);//0.075f);
@@ -334,6 +407,7 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
     AF_Entity* bucket3 = GetBucket3();
     AF_Entity* bucket4 = GetBucket4();
 
+    debugf("spawn buket \n");
 
     if(randomNum == 0){
         *_currentBucket = 0;
@@ -373,10 +447,15 @@ Callback Behaviour triggered when the player dropps off a sacrafice to the gods
 */
 void Scene_OnGodTrigger(AF_Collision* _collision){
 	AF_Entity* entity2 =  _collision->entity2;
-	
+	BOOL hasPlayerData = AF_Component_GetHas(entity2->playerData->enabled);
+    
+    if(hasPlayerData == FALSE){
+        return;
+    }
 
     // if entity is carrying, eat and shift the villager into the distance
     if(entity2->playerData->isCarrying == TRUE){
+        debugf("god trigger\n");
         //debugf("Scene_GodTrigger: eat count %i \n", godEatCount);
         // TODO: update godEatCount. observer pattern would be nice right now
         //godEatCount++;
@@ -399,16 +478,20 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
 }
 
 
+
+
 /*
 Scene_BucketCollisionBehaviour
 Perform gameplay logic if bucket has been collided with by a player character
 */
 void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision, AF_Entity* _villager, AF_Entity* _godEntity){
-      
+     //debugf("Scene_BucketCollisionBehaviour \n ");
     // Don't react if this bucket isn't activated
     if(_currentBucket != _bucketID){
         return;
     }
+
+    
 	//AF_Entity* entity1 =  _collision->entity1;
 	AF_Entity* entity2 =  _collision->entity2;
 
