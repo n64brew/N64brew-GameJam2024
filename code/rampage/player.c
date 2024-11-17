@@ -189,7 +189,11 @@ void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int
     if (player->stun_timer <= 0.0f) {
         player->stun_timer = PLAYER_STUN_TIME;
         player->is_attacking = 0;
-        player->dynamic_object.velocity = (struct Vector3){velocity->x, PLAYER_STUN_IMPULSE, velocity->z};
+        player->dynamic_object.velocity = (struct Vector3){velocity->x, 0.0f, velocity->z};
+        vector3Normalize(&player->dynamic_object.velocity, &player->dynamic_object.velocity);
+
+        vector3Scale(&player->dynamic_object.velocity, &player->dynamic_object.velocity, PLAYER_ATTACK_VELOCITY);
+        player->dynamic_object.velocity.y = PLAYER_STUN_IMPULSE;
     }
 }
 

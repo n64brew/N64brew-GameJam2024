@@ -11,8 +11,12 @@
 
 struct Vector2 tank_rotate_speed;
 
-#define TANK_SPEED  SCALE_FIXED_POINT(0.5f)
-#define TANK_ACCEL  SCALE_FIXED_POINT(0.5f)
+#define TANK_SPEED          SCALE_FIXED_POINT(0.5f)
+#define TANK_SLOW_SPEED     SCALE_FIXED_POINT(0.01f)
+#define TANK_ACCEL          SCALE_FIXED_POINT(0.5f)
+
+#define MIN_FIRE_TIME   3.0f
+#define MAX_FIRE_TIME   5.0f
 
 struct dynamic_object_type tank_collider = {
     .minkowsi_sum = box_minkowski_sum,
@@ -97,6 +101,23 @@ void rampage_tank_next_target(struct RampageTank* tank) {
     }
 }
 
+struct Vector3 fire_offset = {
+    0.0f,
+    SCALE_FIXED_POINT(0.510332f),
+    SCALE_FIXED_POINT(0.681162f),
+};
+
+void rampage_tank_fire(struct RampageTank* tank) {
+    struct Vector3 fire_from = tank->dynamic_object.position;
+    struct Vector2* rotation = &tank->dynamic_object.rotation;
+
+    fire_from.x += fire_offset.x * rotation->x - fire_offset.z * rotation->y;
+    fire_from.y = fire_offset.y;
+    fire_from.z += fire_offset.x * rotation->y + fire_offset.z * rotation->x;
+
+    bullet_fire(&tank->bullet, &fire_from, rotation);
+}
+
 void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position) {
     int entity_id = entity_id_next();
     dynamic_object_init(
@@ -113,16 +134,20 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
     }
 
     tank->dynamic_object.center.y = tank_collider.data.box.half_size.y;
+    tank->dynamic_object.collision_group = entity_id;
     tank->current_target = *start_position;
     tank->is_active = 0;
+    tank->fire_timer = randomInRangef(MIN_FIRE_TIME, MAX_FIRE_TIME) + 4.0f;
 
     collision_scene_add(&tank->dynamic_object);
 
     vector2ComplexFromAngle(1.0f / 30.0f, &tank_rotate_speed);
+    bullet_init(&tank->bullet, entity_id);
 }
 
 void rampage_tank_destroy(struct RampageTank* tank) {
     collision_scene_remove(&tank->dynamic_object);
+    bullet_destroy(&tank->bullet);
 }
 
 bool rampage_tank_has_forward_hit(struct RampageTank* tank, struct Vector2* offset, struct Vector2* current_dir) {
@@ -184,14 +209,19 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
 
         tank->dynamic_object.velocity.x = mathfMoveTowards(
             tank->dynamic_object.velocity.x,
-            should_stop ? 0.0f : dir.x * TANK_SPEED,
+            should_stop ? dir.x * TANK_SLOW_SPEED : dir.x * TANK_SPEED,
             TANK_ACCEL * delta_time
         );
         tank->dynamic_object.velocity.z = mathfMoveTowards(
             tank->dynamic_object.velocity.z,
-            should_stop ? 0.0f : dir.y * TANK_SPEED,
+            should_stop ? dir.y * TANK_SLOW_SPEED : dir.y * TANK_SPEED,
             TANK_ACCEL * delta_time
         );
+
+        if (tank->fire_timer < 0.0f) {
+            rampage_tank_fire(tank);
+            tank->fire_timer = randomInRangef(MIN_FIRE_TIME, MAX_FIRE_TIME);
+        }
     } else {
         tank->dynamic_object.velocity.x = mathfMoveTowards(
             tank->dynamic_object.velocity.x,
@@ -207,6 +237,10 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
 
     tank->dynamic_object.rotation.x = current_dir.y;
     tank->dynamic_object.rotation.y = current_dir.x;
+
+    bullet_update(&tank->bullet, delta_time);
+
+    tank->fire_timer -= delta_time;
 }
 
 void rampage_tank_render(struct RampageTank* tank) {
@@ -218,4 +252,8 @@ void rampage_tank_render(struct RampageTank* tank) {
     t3d_matrix_push(&tank->mtx);
     rspq_block_run(rampage_assets_get()->tankSplit.mesh);
     t3d_matrix_pop(1);
+}
+
+void rampage_tank_render_bullets(struct RampageTank* tank) {
+    bullet_render(&tank->bullet);
 }

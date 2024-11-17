@@ -294,11 +294,14 @@ void minigame_loop(float deltatime) {
     for (int i = 0; i < TANK_COUNT; i += 1) {
         rampage_tank_render(&gRampage.tanks[i]);
     }
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        rampage_tank_render_bullets(&gRampage.tanks[i]);
+    }
 
     t3d_light_set_ambient(colorWhite);
     t3d_light_set_count(0);
 
-    t3d_model_draw(rampage_assets_get()->ground);
+    rspq_block_run(rampage_assets_get()->ground->userBlock);
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rdpq_text_printf(

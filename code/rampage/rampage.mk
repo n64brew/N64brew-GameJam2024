@@ -13,6 +13,7 @@ ASSETS_LIST += \
 	filesystem/rampage/house.t3dm \
 	filesystem/rampage/Jira_01.t3dm \
 	filesystem/rampage/level.t3dm \
+	filesystem/rampage/bullet.t3dm \
 	filesystem/rampage/tank1_32x4.ci4.sprite \
 	filesystem/rampage/tank1_64x4.ci4.sprite \
 	filesystem/rampage/tank2_32x4.ci4.sprite \
@@ -31,10 +32,10 @@ ASSETS_LIST += \
 	filesystem/rampage/road_tjunction.sprite \
 	filesystem/rampage/road_warning1.sprite \
 	filesystem/rampage/QuirkyRobot.font64 \
-	filesystem/rampage/latin_poppy.wav64
+	filesystem/rampage/stompin.wav64
 
 assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)
-	$(BLENDER_4) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
+	$(BLENDER_4_0) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
 
 filesystem/rampage/QuirkyRobot.font64: MKFONT_FLAGS += --size 16

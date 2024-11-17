@@ -37,9 +37,19 @@ void rampage_assets_init() {
     rampage_model_separate_material(gRampageAssets.building, &gRampageAssets.buildingSplit);
 
     gRampageAssets.player = t3d_model_load("rom:/rampage/Jira_01.t3dm");
+
     gRampageAssets.ground = t3d_model_load("rom://rampage/level.t3dm");
+    rspq_block_begin();
+    t3d_model_draw(gRampageAssets.ground);
+    gRampageAssets.ground->userBlock = rspq_block_end();
+
     gRampageAssets.tank = t3d_model_load("rom://rampage/tank0.t3dm");
     rampage_model_separate_material(gRampageAssets.tank, &gRampageAssets.tankSplit);
+
+    gRampageAssets.bullet = t3d_model_load("rom://rampage/bullet.t3dm");
+    rspq_block_begin();
+    t3d_model_draw(gRampageAssets.bullet);
+    gRampageAssets.bullet->userBlock = rspq_block_end();
 
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         char filename[32];
@@ -47,7 +57,7 @@ void rampage_assets_init() {
         gRampageAssets.countdown_numbers[i] = sprite_load(filename);
     }
 
-    wav64_open(&gRampageAssets.music, "rom:/rampage/latin_poppy.wav64");
+    wav64_open(&gRampageAssets.music, "rom:/rampage/stompin.wav64");
 }
 
 void rampage_assets_destroy() {
@@ -58,6 +68,7 @@ void rampage_assets_destroy() {
     t3d_model_free(gRampageAssets.player);
     t3d_model_free(gRampageAssets.ground);
     t3d_model_free(gRampageAssets.tank);
+    t3d_model_free(gRampageAssets.bullet);
 
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         sprite_free(gRampageAssets.countdown_numbers[i]);
