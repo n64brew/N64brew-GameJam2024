@@ -6,11 +6,11 @@
 
 void sequence_3_draw_press_start_to_skip()
 {
-    // Draw "to Skip" text
+    // Draw "Skip" text
     float x = SCREEN_WIDTH - 36;
     float y = SCREEN_HEIGHT - 5;
     rdpq_set_mode_standard();
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, x, y, "to Skip");
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, x, y, "Skip");
 
     // Draw the Start button
     rdpq_set_mode_standard();

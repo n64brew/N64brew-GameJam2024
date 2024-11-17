@@ -48,7 +48,13 @@ float sequence_4_time = 0.0f;
 int sequence_4_frame;
 bool sequence_4_initialized = false;
 bool sequence_4_finished = false;
+
+bool sequence_4_all_paragraphs_finished = false;
+int sequence_4_current_paragraph = 0;
+bool sequence_4_current_paragraph_finished = false;
 int sequence_4_drawn_characters = 0;
+int sequence_4_paragraph_speed = 4;
+char *sequence_4_current_paragraph_string;
 
 float sequence_4_time_to_fade_in_mallard_logo = 1.0f;
 float sequence_4_time_to_show_mallard_logo = 2.0f;
@@ -143,9 +149,9 @@ void sequence_4_cleanup()
     display_close();
 
     // Reset the state.
-    // TODO: Check to make sure that we're resetting the state of a lot of things...
     sequence_4_initialized = false;
     sequence_4_finished = false;
+    // TODO: Check to make sure that we're resetting the state of a lot of things...
 
     // End the sequence.
     sequence_4_story = false;
@@ -168,102 +174,24 @@ int fade_in_color(float percentage)
 
 color_t background_color()
 {
-    // Time: 0.0 - 3.0 = White for mallard logo
-    // Time: 3.0 - 4.0 = Fade to Black for paragraph.
-    // Time: 4.0 - ??? = Black for paragraph.
-    if (sequence_4_time < 3.0f)
+    // White for Mallard Logo.
+    if (sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)
     {
         return WHITE;
     }
-    else if (sequence_4_time >= 3.0f && sequence_4_time <= 4.0f)
+
+    // Fade to Black for Paragraph.
+    if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION &&
+        sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
     {
-        float percentage = (sequence_4_time - 3.0f) / 1.0f;
+        float percentage = (sequence_4_time - (DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)) / DRAW_FADE_WHITE_TO_BLACK_DURATION;
         uint8_t color = fade_in_color(percentage);
         uint8_t alpha = fade_in_alpha(percentage);
         return RGBA32(color, color, color, alpha);
     }
 
+    // Black for Paragraph.
     return BLACK;
-}
-
-void draw_paragraph()
-{
-    int total_chars = strlen(SEQEUENCE_4_PARARGAPH_01);
-
-    // Delay the drawing of the paragraph by 5 seconds.
-    if (sequence_4_time > 5.0f)
-    {
-        // Draw the paragraph one character at a time. Modulo is used to slow down the drawing.
-        if ((sequence_4_frame % 4) == 0)
-        {
-            sequence_4_drawn_characters++;
-            if (sequence_4_drawn_characters > total_chars)
-            {
-                sequence_4_drawn_characters = total_chars;
-            }
-        }
-    }
-
-    int x_margin = 5;
-    int y_margin = 0;
-    rdpq_textparms_t params = {
-        // .line_spacing = -3,
-        .align = ALIGN_CENTER,
-        .valign = VALIGN_CENTER,
-        .width = RESOLUTION_320x240.width - (2 * x_margin),
-        .height = RESOLUTION_320x240.height - (2 * y_margin),
-        .wrap = WRAP_WORD,
-    };
-
-    // rdpq_set_mode_standard();
-    // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_paragraph_t *par = rdpq_paragraph_build(&params, FONT_CELTICGARMONDTHESECOND, SEQEUENCE_4_PARARGAPH_01, &sequence_4_drawn_characters);
-    rdpq_paragraph_render(par, x_margin, y_margin);
-    rdpq_paragraph_free(par);
-}
-
-void draw_mallard_logo()
-{
-    // if (sequence_4_time < 1.0f)
-    // {
-    //     // TODO: Fade in the mallard logo.
-    //     rdpq_set_mode_standard();
-    //     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    //     rdpq_sprite_blit(sequence_4_mallard_logo_black_sprite,
-    //                      RESOLUTION_320x240.width / 2 - sequence_4_mallard_logo_black_sprite->width / 2,
-    //                      RESOLUTION_320x240.height / 2 - sequence_4_mallard_logo_black_sprite->height / 2,
-    //                      &(rdpq_blitparms_t){
-    //                          .scale_x = 1.0f,
-    //                          .scale_y = 1.0f,
-    //                      });
-    // }
-    if (sequence_4_time < 3.0f)
-    {
-        float percentage = sequence_4_time / 3.0f;
-        float scale = 0.75f + 0.10 * percentage;
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_sprite_blit(sequence_4_mallard_logo_black_sprite,
-                         RESOLUTION_320x240.width / 2 - sequence_4_mallard_logo_black_sprite->width * scale / 2,   // TODO: Center the logo.
-                         RESOLUTION_320x240.height / 2 - sequence_4_mallard_logo_black_sprite->height * scale / 2, // TODO: Center the logo.
-                         &(rdpq_blitparms_t){
-                             .scale_x = scale,
-                             .scale_y = scale,
-                         });
-    }
-    // else if (sequence_4_time > 2.0f && sequence_4_time < 3.0f)
-    // {
-    //     // TODO: Fade out the mallard logo.
-    //     rdpq_set_mode_standard();
-    //     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    //     rdpq_sprite_blit(sequence_4_mallard_logo_black_sprite,
-    //                      RESOLUTION_320x240.width / 2 - sequence_4_mallard_logo_black_sprite->width / 2,
-    //                      RESOLUTION_320x240.height / 2 - sequence_4_mallard_logo_black_sprite->height / 2,
-    //                      &(rdpq_blitparms_t){
-    //                          .scale_x = 1.0f,
-    //                          .scale_y = 1.0f,
-    //                      });
-    // }
 }
 
 void sequence_4(float deltatime)
@@ -287,21 +215,18 @@ void sequence_4(float deltatime)
     rdpq_attach(display_get(), NULL);
     rdpq_clear(background_color());
 
-    draw_mallard_logo();
-
     ///////////////////////////////////////////////////////////
-    //                  Draw UI Elements                     //
+    //                  Intro Sequence                       //
     ///////////////////////////////////////////////////////////
-
+    sequence_4_draw_mallard_logo();
+    sequence_4_draw_paragraph();
     sequence_4_draw_press_start_to_skip();
-    // sequence_4_draw_mallard_idle_sprite();
 
-    ///////////////////////////////////////////////////////////
-    //                  Draw Paragraph                       //
-    ///////////////////////////////////////////////////////////
+    fprintf(stderr, "Paragraph %i Character %i. Is %sFinished. Speed %i\n", sequence_4_current_paragraph, sequence_4_drawn_characters, sequence_4_current_paragraph_finished ? "" : "Not ", sequence_4_paragraph_speed);
 
-    draw_paragraph();
     rdpq_detach_show();
+
+    // sequence_4_draw_mallard_idle_sprite();
 
     ///////////////////////////////////////////////////////////
     //                  Handle Audio                         //
@@ -311,7 +236,7 @@ void sequence_4(float deltatime)
 
     xm64player_tell(&xm, &patidx, &row, NULL);
 
-    fprintf(stderr, "Patidx: %d, Row: %d\n", patidx, row);
+    // fprintf(stderr, "Patidx: %d, Row: %d\n", patidx, row);
 
     // If the pattern index is greater than the currently allowed pattern, loop back to the start of the currently allowed pattern.
     if (patidx > sequence_4_currentXMPattern)

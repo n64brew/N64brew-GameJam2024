@@ -1,3 +1,5 @@
+#include <libdragon.h>
+#include "sequence_4.h"
 #include "sequence_4_input.h"
 #include "../../core.h"
 #include "../../minigame.h"
@@ -19,6 +21,33 @@ void sequence_4_process_controller(float deltatime)
         {
             fprintf(stderr, "Controller %u pressed Start. Sequence will now skip.\n", controllerPort);
             sequence_4_finished = true;
+        }
+
+        // Paragraph next.
+        if (sequence_4_all_paragraphs_finished == false && sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
+        {
+            if (pressed.a)
+            {
+                if (sequence_4_current_paragraph_finished == false)
+                {
+                    if (sequence_4_paragraph_speed == 1)
+                    {
+                        sequence_4_drawn_characters = strlen(sequence_4_current_paragraph_string);
+                    }
+                    else
+                    {
+                        sequence_4_paragraph_speed = 1;
+                    }
+                }
+                // Next Paragraph.
+                if (sequence_4_current_paragraph_finished == true)
+                {
+                    sequence_4_paragraph_speed = 4;
+                    sequence_4_current_paragraph_finished = false;
+                    sequence_4_drawn_characters = 0;
+                    sequence_4_current_paragraph++;
+                }
+            }
         }
     }
 }
