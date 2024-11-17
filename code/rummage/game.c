@@ -637,7 +637,7 @@ void game_init()
             int y = VAULTS_COUNT - 1 - i;
             vaults[i].rotated = true;
             vaults[i].rotation = (T3DVec3){{0, M_PI/2, 0}};
-            vaults[i].position = (T3DVec3){{ (room.w-vaults[i].h)/2.0f, 0, -room.h/2.0f + FURNITURE_KEEPOUT + (slot_h/2.0f) * (1+2*y) }};
+            vaults[i].position = (T3DVec3){{ (room.w-vaults[i].h)/2.0f, 0, -room.h/2.0f + FURNITURE_KEEPOUT + (slot_h/2.0f) * (1+2*(2-y)) }};
             vaults[i].direction = (T3DVec3){{-1, 0, 0}};
         }
         vaults[i].bbox = usable_actor_bounding_box((usable_actor_t*)&vaults[i]);
