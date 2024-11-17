@@ -82,6 +82,9 @@ Here's some suggestions of QOL things you should do for minigames, they are **no
 
 ### Building with libdragon-cli
 
+
+### Building with libdragon-cli
+
 Clone this repository with `--recurse-submodules` or if you haven't run:
 
 ```bash
@@ -97,5 +100,7 @@ libdragon init
 Build:
 
 ```bash
-libdragon make T3D_INST=./tiny3d
+libdragon make -C tiny3d install
+libdragon make -C tiny3d/tools/gltf_importer install
+libdragon make
 ```
