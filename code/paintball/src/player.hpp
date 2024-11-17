@@ -24,6 +24,7 @@ struct PlayerGameplayData
     // A player can be in any team at any given time
     PlyNum team;
     std::array<int, MAXPLAYERS> health;
+    float temperature;
 };
 
 class PlayerOtherData

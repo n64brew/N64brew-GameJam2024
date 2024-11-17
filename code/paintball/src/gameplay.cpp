@@ -32,6 +32,9 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
     gameplay.prevPos = gameplay.pos;
 
     if (id < MAXPLAYERS && id < core_get_playercount()) {
+        gameplay.temperature -= deltaTime * CooldownPerSecond;
+        if (gameplay.temperature < 0) gameplay.temperature = 0;
+
         joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
         T3DVec3 direction = {0};
         direction.v[0] = (float)joypad.stick_x;
@@ -122,28 +125,34 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id, 
 
         if (pressed.start) minigame_end();
 
-        if (state.isCountdown) return;
+        if (state.isCountdown || player.temperature > 1.f) return;
 
         auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
 
+        bool fired = false;
         // Fire button
         if (pressed.c_up || pressed.d_up) {
             t3d_vec3_add(position, position, (T3DVec3){0, 0, -BulletOffset});
             bulletController.fireBullet(position, (T3DVec3){0, 0, -BulletVelocity}, (PlyNum)id, player.team);
-            // Max firing rate is 1 bullet per 2 frames & can't fire more than one bullet
-            return;
+            fired = true;
         } else if (pressed.c_down || pressed.d_down) {
             t3d_vec3_add(position, position, (T3DVec3){0, 0, BulletOffset});
             bulletController.fireBullet(position, (T3DVec3){0, 0, BulletVelocity}, (PlyNum)id, player.team);
-            return;
+            fired = true;
         } else if (pressed.c_left || pressed.d_left) {
             t3d_vec3_add(position, position, (T3DVec3){-BulletOffset, 0, 0});
             bulletController.fireBullet(position, (T3DVec3){-BulletVelocity, 0, 0}, (PlyNum)id, player.team);
-            return;
+            fired = true;
         } else if (pressed.c_right || pressed.d_right) {
             t3d_vec3_add(position, position, (T3DVec3){BulletOffset, 0, 0});
             bulletController.fireBullet(position, (T3DVec3){BulletVelocity, 0, 0}, (PlyNum)id, player.team);
-            return;
+            fired = true;
+        }
+
+        if (fired) {
+            player.temperature += TempPerBullet;
+            // Penalize if player is overheating
+            if (player.temperature > 1.f) player.temperature = 1.f + OverheatPenalty;
         }
     }
 }
@@ -213,8 +222,9 @@ void GameplayController::renderPlayerUI(PlayerGameplayData &playerGameplay, Play
         MainFont,
         x,
         y,
-        "P%lu", //  (%u, %u, %u, %u)
-        id + 1//,
+        "P%lu %4.2f", //  (%u, %u, %u, %u)
+        id + 1,
+        playerGameplay.temperature
         // playerGameplay.health[0],
         // playerGameplay.health[1],
         // playerGameplay.health[2],
