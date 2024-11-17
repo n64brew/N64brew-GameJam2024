@@ -46,6 +46,23 @@ void sequence_4_process_controller(float deltatime)
                     sequence_4_current_paragraph_finished = false;
                     sequence_4_drawn_characters = 0;
                     sequence_4_current_paragraph++;
+
+                    // Allowing music to progress based on progression of paragraphs.
+                    switch (sequence_4_current_paragraph)
+                    {
+                    case 0:
+                        sequence_4_currentXMPattern = 4;
+                        break;
+                    case 1:
+                        sequence_4_currentXMPattern = 14;
+                        break;
+                    case 2:
+                        sequence_4_currentXMPattern = 18;
+                        break;
+                    default:
+                        sequence_4_currentXMPattern = 23;
+                        break;
+                    }
                 }
             }
         }

@@ -10,14 +10,6 @@
 //                  Colors                               //
 ///////////////////////////////////////////////////////////
 
-#define BLACK RGBA32(0x00, 0x00, 0x00, 0xFF)
-#define WHITE RGBA32(0xFF, 0xFF, 0xFF, 0xFF)
-#define ASH_GRAY RGBA32(0xAD, 0xBA, 0xBD, 0xFF)
-#define MAYA_BLUE RGBA32(0x6C, 0xBE, 0xED, 0xFF)
-#define GUN_METAL RGBA32(0x31, 0x39, 0x3C, 0xFF)
-#define REDWOOD RGBA32(0xB2, 0x3A, 0x7A, 0xFF)
-#define BREWFONT RGBA32(242, 209, 155, 0xFF)
-
 #define SEQEUENCE_4_PARARGAPH_01 "$02Hark, ye gamer folk, to the tale of Minneapolis Mallard. That noble band who didst rise like the morning sun to lay waste upon the North Central that fateful weekend in late September."
 #define SEQEUENCE_4_PARARGAPH_02 "$02Known not for long years nor honored lineage, yet with spirit ablaze they took siege, keen as the falcon and fierce as the storm."
 #define SEQEUENCE_4_PARARGAPH_03 "$02From that day forth, the name Mallard echoed through village and vale, a legend born of victory. Leaving banners fallen and pride humbled, this is the tale of that very day..."
@@ -27,6 +19,7 @@
 ///////////////////////////////////////////////////////////
 sprite_t *sequence_4_mallard_logo_black_sprite;
 
+sprite_t *sequence_4_a_button_sprite;
 sprite_t *sequence_4_start_button_sprite;
 
 sprite_t *sequence_4_mallard_idle_sprite;
@@ -52,6 +45,9 @@ bool sequence_4_finished = false;
 bool sequence_4_all_paragraphs_finished = false;
 int sequence_4_current_paragraph = 0;
 bool sequence_4_current_paragraph_finished = false;
+bool sequence_4_paragraph_fade_out_started = false;
+float sequence_4_paragraph_fade_out_duration = 0.0f;
+bool sequence_4_paragraph_fade_out_finished = false;
 int sequence_4_drawn_characters = 0;
 int sequence_4_paragraph_speed = 4;
 char *sequence_4_current_paragraph_string;
@@ -107,6 +103,7 @@ void sequence_4_init()
     ///////////////////////////////////////////////////////////
 
     sequence_4_start_button_sprite = sprite_load("rom:/core/StartButton.sprite");
+    sequence_4_a_button_sprite = sprite_load("rom:/core/AButton.sprite");
 
     ///////////////////////////////////////////////////////////
     //                  Set up Game Elements                 //
@@ -138,6 +135,7 @@ void sequence_4_cleanup()
 
     // Free the sprites.
     sprite_free(sequence_4_start_button_sprite);
+    sprite_free(sequence_4_a_button_sprite);
     sprite_free(sequence_4_mallard_idle_sprite);
 
     // Stop the music and free the allocated memory.
@@ -219,10 +217,10 @@ void sequence_4(float deltatime)
     //                  Intro Sequence                       //
     ///////////////////////////////////////////////////////////
     sequence_4_draw_mallard_logo();
-    sequence_4_draw_paragraph();
+    sequence_4_draw_paragraph(deltatime);
+    sequence_4_draw_press_a_for_next();
     sequence_4_draw_press_start_to_skip();
-
-    fprintf(stderr, "Paragraph %i Character %i. Is %sFinished. Speed %i\n", sequence_4_current_paragraph, sequence_4_drawn_characters, sequence_4_current_paragraph_finished ? "" : "Not ", sequence_4_paragraph_speed);
+    sequence_4_menu();
 
     rdpq_detach_show();
 
@@ -236,7 +234,7 @@ void sequence_4(float deltatime)
 
     xm64player_tell(&xm, &patidx, &row, NULL);
 
-    // fprintf(stderr, "Patidx: %d, Row: %d\n", patidx, row);
+    fprintf(stderr, "Patidx: %d, Row: %d\n", patidx, row);
 
     // If the pattern index is greater than the currently allowed pattern, loop back to the start of the currently allowed pattern.
     if (patidx > sequence_4_currentXMPattern)
