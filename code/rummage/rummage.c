@@ -5,7 +5,7 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
-#define ENABLE_MUSIC 0
+#define ENABLE_MUSIC 1
 #define ENABLE_TEXT 0
 #define ENABLE_WIREFRAME 1
 
@@ -20,7 +20,7 @@
 #define WIN_DELAY           5.0f
 #define WIN_SHOW_DELAY      2.0f
 
-#define GAME_BACKGROUND     0xffff00ff
+#define GAME_BACKGROUND     0x666666ff
 #define FONT_DEBUG          1
 #define FONT_TEXT           2
 #define TEXT_COLOR          0x6CBB3CFF
@@ -103,13 +103,18 @@ void minigame_init()
     fonttext = rdpq_font_load("rom:/rummage/thickhead.font64");
     rdpq_text_register_font(FONT_TEXT, fonttext);
     rdpq_font_style(fonttext, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
+#else
+    // Init T3D debug font
+    t3d_debug_print_init();
+    font_t3ddbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);
+    rdpq_text_register_font(FONT_BUILTIN_DEBUG_MONO, font_t3ddbg);
 #endif
 
 #if ENABLE_MUSIC
     // Init and play music
     wav64_open(&music, "rom:/rummage/music.wav64");
 	wav64_set_loop(&music, true);
-    mixer_ch_set_vol(1, 0.15f, 0.15f);
+    mixer_ch_set_vol(1, 0.75f, 0.75f);
     wav64_play(&music, 1);
 #endif
 
@@ -237,16 +242,17 @@ void minigame_loop(float deltatime)
 #endif
 
 #if ENABLE_TEXT
-    if (show_debug_text) {
         rdpq_sync_tile();
         rdpq_sync_pipe(); // Hardware crashes otherwise
 
+    if (show_debug_text) {
         // Display FPS
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
 
         // Display game data
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 30, "Key: %d", game_key());
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
+    }
 
         // Display winner
         if (is_ending && end_timer >= WIN_SHOW_DELAY) {

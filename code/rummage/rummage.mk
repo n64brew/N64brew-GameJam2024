@@ -7,6 +7,8 @@ ASSETS_LIST += \
 	filesystem/rummage/furniture_wood_tex.ci4.sprite \
 	filesystem/rummage/vault.t3dm \
 	filesystem/rummage/vault_tex.ci4.sprite \
+	filesystem/rummage/vault_digits_tex.ci4.sprite \
+	filesystem/rummage/vault_lock_tex.ci4.sprite \
 	filesystem/rummage/player.t3dm \
 	filesystem/rummage/key.t3dm \
 	filesystem/rummage/key.wav64 \
