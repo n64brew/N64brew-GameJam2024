@@ -158,11 +158,12 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
         // TODO: if we could delegate this to player.cpp, b/c collider doesn't belong here
         for (auto& player : gameplayData)
         {
-            auto colliderPosition = T3DVec3{player.pos.v[0], player.pos.v[1] + BulletHeight, player.pos.v[2]};
-            auto colliderPosition2 = T3DVec3{player.pos.v[0], player.pos.v[1] + BulletHeight-PlayerRadius, player.pos.v[2]};
+            // 2D distance
+            auto dist2 =
+                (player.pos.v[0] - bullet.pos.v[0]) * (player.pos.v[0] - bullet.pos.v[0]) +
+                (player.pos.v[2] - bullet.pos.v[2]) * (player.pos.v[2] - bullet.pos.v[2]);
 
-            if (t3d_vec3_distance2(colliderPosition, bullet.pos) < PlayerRadius * PlayerRadius ||
-                t3d_vec3_distance2(colliderPosition2, bullet.pos) < PlayerRadius * PlayerRadius) {
+            if (dist2 < PlayerRadius * PlayerRadius) {
                 playerHitStatus[i] = applyDamage(player, bullet.team);
                 killBullet(bullet);
             }
