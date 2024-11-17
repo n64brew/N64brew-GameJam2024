@@ -474,18 +474,53 @@ void rdpq_draw_one_floor_piece(int *x, int *y, int *w, int *h, color_t color){
     rdpq_fill_rectangle(*x, *y, *x + *w, *y + *h);
 }
 
-void draw_players_and_level(struct player** players, struct floorPiece** floors, int* numFloors, color_t WHITE){
+void draw_players_and_level(struct player** players, sprite_t** player_sprites, struct floorPiece** floors, int* numFloors, color_t WHITE){
         // draw floors
         for(int i = 0; i < *numFloors; i++){
             rdpq_draw_one_floor_piece(&floors[i]->xPos, &floors[i]->yPos, &floors[i]->width, &floors[i]->height, WHITE);
         }
 
-        // for(int i = 0; i < 4; i++){
-        //     // draw player if alive
-        //     if(players[i]->isAlive){
-        //         if(players[i]->id != 0){
-        //             rdpq_draw_one_rectangle(&players[i]->xPos, &players[i]->yPos, &players[i]->width, &players[i]->height, players[i]->color);
-        //         }
-        //     }
-        // }
+        // DRAW PLAYER SPRITES
+        sprite_t* player_left_sprite = player_sprites[0];
+        sprite_t* player_right_sprite = player_sprites[1];
+        sprite_t* player_jump_sprite = player_sprites[2];
+        for(int i = 0; i < MAXPLAYERS; i++){
+            // draw player if alive
+            if(players[i]->isAlive){
+                if(players[i]->onFloor || players[i]->onTopOfEnemy){
+                    if(players[i]->attackTimer > 0){
+                        if(players[i]->attackDirection == 0){
+                            rdpq_set_mode_standard();
+                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                            rdpq_sprite_blit(player_left_sprite, players[i]->xPos, players[i]->yPos, NULL);
+                        } else if(players[i]->attackDirection == 1){
+                            rdpq_set_mode_standard();
+                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                            rdpq_sprite_blit(player_right_sprite, players[i]->xPos, players[i]->yPos, NULL);
+                        }
+                    } else {
+                        if(players[i]->direction == 0){
+                            rdpq_set_mode_standard();
+                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                            rdpq_sprite_blit(player_left_sprite, players[i]->xPos, players[i]->yPos, NULL);
+                        } else if(players[i]->direction == 1){
+                            rdpq_set_mode_standard();
+                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                            rdpq_sprite_blit(player_right_sprite, players[i]->xPos, players[i]->yPos, NULL);
+                        }
+                    }
+                } else {
+                    // rdpq_set_mode_standard();
+                    // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                    // rdpq_mode_combiner(RDPQ_COMBINER1((PRIM,ENV,TEX0,ENV), (0,0,0,TEX0)));
+                    // rdpq_set_prim_color(BREWFONT);  // fill color
+                    // rdpq_set_env_color(BLACK);      // outline color
+                    // rdpq_sprite_blit(logo, 35, 20, NULL);
+
+                    rdpq_set_mode_standard();
+                    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                    rdpq_sprite_blit(player_jump_sprite, players[i]->xPos, players[i]->yPos, NULL);
+                }
+            }
+        }
 }

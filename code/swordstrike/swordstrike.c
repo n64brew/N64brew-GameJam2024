@@ -17,6 +17,9 @@ const MinigameDef minigame_def = {
     .instructions = "DPAD for movement, A to jump, B to attack, Down + A to drop down, L to slide"
 };
 
+#define FONT_TEXT           1
+#define TEXT_COLOR          0x6CBB3CFF
+
 // game state
 // COUNT DOWN = 0, IN GAME = 1, GAME END = 2, PAUSE = 3
 int game_state;
@@ -59,13 +62,22 @@ bool playedWinnerSound;
 joypad_port_t pausePlayerPort;
 float pauseCheckDelay;
 
-// player sprites
-// sprite_t *player_sprites[4];
+// player sprites init
 sprite_t *player_left_sprite;
 sprite_t *player_right_sprite;
 sprite_t *player_jump_sprite;
 
+sprite_t* player_sprites[3];
+    
+// font
+rdpq_font_t *font;
+
 void minigame_init(){
+    // load font
+    font = rdpq_font_load("rom:/squarewave.font64");
+    rdpq_text_register_font(FONT_TEXT, font);
+    rdpq_font_style(font, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
+
     // load sprites from rom
     char fn1[64];
     sprintf(fn1, "rom:/swordstrike/fighter_left_neutral.sprite");
@@ -78,6 +90,10 @@ void minigame_init(){
     char fn3[64];
     sprintf(fn3, "rom:/swordstrike/fighter_jumping.sprite");
     player_jump_sprite = sprite_load(fn3);
+
+    player_sprites[0] = player_left_sprite;
+    player_sprites[1] = player_right_sprite;
+    player_sprites[2] = player_jump_sprite;
 
     // default to 0
     pauseCheckDelay = 0.0f;
@@ -319,13 +335,20 @@ void minigame_loop(float deltatime){
     }
 
     if(game_state == 3){
-        // UNPAUSE GAME
         joypad_buttons_t joypad_pressed = joypad_get_buttons_pressed(pausePlayerPort);
+        joypad_buttons_t joypad_held = joypad_get_buttons_held(pausePlayerPort);
+
+        // UNPAUSE GAME
         if(joypad_pressed.start){
             if(pauseCheckDelay <= 0.0){
                 game_state = 1;
                 pauseCheckDelay = 0.5f;
             }
+        }
+        
+        // QUIT GAME
+        if(joypad_held.z && joypad_held.d_up){
+            minigame_end();
         }
     }
 
@@ -336,10 +359,10 @@ void minigame_loop(float deltatime){
     rdpq_attach(disp, NULL);
 
     // draw background
-    graphics_fill_screen(disp, graphics_convert_color(DARK_GREY));
+    rdpq_clear(DARK_GREY);
 
-    // draw player bounding boxes and floors
-    draw_players_and_level(players, floors, &numFloors, WHITE);
+    // draw player sprites and floors
+    draw_players_and_level(players, player_sprites, floors, &numFloors, WHITE);
 
     // draw hitboxs => REMOVE LATER
     if(game_state == 1){
@@ -350,139 +373,27 @@ void minigame_loop(float deltatime){
         }
     }
 
-    // detach rdp before updating display
-    rdpq_detach();
-
-    // DRAW DEBUG VALUES -- remove later
-    void draw_debug_values(){
-
-        // PLAYER 1 VARS
-        // char msg1[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg1, sizeof(msg1), "%s: %i, %i", "POS", player1.xPos, player1.yPos);
-        // graphics_draw_text(disp, 10, 10, msg1);
-
-        // char msg2[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg2, sizeof(msg2), "%s: %f, %f", "VEL", player1.horizontalVelocity, player1.verticalVelocity);
-        // graphics_draw_text(disp, 10, 20, msg2);
-
-        // char msg3[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg3, sizeof(msg3), "%s: %i", "GAME_STATE", game_state);
-        // graphics_draw_text(disp, 10, 30, msg3);
-
-        // PLAYER 2 VARS
-        // char msg3[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg3, sizeof(msg3), "%s: %i, %i", "POS", player2.xPos, player2.yPos);
-        // graphics_draw_text(disp, 10, 30, msg3);
-
-        // char msg4[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg4, sizeof(msg4), "%s: %f, %f", "VEL", player2.horizontalVelocity, player2.verticalVelocity);
-        // graphics_draw_text(disp, 10, 40, msg4);
-
-        // PLAYERS ALIVE STATUS
-        // char msg3[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg3, sizeof(msg3), "%s: %i", "P1 ALIVE", player1.isAlive);
-        // graphics_draw_text(disp, 10, 30, msg3);
-
-        // char msg4[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg4, sizeof(msg4), "%s: %i", "P2 ALIVE", player2.isAlive);
-        // graphics_draw_text(disp, 10, 40, msg4);
-
-        // char msg5[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg5, sizeof(msg5), "%s: %i", "P3 ALIVE", player3.isAlive);
-        // graphics_draw_text(disp, 10, 50, msg5);
-
-        // char msg6[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg6, sizeof(msg6), "%s: %i", "P4 ALIVE", player4.isAlive);
-        // graphics_draw_text(disp, 10, 60, msg6);
-
-        // PLAYER 1 WEAPON
-        // char msg5[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg5, sizeof(msg5), "%s: %i, %i", "WEAP POS", player1.weapon.xPos, player1.weapon.yPos);
-        // graphics_draw_text(disp, 10, 40, msg5);
-
-        // char msg6[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg6, sizeof(msg6), "%s: %i", "ATT TIMER", player1.attackTimer);
-        // graphics_draw_text(disp, 10, 30, msg6);
-
-        // char msg4[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg4, sizeof(msg4), "%s: %i", "PAUSE PRESSED", pausePressed);
-        // graphics_draw_text(disp, 10, 40, msg4);
-        
-        // char msg4[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg4, sizeof(msg4), "%s: %i", "P1 onEnemy", player1.onTopOfEnemy);
-        // graphics_draw_text(disp, 10, 30, msg4);
-
-        // char msg5[100];
-        // graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        // snprintf(msg5, sizeof(msg5), "%s: %i", "P1 yPos + 10", (player1.yPos + 10));
-        // graphics_draw_text(disp, 10, 50, msg5);
-
-    }
-    draw_debug_values();
-
-    // DRAW PLAYER SPRITES
-    for(int i = 0; i < MAXPLAYERS; i++){
-        // draw player if alive
-        if(players[i]->isAlive){
-            if(players[i]->onFloor || players[i]->onTopOfEnemy){
-                if(players[i]->attackTimer > 0){
-                    if(players[i]->attackDirection == 0){
-                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_left_sprite);
-                    } else if(players[i]->attackDirection == 1){
-                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_right_sprite);
-                    }
-                } else {
-                    if(players[i]->direction == 0){
-                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_left_sprite);
-                    } else if(players[i]->direction == 1){
-                        graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_right_sprite);
-                    }
-                }
-            } else {
-                graphics_draw_sprite(disp, players[i]->xPos, players[i]->yPos, player_jump_sprite);
-            }
-        }
-    }
+    // set rdpq for drawing text
+    rdpq_set_mode_standard();
 
     // COUNT DOWN
     if(game_state == 0){
-        char msg1[100];
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        snprintf(msg1, sizeof(msg1), "%i", (int)countdown_timer);
-        graphics_draw_text(disp, 155, 130, msg1);
+        rdpq_text_printf(NULL, FONT_TEXT, 155, 140, "%i", (int)countdown_timer);
     }
 
     // DISPLAY WINNER NAME 
     if(game_state == 2 && playedWinnerSound){
-        char msg1[100];
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        snprintf(msg1, sizeof(msg1), "%s %i %s", "PLAYER", winnerIndex, "WINS");
-        graphics_draw_text(disp, 110, 130, msg1);
+        rdpq_text_printf(NULL, FONT_TEXT, 125, 140, "%s %i %s", "PLAYER", winnerIndex, "WINS");
     }
 
     // PAUSE
     if(game_state == 3){
-        char msg1[100];
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        snprintf(msg1, sizeof(msg1), "%s", "PAUSE");
-        graphics_draw_text(disp, 140, 130, msg1);
+        rdpq_text_printf(NULL, FONT_TEXT, 145, 140,  "%s", "PAUSE");
+        rdpq_text_printf(NULL, FONT_TEXT, 110, 230, "%s", "HOLD Z + UP TO QUIT");
     }
 
-    // UPDATE DISPLAY WITH CURRENT VIDEO DATA
-    display_show(disp);
+    // detach rdp before updating display
+    rdpq_detach_show();
 }
 
 void free_level_data(struct floorPiece **floors){
@@ -506,6 +417,10 @@ void minigame_cleanup(){
     sprite_free(player_left_sprite);
     sprite_free(player_right_sprite);
     sprite_free(player_jump_sprite);
+
+    // free fonts
+    rdpq_font_free(font);
+    rdpq_text_unregister_font(FONT_TEXT);
 
     display_close();
 }
