@@ -36,6 +36,7 @@ class Bullet
         T3DVec3 prevPos;
         T3DVec3 velocity;
         PlyNum team;
+        PlyNum owner;
         U::T3DMat4FP matFP;
 };
 
@@ -61,7 +62,7 @@ class BulletController
         BulletController(std::shared_ptr<MapRenderer> map);
         void render(float deltaTime);
         std::array<bool, PlayerCount> fixedUpdate(float deltaTime, std::vector<PlayerGameplayData> &gameplayData);
-        void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum player);
+        void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team);
 };
 
 #endif // __DAMAGE_H

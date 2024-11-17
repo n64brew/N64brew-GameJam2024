@@ -159,7 +159,7 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
         for (auto& player : gameplayData)
         {
             // Don't hit the player that fired the bullet
-            if (i == bullet.team) {
+            if (i == bullet.owner) {
                 i++;
                 continue;
             }
@@ -180,11 +180,12 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
     return playerHitStatus;
 }
 
-void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum team) {
+void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team) {
     if (newBulletCount >= newBullets.size()) return;
 
     newBullets[newBulletCount].pos = pos;
     newBullets[newBulletCount].velocity = velocity;
+    newBullets[newBulletCount].owner = owner;
     newBullets[newBulletCount].team = team;
     newBulletCount++;
 }
