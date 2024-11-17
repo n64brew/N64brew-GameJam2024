@@ -25,6 +25,7 @@
 constexpr float ForceLimit = 60.f;
 constexpr float PlayerInvMass = 10;
 constexpr float SpeedLimit = 80.f;
+constexpr float BulletOffset = 15.f;
 
 class GameplayController
 {

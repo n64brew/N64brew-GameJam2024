@@ -128,16 +128,20 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id, 
 
         // Fire button
         if (pressed.c_up || pressed.d_up) {
+            t3d_vec3_add(position, position, (T3DVec3){0, 0, -BulletOffset});
             bulletController.fireBullet(position, (T3DVec3){0, 0, -BulletVelocity}, player.team);
             // Max firing rate is 1 bullet per 2 frames & can't fire more than one bullet
             return;
         } else if (pressed.c_down || pressed.d_down) {
+            t3d_vec3_add(position, position, (T3DVec3){0, 0, BulletOffset});
             bulletController.fireBullet(position, (T3DVec3){0, 0, BulletVelocity}, player.team);
             return;
         } else if (pressed.c_left || pressed.d_left) {
+            t3d_vec3_add(position, position, (T3DVec3){-BulletOffset, 0, 0});
             bulletController.fireBullet(position, (T3DVec3){-BulletVelocity, 0, 0}, player.team);
             return;
         } else if (pressed.c_right || pressed.d_right) {
+            t3d_vec3_add(position, position, (T3DVec3){BulletOffset, 0, 0});
             bulletController.fireBullet(position, (T3DVec3){BulletVelocity, 0, 0}, player.team);
             return;
         }

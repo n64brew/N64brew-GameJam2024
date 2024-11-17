@@ -158,6 +158,12 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
         // TODO: if we could delegate this to player.cpp, b/c collider doesn't belong here
         for (auto& player : gameplayData)
         {
+            // Don't hit the player that fired the bullet
+            if (i == bullet.team) {
+                i++;
+                continue;
+            }
+
             // 2D distance
             auto dist2 =
                 (player.pos.v[0] - bullet.pos.v[0]) * (player.pos.v[0] - bullet.pos.v[0]) +
