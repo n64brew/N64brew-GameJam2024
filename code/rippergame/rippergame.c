@@ -14,10 +14,14 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 
 #define COUNTDOWN_DELAY 4.0f
 #define FINISH_DELAY 10.0f
+#define STARTING_GAME_TIME 60.0f
+#define DEFAULT_ABILITY_COOLDOWN 2.0f
+
 #define CONTROLLER_LOWER_DEADZONE 4
 #define CONTROLLER_UPPER_DEADZONE 50
 
-#define DEBUG_FONT 1
+#define FONT_DEBUG 1
+#define FONT_BILLBOARD 2
 
 /*********************************
              Globals
@@ -31,6 +35,8 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 T3DModel* modelMap;
 T3DModel* modelCollision;
+
+sprite_t* spriteAButton;
 
 // Enumerator for teams
 typedef enum
@@ -102,10 +108,13 @@ player_data players[MAXPLAYERS];
 objective_data objectives[2];
 collisionobject_data collisionObjects[10];
 
+// drawing variables
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
 
-rdpq_font_t* debugFont;
+// fonts
+rdpq_font_t* fontDebug;
+rdpq_font_t* fontBillboard;
 
 // Sound globals
 wav64_t sfx_start;
@@ -116,6 +125,7 @@ int lastCountdownNumber;
 float countdownTimer;
 bool gameStarting;
 bool gameEnding;
+float gameTimeRemaining;
 
 // You need this function defined somewhere in your project
 // so that the minigame manager can work
@@ -134,10 +144,10 @@ const MinigameDef minigame_def = {
 
 void debugInfoDraw(float deltaTime)
 {
-    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 10, "Test Debug");
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "FPS: %f", 1.0f/deltaTime);
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
+    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = 640, .disable_aa_fix = true, };
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+10, "Test Debug");
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+20, "FPS: %f", 1.0f/deltaTime);
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
     joypad_port_t controllerPort = core_get_playercontroller(0);
     
     if(!joypad_is_connected(controllerPort))
@@ -147,7 +157,100 @@ void debugInfoDraw(float deltaTime)
     else
     {
         joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 40, "p1 stick x: %i, p1 stick y: %i", joypad.stick_x, joypad.stick_y);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "p1 stick x: %i, p1 stick y: %i", joypad.stick_x, joypad.stick_y);
+    }
+}
+
+/*==============================
+    HUD_Update
+    updates HUD elements outside of the draw loop
+==============================*/
+void HUD_Update(float deltaTime)
+{
+    if(!gameStarting)
+    {
+        // Update anything needed on the HUD (ability timer bar resizing/game time remaining)
+        gameTimeRemaining -= deltaTime;
+    }
+}
+
+/*==============================
+    HUD_draw
+    draws main HUD info using the RDP
+==============================*/
+void HUD_draw()
+{
+    const T3DVec3 HUDOffsets[] = {
+    (T3DVec3){{16.0f, 208.0f, 0.0f}},
+    (T3DVec3){{528.0f, 208.0f, 0.0f}},
+    (T3DVec3){{528.0f, 16.0f, 0.0f}},
+    (T3DVec3){{16.0f, 16.0f, 0.0f}},
+    };
+
+    const color_t colours[] = {
+    PLAYERCOLOR_1,
+    PLAYERCOLOR_2,
+    PLAYERCOLOR_3,
+    PLAYERCOLOR_4,
+    };
+
+    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
+
+    // make sure the RDP is sync'd
+    rdpq_sync_pipe();
+    rdpq_sync_tile();
+
+    // iterate through all the players and draw what we need
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        // if player isn't active, skip
+        if(!players[iDx].isActive)
+        {
+            continue;
+        }
+        else
+        {
+            // set up some basic vectors for reverse picking
+            T3DVec3 billboardPos = (T3DVec3){{
+                players[iDx].playerPos.v[0],
+                players[iDx].playerPos.v[1],
+                players[iDx].playerPos.v[2]
+            }};
+
+            T3DVec3 billboardScreenPos;
+            t3d_viewport_calc_viewspace_pos(&viewport, &billboardScreenPos, &billboardPos);
+
+            // round the result to the nearest whole number to avoid blurry text
+            int x = floorf(billboardScreenPos.v[0]);
+            int y = floorf(billboardScreenPos.v[1]);
+
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, x-5, y-16, "P%d", iDx+1);
+
+            // draw the rest of the text for the HUD
+            // draw the A button sprite
+            rdpq_set_mode_standard();
+            rdpq_mode_alphacompare(128);
+            rdpq_sync_load();
+            rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 8, &(rdpq_blitparms_t){ .scale_y = 0.5f});
+            if(players[iDx].playerTeam == teamThief)
+            {
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Jump Wall");
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] + 10, "Player %i: Thief", iDx + 1);
+            }
+            else if(players[iDx].playerTeam == teamGuard)
+            {
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Stun Attack");
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] + 10, "Player %i: Guard", iDx + 1);
+            }
+
+            // draw ability cooldown bars
+            rdpq_set_mode_fill(RGBA32(0 ,0 ,0 ,128));
+            rdpq_fill_rectangle(HUDOffsets[iDx].v[0] - 2, HUDOffsets[iDx].v[1] + 12, HUDOffsets[iDx].v[0] + 85, HUDOffsets[iDx].v[1] + 15);
+            
+            rdpq_set_mode_fill(colours[iDx]);
+            rdpq_fill_rectangle(HUDOffsets[iDx].v[0] - 2, HUDOffsets[iDx].v[1] + 12, HUDOffsets[iDx].v[0] + t3d_lerp(85, -2, (players[iDx].abilityTimer / DEFAULT_ABILITY_COOLDOWN) ) , HUDOffsets[iDx].v[1] + 15);
+        }
     }
 }
 
@@ -573,24 +676,30 @@ void player_loop(float deltaTime, int playerNumber)
         return;
     }
 
-    if(!players[playerNumber].isAi)
+    if(!players[playerNumber].isAi && !gameStarting)
     {
         joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
 
         if(btn.start) minigame_end();
 
-        if(btn.b && players[playerNumber].playerTeam == teamGuard)
+        if(btn.a && players[playerNumber].playerTeam == teamGuard)
         {
-            // stun in an AoE
-            for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+            // check to see if our ability cooldown is not active
+            if(!(players[playerNumber].abilityTimer > 0.0f))
             {
-                if(players[iDx].isActive == false || players[iDx].playerTeam == teamGuard)
+                // stun in an AoE
+                for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
                 {
-                    continue;
+                    if(players[iDx].isActive == false || players[iDx].playerTeam == teamGuard)
+                    {
+                        continue;
+                    }
+                    T3DVec3 tempVec = {0};
+                    t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
+                    if(t3d_vec3_len(&tempVec) < 100 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 10.0f;
                 }
-                T3DVec3 tempVec = {0};
-                t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
-                if(t3d_vec3_len(&tempVec) < 100 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 10.0f;
+                // set the ability timer
+                players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
             }
         }
     }
@@ -678,22 +787,39 @@ void objective_cleanup()
 
 void minigame_init()
 {
+    // keep a const here of the player colours
+    const color_t colours[] = {
+    PLAYERCOLOR_1,
+    PLAYERCOLOR_2,
+    PLAYERCOLOR_3,
+    PLAYERCOLOR_4,
+    };
+
     // initialise gameplay variables
     lastCountdownNumber = COUNTDOWN_DELAY;
     countdownTimer = COUNTDOWN_DELAY;
     gameStarting = true;
     gameEnding = false;
+    gameTimeRemaining = STARTING_GAME_TIME;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_640x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_640x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_DEDITHER);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
     t3d_init((T3DInitParams){});
 
     // load a font to use for HUD text
-    debugFont = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);
-    rdpq_text_register_font(DEBUG_FONT, debugFont);
+    fontDebug = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);
+    rdpq_text_register_font(FONT_DEBUG, fontDebug);
+
+    // load in the player billboard font
+    fontBillboard = rdpq_font_load("rom:/squarewave.font64");
+    rdpq_text_register_font(FONT_BILLBOARD, fontBillboard);
+    for (size_t i = 0; i < MAXPLAYERS; i++)
+    {
+        rdpq_font_style(fontBillboard, i, &(rdpq_fontstyle_t){ .color = colours[i] });
+    }
 
     // create the viewport
     viewport = t3d_viewport_create();
@@ -723,6 +849,9 @@ void minigame_init()
 
     // load a model from ROM for the collision square
     modelCollision = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
+
+    // load sprites from ROM for the HUD
+    spriteAButton = sprite_load("rom:/core/AButton.sprite");
 
     // clear the sync point
     syncPoint = 0;
@@ -762,6 +891,8 @@ void minigame_fixedloop(float deltatime)
     {
         player_fixedloop(deltatime, i);
     }
+
+    HUD_Update(deltatime);
 
     // process pre-game countdown timer
     if(gameStarting)
@@ -846,12 +977,16 @@ void minigame_loop(float deltatime)
     // set a sync point
     syncPoint = rspq_syncpoint_new();
 
-    // make sure the RDP is sync'd
-    rdpq_sync_tile();
-    rdpq_sync_pipe(); // Hardware crashes otherwise
 
     // draws RDP text on top of the scene showing debug info
     debugInfoDraw(deltatime);
+
+    // draws the main game HUD
+    HUD_draw();
+    
+    // make sure the RDP is sync'd
+    rdpq_sync_tile();
+    rdpq_sync_pipe(); // Hardware crashes otherwise
 
     // game starting countdown text draw
     if(gameStarting)
@@ -896,9 +1031,15 @@ void minigame_cleanup()
     t3d_model_free(modelMap);
 
     free_uncached(mapMatFP);
+    
+    // make sure to free the allocated sprites
+    free(spriteAButton);
 
-    rdpq_text_unregister_font(DEBUG_FONT);
-    rdpq_font_free(debugFont);
+    rdpq_text_unregister_font(FONT_BILLBOARD);
+    rdpq_font_free(fontBillboard);
+
+    rdpq_text_unregister_font(FONT_DEBUG);
+    rdpq_font_free(fontDebug);
 
     t3d_destroy();
     display_close();
