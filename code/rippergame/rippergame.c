@@ -35,6 +35,7 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 T3DModel* modelMap;
 T3DModel* modelCollision;
+T3DModel* modelStunWeaponEffect;
 
 sprite_t* spriteAButton;
 
@@ -81,6 +82,16 @@ typedef struct
 
 typedef struct
 {
+    T3DMat4FP* modelMatFP;
+    T3DModel* model; // do not load models into this struct as they won't be tracked and free'd only pass copies of pointers
+    T3DVec3 effectPos;
+    bool isActive;
+    float remainingTimer; // self removing timer
+    float effectSize;
+} effect_data;
+
+typedef struct
+{
     bool isActive;
     T3DMat4FP* modelMatFP;
     T3DModel* model;
@@ -105,6 +116,7 @@ typedef struct
 } collisionresult_data;
 
 player_data players[MAXPLAYERS];
+effect_data effectPool[MAXPLAYERS];
 objective_data objectives[2];
 collisionobject_data collisionObjects[10];
 
@@ -198,8 +210,8 @@ void HUD_draw()
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
     // make sure the RDP is sync'd
-    rdpq_sync_pipe();
-    rdpq_sync_tile();
+    //rdpq_sync_pipe();
+    //rdpq_sync_tile();
 
     // iterate through all the players and draw what we need
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
@@ -231,7 +243,7 @@ void HUD_draw()
             // draw the A button sprite
             rdpq_set_mode_standard();
             rdpq_mode_alphacompare(128);
-            rdpq_sync_load();
+            //rdpq_sync_load();
             rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 8, &(rdpq_blitparms_t){ .scale_y = 0.5f});
             if(players[iDx].playerTeam == teamThief)
             {
@@ -696,10 +708,18 @@ void player_loop(float deltaTime, int playerNumber)
                     }
                     T3DVec3 tempVec = {0};
                     t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
-                    if(t3d_vec3_len(&tempVec) < 100 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 10.0f;
+                    if(t3d_vec3_len(&tempVec) < 50 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 1.0f;
                 }
                 // set the ability timer
                 players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+                // set the effect model to appear
+                effectPool[playerNumber].isActive = true;
+                effectPool[playerNumber].remainingTimer = 1.0f;
+                effectPool[playerNumber].effectPos = players[playerNumber].playerPos;
+                effectPool[playerNumber].effectSize = 100.0f;
+
+                // play sound effect here
+                // TODO ability sound effect 
             }
         }
     }
@@ -780,6 +800,62 @@ void objective_cleanup()
     free_uncached(objectives[1].modelMatFP);
 }
 
+void effect_init()
+{
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        effectPool[iDx].isActive = false;
+        effectPool[iDx].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+        effectPool[iDx].model = modelStunWeaponEffect;
+        effectPool[iDx].effectPos = (T3DVec3){{128.0f, 1.0f, 0.0f}};
+        effectPool[iDx].remainingTimer = 0.0f;
+        effectPool[iDx].effectSize = 1.0f;
+    }
+}
+
+void effect_update(float deltaTime)
+{
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        if(effectPool[iDx].remainingTimer > 0.0f)
+        {
+            effectPool[iDx].remainingTimer -= deltaTime;
+            if(effectPool[iDx].remainingTimer < 0.0f) 
+            {   
+                effectPool[iDx].remainingTimer = 0.0f;
+                effectPool[iDx].isActive = false;
+            }
+        }
+    }
+}
+
+void effect_draw()
+{
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        if(effectPool[iDx].isActive)
+        {
+            t3d_mat4fp_from_srt_euler(effectPool[iDx].modelMatFP,
+            (float[3]){0.00625f * effectPool[iDx].effectSize, 0.00625f * effectPool[iDx].effectSize, 0.00625f * effectPool[iDx].effectSize},
+            (float[3]){0.0f, 0.0f, 0.0f},
+            effectPool[iDx].effectPos.v);
+
+            t3d_matrix_push(effectPool[iDx].modelMatFP);
+            rdpq_set_prim_color(RGBA32(0,128,255,255));
+            t3d_model_draw(effectPool[iDx].model);
+            t3d_matrix_pop(1);
+        }
+    }
+}
+
+void effect_cleanup()
+{
+    for(int iDx = 0; iDx < (sizeof(effectPool) / sizeof(effectPool[0])); iDx++)
+    {
+        free_uncached(effectPool[iDx].modelMatFP);
+    }
+}
+
 /*==============================
     minigame_init
     The minigame initialization function
@@ -847,6 +923,9 @@ void minigame_init()
         t3d_matrix_pop(1);
     dplMap = rspq_block_end();
 
+    // load a model from ROM for the stun weapon effect
+    modelStunWeaponEffect = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
+
     // load a model from ROM for the collision square
     modelCollision = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
 
@@ -873,6 +952,9 @@ void minigame_init()
     // initialise and setup collisions
     collision_init();
 
+    // initialise effect models
+    effect_init();
+
     return;
 }
 
@@ -893,6 +975,8 @@ void minigame_fixedloop(float deltatime)
     }
 
     HUD_Update(deltatime);
+
+    effect_update(deltatime);
 
     // process pre-game countdown timer
     if(gameStarting)
@@ -974,6 +1058,9 @@ void minigame_loop(float deltatime)
     // draw the objectives
     objective_draw();
 
+    // draw the effects
+    effect_draw();
+
     // set a sync point
     syncPoint = rspq_syncpoint_new();
 
@@ -1021,8 +1108,13 @@ void minigame_cleanup()
     // clenaup objectives
     objective_cleanup();
 
+    // cleanup effects
+    effect_cleanup();
+
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);
+
+    t3d_model_free(modelStunWeaponEffect);
 
     t3d_model_free(modelCollision);
 
