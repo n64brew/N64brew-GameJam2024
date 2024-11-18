@@ -184,7 +184,12 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
         currentPos.v
     );
 
+    rdpq_sync_pipe();
     rdpq_set_prim_color(colors[playerGameplay.team]);
+
+    auto result = std::max_element(playerGameplay.health.begin(), playerGameplay.health.end());
+
+    rdpq_set_env_color(colors[std::distance(playerGameplay.health.begin(), result)]);
     rspq_block_run(playerOther.block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
@@ -216,7 +221,7 @@ void GameplayController::renderPlayerUI(PlayerGameplayData &playerGameplay, Play
     rdpq_textparms_t fontParams {
         .style_id = playerGameplay.team,
         .width = 20,
-        .align = ALIGN_CENTER, .disable_aa_fix = false };
+        .align = ALIGN_CENTER, .disable_aa_fix = true };
     rdpq_text_printf(
         &fontParams,
         MainFont,

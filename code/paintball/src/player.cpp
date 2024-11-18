@@ -21,7 +21,23 @@ PlayerOtherData::PlayerOtherData(T3DModel *model, T3DModel *shadowModel) :
 
                 rdpq_mode_zbuf(true, true);
 
-                t3d_model_draw_skinned(model, skel.get());
+                // T3DModelIter it = t3d_model_iter_create(model, T3D_CHUNK_TYPE_OBJECT);
+                // while(t3d_model_iter_next(&it))
+                // {
+                //     t3d_model_draw_object(it.object, skel.get()->boneMatricesFP);
+                // }
+
+                T3DModelIter it = t3d_model_iter_create(model, T3D_CHUNK_TYPE_OBJECT);
+                while(t3d_model_iter_next(&it))
+                {
+                    if(it.object->material) {
+                        t3d_model_draw_material(it.object->material, nullptr);
+                    }
+                    // if (!strcmp(it.object->material->name, "paint") {
+
+                    // }
+                    t3d_model_draw_object(it.object, skel.get()->boneMatricesFP);
+                }
 
                 // Outline
                 t3d_state_set_vertex_fx(T3D_VERTEX_FX_OUTLINE, (int16_t)8, (int16_t)8);
@@ -33,7 +49,7 @@ PlayerOtherData::PlayerOtherData(T3DModel *model, T3DModel *shadowModel) :
                     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
                     t3d_state_set_drawflags((T3DDrawFlags)(T3D_FLAG_CULL_FRONT | T3D_FLAG_DEPTH));
 
-                    T3DModelIter it = t3d_model_iter_create(model, T3D_CHUNK_TYPE_OBJECT);
+                    it = t3d_model_iter_create(model, T3D_CHUNK_TYPE_OBJECT);
                     while(t3d_model_iter_next(&it))
                     {
                         t3d_model_draw_object(it.object, skel.get()->boneMatricesFP);
