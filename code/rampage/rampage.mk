@@ -6,6 +6,8 @@ ASSETS_LIST += \
 	filesystem/rampage/3.sprite \
 	filesystem/rampage/4.sprite \
 	filesystem/rampage/5.sprite \
+	filesystem/rampage/destroy.sprite \
+	filesystem/rampage/finish.sprite \
 	filesystem/rampage/building.t3dm \
 	filesystem/rampage/player.t3dm \
 	filesystem/rampage/ground.t3dm \
@@ -32,7 +34,13 @@ ASSETS_LIST += \
 	filesystem/rampage/road_tjunction.sprite \
 	filesystem/rampage/road_warning1.sprite \
 	filesystem/rampage/QuirkyRobot.font64 \
-	filesystem/rampage/stompin.wav64
+	filesystem/rampage/stompin.wav64 \
+	filesystem/rampage/Collapse.wav64 \
+	filesystem/rampage/countdown.wav64 \
+	filesystem/rampage/hit.wav64 \
+	filesystem/rampage/Roar1.wav64 \
+	filesystem/rampage/RoarShort.wav64 \
+	filesystem/rampage/startjingle.wav64
 
 assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)

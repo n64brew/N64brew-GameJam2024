@@ -20,8 +20,15 @@ struct RampageAssets {
     struct RampageSplitMesh tankSplit;
 
     sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
+    sprite_t* destroy_image;
+    sprite_t* finish_image;
 
     wav64_t music;
+    wav64_t collapseSound;
+    wav64_t countdownSound;
+    wav64_t hitSound;
+    wav64_t roarSounds[2];
+    wav64_t startJingle;
 };
 
 void rampage_assets_init();

@@ -24,9 +24,10 @@ T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 rdpq_font_t* font;
 #define FONT_TEXT 1
 
-#define START_DELAY 4.0f
+#define START_DELAY 4.5f
 #define FINISH_DELAY 3.0f
 #define END_SCREEN_DELAY    4.0f
+#define DESTROY_TITLE_TIME  2.0f
 
 struct Rampage gRampage;
 
@@ -72,7 +73,7 @@ static struct mesh_collider global_mesh_collider = {
 };
 
 void minigame_init() {
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_640x480, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     t3d_init((T3DInitParams){});
 
     collision_scene_init();
@@ -101,6 +102,8 @@ void minigame_init() {
     });
 
     rampage_init(&gRampage);
+
+    wav64_play(&rampage_assets_get()->startJingle, 2);
 }
 
 void minigame_set_active(bool is_active) {
@@ -157,16 +160,24 @@ void minigame_find_winners() {
 
 void minigame_fixedloop(float deltatime) {
     if (gRampage.state == RAMPAGE_STATE_START) {
+        float before = gRampage.delay_timer;
+
         gRampage.delay_timer -= deltatime;
 
+        if (floorf(before) != floorf(gRampage.delay_timer) && gRampage.delay_timer <= 3.0f) {
+            wav64_play(&rampage_assets_get()->countdownSound, 2);
+        }
+
         if (gRampage.delay_timer < 0.0f) {
-            gRampage.delay_timer = 0.0f;
+            gRampage.delay_timer = DESTROY_TITLE_TIME;
             gRampage.state = RAMPAGE_STATE_PLAYING;
             minigame_set_active(true);
             wav64_set_loop(&rampage_assets_get()->music, true);
             wav64_play(&rampage_assets_get()->music, 1);
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING) {
+        gRampage.delay_timer -= deltatime;
+
         if (minigame_is_done()) {
             gRampage.state = RAMPAGE_STATE_FINISHED;
             gRampage.delay_timer = FINISH_DELAY;
@@ -206,7 +217,7 @@ void minigame_fixedloop(float deltatime) {
     }
 }
 
-#define ORTHO_SCALE     5.0f
+#define ORTHO_SCALE     6.0f
 
 uint8_t colorWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -236,9 +247,9 @@ float pointLightDistance[] = {
 
 struct Vector2 scorePosition[] = {
     {30.0f, 36.0f},
-    {230.0f, 36.0f},
-    {230.0f, 220.0f},
-    {30.0f, 220.0f},
+    {550.0f, 36.0f},
+    {550.0f, 460.0f},
+    {30.0f, 460.0f},
 };
 
 int get_winner_index(int index) {
@@ -316,19 +327,35 @@ void minigame_loop(float deltatime) {
         );
     }
 
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,TEX0), (0,0,0,TEX0)));
+    
     if (gRampage.state == RAMPAGE_STATE_START) {
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,TEX0), (0,0,0,TEX0)));
+        int countdown_number = (int)ceilf(gRampage.delay_timer);
+        if (countdown_number <= 3) {
+            rdpq_sprite_blit(
+                rampage_assets_get()->countdown_numbers[countdown_number],
+                320 - 9,
+                240 - 16,
+                NULL
+            );
+        }
+    } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
         rdpq_sprite_blit(
-            rampage_assets_get()->countdown_numbers[(int)ceilf(gRampage.delay_timer)],
-            160 - 9,
-            120 - 16,
+            rampage_assets_get()->destroy_image,
+            320 - 137 / 2,
+            240 - 16,
             NULL
         );
-    }
-
-    if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
+    } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
+        rdpq_sprite_blit(
+            rampage_assets_get()->finish_image,
+            320 - 118 / 2,
+            240 - 16,
+            NULL
+        );
+    } else if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
         switch (gRampage.winner_count) {
             case 1:
                 rdpq_text_printf(

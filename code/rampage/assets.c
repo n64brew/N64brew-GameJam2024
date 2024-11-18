@@ -57,7 +57,17 @@ void rampage_assets_init() {
         gRampageAssets.countdown_numbers[i] = sprite_load(filename);
     }
 
+    gRampageAssets.destroy_image = sprite_load("rom:/rampage/destroy.sprite");
+    gRampageAssets.finish_image = sprite_load("rom:/rampage/finish.sprite");
+
     wav64_open(&gRampageAssets.music, "rom:/rampage/stompin.wav64");
+
+    wav64_open(&gRampageAssets.collapseSound, "rom:/rampage/Collapse.wav64");
+    wav64_open(&gRampageAssets.countdownSound, "rom:/rampage/countdown.wav64");
+    wav64_open(&gRampageAssets.hitSound, "rom:/rampage/hit.wav64");
+    wav64_open(&gRampageAssets.roarSounds[0], "rom:/rampage/Roar1.wav64");
+    wav64_open(&gRampageAssets.roarSounds[1], "rom:/rampage/RoarShort.wav64");
+    wav64_open(&gRampageAssets.startJingle, "rom:/rampage/startjingle.wav64");
 }
 
 void rampage_assets_destroy() {
@@ -75,6 +85,13 @@ void rampage_assets_destroy() {
     }
 
     wav64_close(&gRampageAssets.music);
+
+    wav64_close(&gRampageAssets.collapseSound);
+    wav64_close(&gRampageAssets.countdownSound);
+    wav64_close(&gRampageAssets.hitSound);
+    wav64_close(&gRampageAssets.roarSounds[0]);
+    wav64_close(&gRampageAssets.roarSounds[1]);
+    wav64_close(&gRampageAssets.startJingle);
 }
 
 struct RampageAssets* rampage_assets_get() {

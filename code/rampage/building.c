@@ -97,9 +97,12 @@ void rampage_building_damage(void* data, int amount, struct Vector3* velocity, i
     building->shake_timer = SHAKE_TIME;
 
     if (building->hp <= 0) {
+        wav64_play(&rampage_assets_get()->collapseSound, 3);
         give_player_score(source_id, building->height);
         building->health.is_dead = 1;
         building->is_collapsing = true;
+    } else {
+        wav64_play(&rampage_assets_get()->hitSound, 3);
     }
 }
 

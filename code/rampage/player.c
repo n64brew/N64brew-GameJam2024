@@ -194,6 +194,8 @@ void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int
 
         vector3Scale(&player->dynamic_object.velocity, &player->dynamic_object.velocity, PLAYER_ATTACK_VELOCITY);
         player->dynamic_object.velocity.y = PLAYER_STUN_IMPULSE;
+
+        wav64_play(&rampage_assets_get()->roarSounds[randomInRange(0, 2)], 3);
     }
 }
 
