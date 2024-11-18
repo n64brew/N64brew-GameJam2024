@@ -44,8 +44,11 @@ static const int8_t animation_offsets[HYDRA_ANIMATION_COUNT][ANIMATION_DB_COUNT]
 		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW},			// Close success
 		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_TO_SWAP},	// Open to swap
 		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW_TO_SWAP},	// Close to swap
+		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_TO_STUN},	// Open to stun
+		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW_TO_STUN},	// Close to stun
 		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_NONE},			// Chew
 		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_SWAP_DOWN},		// Chew to swap
+		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_STUN},			// Chew to swap
 		{4,	2,	3,	40,	0,	HYDRA_ANIMATION_SLEEP_2},		// Sleep
 		{5,	2,	1,	40,	0,	HYDRA_ANIMATION_SLEEP},			// Sleep 2 (single frame)
 		{7,	2,	1,	65,	0,	HYDRA_ANIMATION_NONE},			// Stun
@@ -149,15 +152,47 @@ void hydra_swap_animation (hydraharmonics_animations_t stage, PlyNum i) {
 		// Find another hydra in this state
 		for (uint8_t j=0; j<PLAYER_MAX; j++) {
 			if (hydras[j].animation == HYDRA_ANIMATION_SWAP_WAIT && j != i) {
+				// Check if there's anyone else moving downwards
+				uint8_t players_to_swap = 0;
+				for (uint8_t k=0; k<PLAYER_MAX; k++) {
+					if (
+						hydras[k].animation == HYDRA_ANIMATION_SWAP_DOWN ||
+						hydras[k].animation == HYDRA_ANIMATION_OPEN_TO_SWAP ||
+						hydras[k].animation == HYDRA_ANIMATION_CLOSE_TO_SWAP ||
+						hydras[k].animation == HYDRA_ANIMATION_CHEW_TO_SWAP
+					) {
+						// We're waiting for someone.
+						return;
+					} else if (hydras[k].animation == HYDRA_ANIMATION_SWAP_WAIT) {
+						players_to_swap++;
+					}
+				}
+				// Prepare the arrays
+				uint8_t* temp_hyd = malloc(players_to_swap * sizeof(uint8_t));
+				uint8_t* temp_pos = malloc(players_to_swap * sizeof(uint8_t));
+				uint8_t temp = 0;
+				for (uint8_t k=0; k<PLAYER_MAX; k++) {
+					if (hydras[k].animation == HYDRA_ANIMATION_SWAP_WAIT) {
+						temp_hyd[temp] = k;
+						temp_pos[temp] = hydras[k].pos;
+						temp++;
+					}
+				}
 				// Do the swap
-				PlyNum temp = hydras[i].pos;
-				hydras[i].pos = hydras[j].pos;
-				hydras[j].pos = temp;
-				hydra_animate (i, HYDRA_ANIMATION_SWAP_UP);
-				hydra_animate (j, HYDRA_ANIMATION_SWAP_UP);
+				temp = hydras[temp_hyd[0]].pos;
+				for (uint8_t k=0; k<players_to_swap-1; k++) {
+					hydras[temp_hyd[k]].pos = hydras[temp_hyd[k+1]].pos;
+				}
+				hydras[temp_hyd[players_to_swap-1]].pos = temp;
+				// Set the default post-swap variables
+				for (uint8_t k=0; k<players_to_swap; k++) {
+					hydra_animate (temp_hyd[k], HYDRA_ANIMATION_SWAP_UP);
+					hydras[temp_hyd[k]].state = STATE_MID;
+				}
+				// Set things back to normal
 				hydra_calculate_x();
-				hydras[i].state = STATE_MID;
-				hydras[j].state = STATE_MID;
+				free(temp_hyd);
+				free(temp_pos);
 				break;
 			}
 		}
@@ -211,22 +246,29 @@ void hydra_move (void) {
 	}
 }
 
-void hydra_swap_start (PlyNum swap_player, notes_special_t note_type) {
+void hydra_swap_start (PlyNum swap_player, notes_types_t note_type) {
 	PlyNum player_b;
 	// Find player 'b'
-	if (note_type == NOTES_SPECIAL_WHITE) {
+	if (note_type == NOTES_TYPE_SWAP_FORWARD) {
 		// Swap with next player in line
 		player_b = hydra_get_from_pos((hydras[swap_player].pos + 1) % PLAYER_MAX);
-	} else if (note_type == NOTES_SPECIAL_GREY) {
+	} else if (note_type == NOTES_TYPE_SWAP_RANDOM) {
 		// Swap with random player
 		player_b = hydra_get_from_pos((hydras[swap_player].pos + 1 + (rand() % (PLAYER_MAX-1))) % PLAYER_MAX);
-	} else if (note_type == NOTES_SPECIAL_BLACK) {
+	} else if (note_type == NOTES_TYPE_SWAP_BACK) {
 		// Swap with player behind you
 		player_b = hydra_get_from_pos((hydras[swap_player].pos + PLAYER_MAX-1) % PLAYER_MAX);
+	} else if (note_type == NOTES_TYPE_SWAP_ALL) {
+		// Swap with all players
+		for (uint8_t i=0; i<PLAYER_MAX; i++) {
+			if (i != swap_player) {
+				hydra_animate (i, HYDRA_ANIMATION_SWAP_DOWN);
+			}
+		}
+		return;
 	} else {
 		return;
 	}
-	hydras[swap_player].animation += HYDRA_ANIMATION_TO_SWAP_DIFF;
 	hydra_animate (player_b, HYDRA_ANIMATION_SWAP_DOWN);
 }
 

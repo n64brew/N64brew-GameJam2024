@@ -10,9 +10,15 @@ typedef struct winner_s {
 	uint8_t length;
 } winner_t;
 
+typedef enum {
+	SCORES_GET_FIRST,
+	SCORES_GET_LAST,
+} scores_extreme_t;
+
 extern winner_t* winners;
 
-uint16_t scores_get(uint8_t hydra);
+int16_t scores_get(uint8_t hydra);
+PlyNum scores_get_extreme (scores_extreme_t type);
 void scores_get_winner (void);
 void scores_clear (void);
 void hydra_ai (uint8_t hydra);

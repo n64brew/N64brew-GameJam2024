@@ -3,22 +3,29 @@
 
 #include "hydraharmonics.h"
 
-#define NOTES_SPECIAL_TYPES 3
-#define NOTES_PER_PLAYER 5
+#define NOTES_SPECIAL_TYPES 0
+#define NOTES_PER_PLAYER 10
 #define NOTES_PER_PLAYER_SPECIAL 3
 #define NOTES_SPEED 2.5
 #define NOTES_TOTAL_COUNT (NOTES_SPECIAL_TYPES + PLAYER_MAX)
+
+typedef enum {
+	NOTES_GET_REMAINING_UNSPAWNED = 1,
+	NOTES_GET_REMAINING_SPAWNED = 2,
+	NOTES_GET_REMAINING_ALL = 3,
+} notes_remaining_t;
 
 typedef struct note_s {
 	float x, y;
 	int8_t anim_offset;
 	float scale;
 	float y_offset;
-	hydraharmonics_state_t state;
 	PlyNum player;
+	notes_types_t type;
 	sprite_t* sprite;
-	struct note_s* next;
+	hydraharmonics_state_t state;
 	rdpq_blitparms_t blitparms;
+	struct note_s* next;
 } note_t;
 
 typedef struct note_ll_s {
@@ -27,14 +34,8 @@ typedef struct note_ll_s {
 	uint8_t notes_left[NOTES_TOTAL_COUNT];
 } note_ll_t;
 
-typedef enum {
-	NOTES_GET_REMAINING_UNSPAWNED = 1,
-	NOTES_GET_REMAINING_SPAWNED = 2,
-	NOTES_GET_REMAINING_ALL = 3,
-} notes_remaining_t;
-
 void notes_init(void);
-void notes_add (void);
+void notes_check_and_add (void);
 note_t* notes_get_first(void);
 void notes_move (void);
 void notes_draw (void);
