@@ -35,7 +35,6 @@ int main()
     joypad_init();
     timer_init();
     rdpq_init();
-    rdpq_debug_start();
     minigame_loadall();
     audio_init(32000, 3);
     mixer_init(32);

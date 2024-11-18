@@ -29,8 +29,9 @@ class MapRenderer
 {
     private:
         RDPQSurface surface;
-        U::RSPQBlock block;
-        // U::RSPQBlock paintBlock;
+        U::RSPQBlock renderModeBlock;
+        U::RSPQBlock paintBlock;
+        U::RSPQBlock drawBlock;
         U::Sprite sprite;
 
         U::TLUT tlut;

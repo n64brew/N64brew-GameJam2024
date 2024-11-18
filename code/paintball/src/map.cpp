@@ -2,7 +2,9 @@
 
 MapRenderer::MapRenderer() :
     surface {FMT_CI8, MapWidth, MapWidth},
-    block {nullptr, rspq_block_free},
+    renderModeBlock {nullptr, rspq_block_free},
+    paintBlock {nullptr, rspq_block_free},
+    drawBlock {nullptr, rspq_block_free},
     sprite {sprite_load("rom:/paintball/splash.ia4.sprite"), sprite_free},
     tlut {
         (uint16_t*)malloc_uncached(sizeof(uint16_t[256])),
@@ -73,6 +75,38 @@ MapRenderer::MapRenderer() :
     //     int y = i / (MapWidth/TileSize) * TileSize;
     //     __splash(x + 16, y + 16, PLAYER_1);
     // }
+
+    rspq_block_begin();
+        t3d_frame_start();
+        rdpq_sync_pipe();
+        rdpq_mode_tlut(TLUT_RGBA16);
+        rdpq_tex_upload_tlut(tlut.get(), 0, 5);
+        rdpq_mode_combiner(RDPQ_COMBINER_TEX);
+        t3d_state_set_drawflags((T3DDrawFlags)(T3D_FLAG_TEXTURED | T3D_FLAG_DEPTH));
+
+        rdpq_mode_filter(FILTER_POINT);
+        rdpq_mode_persp(true);
+
+        rdpq_mode_zbuf(false, false);
+    renderModeBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
+
+    rspq_block_begin();
+        rdpq_set_mode_standard();
+        rdpq_mode_antialias(AA_NONE);
+        rdpq_mode_alphacompare(1);
+        rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
+        rdpq_mode_blender(RDPQ_BLENDER((MEMORY_RGB, 0, IN_RGB, 1)));
+        rdpq_mode_filter(FILTER_BILINEAR);
+    paintBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
+
+    rspq_block_begin();
+        t3d_tri_draw(0, 1, 2);
+        t3d_tri_draw(2, 1, 3);
+
+        rdpq_sync_tile();
+        rdpq_sync_load();
+        rdpq_sync_pipe();
+    drawBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
 }
 
 MapRenderer::~MapRenderer() {
@@ -90,19 +124,7 @@ void MapRenderer::render(const T3DViewport &viewport) {
     }
     newSplashCount = 0;
 
-    t3d_frame_start();
-
-    // Moving the following to a block is crashing ares for some reason
-    rdpq_sync_pipe();
-    rdpq_mode_tlut(TLUT_RGBA16);
-    rdpq_tex_upload_tlut(tlut.get(), 0, 5);
-    rdpq_mode_combiner(RDPQ_COMBINER_TEX);
-    t3d_state_set_drawflags((T3DDrawFlags)(T3D_FLAG_TEXTURED | T3D_FLAG_DEPTH));
-
-    rdpq_mode_filter(FILTER_POINT);
-    rdpq_mode_persp(true);
-
-    rdpq_mode_zbuf(false, false);
+    rspq_block_run(renderModeBlock.get());
 
     for (int iy = 0; iy < MapWidth/TileSize; iy++) {
         for (int ix = 0; ix < MapWidth/TileSize; ix++ ) {
@@ -114,17 +136,13 @@ void MapRenderer::render(const T3DViewport &viewport) {
 
             int pixelX = ix * TileSize;
             int pixelY = iy * TileSize;
-            rdpq_sync_tile();
-            rdpq_sync_load();
-            rdpq_sync_pipe();
 
             rdpq_tex_upload_sub(TILE0, surface.get(), NULL, pixelX, pixelY, pixelX+TileSize, pixelY+TileSize);
 
             // TODO: this is not efficient, load more vertices
             t3d_vert_load(&vertices[idx * 2], 0, 4);
 
-            t3d_tri_draw(0, 1, 2);
-            t3d_tri_draw(2, 1, 3);
+            rspq_block_run(drawBlock.get());
         }
     }
 }
@@ -139,13 +157,9 @@ void MapRenderer::__splash(int x, int y, PlyNum player) {
 
     // TODO: move this to its own block & batch all the blits
     rdpq_attach(surface.get(), nullptr);
-        rdpq_set_mode_standard();
-        rdpq_mode_antialias(AA_NONE);
+        rspq_block_run(paintBlock.get());
+
         rdpq_set_scissor(x - 16, y - 16, x + 16, y + 16);
-        rdpq_mode_alphacompare(1);
-        rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
-        rdpq_mode_blender(RDPQ_BLENDER((MEMORY_RGB, 0, IN_RGB, 1)));
-        rdpq_mode_filter(FILTER_BILINEAR);
         rdpq_blitparms_t params {
             .width = 32,
             .height = 32,
