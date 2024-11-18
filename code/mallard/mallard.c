@@ -2,26 +2,22 @@
 #include "../../core.h"
 #include "../../minigame.h"
 
-#include "sequence_1.h"
-#include "sequence_2.h"
-#include "sequence_3.h"
 #include "sequence_4.h"
 
 #include <stdio.h>
 #include <unistd.h>
 
 const MinigameDef minigame_def = {
-    .gamename = "Mallard 64",
+    .gamename = "Mallard",
     .developername = "Josh Kautz",
     .description = "",
     .instructions = "",
 };
 
-bool sequence_1_libdragon = false;
-bool sequence_2_ascii = false;
-bool sequence_3_video = false;
-bool sequence_4_story = true;
-bool sequence_5_BLANK = false;
+bool sequence_introduction_started = true;
+bool sequence_introduction_finished = false;
+bool sequence_menu_started = false;
+bool sequence_menu_finished = false;
 
 /*==============================
     minigame_init
@@ -49,27 +45,9 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-    if (sequence_1_libdragon)
+    if (sequence_introduction_started == true && sequence_introduction_finished == false)
     {
-        sequence_1(deltatime);
-        return;
-    }
-
-    if (sequence_2_ascii)
-    {
-        sequence_2(deltatime);
-        return;
-    }
-
-    if (sequence_3_video)
-    {
-        sequence_3(deltatime);
-        return;
-    }
-
-    if (sequence_4_story)
-    {
-        sequence_4(deltatime);
+        sequence_introduction(deltatime);
         return;
     }
 

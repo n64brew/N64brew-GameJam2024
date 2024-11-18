@@ -31,8 +31,6 @@ extern sprite_t *sequence_4_start_button_sprite;
 extern sprite_t *sequence_4_mallard_libdragon_sprite;
 extern sprite_t *sequence_4_mallard_logo_black_sprite;
 extern sprite_t *sequence_4_mallard_logo_white_sprite;
-extern sprite_t *sequence_4_mallard_menu_1_sprite;
-extern sprite_t *sequence_4_mallard_menu_2_sprite;
 
 extern xm64player_t xm;
 

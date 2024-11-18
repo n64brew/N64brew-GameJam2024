@@ -22,27 +22,26 @@ void sequence_4_process_controller(float deltatime)
             sequence_4_finished = true;
         }
 
-        // Intro - Libdragon.
-        if (sequence_4_time <= DRAW_LIBDRAGON_LOGO_DURATION)
+        // Intro - Libdragon Logo.
+        if (sequence_4_libdragon_logo_started == true && sequence_4_libdragon_logo_finished == false)
         {
             if (pressed.a)
             {
-                sequence_4_time = DRAW_LIBDRAGON_LOGO_DURATION;
+                sequence_4_libdragon_logo_elapsed = DRAW_LIBDRAGON_LOGO_DURATION;
             }
         }
 
-        // Intro - Mallard.
-        if (sequence_4_time > DRAW_LIBDRAGON_LOGO_DURATION &&
-            sequence_4_time <= DRAW_LIBDRAGON_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION )
+        // Intro - Mallard Logo.
+        if (sequence_4_mallard_logo_started == true && sequence_4_mallard_logo_finished == false)
         {
             if (pressed.a)
             {
-                sequence_4_time = DRAW_LIBDRAGON_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION ;
+                sequence_4_mallard_logo_elapsed = DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION;
             }
         }
 
-        // Paragraphs.
-        if (sequence_4_paragraphs_finished == false && sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION )
+        // Intro - Paragraphs.
+        if (sequence_4_paragraphs_started == true && sequence_4_paragraphs_finished == false)
         {
             if (pressed.a)
             {

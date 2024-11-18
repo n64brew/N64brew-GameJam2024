@@ -22,8 +22,8 @@ void sequence_4_draw_press_start_to_skip()
         // Draw "Skip" text
         float x = RESOLUTION_320x240.width - 30;
         float y = RESOLUTION_320x240.height - 5;
-        int nbytes = strlen("$03^00Skip");
-        rdpq_text_printn(NULL, FONT_HALODEK, x, y, "$03^00Skip", nbytes);
+        int nbytes = strlen("$02^00Skip");
+        rdpq_text_printn(NULL, FONT_HALODEK, x, y, "$02^00Skip", nbytes);
         rdpq_mode_pop();
     }
 }
@@ -44,8 +44,8 @@ void sequence_4_draw_press_a_for_next()
         // Draw "Next" text
         float x = RESOLUTION_320x240.width - 30;
         float y = RESOLUTION_320x240.height - sequence_4_start_button_sprite->height - 6;
-        int nbytes = strlen("$03^00Next");
-        rdpq_text_printn(NULL, FONT_HALODEK, x, y, "$03^00Next", nbytes);
+        int nbytes = strlen("$02^00Next");
+        rdpq_text_printn(NULL, FONT_HALODEK, x, y, "$02^00Next", nbytes);
         rdpq_mode_pop();
     }
 }
@@ -75,8 +75,8 @@ void sequence_4_draw_libdragon_logo(float deltatime)
         float x = RESOLUTION_320x240.width / 2 - 37;
         float y = RESOLUTION_320x240.height / 2 - 72;
         rdpq_set_mode_standard();
-        int nbytes = strlen("$03^00Made with");
-        rdpq_text_printn(&(rdpq_textparms_t){.char_spacing = 2}, FONT_HALODEK, x, y, "$03^00Made with", nbytes);
+        int nbytes = strlen("$02^00Made with");
+        rdpq_text_printn(&(rdpq_textparms_t){.char_spacing = 2}, FONT_HALODEK, x, y, "$02^00Made with", nbytes);
 
         // Draw the Libdragon logo
         rdpq_mode_push();
@@ -214,8 +214,6 @@ void sequence_4_menu(float deltatime)
     if (sequence_4_paragraphs_finished == true)
     {
         float percentage = sequence_4_menu_fade_in_duration > MENU_FADE_IN_DURATION ? 1.0f : sequence_4_menu_fade_in_duration / MENU_FADE_IN_DURATION;
-        // rdpq_set_mode_standard();
-        // rdpq_sprite_blit(sequence_4_mallard_menu_1_sprite, 0, 0, NULL);
 
         sequence_4_draw_mallard_idle_sprite();
 

@@ -10,9 +10,9 @@
 //                  Colors                               //
 ///////////////////////////////////////////////////////////
 
-#define SEQEUENCE_4_PARARGAPH_01 "$02Hark, ye gamer folk, to the tale of Minneapolis Mallard. That noble band who didst rise like the morning sun to lay waste upon the North Central that fateful weekend in late September."
-#define SEQEUENCE_4_PARARGAPH_02 "$02Known not for long years nor honored lineage, yet with spirit ablaze they took siege, keen as the falcon and fierce as the storm."
-#define SEQEUENCE_4_PARARGAPH_03 "$02From that day forth, the name Mallard echoed through village and vale, a legend born of victory. Leaving banners fallen and pride humbled, this is the tale of that very day..."
+#define SEQEUENCE_4_PARARGAPH_01 "$01^00Hark, ye gamer folk, to the tale of Minneapolis Mallard. That noble band who didst rise like the morning sun to lay waste upon the North Central that fateful weekend in late September."
+#define SEQEUENCE_4_PARARGAPH_02 "$01^00Known not for long years nor honored lineage, yet with spirit ablaze they took siege, keen as the falcon and fierce as the storm."
+#define SEQEUENCE_4_PARARGAPH_03 "$01^00From that day forth, the name Mallard echoed through village and vale, a legend born of victory. Leaving banners fallen and pride humbled, this is the tale of that very day..."
 
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
@@ -20,8 +20,7 @@
 sprite_t *sequence_4_mallard_libdragon_sprite;
 sprite_t *sequence_4_mallard_logo_black_sprite;
 sprite_t *sequence_4_mallard_logo_white_sprite;
-sprite_t *sequence_4_mallard_menu_1_sprite;
-sprite_t *sequence_4_mallard_menu_2_sprite;
+
 
 sprite_t *sequence_4_mallard_background_clouds_front_fc_sprite;
 sprite_t *sequence_4_mallard_background_clouds_front_t_fc_sprite;
@@ -40,12 +39,11 @@ sprite_t *sequence_4_mallard_idle_sprite;
 xm64player_t xm;
 int sequence_4_currentXMPattern = 0;
 
-rdpq_font_t *sequence_4_font_pacifico;
 rdpq_font_t *sequence_4_font_celtic_garamond_the_second;
 rdpq_font_t *sequence_4_font_halo_dek;
 
 float sequence_4_time = 0.0f;
-int sequence_4_frame;
+int sequence_4_frame = 0;
 bool sequence_4_initialized = false;
 bool sequence_4_finished = false;
 
@@ -95,16 +93,14 @@ void sequence_4_init()
         .color = RGBA32(0x00, 0x00, 0x00, 0x00), // Black
     };
 
-    sequence_4_font_pacifico = rdpq_font_load("rom:/mallard/Pacifico.font64");
     sequence_4_font_celtic_garamond_the_second = rdpq_font_load("rom:/mallard/CelticGaramondTheSecond.font64");
     sequence_4_font_halo_dek = rdpq_font_load("rom:/mallard/HaloDek.font64");
 
     rdpq_font_style(sequence_4_font_halo_dek, 0, &fontstyle_white);
     rdpq_font_style(sequence_4_font_halo_dek, 1, &fontstyle_black);
-    rdpq_font_style(sequence_4_font_pacifico, 0, &fontstyle_white);
     rdpq_font_style(sequence_4_font_celtic_garamond_the_second, 0, &fontstyle_white);
+    rdpq_font_style(sequence_4_font_celtic_garamond_the_second, 1, &fontstyle_black);
 
-    rdpq_text_register_font(FONT_PACIFICO, sequence_4_font_pacifico);
     rdpq_text_register_font(FONT_CELTICGARMONDTHESECOND, sequence_4_font_celtic_garamond_the_second);
     rdpq_text_register_font(FONT_HALODEK, sequence_4_font_halo_dek);
 
@@ -122,10 +118,6 @@ void sequence_4_init()
     // Intro UI
     sequence_4_start_button_sprite = sprite_load("rom:/core/StartButton.sprite");
     sequence_4_a_button_sprite = sprite_load("rom:/core/AButton.sprite");
-
-    // Menu
-    sequence_4_mallard_menu_1_sprite = sprite_load("rom:/mallard/mallard_menu_1.rgba32.sprite");
-    sequence_4_mallard_menu_2_sprite = sprite_load("rom:/mallard/mallard_menu_2.rgba32.sprite");
 
     // Game
     sequence_4_mallard_idle_sprite = sprite_load("rom:/mallard/mallard_idle.rgba32.sprite");
@@ -147,17 +139,13 @@ void sequence_4_init()
     xm64player_play(&xm, 0);
     xm64player_seek(&xm, sequence_4_currentXMPattern, 0, 0);
 
-    sequence_4_frame = 0;
     sequence_4_initialized = true;
-
     sequence_4_libdragon_logo_started = true;
 }
 
 void sequence_4_cleanup()
 {
     // Unregister the font and free the allocated memory.
-    rdpq_text_unregister_font(FONT_PACIFICO);
-    rdpq_font_free(sequence_4_font_pacifico);
     rdpq_text_unregister_font(FONT_CELTICGARMONDTHESECOND);
     rdpq_font_free(sequence_4_font_celtic_garamond_the_second);
     rdpq_text_unregister_font(FONT_HALODEK);
@@ -175,10 +163,6 @@ void sequence_4_cleanup()
     // Intro UI
     sprite_free(sequence_4_start_button_sprite);
     sprite_free(sequence_4_a_button_sprite);
-
-    // Menu
-    sprite_free(sequence_4_mallard_menu_1_sprite);
-    sprite_free(sequence_4_mallard_menu_2_sprite);
 
     // Game
     sprite_free(sequence_4_mallard_idle_sprite);
@@ -206,51 +190,12 @@ void sequence_4_cleanup()
     // TODO: Check to make sure that we're resetting the state of a lot of things...
 
     // End the sequence.
-    sequence_4_story = false;
-    sequence_5_BLANK = true;
+    sequence_introduction_finished = true;
+    sequence_menu_started = true;
 }
 
-///////////////////////////////////////////////////////////
-//                  Utility Functions                    //
-///////////////////////////////////////////////////////////
-
-int fade_in_alpha(float percentage)
+void sequence_introduction(float deltatime)
 {
-    return (int)(percentage * 255.0f);
-}
-
-int fade_in_color(float percentage)
-{
-    return (int)((1.0f - percentage) * 255.0f);
-}
-
-// color_t background_color()
-// {
-//     // White for Mallard Logo.
-//     if (sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)
-//     {
-//         return WHITE;
-//     }
-
-//     // Fade to Black for Paragraph.
-//     if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION &&
-//         sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
-//     {
-//         float percentage = (sequence_4_time - (DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)) / DRAW_FADE_WHITE_TO_BLACK_DURATION;
-//         uint8_t color = fade_in_color(percentage);
-//         uint8_t alpha = fade_in_alpha(percentage);
-//         return RGBA32(color, color, color, alpha);
-//     }
-
-//     // Black for Paragraph.
-//     return BLACK;
-// }
-
-void sequence_4(float deltatime)
-{
-    sequence_4_frame++;
-    sequence_4_time += deltatime;
-
     sequence_4_process_controller(deltatime);
 
     if (!sequence_4_initialized)
@@ -290,4 +235,7 @@ void sequence_4(float deltatime)
     // If the pattern index is greater than the currently allowed pattern, loop back to the start of the currently allowed pattern.
     if (patidx > sequence_4_currentXMPattern)
         xm64player_seek(&xm, sequence_4_currentXMPattern, 0, 0);
+
+    sequence_4_frame++;
+    sequence_4_time += deltatime;
 }
