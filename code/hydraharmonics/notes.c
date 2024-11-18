@@ -1,6 +1,6 @@
 #include "notes.h"
+#include "logic.h"
 
-#define NOTE_SCALE_MULTIPLIER 1.0
 #define NOTE_Y_OFFSET_PERIOD 32
 #define NOTE_Y_OFFSET_AMPLITUDE 4
 #define NOTE_THETA_PERIOD 16
@@ -14,6 +14,12 @@
 #define NOTE_HEIGHT 32
 #define NOTE_ANIMATION_SPEED 8
 #define NOTE_ANIMATION_OFFSET_Y NOTE_Y_OFFSET_AMPLITUDE * 0.35
+
+#define NOTE_PLAYER_MAX_RETRIES 4
+#define NOTE_CHANCE_DOUBLE 4
+#define NOTE_CHANCE_TRIPLE 2
+#define NOTE_CHANCE_NON_STANDARD 3
+#define NOTE_CHANCE_FIXED 2
 
 // Global vars
 static note_ll_t notes;
@@ -37,30 +43,74 @@ void notes_init(void) {
 	notes.start = notes.end = NULL;
 }
 
+notes_types_t note_get_random_type (PlyNum p) {
+	uint32_t random = rand();
+	if (p == scores_get_extreme(SCORES_GET_FIRST)) {
+		// User is in first place, let's bring them down
+		if (random % NOTE_CHANCE_NON_STANDARD) {
+			return NOTES_TYPE_STANDARD;
+		} else if (random % NOTE_CHANCE_FIXED) {
+			return NOTES_TYPE_SOUR;
+		} else {
+			return random % NOTES_TYPE_COUNT;
+		}
+	} else if (p == scores_get_extreme(SCORES_GET_LAST)) {
+		// Use is in last place. Let's help a bit
+		if (random % NOTE_CHANCE_NON_STANDARD) {
+			return NOTES_TYPE_STANDARD;
+		} else if (random % NOTE_CHANCE_FIXED) {
+			return NOTES_TYPE_SWEET;
+		} else {
+			return random % NOTES_TYPE_COUNT;
+		}
+	} else {
+		// Standard rules
+		if (random % NOTE_CHANCE_NON_STANDARD) {
+			// Spawn a normal note
+			return NOTES_TYPE_STANDARD;
+		} else {
+			return random % NOTES_TYPE_COUNT;
+		}
+	}
+}
+
 PlyNum note_get_free(void) {
-	uint8_t i;
-	uint16_t notes_left_total = 0;
-	// Get the sum of weights
-	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
-		notes_left_total += notes.notes_left[i];
+	uint8_t i, j = 0;
+	uint16_t notes_left_total;
+	static PlyNum last_player = PLAYER_MAX;
+	if (last_player == PLAYER_MAX) {
+		last_player = rand() % PLAYER_MAX;
 	}
 
-	// Pick a random note
-	uint16_t random_note = rand() % notes_left_total;
 
-	// Find out which group it belongs to
-	uint16_t notes_left_cum = 0;
-	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
-		notes_left_cum += notes.notes_left[i];
-		if (random_note < notes_left_cum) {
-			notes.notes_left[i]--;
-			return i;
+	// Get the sum of weights
+	notes_left_total = notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED);
+
+	// Try not to pick the same note a few times
+	while (j <= NOTE_PLAYER_MAX_RETRIES) {
+		// Pick a random note
+		uint16_t random_note = rand() % notes_left_total;
+
+		// Find out which group it belongs to
+		uint16_t notes_left_cum = 0;
+		for (i=0; i<NOTES_TOTAL_COUNT; i++) {
+			notes_left_cum += notes.notes_left[i];
+			if (random_note < notes_left_cum) {
+				// Check if this is a note used by the previous player
+				if (i == last_player && j++ < NOTE_PLAYER_MAX_RETRIES) {
+					break;
+				} else {
+					last_player = i;
+					notes.notes_left[i]--;
+					return i;
+				}
+			}
 		}
 	}
 	return 0;
 }
 
-void notes_add (void) {
+void notes_add (PlyNum player, notes_types_t type, hydraharmonics_state_t state) {
 	note_t* note = malloc(sizeof(note_t));
 	uint32_t random = rand();
 	if (note != NULL) {
@@ -73,15 +123,10 @@ void notes_add (void) {
 		notes.end = note;
 
 		// Set the note's starting  values
-		if (random%3 == 0) {
-			note->state = STATE_UP;
-		} else if (random%3 == 1) {
-			note->state = STATE_MID;
-		} else {
-			note->state = STATE_DOWN;
-		}
-		note->player = note_get_free();
-		note->sprite = note_sprites[note->player];
+		note->player = player;
+		note->state = state;
+		note->type = type;
+		note->sprite = note_sprites[player];
 		note->x = display_get_width();
 		note->y = PADDING_TOP + (note->state+1) * HYDRA_ROW_HEIGHT + 8;
 		note->anim_offset = random % UINT8_MAX;
@@ -93,10 +138,53 @@ void notes_add (void) {
 			.scale_y = 0,
 			.cx = NOTE_WIDTH/2,
 			.cy = NOTE_HEIGHT/2,
+			.t0 = NOTE_HEIGHT * note->type,
 		};
 		note->scale = 0;
 		note->y_offset = 0;
 		note->next = NULL;
+	}
+}
+
+void notes_check_and_add (void) {
+	AiDiff diff = core_get_aidifficulty();
+	// Spawn the first note
+	if (!notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED))
+		return;
+	PlyNum p = note_get_free();
+	notes_add(
+		p,
+		note_get_random_type(p),
+		rand() % STATES_USABLE
+	);
+
+	// Have a chance to spawn two notes at medium and hard difficulty
+	if ( (diff == DIFF_MEDIUM || diff == DIFF_HARD) && !(rand() % NOTE_CHANCE_DOUBLE) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
+		hydraharmonics_state_t last_note_state = notes.end->state;
+		hydraharmonics_state_t new_note_state = 0;
+		while (new_note_state == last_note_state) {
+			new_note_state = (new_note_state + 1) % STATES_USABLE;
+		}
+		p = note_get_free();
+		notes_add(
+			p,
+			note_get_random_type(p),
+			new_note_state
+		);
+
+		// Have a chance to spawn a third note at a harder difficulty
+		if (diff == DIFF_HARD && !(rand() % NOTE_CHANCE_TRIPLE) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
+			new_note_state = 0;
+			while (new_note_state == last_note_state || new_note_state == notes.end->state) {
+				new_note_state = (new_note_state + 1) % STATES_USABLE;
+			}
+			p = note_get_free();
+			notes_add(
+				p,
+				note_get_random_type(p),
+				new_note_state
+			);
+		}
 	}
 }
 
@@ -127,6 +215,11 @@ void notes_draw (void) {
 			&current->blitparms
 		);
 		current = current->next;
+	}
+	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
+		rdpq_text_printf(NULL, FONT_DEFAULT, 20, 20+i*20,
+			"%i", notes.notes_left[i]
+		);
 	}
 }
 

@@ -11,7 +11,7 @@
 #define HIT_DETECTION_LEFT_OFFSET (HYDRA_HEAD_WIDTH/2)
 #define HIT_DETECTION_RIGHT_OFFSET 0
 
-static uint16_t scores[PLAYER_MAX] = {0};
+static int16_t scores[PLAYER_MAX] = {0};
 winner_t* winners;
 
 void scores_get_winner (void) {
@@ -20,9 +20,9 @@ void scores_get_winner (void) {
 	winners->length = 0;
 
 	uint8_t temp_players[PLAYER_MAX] = {0,1,2,3};
-	uint16_t temp_scores[PLAYER_MAX];
-	uint16_t temp;
-	memcpy(temp_scores, scores, sizeof(uint16_t) * PLAYER_MAX);
+	int16_t temp_scores[PLAYER_MAX];
+	int16_t temp;
+	memcpy(temp_scores, scores, sizeof(int16_t) * PLAYER_MAX);
 
 	// Sort the temp arrays
 	for (i=0; i<PLAYER_MAX; i++){
@@ -52,7 +52,20 @@ void scores_get_winner (void) {
 	}
 }
 
-uint16_t scores_get(uint8_t hydra) {
+PlyNum scores_get_extreme (scores_extreme_t type) {
+	PlyNum extreme = PLAYER_1;
+	for (uint8_t i=PLAYER_2; i<PLAYER_MAX; i++){
+		if (type == SCORES_GET_FIRST && scores[i] > scores[extreme]) {
+			extreme = i;
+		}
+		if (type == SCORES_GET_LAST && scores[i] < scores[extreme]) {
+			extreme = i;
+		}
+	}
+	return extreme;
+}
+
+int16_t scores_get(uint8_t hydra) {
 	assertf(hydra < PLAYER_MAX, "Invalid player number!");
 	return scores[hydra];
 }
@@ -69,7 +82,7 @@ void scores_clear (void) {
 
 void note_hit_detection(void) {
 	note_t* current = notes_get_first();
-	uint8_t add_score;
+	int8_t add_score;
 	// Loop trhough notes
 	while (current != NULL) {
 		// Loop through players
@@ -89,15 +102,32 @@ void note_hit_detection(void) {
 					// Check if the animation is correct
 					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
 						// Note is eaten
+						if (current->type == NOTES_TYPE_STANDARD) {
+							// No swap, just eat
+							hydras[i].animation += HYDRA_ANIMATION_SUCCESS_DIFF;
+						} else if (
+							current->type == NOTES_TYPE_SWAP_BACK ||
+							current->type == NOTES_TYPE_SWAP_FORWARD ||
+							current->type == NOTES_TYPE_SWAP_RANDOM ||
+							current->type == NOTES_TYPE_SWAP_ALL
+						) {
+							// Perform a swap
+							hydra_swap_start (i, current->type);
+							hydras[i].animation += HYDRA_ANIMATION_TO_SWAP_DIFF;
+						} else if (
+							current->type == NOTES_TYPE_SWEET
+						) {
+							// Just ate a sweet note
+							add_score *= 2;
+							hydras[i].animation += HYDRA_ANIMATION_SUCCESS_DIFF;
+						} else if (
+							current->type == NOTES_TYPE_SOUR
+						) {
+							// Just ate a sweet note
+							add_score = -1;
+							hydras[i].animation += HYDRA_ANIMATION_TO_STUN_DIFF;
+						}
 						scores[i] += add_score;
-						hydras[i].animation += HYDRA_ANIMATION_SUCCESS_DIFF;
-						notes_destroy (current);
-					}
-				} else if (current->player >= PLAYER_MAX) {
-					// It's a special note
-					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
-						scores[i] += add_score;
-						hydra_swap_start (i, current->player);
 						notes_destroy (current);
 					}
 				} else if (

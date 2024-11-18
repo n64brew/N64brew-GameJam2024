@@ -69,7 +69,7 @@ void minigame_fixedloop(float deltatime)
 		// Add a new note every second
 		timer -= deltatime;
 		if ((int)timer != (int)(timer - deltatime) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
-			notes_add();
+			notes_check_and_add();
 		}
 		// Skip to the end if there are no notes left
 		if (!notes_get_remaining(NOTES_GET_REMAINING_ALL)) {

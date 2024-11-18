@@ -18,6 +18,9 @@
 #define FONT_DEFAULT 1
 #define FONT_CLARENDON 2
 
+#define STATES_TOTAL 4
+#define STATES_USABLE 3
+
 typedef enum {
 	STAGE_START,
     STAGE_GAME,
@@ -33,10 +36,15 @@ typedef enum {
 } hydraharmonics_state_t;
 
 typedef enum {
-	NOTES_SPECIAL_WHITE = 4,
-	NOTES_SPECIAL_GREY = 5,
-	NOTES_SPECIAL_BLACK = 6,
-} notes_special_t;
+	NOTES_TYPE_STANDARD,
+	NOTES_TYPE_SWAP_BACK,
+	NOTES_TYPE_SWAP_FORWARD,
+	NOTES_TYPE_SWAP_RANDOM,
+	NOTES_TYPE_SWAP_ALL,
+	NOTES_TYPE_SWEET,
+	NOTES_TYPE_SOUR,
+	NOTES_TYPE_COUNT,
+} notes_types_t;
 
 extern hydraharmonics_stage_t stage;
 
