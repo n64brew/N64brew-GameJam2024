@@ -1,7 +1,7 @@
 #include "player.hpp"
 
-PlayerGameplayData::PlayerGameplayData(T3DVec3 pos, PlyNum team, std::array<int, MAXPLAYERS> health) :
-    pos(pos), prevPos(pos), team(team), health(health), temperature(0) {}
+PlayerGameplayData::PlayerGameplayData(T3DVec3 pos, PlyNum team) :
+    pos(pos), prevPos(pos), team(team), firstHit(team), temperature(0) {}
 
 PlayerOtherData::PlayerOtherData(T3DModel *model, T3DModel *shadowModel) :
     accel({0}),

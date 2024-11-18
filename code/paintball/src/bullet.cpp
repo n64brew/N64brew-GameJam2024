@@ -87,28 +87,19 @@ void BulletController::killBullet(Bullet &bullet) {
  * Returns true if the player changed team
  */
 bool BulletController::applyDamage(PlayerGameplayData &gameplayData, PlyNum team) {
-    auto currentVal = gameplayData.health[team];
+    // Already on same team, heal
+    if (gameplayData.team == team) {
+        gameplayData.firstHit = team;
+        return false;
+    }
 
-    // Already on same team
-    if (gameplayData.team == team || currentVal == MaxHealth) return false;
-
-    gameplayData.health[team] = 0;
-
-    auto result = std::max_element(gameplayData.health.begin(), gameplayData.health.end(), [](int a, int b)
-    {
-        if (a == b) return (static_cast<float>(rand()) / RAND_MAX) > 0.5f;
-        return a < b;
-    });
-
-    *result -= Damage;
-    if (*result < 0) *result = 0;
-
-    gameplayData.health[team] = currentVal + Damage;
-    if (gameplayData.health[team] >= MaxHealth) {
-        gameplayData.health[team] = MaxHealth;
+    if (gameplayData.firstHit == team) {
         gameplayData.team = team;
         return true;
     }
+
+    gameplayData.firstHit = team;
+
     return false;
 }
 

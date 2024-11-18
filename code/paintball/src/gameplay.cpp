@@ -21,10 +21,10 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
         playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
 
         playerGameplayData.reserve(PlayerCount);
-        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0,0}, PLAYER_1, {MaxHealth, 0, 0, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,-100}, PLAYER_2, {0, MaxHealth, 0, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{100,0,0}, PLAYER_3, {0, 0, MaxHealth, 0}});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,100}, PLAYER_4, {0, 0, 0, MaxHealth}});
+        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0,0}, PLAYER_1});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,-100}, PLAYER_2});
+        playerGameplayData.emplace_back(PlayerGameplayData {{100,0,0}, PLAYER_3});
+        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,100}, PLAYER_4});
     }
 
 void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
@@ -187,9 +187,7 @@ void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, Player
     rdpq_sync_pipe();
     rdpq_set_prim_color(colors[playerGameplay.team]);
 
-    auto result = std::max_element(playerGameplay.health.begin(), playerGameplay.health.end());
-
-    rdpq_set_env_color(colors[std::distance(playerGameplay.health.begin(), result)]);
+    rdpq_set_env_color(colors[playerGameplay.firstHit]);
     rspq_block_run(playerOther.block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
@@ -227,13 +225,9 @@ void GameplayController::renderPlayerUI(PlayerGameplayData &playerGameplay, Play
         MainFont,
         x,
         y,
-        "P%lu %4.2f", //  (%u, %u, %u, %u)
+        "P%lu %4.2f",
         id + 1,
         playerGameplay.temperature
-        // playerGameplay.health[0],
-        // playerGameplay.health[1],
-        // playerGameplay.health[2],
-        // playerGameplay.health[3]
     );
 }
 

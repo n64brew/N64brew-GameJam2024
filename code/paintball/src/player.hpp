@@ -18,12 +18,14 @@
 
 struct PlayerGameplayData
 {
-    PlayerGameplayData(T3DVec3 pos, PlyNum team, std::array<int, MAXPLAYERS> health);
+    PlayerGameplayData(T3DVec3 pos, PlyNum team);
     T3DVec3 pos;
     T3DVec3 prevPos;
     // A player can be in any team at any given time
     PlyNum team;
-    std::array<int, MAXPLAYERS> health;
+    // When hit by a team, this is set to that color, upon another hit,
+    // the player moves to that team
+    PlyNum firstHit;
     float temperature;
 };
 
