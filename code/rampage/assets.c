@@ -38,7 +38,7 @@ void rampage_assets_init() {
 
     gRampageAssets.player = t3d_model_load("rom:/rampage/Jira_01.t3dm");
 
-    gRampageAssets.ground = t3d_model_load("rom://rampage/level.t3dm");
+    gRampageAssets.ground = t3d_model_load("rom://rampage/ground.t3dm");
     rspq_block_begin();
     t3d_model_draw(gRampageAssets.ground);
     gRampageAssets.ground->userBlock = rspq_block_end();
