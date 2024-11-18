@@ -39,14 +39,12 @@ class GameplayController
         U::T3DModel shadowModel;
 
         // Player data
-        std::vector<PlayerOtherData> playerOtherData;
-        std::vector<PlayerGameplayData> playerGameplayData;
+        std::vector<Player::OtherData> playerOtherData;
+        std::vector<Player::GameplayData> playerGameplayData;
 
         // Player calculations
-        void simulatePhysics(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, float deltaTime);
-        void handleActions(PlayerGameplayData &gameplayData, uint32_t id, GameState &state);
-        void renderPlayer(PlayerGameplayData &gameplayData, PlayerOtherData &other, uint32_t id, T3DViewport &viewport, float deltaTime);
-        void renderPlayerUI(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id);
+        void simulatePhysics(Player::GameplayData &gameplayData, Player::OtherData &other, uint32_t id, float deltaTime);
+        void handleActions(Player::GameplayData &gameplayData, uint32_t id, GameState &state);
 
         void checkGameFinished(GameState &state, std::array<bool, PlayerCount> &playerHitStatus);
     public:

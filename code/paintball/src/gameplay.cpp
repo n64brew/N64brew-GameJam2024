@@ -15,19 +15,19 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
 
         playerOtherData.reserve(PlayerCount);
 
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
-        playerOtherData.emplace_back(PlayerOtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
+        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
 
         playerGameplayData.reserve(PlayerCount);
-        playerGameplayData.emplace_back(PlayerGameplayData {{-100,0,0}, PLAYER_1});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,-100}, PLAYER_2});
-        playerGameplayData.emplace_back(PlayerGameplayData {{100,0,0}, PLAYER_3});
-        playerGameplayData.emplace_back(PlayerGameplayData {{0,0,100}, PLAYER_4});
+        playerGameplayData.emplace_back(Player::GameplayData {{-100,0,0}, PLAYER_1});
+        playerGameplayData.emplace_back(Player::GameplayData {{0,0,-100}, PLAYER_2});
+        playerGameplayData.emplace_back(Player::GameplayData {{100,0,0}, PLAYER_3});
+        playerGameplayData.emplace_back(Player::GameplayData {{0,0,100}, PLAYER_4});
     }
 
-void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOtherData &otherData, uint32_t id, float deltaTime)
+void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player::OtherData &otherData, uint32_t id, float deltaTime)
 {
     gameplay.prevPos = gameplay.pos;
 
@@ -119,7 +119,7 @@ void GameplayController::simulatePhysics(PlayerGameplayData &gameplay, PlayerOth
     }
 }
 
-void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id, GameState &state) {
+void GameplayController::handleActions(Player::GameplayData &player, uint32_t id, GameState &state) {
     if (id < core_get_playercount()) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
 
@@ -157,80 +157,6 @@ void GameplayController::handleActions(PlayerGameplayData &player, uint32_t id, 
     }
 }
 
-void GameplayController::renderPlayer(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime)
-{
-    double interpolate = core_get_subtick();
-    T3DVec3 currentPos {0};
-    t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
-    t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 0, 0});
-
-    const color_t colors[] = {
-        PLAYERCOLOR_1,
-        PLAYERCOLOR_2,
-        PLAYERCOLOR_3,
-        PLAYERCOLOR_4,
-    };
-
-    assertf(playerOther.matFP.get(), "Player %lu matrix is null", id);
-    assertf(playerOther.block.get(), "Player %lu block is null", id);
-
-    t3d_anim_update(playerOther.animWalk.get(), deltaTime);
-    t3d_skeleton_update(playerOther.skel.get());
-
-    t3d_mat4fp_from_srt_euler(
-        playerOther.matFP.get(),
-        (float[3]){0.12f, 0.12f, 0.12f},
-        (float[3]){0.0f, playerOther.direction, 0},
-        currentPos.v
-    );
-
-    rdpq_sync_pipe();
-    rdpq_set_prim_color(colors[playerGameplay.team]);
-
-    rdpq_set_env_color(colors[playerGameplay.firstHit]);
-    rspq_block_run(playerOther.block.get());
-
-    T3DVec3 billboardPos = (T3DVec3){{
-        currentPos.v[0],
-        currentPos.v[1] + 40,
-        currentPos.v[2]
-    }};
-
-    t3d_viewport_calc_viewspace_pos(viewport,  playerOther.screenPos, billboardPos);
-}
-
-void GameplayController::renderPlayerUI(PlayerGameplayData &playerGameplay, PlayerOtherData &playerOther, uint32_t id)
-{
-    constexpr int margin = ScreenWidth / 16;
-    constexpr int textHalfWidth = 10;
-    constexpr int textHalfHeight = 6;
-    int x = floorf(playerOther.screenPos.v[0]) - textHalfWidth;
-    int y = floorf(playerOther.screenPos.v[1]) - textHalfHeight;
-
-    if (x < margin) x = margin;
-    if (x > (ScreenWidth-margin-2*textHalfWidth) ) x = (ScreenWidth-margin-2*textHalfWidth);
-
-    if (y < (margin + textHalfHeight)) y = (margin + textHalfHeight);
-    if (y > (ScreenHeight-margin-2*textHalfHeight) ) y = (ScreenHeight-margin-2*textHalfHeight);
-
-    rdpq_sync_pipe(); // Hardware crashes otherwise
-    rdpq_sync_tile(); // Hardware crashes otherwise
-
-    rdpq_textparms_t fontParams {
-        .style_id = playerGameplay.team,
-        .width = 20,
-        .align = ALIGN_CENTER, .disable_aa_fix = true };
-    rdpq_text_printf(
-        &fontParams,
-        MainFont,
-        x,
-        y,
-        "P%lu %4.2f",
-        id + 1,
-        playerGameplay.temperature
-    );
-}
-
 void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
     state.avPos = {0};
@@ -240,7 +166,7 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
         auto& playerGameplay = playerGameplayData[i];
 
         handleActions(playerGameplay, i, state);
-        renderPlayer(playerGameplay, playerOther, i, viewport, deltaTime);
+        Player::render(playerGameplay, playerOther, i, viewport, deltaTime);
 
         t3d_vec3_add(state.avPos, state.avPos, playerGameplay.pos);
 
@@ -256,7 +182,7 @@ void GameplayController::renderUI()
     for (auto& playerOther : playerOtherData)
     {
         auto& playerGameplay = playerGameplayData[i];
-        renderPlayerUI(playerGameplay, playerOther, i);
+        Player::renderUI(playerGameplay, playerOther, i);
         i++;
     }
 }

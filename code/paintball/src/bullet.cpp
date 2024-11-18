@@ -86,7 +86,7 @@ void BulletController::killBullet(Bullet &bullet) {
 /**
  * Returns true if the player changed team
  */
-bool BulletController::applyDamage(PlayerGameplayData &gameplayData, PlyNum team) {
+bool BulletController::applyDamage(Player::GameplayData &gameplayData, PlyNum team) {
     // Already on same team, heal
     if (gameplayData.team == team) {
         gameplayData.firstHit = team;
@@ -124,7 +124,7 @@ void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
 /**
  * Returns an array of players changed status this tick
  */
-std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std::vector<PlayerGameplayData> &gameplayData) {
+std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData) {
     std::array<bool, PlayerCount> playerHitStatus {0};
 
     for (auto& bullet : bullets)
