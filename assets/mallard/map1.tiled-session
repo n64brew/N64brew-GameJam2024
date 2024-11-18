@@ -1,0 +1,28 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "map1.tsx",
+    "expandedProjectPaths": [
+    ],
+    "fileStates": {
+        "map1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 3
+        }
+    },
+    "last.imagePath": "C:/Users/Josh/OneDrive/Desktop/Mallard 64/Brysia/islands_tileset_v2_byBrysia",
+    "openFiles": [
+        "map1.tsx"
+    ],
+    "project": "map1.tiled-project",
+    "recentFiles": [
+        "map1.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}

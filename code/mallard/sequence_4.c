@@ -17,9 +17,20 @@
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
+sprite_t *sequence_4_mallard_libdragon_sprite;
 sprite_t *sequence_4_mallard_logo_black_sprite;
+sprite_t *sequence_4_mallard_logo_white_sprite;
 sprite_t *sequence_4_mallard_menu_1_sprite;
 sprite_t *sequence_4_mallard_menu_2_sprite;
+
+sprite_t *sequence_4_mallard_background_clouds_front_fc_sprite;
+sprite_t *sequence_4_mallard_background_clouds_front_t_fc_sprite;
+sprite_t *sequence_4_mallard_background_clouds_mid_fc_sprite;
+sprite_t *sequence_4_mallard_background_clouds_mid_t_fc_sprite;
+sprite_t *sequence_4_mallard_background_far_mountains_fc_sprite;
+sprite_t *sequence_4_mallard_background_grassy_mountains_fc_sprite;
+sprite_t *sequence_4_mallard_background_hill_sprite;
+sprite_t *sequence_4_mallard_background_sky_fc_sprite;
 
 sprite_t *sequence_4_a_button_sprite;
 sprite_t *sequence_4_start_button_sprite;
@@ -27,13 +38,7 @@ sprite_t *sequence_4_start_button_sprite;
 sprite_t *sequence_4_mallard_idle_sprite;
 
 xm64player_t xm;
-// Chunk 1: Loop 4
-// Chunk 2: Loop 14
-// Chunk 3: Loop 18
-// Chunk 4: Loop 23
-// Chunk 5: Loop 30
-// Chunk 6: End on 31
-int sequence_4_currentXMPattern = 4;
+int sequence_4_currentXMPattern = 0;
 
 rdpq_font_t *sequence_4_font_pacifico;
 rdpq_font_t *sequence_4_font_celtic_garamond_the_second;
@@ -44,22 +49,31 @@ int sequence_4_frame;
 bool sequence_4_initialized = false;
 bool sequence_4_finished = false;
 
-bool sequence_4_all_paragraphs_finished = false;
+// Libdragon Logo
+bool sequence_4_libdragon_logo_started = false;
+bool sequence_4_libdragon_logo_finished = false;
+float sequence_4_libdragon_logo_elapsed = 0.0f;
+
+// Mallard Logo
+bool sequence_4_mallard_logo_started = false;
+bool sequence_4_mallard_logo_finished = false;
+float sequence_4_mallard_logo_elapsed = 0.0f;
+
+// Paragraphs
+bool sequence_4_paragraphs_started = false;
+bool sequence_4_paragraphs_finished = false;
 int sequence_4_current_paragraph = 0;
+int sequence_4_current_paragraph_speed = 4;
 bool sequence_4_current_paragraph_finished = false;
-bool sequence_4_paragraph_fade_out_started = false;
-float sequence_4_paragraph_fade_out_duration = 0.0f;
-bool sequence_4_paragraph_fade_out_finished = false;
-float sequence_4_menu_fade_in_duration = 0.0f;
-int sequence_4_drawn_characters = 0;
-int sequence_4_paragraph_speed = 4;
 char *sequence_4_current_paragraph_string;
+int sequence_4_current_paragraph_drawn_characters = 0;
 
-float sequence_4_time_to_fade_in_mallard_logo = 1.0f;
-float sequence_4_time_to_show_mallard_logo = 2.0f;
-float sequence_4_time_to_fade_out_mallard_logo = 1.0f;
+bool sequence_4_paragraph_fade_out_started = false;
+float sequence_4_paragraph_fade_out_elapsed = 0.0f;
+bool sequence_4_paragraph_fade_out_finished = false;
 
-float sequence_4_time_to_fade_in_paragraph = 1.0f;
+// Menu
+float sequence_4_menu_fade_in_duration = 0.0f;
 
 void sequence_4_init()
 {
@@ -74,22 +88,21 @@ void sequence_4_init()
     ///////////////////////////////////////////////////////////
 
     rdpq_fontstyle_t fontstyle_white = {
-        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),         // White
-        .outline_color = RGBA32(0x00, 0x00, 0x00, 0x00), // None
+        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF), // White
     };
 
-    rdpq_fontstyle_t fontstyle_white_outlined = {
-        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),         // White
-        .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF), // Black
+    rdpq_fontstyle_t fontstyle_black = {
+        .color = RGBA32(0x00, 0x00, 0x00, 0x00), // Black
     };
 
     sequence_4_font_pacifico = rdpq_font_load("rom:/mallard/Pacifico.font64");
     sequence_4_font_celtic_garamond_the_second = rdpq_font_load("rom:/mallard/CelticGaramondTheSecond.font64");
     sequence_4_font_halo_dek = rdpq_font_load("rom:/mallard/HaloDek.font64");
 
+    rdpq_font_style(sequence_4_font_halo_dek, 0, &fontstyle_white);
+    rdpq_font_style(sequence_4_font_halo_dek, 1, &fontstyle_black);
     rdpq_font_style(sequence_4_font_pacifico, 0, &fontstyle_white);
     rdpq_font_style(sequence_4_font_celtic_garamond_the_second, 0, &fontstyle_white);
-    rdpq_font_style(sequence_4_font_halo_dek, 0, &fontstyle_white_outlined);
 
     rdpq_text_register_font(FONT_PACIFICO, sequence_4_font_pacifico);
     rdpq_text_register_font(FONT_CELTICGARMONDTHESECOND, sequence_4_font_celtic_garamond_the_second);
@@ -99,22 +112,32 @@ void sequence_4_init()
     //                  Set up Graphics                      //
     ///////////////////////////////////////////////////////////
 
+    // Libdragon
+    sequence_4_mallard_libdragon_sprite = sprite_load("rom:/mallard/libdragon.rgba32.sprite");
+
+    // Mallard Logo
     sequence_4_mallard_logo_black_sprite = sprite_load("rom:/mallard/mallard_logo_black.rgba32.sprite");
-    sequence_4_mallard_menu_1_sprite = sprite_load("rom:/mallard/mallard_menu_1.rgba32.sprite");
-    sequence_4_mallard_menu_2_sprite = sprite_load("rom:/mallard/mallard_menu_2.rgba32.sprite");
+    sequence_4_mallard_logo_white_sprite = sprite_load("rom:/mallard/mallard_logo_white.rgba32.sprite");
 
-    ///////////////////////////////////////////////////////////
-    //                  Set up UI Elements                   //
-    ///////////////////////////////////////////////////////////
-
+    // Intro UI
     sequence_4_start_button_sprite = sprite_load("rom:/core/StartButton.sprite");
     sequence_4_a_button_sprite = sprite_load("rom:/core/AButton.sprite");
 
-    ///////////////////////////////////////////////////////////
-    //                  Set up Game Elements                 //
-    ///////////////////////////////////////////////////////////
+    // Menu
+    sequence_4_mallard_menu_1_sprite = sprite_load("rom:/mallard/mallard_menu_1.rgba32.sprite");
+    sequence_4_mallard_menu_2_sprite = sprite_load("rom:/mallard/mallard_menu_2.rgba32.sprite");
 
+    // Game
     sequence_4_mallard_idle_sprite = sprite_load("rom:/mallard/mallard_idle.rgba32.sprite");
+
+    sequence_4_mallard_background_clouds_front_fc_sprite = sprite_load("rom:/mallard/mallard_background_clouds_front_fc.rgba32.sprite");
+    sequence_4_mallard_background_clouds_front_t_fc_sprite = sprite_load("rom:/mallard/mallard_background_clouds_front_t_fc.rgba32.sprite");
+    sequence_4_mallard_background_clouds_mid_fc_sprite = sprite_load("rom:/mallard/mallard_background_clouds_mid_fc.rgba32.sprite");
+    sequence_4_mallard_background_clouds_mid_t_fc_sprite = sprite_load("rom:/mallard/mallard_background_clouds_mid_t_fc.rgba32.sprite");
+    sequence_4_mallard_background_far_mountains_fc_sprite = sprite_load("rom:/mallard/mallard_background_far_mountains_fc.rgba32.sprite");
+    sequence_4_mallard_background_grassy_mountains_fc_sprite = sprite_load("rom:/mallard/mallard_background_grassy_mountains_fc.rgba32.sprite");
+    sequence_4_mallard_background_hill_sprite = sprite_load("rom:/mallard/mallard_background_hill.rgba32.sprite");
+    sequence_4_mallard_background_sky_fc_sprite = sprite_load("rom:/mallard/mallard_background_sky_fc.rgba32.sprite");
 
     ///////////////////////////////////////////////////////////
     //                  Set up Audio                         //
@@ -126,6 +149,8 @@ void sequence_4_init()
 
     sequence_4_frame = 0;
     sequence_4_initialized = true;
+
+    sequence_4_libdragon_logo_started = true;
 }
 
 void sequence_4_cleanup()
@@ -139,11 +164,33 @@ void sequence_4_cleanup()
     rdpq_font_free(sequence_4_font_halo_dek);
 
     // Free the sprites.
+
+    // Libdragon
+    sprite_free(sequence_4_mallard_libdragon_sprite);
+
+    // Mallard Logo
+    sprite_free(sequence_4_mallard_logo_black_sprite);
+    sprite_free(sequence_4_mallard_logo_white_sprite);
+
+    // Intro UI
     sprite_free(sequence_4_start_button_sprite);
     sprite_free(sequence_4_a_button_sprite);
-    sprite_free(sequence_4_mallard_idle_sprite);
+
+    // Menu
     sprite_free(sequence_4_mallard_menu_1_sprite);
     sprite_free(sequence_4_mallard_menu_2_sprite);
+
+    // Game
+    sprite_free(sequence_4_mallard_idle_sprite);
+
+    sprite_free(sequence_4_mallard_background_clouds_front_fc_sprite);
+    sprite_free(sequence_4_mallard_background_clouds_front_t_fc_sprite);
+    sprite_free(sequence_4_mallard_background_clouds_mid_fc_sprite);
+    sprite_free(sequence_4_mallard_background_clouds_mid_t_fc_sprite);
+    sprite_free(sequence_4_mallard_background_far_mountains_fc_sprite);
+    sprite_free(sequence_4_mallard_background_grassy_mountains_fc_sprite);
+    sprite_free(sequence_4_mallard_background_hill_sprite);
+    sprite_free(sequence_4_mallard_background_sky_fc_sprite);
 
     // Stop the music and free the allocated memory.
     xm64player_stop(&xm);
@@ -177,27 +224,27 @@ int fade_in_color(float percentage)
     return (int)((1.0f - percentage) * 255.0f);
 }
 
-color_t background_color()
-{
-    // White for Mallard Logo.
-    if (sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)
-    {
-        return WHITE;
-    }
+// color_t background_color()
+// {
+//     // White for Mallard Logo.
+//     if (sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)
+//     {
+//         return WHITE;
+//     }
 
-    // Fade to Black for Paragraph.
-    if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION &&
-        sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
-    {
-        float percentage = (sequence_4_time - (DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)) / DRAW_FADE_WHITE_TO_BLACK_DURATION;
-        uint8_t color = fade_in_color(percentage);
-        uint8_t alpha = fade_in_alpha(percentage);
-        return RGBA32(color, color, color, alpha);
-    }
+//     // Fade to Black for Paragraph.
+//     if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION &&
+//         sequence_4_time <= DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
+//     {
+//         float percentage = (sequence_4_time - (DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION)) / DRAW_FADE_WHITE_TO_BLACK_DURATION;
+//         uint8_t color = fade_in_color(percentage);
+//         uint8_t alpha = fade_in_alpha(percentage);
+//         return RGBA32(color, color, color, alpha);
+//     }
 
-    // Black for Paragraph.
-    return BLACK;
-}
+//     // Black for Paragraph.
+//     return BLACK;
+// }
 
 void sequence_4(float deltatime)
 {
@@ -218,20 +265,19 @@ void sequence_4(float deltatime)
     }
 
     rdpq_attach(display_get(), NULL);
-    rdpq_clear(background_color());
+    rdpq_clear(BLACK);
 
     ///////////////////////////////////////////////////////////
     //                  Intro Sequence                       //
     ///////////////////////////////////////////////////////////
-    sequence_4_draw_mallard_logo();
+    sequence_4_draw_libdragon_logo(deltatime);
+    sequence_4_draw_mallard_logo(deltatime);
     sequence_4_draw_press_a_for_next();
     sequence_4_draw_press_start_to_skip();
     sequence_4_draw_paragraph(deltatime);
     sequence_4_menu(deltatime);
 
     rdpq_detach_show();
-
-    // sequence_4_draw_mallard_idle_sprite();
 
     ///////////////////////////////////////////////////////////
     //                  Handle Audio                         //
