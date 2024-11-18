@@ -103,65 +103,6 @@ void sequence_2(float deltatime)
     else
         sequence_2_frame++;
 
-    //////////////////////////////////////////////////////
-
-    // int length = strlen(text);
-    // for (int i = 0; i < length; i += 64)
-    // {
-    //     // Print a substring of `chunk_size` characters
-    //     fprintf(stderr, "%.64s\n", &text[i]);
-    // }
-
-    // if (sequence_2_frame == num_strings - 1)
-    //     sequence_2_frame = sequence_2_frame;
-    // else
-    //     sequence_2_frame++;
-
-    //////////////////////////////////////////////////////
-
-    // rdpq_set_mode_fill(RGBA32(0x30, 0x63, 0x8E, 0xFF));
-    // rdpq_fill_rectangle((320 - box_width) / 2, (240 - box_height) / 2, (320 + box_width) / 2, (240 + box_height) / 2);
-
-    // disable_interrupts();
-
-    // int nbytes = strlen(text);
-    // rdpq_paragraph_t *par = rdpq_paragraph_build(&(rdpq_textparms_t){
-    //                                                  // .line_spacing = -3,
-    //                                                  .align = ALIGN_LEFT,
-    //                                                  .valign = VALIGN_CENTER,
-    //                                                  .width = screen->width,
-    //                                                  .height = screen->height,
-    //                                                  .wrap = WRAP_WORD,
-    //                                              },
-    //                                              FONT_TEXT, text, &nbytes);
-
-    // rdpq_paragraph_render(par, 0, 0);
-    // rdpq_paragraph_free(par);
-
-    // enable_interrupts();
-
-    // rdpq_set_mode_standard();
-    // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    // rdpq_set_prim_color(RGBA32(0xFF, 0xFF, 0xFF, 0x30));
-    // rdpq_fill_rectangle(par->bbox.x0 + x0, par->bbox.y0 + y0, par->bbox.x1 + x0, par->bbox.y1 + y0);
-
-    // graphics_draw_text(screen, 10, 30, "Additional Content"); // New text on next frame
-
-    // rdpq_detach_show();
-
-    //////////////////////////////////////////////////////
-
-    // if (sequence_2_frame == num_strings - 1)
-    //     sequence_2_frame = sequence_2_frame;
-    // else
-    //     sequence_2_frame++;
-
-    // surface_t *surface = display_get();
-    // graphics_draw_text(surface, 10, 30, "Additional Content"); // New text on next frame
-    // display_show(surface);
-
-    // Draw "Press Start" text and the Start button
     sequence_2_draw_press_start_to_skip();
 
     rdpq_detach_show();

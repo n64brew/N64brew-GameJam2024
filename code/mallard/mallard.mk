@@ -6,6 +6,8 @@ ASSETS_LIST += \
 	filesystem/mallard/HaloDek.font64 \
 	filesystem/mallard/mallard_intro_music.xm64 \
 	filesystem/mallard/libdragon.rgba32.sprite \
+	filesystem/mallard/mallard_menu_1.rgba32.sprite \
+	filesystem/mallard/mallard_menu_2.rgba32.sprite \
 	filesystem/mallard/mallard_logo.rgba32.sprite \
 	filesystem/mallard/mallard_logo_black.rgba32.sprite \
 	filesystem/mallard/mallard_idle.rgba32.sprite

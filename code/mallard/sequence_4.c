@@ -18,6 +18,8 @@
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
 sprite_t *sequence_4_mallard_logo_black_sprite;
+sprite_t *sequence_4_mallard_menu_1_sprite;
+sprite_t *sequence_4_mallard_menu_2_sprite;
 
 sprite_t *sequence_4_a_button_sprite;
 sprite_t *sequence_4_start_button_sprite;
@@ -48,6 +50,7 @@ bool sequence_4_current_paragraph_finished = false;
 bool sequence_4_paragraph_fade_out_started = false;
 float sequence_4_paragraph_fade_out_duration = 0.0f;
 bool sequence_4_paragraph_fade_out_finished = false;
+float sequence_4_menu_fade_in_duration = 0.0f;
 int sequence_4_drawn_characters = 0;
 int sequence_4_paragraph_speed = 4;
 char *sequence_4_current_paragraph_string;
@@ -97,6 +100,8 @@ void sequence_4_init()
     ///////////////////////////////////////////////////////////
 
     sequence_4_mallard_logo_black_sprite = sprite_load("rom:/mallard/mallard_logo_black.rgba32.sprite");
+    sequence_4_mallard_menu_1_sprite = sprite_load("rom:/mallard/mallard_menu_1.rgba32.sprite");
+    sequence_4_mallard_menu_2_sprite = sprite_load("rom:/mallard/mallard_menu_2.rgba32.sprite");
 
     ///////////////////////////////////////////////////////////
     //                  Set up UI Elements                   //
@@ -137,6 +142,8 @@ void sequence_4_cleanup()
     sprite_free(sequence_4_start_button_sprite);
     sprite_free(sequence_4_a_button_sprite);
     sprite_free(sequence_4_mallard_idle_sprite);
+    sprite_free(sequence_4_mallard_menu_1_sprite);
+    sprite_free(sequence_4_mallard_menu_2_sprite);
 
     // Stop the music and free the allocated memory.
     xm64player_stop(&xm);
@@ -217,10 +224,10 @@ void sequence_4(float deltatime)
     //                  Intro Sequence                       //
     ///////////////////////////////////////////////////////////
     sequence_4_draw_mallard_logo();
-    sequence_4_draw_paragraph(deltatime);
     sequence_4_draw_press_a_for_next();
     sequence_4_draw_press_start_to_skip();
-    sequence_4_menu();
+    sequence_4_draw_paragraph(deltatime);
+    sequence_4_menu(deltatime);
 
     rdpq_detach_show();
 
@@ -233,8 +240,6 @@ void sequence_4(float deltatime)
     int patidx, row;
 
     xm64player_tell(&xm, &patidx, &row, NULL);
-
-    fprintf(stderr, "Patidx: %d, Row: %d\n", patidx, row);
 
     // If the pattern index is greater than the currently allowed pattern, loop back to the start of the currently allowed pattern.
     if (patidx > sequence_4_currentXMPattern)

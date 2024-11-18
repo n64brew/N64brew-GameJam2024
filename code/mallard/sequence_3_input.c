@@ -19,7 +19,6 @@ void sequence_3_process_controller(float deltatime)
         if (held.b)
         {
             sequence_3_b_btn_held_duration += deltatime;
-            fprintf(stderr, "Controller %u has held B for %f\n", controllerPort, sequence_3_b_btn_held_duration);
 
             // If the button is held for more than 3 seconds, end the minigame
             if (sequence_3_b_btn_held_duration > 3.0f)
@@ -36,20 +35,17 @@ void sequence_3_process_controller(float deltatime)
         if (pressed.a)
         {
             sequence_3_paused = !sequence_3_paused;
-            fprintf(stderr, "Controller %u pressed A. Video is now %s.\n", controllerPort, sequence_3_paused ? "paused" : "unpaused");
         }
 
         // Rewind the video.
         if (pressed.z)
         {
             sequence_3_rewind = true;
-            fprintf(stderr, "Controller %u pressed Z. Video will now rewind.\n", controllerPort);
         }
 
         // Skip the sequence.
         if (pressed.start)
         {
-            fprintf(stderr, "Controller %u pressed Start. Sequence will now skip.\n", controllerPort);
             sequence_3_finished = true;
         }
     }

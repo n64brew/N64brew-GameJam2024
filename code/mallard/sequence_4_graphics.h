@@ -14,17 +14,20 @@ extern bool sequence_4_paragraph_fade_out_started;
 extern float sequence_4_paragraph_fade_out_duration;
 extern bool sequence_4_paragraph_fade_out_finished;
 extern char *sequence_4_current_paragraph_string;
+extern float sequence_4_menu_fade_in_duration;
 
 extern sprite_t *sequence_4_mallard_idle_sprite;
 extern sprite_t *sequence_4_a_button_sprite;
 extern sprite_t *sequence_4_start_button_sprite;
 extern sprite_t *sequence_4_mallard_logo_black_sprite;
+extern sprite_t *sequence_4_mallard_menu_1_sprite;
+extern sprite_t *sequence_4_mallard_menu_2_sprite;
 
 void sequence_4_draw_press_start_to_skip();
 void sequence_4_draw_press_a_for_next();
 void sequence_4_draw_mallard_idle_sprite();
 void sequence_4_draw_mallard_logo();
 void sequence_4_draw_paragraph(float deltatime);
-void sequence_4_menu();
+void sequence_4_menu(float deltatime);
 
 #endif // SEQUENCE_4_GRAPHICS_H

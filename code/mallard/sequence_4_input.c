@@ -19,7 +19,6 @@ void sequence_4_process_controller(float deltatime)
         // Skip the sequence.
         if (pressed.start)
         {
-            fprintf(stderr, "Controller %u pressed Start. Sequence will now skip.\n", controllerPort);
             sequence_4_finished = true;
         }
 

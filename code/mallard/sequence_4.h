@@ -19,7 +19,8 @@
 #define DRAW_MALLARD_LOGO_DURATION 1.0f
 #define DRAW_MALLARD_LOGO_FADE_OUT_DURATION 1.0f
 #define DRAW_FADE_WHITE_TO_BLACK_DURATION 1.0f
-#define DRAW_FADE_PARAGRAPH_TO_BLACK_DURATION 3.0f
+#define PARAGRAPH_FADE_OUT_DURATION 3.0f
+#define MENU_FADE_IN_DURATION 2.0f
 
 #define DEFAULT_PARAGRAPH_SPEED 4
 #define SEQEUENCE_4_GAMEJAM_PARARGAPH_01 "$02Hark, ye gamer folk, to the tale of Mallard. That noble band who didst rise like the morning sun to lay waste upon the Winter..."

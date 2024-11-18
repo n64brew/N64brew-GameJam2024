@@ -8,9 +8,8 @@
 
 void sequence_4_draw_press_start_to_skip()
 {
-    // TODO: Fade out after the last paragraph.
-
-    if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
+    if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION &&
+        sequence_4_paragraph_fade_out_finished == false)
     {
         // Draw "Start" button
         rdpq_mode_push();
@@ -31,9 +30,8 @@ void sequence_4_draw_press_start_to_skip()
 
 void sequence_4_draw_press_a_for_next()
 {
-    // TODO: Fade out after the last paragraph.
-
-    if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION)
+    if (sequence_4_time > DRAW_MALLARD_LOGO_FADE_IN_DURATION + DRAW_MALLARD_LOGO_DURATION + DRAW_MALLARD_LOGO_FADE_OUT_DURATION + DRAW_FADE_WHITE_TO_BLACK_DURATION &&
+        sequence_4_paragraph_fade_out_finished == false)
     {
         // Draw "A" button
         rdpq_mode_push();
@@ -155,14 +153,14 @@ void sequence_4_draw_paragraph(float deltatime)
 
         if (sequence_4_paragraph_fade_out_started == true && sequence_4_paragraph_fade_out_finished == false)
         {
-            if (sequence_4_paragraph_fade_out_duration > DRAW_FADE_PARAGRAPH_TO_BLACK_DURATION)
+            if (sequence_4_paragraph_fade_out_duration > PARAGRAPH_FADE_OUT_DURATION)
             {
                 sequence_4_paragraph_fade_out_finished = true;
                 sequence_4_all_paragraphs_finished = true;
             }
 
             rdpq_mode_push();
-            uint8_t alpha = (int)(255.0f * (sequence_4_paragraph_fade_out_duration / DRAW_FADE_PARAGRAPH_TO_BLACK_DURATION));
+            uint8_t alpha = (int)(255.0f * (sequence_4_paragraph_fade_out_duration / PARAGRAPH_FADE_OUT_DURATION));
             rdpq_set_mode_standard();
             rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
             rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -174,12 +172,18 @@ void sequence_4_draw_paragraph(float deltatime)
     }
 }
 
-void sequence_4_menu()
+void sequence_4_menu(float deltatime)
 {
-    if (sequence_4_all_paragraphs_finished)
+    if (sequence_4_all_paragraphs_finished == true)
     {
-        // TODO: Fade in from black to menu.
-        fprintf(stderr, "Showing menu...\n");
-        // TODO: Show the menu
+        float percentage = sequence_4_menu_fade_in_duration > MENU_FADE_IN_DURATION ? 1.0f : sequence_4_menu_fade_in_duration / MENU_FADE_IN_DURATION;
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_alphacompare(1);
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
+        rdpq_set_fog_color(RGBA32(0, 0, 0, (int)(255 * percentage)));
+        rdpq_sprite_blit(sequence_4_mallard_menu_1_sprite, 0, 0, NULL);
+        rdpq_mode_pop();
+        sequence_4_menu_fade_in_duration += deltatime;
     }
 }
