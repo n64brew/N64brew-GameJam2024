@@ -1,0 +1,2 @@
+#define SPRITE_WIDTH 64
+#define SPRITE_HEIGHT 64
