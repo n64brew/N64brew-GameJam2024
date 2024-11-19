@@ -4,6 +4,7 @@
 #include <libdragon.h>
 
 extern bool sequence_game_finished;
+extern bool sequence_game_paused;
 
 void sequence_game_process_controller(float deltatime);
 

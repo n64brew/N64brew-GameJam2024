@@ -3,9 +3,6 @@
 
 #include <libdragon.h>
 
-#define FONT_CELTICGARMONDTHESECOND 1
-#define FONT_HALODEK 2
-
 #define BLACK RGBA32(0x00, 0x00, 0x00, 0xFF)
 #define WHITE RGBA32(0xFF, 0xFF, 0xFF, 0xFF)
 #define ASH_GRAY RGBA32(0xAD, 0xBA, 0xBD, 0xFF)
@@ -22,9 +19,9 @@
 
 #define DEFAULT_PARAGRAPH_SPEED 4
 
-#define SEQEUENCE_INTRODUCTION_GAMEJAM_PARARGAPH_01 "$01^00Hark, ye gamer folk, to the tale of Mallard. That noble band who didst rise like the morning sun to lay waste upon the Winter..."
-#define SEQEUENCE_INTRODUCTION_GAMEJAM_PARARGAPH_02 "$01^00With spirit ablaze, they took siege, keen as the falcon and fierce as the storm..."
-#define SEQEUENCE_INTRODUCTION_GAMEJAM_PARARGAPH_03 "$01^00Leaving banners fallen and pride humbled, this is the tale of that very day..."
+#define SEQEUENCE_INTRODUCTION_GAMEJAM_PARARGAPH_01 "$03^00Hark, ye gamer folk, to the tale of Mallard. That noble band who didst rise like the morning sun to lay waste upon the Winter..."
+#define SEQEUENCE_INTRODUCTION_GAMEJAM_PARARGAPH_02 "$03^00With spirit ablaze, they took siege, keen as the falcon and fierce as the storm..."
+#define SEQEUENCE_INTRODUCTION_GAMEJAM_PARARGAPH_03 "$03^00Leaving banners fallen and pride humbled, this is the tale of that very day..."
 
 extern bool sequence_introduction_finished;
 extern bool sequence_game_started;

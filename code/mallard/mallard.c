@@ -4,6 +4,7 @@
 
 #include "sequence_introduction.h"
 #include "sequence_game.h"
+#include "mallard.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -14,6 +15,10 @@ const MinigameDef minigame_def = {
     .description = "",
     .instructions = "",
 };
+
+rdpq_font_t *font_halo_dek;
+rdpq_font_t *font_halo_dek_big;
+rdpq_font_t *font_celtic_garamond_the_second;
 
 bool sequence_introduction_started = true;
 bool sequence_introduction_finished = false;
@@ -28,6 +33,37 @@ bool sequence_game_finished = false;
 ==============================*/
 void minigame_init()
 {
+    ///////////////////////////////////////////////////////////
+    //                  Set Fonts                            //
+    ///////////////////////////////////////////////////////////
+
+    rdpq_fontstyle_t fontstyle_white = {
+        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),
+    };
+
+    rdpq_fontstyle_t fontstyle_white_transparent = {
+        .color = RGBA32(0xFF, 0xFF, 0xFF, (int)(255.0f * 0.5f)),
+    };
+
+    rdpq_fontstyle_t fontstyle_white_outlined = {
+        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),
+        .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
+    };
+
+    font_halo_dek = rdpq_font_load("rom:/mallard/HaloDek.font64");
+    font_halo_dek_big = rdpq_font_load("rom:/mallard/HaloDekBig.font64");
+    font_celtic_garamond_the_second = rdpq_font_load("rom:/mallard/CelticGaramondTheSecond.font64");
+
+    rdpq_font_style(font_halo_dek, 0, &fontstyle_white);
+    rdpq_font_style(font_halo_dek, 1, &fontstyle_white_transparent);
+
+    rdpq_font_style(font_halo_dek_big, 0, &fontstyle_white_outlined);
+
+    rdpq_font_style(font_celtic_garamond_the_second, 0, &fontstyle_white);
+
+    rdpq_text_register_font(FONT_HALODEK, font_halo_dek);
+    rdpq_text_register_font(FONT_HALODEK_BIG, font_halo_dek_big);
+    rdpq_text_register_font(FONT_CELTICGARMONDTHESECOND, font_celtic_garamond_the_second);
 }
 
 /*==============================
@@ -100,4 +136,11 @@ void minigame_loop(float deltatime)
 ==============================*/
 void minigame_cleanup()
 {
+    // Unregister the font and free the allocated memory.
+    rdpq_text_unregister_font(FONT_HALODEK);
+    rdpq_font_free(font_halo_dek);
+    rdpq_text_unregister_font(FONT_HALODEK_BIG);
+    rdpq_font_free(font_halo_dek_big);
+    rdpq_text_unregister_font(FONT_CELTICGARMONDTHESECOND);
+    rdpq_font_free(font_celtic_garamond_the_second);
 }

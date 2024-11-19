@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include "mallard.h"
 #include "sequence_introduction.h"
 #include "sequence_introduction_graphics.h"
 #include "../../core.h"
@@ -6,7 +7,9 @@
 
 void sequence_introduction_draw_press_start_to_skip()
 {
-    if (sequence_introduction_libdragon_logo_started == true || sequence_introduction_mallard_logo_started == true || sequence_introduction_paragraphs_started == true)
+    if ((sequence_introduction_libdragon_logo_started == true && sequence_introduction_libdragon_logo_finished == false) ||
+        (sequence_introduction_mallard_logo_started == true && sequence_introduction_mallard_logo_finished == false) ||
+        (sequence_introduction_paragraphs_started == true && sequence_introduction_paragraphs_finished == false))
     {
         // Draw "Start" button
         rdpq_mode_push();
@@ -20,8 +23,7 @@ void sequence_introduction_draw_press_start_to_skip()
         // Draw "Skip" text
         float x = RESOLUTION_320x240.width - 30;
         float y = RESOLUTION_320x240.height - 5;
-        int nbytes = strlen("$02^00Skip");
-        rdpq_text_printn(NULL, FONT_HALODEK, x, y, "$02^00Skip", nbytes);
+        rdpq_text_print(NULL, FONT_HALODEK, x, y, "$01^00Skip");
         rdpq_mode_pop();
     }
 }
@@ -44,8 +46,7 @@ void sequence_introduction_draw_press_a_for_next()
         // Draw "Next" text
         float x = RESOLUTION_320x240.width - 30;
         float y = RESOLUTION_320x240.height - sequence_introduction_start_button_sprite->height - 6;
-        int nbytes = strlen("$02^00Next");
-        rdpq_text_printn(NULL, FONT_HALODEK, x, y, "$02^00Next", nbytes);
+        rdpq_text_print(NULL, FONT_HALODEK, x, y, "$01^00Next");
         rdpq_mode_pop();
     }
 }
@@ -93,8 +94,7 @@ void sequence_introduction_draw_libdragon_logo(float deltatime)
         float x = RESOLUTION_320x240.width / 2 - 37;
         float y = RESOLUTION_320x240.height / 2 - 72;
         rdpq_set_mode_standard();
-        int nbytes = strlen("$02^00Made with");
-        rdpq_text_printn(&(rdpq_textparms_t){.char_spacing = 2}, FONT_HALODEK, x, y, "$02^00Made with", nbytes);
+        rdpq_text_print(&(rdpq_textparms_t){.char_spacing = 2}, FONT_HALODEK, x, y, "$01^00Made with");
 
         // Draw the Libdragon logo
         rdpq_mode_push();

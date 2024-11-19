@@ -10,11 +10,11 @@
 sprite_t *sequence_game_mallard_idle_sprite;
 sprite_t *sequence_game_background_lakeview_terrace_sprite;
 
-float sequence_game_fade_in_duration = 0.0f;
+sprite_t *sequence_game_start_button_sprite;
 
 int sequence_game_frame = 0;
-
 bool sequence_game_initialized = false;
+bool sequence_game_paused = false;
 
 void sequence_game_init()
 {
@@ -34,6 +34,8 @@ void sequence_game_init()
     // Gmae - Background
     sequence_game_background_lakeview_terrace_sprite = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
 
+    sequence_game_start_button_sprite = sprite_load("rom:/core/StartButton.sprite");
+
     sequence_game_initialized = true;
 }
 
@@ -44,6 +46,8 @@ void sequence_game_cleanup()
     // Game
     sprite_free(sequence_game_mallard_idle_sprite);
     sprite_free(sequence_game_background_lakeview_terrace_sprite);
+
+    sprite_free(sequence_game_start_button_sprite);
 
     // Close the display and free the allocated memory.
     rspq_wait();
@@ -76,7 +80,7 @@ void sequence_game(float deltatime)
     rdpq_attach(display_get(), NULL);
     rdpq_clear(BLACK);
 
-    // render(deltatime);
+    sequence_game_render(deltatime);
 
     rdpq_detach_show();
 }

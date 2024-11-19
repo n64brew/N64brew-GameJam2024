@@ -17,9 +17,6 @@ sprite_t *sequence_introduction_start_button_sprite;
 xm64player_t xm;
 int sequence_introduction_currentXMPattern = 0;
 
-rdpq_font_t *sequence_introduction_font_celtic_garamond_the_second;
-rdpq_font_t *sequence_introduction_font_halo_dek;
-
 int sequence_introduction_frame = 0;
 bool sequence_introduction_initialized = false;
 
@@ -55,29 +52,6 @@ void sequence_introduction_init()
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
 
     ///////////////////////////////////////////////////////////
-    //                  Set Fonts                            //
-    ///////////////////////////////////////////////////////////
-
-    rdpq_fontstyle_t fontstyle_white = {
-        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF), // White
-    };
-
-    rdpq_fontstyle_t fontstyle_black = {
-        .color = RGBA32(0x00, 0x00, 0x00, 0x00), // Black
-    };
-
-    sequence_introduction_font_celtic_garamond_the_second = rdpq_font_load("rom:/mallard/CelticGaramondTheSecond.font64");
-    sequence_introduction_font_halo_dek = rdpq_font_load("rom:/mallard/HaloDek.font64");
-
-    rdpq_font_style(sequence_introduction_font_halo_dek, 0, &fontstyle_white);
-    rdpq_font_style(sequence_introduction_font_halo_dek, 1, &fontstyle_black);
-    rdpq_font_style(sequence_introduction_font_celtic_garamond_the_second, 0, &fontstyle_white);
-    rdpq_font_style(sequence_introduction_font_celtic_garamond_the_second, 1, &fontstyle_black);
-
-    rdpq_text_register_font(FONT_CELTICGARMONDTHESECOND, sequence_introduction_font_celtic_garamond_the_second);
-    rdpq_text_register_font(FONT_HALODEK, sequence_introduction_font_halo_dek);
-
-    ///////////////////////////////////////////////////////////
     //                  Set up Sprites                       //
     ///////////////////////////////////////////////////////////
 
@@ -106,12 +80,6 @@ void sequence_introduction_init()
 
 void sequence_introduction_cleanup()
 {
-    // Unregister the font and free the allocated memory.
-    rdpq_text_unregister_font(FONT_CELTICGARMONDTHESECOND);
-    rdpq_font_free(sequence_introduction_font_celtic_garamond_the_second);
-    rdpq_text_unregister_font(FONT_HALODEK);
-    rdpq_font_free(sequence_introduction_font_halo_dek);
-
     // Free the sprites.
 
     // Libdragon

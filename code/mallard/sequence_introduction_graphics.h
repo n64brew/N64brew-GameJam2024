@@ -18,7 +18,6 @@ extern bool sequence_introduction_paragraph_fade_out_started;
 extern float sequence_introduction_paragraph_fade_out_elapsed;
 extern bool sequence_introduction_paragraph_fade_out_finished;
 extern char *sequence_introduction_current_paragraph_string;
-extern float sequence_game_fade_in_duration;
 
 extern bool sequence_introduction_mallard_logo_started;
 extern bool sequence_introduction_mallard_logo_finished;
@@ -37,7 +36,5 @@ void sequence_introduction_draw_mallard_logo(float deltatime);
 void sequence_introduction_draw_press_start_to_skip();
 void sequence_introduction_draw_press_a_for_next();
 void sequence_introduction_draw_paragraph(float deltatime);
-void sequence_introduction_menu(float deltatime);
-
 
 #endif // SEQUENCE_INTRODUCTION_GRAPHICS_H

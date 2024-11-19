@@ -6,6 +6,7 @@
 #define BLACK RGBA32(0x00, 0x00, 0x00, 0xFF)
 
 #define GAME_FADE_IN_DURATION 1.0f
+#define GAME_EXIT_DURATION 2.0f
 
 extern bool sequence_game_finished;
 
