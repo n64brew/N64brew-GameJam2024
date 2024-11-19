@@ -11,8 +11,8 @@ namespace {
 extern "C" const MinigameDef minigame_def = {
     .gamename = "Paintball",
     .developername = "Ali Naci Erdem",
-    .description = "...",
-    .instructions = "Move with analog stick, press A to shoot paintballs and aim with C/D pad."
+    .description = "Paint enemies to capture & score for your team. Winning color or last one standing gets more points!",
+    .instructions = "Move with analog stick, press C/D pad to shoot paintballs."
 };
 
 /*==============================

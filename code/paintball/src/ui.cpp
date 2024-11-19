@@ -22,7 +22,7 @@ void UIRenderer::render(const GameState &state)
 
         rdpq_textparms_t textparms2 = { .style_id = 4, .width = ScreenWidth, .height = ScreenHeight / 2, .align = ALIGN_CENTER, .valign = VALIGN_CENTER };
         rdpq_text_printf(&textparms2, MainFont, 0, ScreenHeight / 2, "Prepare to paint!");
-    } else if(state.gameTime < 3.6f){
+    } else if(state.state == STATE_GAME && state.gameTime < 3.6f){
         rdpq_text_printf(&textparms, BigFont, 0, 0, "Go!");
     }
 }

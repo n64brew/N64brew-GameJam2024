@@ -88,13 +88,6 @@ void Game::fixedUpdate(float deltaTime) {
     gameplayController.fixedUpdate(deltaTime, state);
 
     processState();
-
-    // if (timer.get() == nullptr) {
-    //     timer = {
-    //         new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
-    //         delete_timer
-    //     };
-    // }
 }
 
 void Game::processState() {
@@ -104,6 +97,24 @@ void Game::processState() {
     }
 
     if (state.currentRound == RoundCount) {
+        int maxScore = 0;
+        PlyNum winner = PLAYER_1;
+        // Calculate max score fol all teams
+        for (int i = 0; i < MAXPLAYERS; i++) {
+            if (state.scores[i] > maxScore) {
+                maxScore = state.scores[i];
+                winner = (PlyNum)i;
+            }
+        }
+
+        core_set_winner(winner);
+
+        if (timer.get() == nullptr) {
+            timer = {
+                new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
+                delete_timer
+            };
+        }
         state.state = STATE_FINISHED;
         return;
     }
@@ -115,31 +126,36 @@ void Game::processState() {
 
     if (state.state == STATE_WAIT_FOR_NEW_ROUND && state.gameTime > 3.0f) {
         gameplayController.newRound();
+        state.gameTime = 0.0f;
         state.state = STATE_COUNTDOWN;
         return;
     }
 
     auto&& playerGameplayData = gameplayController.getPlayerGameplayData();
-    std::array<int, MAXPLAYERS> counts = {0};
+    std::array<int, PlayerCount> counts = {0};
 
     int largestTeamCount = 0;
     PlyNum largestTeam = PLAYER_1;
-    for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
+    for (auto it = playerGameplayData.begin(); it != playerGameplayData.end(); ++it) {
         counts[it->team]++;
-        if (counts[it->team] > largestTeamCount) {
+        if (counts[it->team] >= largestTeamCount) {
             largestTeamCount = counts[it->team];
             largestTeam = it->team;
         }
     }
 
-    if (largestTeamCount == 4) {
+    if (
+        (state.state == STATE_GAME || state.state == STATE_LAST_ONE_STANDING) &&
+        largestTeamCount == PlayerCount
+    ) {
         state.currentRound++;
+
+        // One point to the team owner
         state.scores[largestTeam]++;
 
-        int i = 0;
-        for (auto& player : playerGameplayData) {
-            state.scores[i] += player.fragCount;
-            i++;
+        // First MAXPLAYERS players are eligible for kill points
+        for (int i = 0; i < MAXPLAYERS; i++) {
+            state.scores[i] += playerGameplayData[i].fragCount;
         }
 
         state.gameTime = 0.0f;
@@ -147,7 +163,7 @@ void Game::processState() {
         return;
     }
 
-    if (largestTeamCount == 3) {
+    if (state.state == STATE_GAME && largestTeamCount == (PlayerCount - 1)) {
         state.gameTime = 0.0f;
         state.state = STATE_LAST_ONE_STANDING;
         return;
@@ -156,13 +172,22 @@ void Game::processState() {
     if (state.state == STATE_LAST_ONE_STANDING && state.gameTime > LastOneStandingTime) {
         int i = 0;
         PlyNum lastPlayerTeam = PLAYER_1;
-        for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
+        for (auto it = playerGameplayData.begin(); it != playerGameplayData.end(); ++it) {
             if (it->team != largestTeam) {
                 lastPlayerTeam = (PlyNum)i;
             }
             i++;
         }
-        state.scores[lastPlayerTeam]++;
+
+        // First MAXPLAYERS players are eligible for kill points
+        for (int i = 0; i < MAXPLAYERS; i++) {
+            state.scores[i] += playerGameplayData[i].fragCount;
+        }
+
+        state.currentRound++;
+        // Two points if can escape
+        state.scores[lastPlayerTeam] += 2;
+
         state.gameTime = 0.0f;
         state.state = STATE_WAIT_FOR_NEW_ROUND;
         return;

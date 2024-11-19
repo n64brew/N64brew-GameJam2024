@@ -23,7 +23,7 @@
 constexpr float BulletVelocity = 300;
 constexpr float BulletHeight = 35.f;
 constexpr int BulletLimit = 100;
-constexpr float PlayerRadius = 12;
+constexpr float PlayerRadius = 13;
 constexpr float Gravity = -200;
 
 class Bullet

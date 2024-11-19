@@ -137,6 +137,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player::Gameplay
                 bullet.prevPos = bullet.pos;
                 bullet.velocity = newBullets[bulletIndex].velocity;
                 bullet.team = newBullets[bulletIndex].team;
+                bullet.owner = newBullets[bulletIndex].owner;
             } else {
                 continue;
             }

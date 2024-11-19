@@ -217,6 +217,8 @@ void GameplayController::newRound()
 
         player.team = ply;
         player.firstHit = ply;
+        player.fragCount = 0;
+
         ply = (PlyNum)(ply + 1);
     }
 
