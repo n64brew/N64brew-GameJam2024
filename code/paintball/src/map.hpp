@@ -31,7 +31,7 @@ class MapRenderer
         RDPQSurface surface;
         U::RSPQBlock renderModeBlock;
         U::RSPQBlock paintBlock;
-        U::RSPQBlock drawBlock;
+        // U::RSPQBlock drawBlock;
         U::Sprite sprite;
 
         U::TLUT tlut;

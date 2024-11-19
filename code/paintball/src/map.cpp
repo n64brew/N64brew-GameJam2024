@@ -4,7 +4,7 @@ MapRenderer::MapRenderer() :
     surface {FMT_CI8, MapWidth, MapWidth},
     renderModeBlock {nullptr, rspq_block_free},
     paintBlock {nullptr, rspq_block_free},
-    drawBlock {nullptr, rspq_block_free},
+    // drawBlock {nullptr, rspq_block_free},
     sprite {sprite_load("rom:/paintball/splash.ia4.sprite"), sprite_free},
     tlut {
         (uint16_t*)malloc_uncached(sizeof(uint16_t[256])),
@@ -99,14 +99,15 @@ MapRenderer::MapRenderer() :
         rdpq_mode_filter(FILTER_BILINEAR);
     paintBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
 
-    rspq_block_begin();
-        t3d_tri_draw(0, 1, 2);
-        t3d_tri_draw(2, 1, 3);
+    // This breaks ares if used
+    // rspq_block_begin();
+    //     t3d_tri_draw(0, 1, 2);
+    //     t3d_tri_draw(2, 1, 3);
 
-        rdpq_sync_tile();
-        rdpq_sync_load();
-        rdpq_sync_pipe();
-    drawBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
+    //     rdpq_sync_tile();
+    //     rdpq_sync_load();
+    //     rdpq_sync_pipe();
+    // drawBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
 }
 
 MapRenderer::~MapRenderer() {
@@ -136,13 +137,17 @@ void MapRenderer::render(const T3DViewport &viewport) {
 
             int pixelX = ix * TileSize;
             int pixelY = iy * TileSize;
+            rdpq_sync_tile();
+            rdpq_sync_load();
+            rdpq_sync_pipe();
 
             rdpq_tex_upload_sub(TILE0, surface.get(), NULL, pixelX, pixelY, pixelX+TileSize, pixelY+TileSize);
 
             // TODO: this is not efficient, load more vertices
             t3d_vert_load(&vertices[idx * 2], 0, 4);
 
-            rspq_block_run(drawBlock.get());
+            t3d_tri_draw(0, 1, 2);
+            t3d_tri_draw(2, 1, 3);
         }
     }
 }

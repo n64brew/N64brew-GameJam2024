@@ -46,8 +46,8 @@ void Game::render(float deltaTime) {
     uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
     // Update camera
-    t3d_vec3_add(camTarget, state.avPos, T3DVec3{0, 0, 30});
-    t3d_vec3_add(camPos, state.avPos, T3DVec3{0, 150.0f, 100.0f});
+    t3d_vec3_add(camTarget, state.avPos, T3DVec3{0, 0, 40});
+    t3d_vec3_add(camPos, state.avPos, T3DVec3{0, 125.0f, 100.0f});
 
     T3DVec3 up = (T3DVec3){{0,1,0}};
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
