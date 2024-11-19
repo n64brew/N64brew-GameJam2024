@@ -33,12 +33,16 @@
         "sequence_2_input.h": "c",
         "sequence_1_graphics.h": "c",
         "sequence_3_graphics.h": "c",
-        "sequence_4_graphics.h": "c",
+        "sequence_introduction_graphics.h": "c",
         "rdpq_paragraph.h": "c",
         "sequence_4.h": "c",
         "random": "cpp",
-        "sequence_4_input.h": "c",
+        "sequence_introduction_input.h": "c",
         "audio.h": "c",
-        "xm64.h": "c"
+        "xm64.h": "c",
+        "sequence_introduction.h": "c",
+        "sequence_game.h": "c",
+        "sequence_introduction_graphics.h": "c",
+        "sequence_game_graphics.h": "c"
     }
 }

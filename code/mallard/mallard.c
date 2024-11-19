@@ -2,7 +2,8 @@
 #include "../../core.h"
 #include "../../minigame.h"
 
-#include "sequence_4.h"
+#include "sequence_introduction.h"
+#include "sequence_game.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -18,6 +19,8 @@ bool sequence_introduction_started = true;
 bool sequence_introduction_finished = false;
 bool sequence_menu_started = false;
 bool sequence_menu_finished = false;
+bool sequence_game_started = false;
+bool sequence_game_finished = false;
 
 /*==============================
     minigame_init
@@ -48,6 +51,12 @@ void minigame_loop(float deltatime)
     if (sequence_introduction_started == true && sequence_introduction_finished == false)
     {
         sequence_introduction(deltatime);
+        return;
+    }
+
+    if (sequence_game_started == true && sequence_game_finished == false)
+    {
+        sequence_game(deltatime);
         return;
     }
 
