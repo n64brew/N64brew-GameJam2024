@@ -84,6 +84,12 @@ PlyNum winner;
 #define WIN_SHOW_DELAY      2.0f
 
 #define BILLBOARD_YOFFSET   15.0f
+AF_Color WHITE_COLOR = {255, 255, 255, 255};
+AF_Color PLAYER1_COLOR = {255, 0,0, 255};
+AF_Color PLAYER2_COLOR = {0, 255,0, 255};
+AF_Color PLAYER3_COLOR = {0, 0,255, 255};
+AF_Color PLAYER4_COLOR = {255, 255,0, 255};
+
 
 typedef struct
 {
@@ -138,13 +144,11 @@ void PlayerController_DamageHandler(AppData* _appData){
                     AF_Entity* otherPlayerEntity = _appData->gameplayData.playerEntities[x];
                     Vec3* otherPlayerPos = &otherPlayerEntity->transform->pos;
                     float playersInRange = Vec3_DISTANCE(*playerPos, *otherPlayerPos);
-                    debugf("Player is attatcking %f \n" , playersInRange);
-                    if(playersInRange < ATTACK_RADIUS){
+                  if(playersInRange < ATTACK_RADIUS){
                         // Other player is in range
                         // attack
                         AF_C3DRigidbody* otherPlayerRigidbody = otherPlayerEntity->rigidbody;
                         Vec3 forceVector = Vec3_ADD(*playerPos, *otherPlayerPos);
-                        debugf("PlayerController: damage x: %f, y: %f, z: %f \n", forceVector.x, forceVector.y, forceVector.z);
                         AF_Physics_ApplyLinearImpulse(otherPlayerRigidbody, forceVector);
                         //*otherPlayerPos = Vec3_ADD(forceVector, *otherPlayerPos);
                         playerData->isAttacking = FALSE;
@@ -152,8 +156,6 @@ void PlayerController_DamageHandler(AppData* _appData){
                 }
             }
         }
-        
-
     }
 }
 
@@ -234,6 +236,7 @@ void Scene_SetupEntities(AppData* _appData){
     Vec3 godBoundingScale = {1,1,1};
     godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_MESH, AABB);
     godEntity->mesh->meshID = MODEL_SNAKE;
+    godEntity->mesh->material.color = WHITE_COLOR;
     godEntity->rigidbody->inverseMass = zeroInverseMass;
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->boundingVolume = godBoundingScale;
@@ -247,7 +250,8 @@ void Scene_SetupEntities(AppData* _appData){
     
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
-    player1Entity->mesh->meshID = MODEL_SNAKE;
+    player1Entity->mesh->meshID = MODEL_SNAKE;//MODEL_SNAKE2;
+    player1Entity->mesh->material.color = PLAYER1_COLOR;
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
@@ -261,6 +265,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player2Entity = gameplayData->playerEntities[1];
     player2Entity->mesh->meshID = MODEL_SNAKE;
+    player2Entity->mesh->material.color = PLAYER2_COLOR;
     player2Entity->rigidbody->inverseMass = 1.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
@@ -273,6 +278,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player3Entity = gameplayData->playerEntities[2];
     player3Entity->mesh->meshID = MODEL_SNAKE;
+    player3Entity->mesh->material.color = PLAYER3_COLOR;
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = 1.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
@@ -285,6 +291,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
 	AF_Entity* player4Entity = gameplayData->playerEntities[3];
     player4Entity->mesh->meshID = MODEL_SNAKE;
+    player4Entity->mesh->material.color = PLAYER4_COLOR;
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = 1.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
@@ -407,7 +414,7 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
     AF_Entity* bucket3 = GetBucket3();
     AF_Entity* bucket4 = GetBucket4();
 
-    debugf("spawn buket \n");
+    
 
     if(randomNum == 0){
         *_currentBucket = 0;
@@ -455,7 +462,7 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
 
     // if entity is carrying, eat and shift the villager into the distance
     if(entity2->playerData->isCarrying == TRUE){
-        debugf("god trigger\n");
+       
         //debugf("Scene_GodTrigger: eat count %i \n", godEatCount);
         // TODO: update godEatCount. observer pattern would be nice right now
         //godEatCount++;

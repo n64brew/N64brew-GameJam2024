@@ -50,9 +50,9 @@ T3DAnim animAttacks[AF_ECS_TOTAL_ENTITIES];
 
 
 // ============ ANIMATIONS ============
-const char* snakeIdlePath = "Snake_Idle";
-const char* snakeWalkPath = "Snake_Walk";
-const char* snakeAttackPath = "Snake_Attack";
+const char* idlePath = "Idle";//"Snake_Idle";
+const char* walkPath = "Walk";//"Snake_Walk";
+const char* attackPath = "Attack";//"Snake_Attack";
 
 // we need a seperate skelton anim for each skeleton
 T3DSkeleton skeletons[AF_ECS_TOTAL_ENTITIES];
@@ -169,12 +169,10 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
 
    // First instantiate skeletons, they will be used to draw models in a specific pose
    // model skeleton)
-    debugf("AF_Renderer_LoadAnimation: create skeleton \n");
     assert(_animation->model != NULL && "AF_Renderer_LoadAnimation: failed to create skeleton\n");
     skeletons[_i] = t3d_skeleton_create( (T3DModel*)_animation->model);
     _animation->skeleton = (void*)&skeletons[_i];
 
-    debugf("AF_Renderer_LoadAnimation: clone skeleton \n");
     // Model skeletonblend
     skeletonBlends[_i] = t3d_skeleton_clone(&skeletons[_i], false); // optimized for blending, has no matrices
     _animation->skeletonBlend = (void*)&skeletonBlends[_i];
@@ -183,14 +181,13 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
     // Note that tiny3d internally keeps no track of animations, it's up to the user to manage and play them.
     // create idle animation   
 
-    debugf("AF_Renderer_LoadAnimation: create idle \n");
-    animIdles[_i] = t3d_anim_create((T3DModel*)_animation->model, snakeIdlePath);// "Snake_Idle");
+    animIdles[_i] = t3d_anim_create((T3DModel*)_animation->model, idlePath);// "Snake_Idle");
     _animation->idleAnimationData = (void*)&animIdles[_i];
     // attatch idle animation
     t3d_anim_attach(&animIdles[_i], &skeletons[_i]); // tells the animation which skeleton to modify
 
     // Create walk animation
-    animWalks[_i] = t3d_anim_create((T3DModel*)_animation->model, snakeWalkPath);//"Snake_Walk");
+    animWalks[_i] = t3d_anim_create((T3DModel*)_animation->model, walkPath);//"Snake_Walk");
     _animation->walkAnimationData = (void*)&animWalks[_i];
     // attatch walk animation
     t3d_anim_attach(&animWalks[_i], &skeletonBlends[_i]);
@@ -198,7 +195,7 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
     // multiple animations can attach to the same skeleton, this will NOT perform any blending
     // rather the last animation that updates "wins", this can be useful if multiple animations touch different bones
     // Create attack animation
-    animAttacks[_i] = t3d_anim_create((T3DModel*)_animation->model, snakeAttackPath);// "Snake_Attack");
+    animAttacks[_i] = t3d_anim_create((T3DModel*)_animation->model, attackPath);// "Snake_Attack");
     _animation->attackAnimationData = (void*)&animAttacks[_i];
 
     // attatch attack animation
@@ -278,18 +275,18 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
     
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
+        
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
             
             // ========== ANIMATIONS =========
             // Process objects that have skeletal animations
-            AF_CSkeletalAnimation* animation = &_ecs->skeletalAnimations[i];
-            BOOL hasComponent = AF_Component_GetHas(animation->enabled);
-            BOOL isEnabled = AF_Component_GetEnabled(animation->enabled);
+            AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+            BOOL hasSkeletalComponent = AF_Component_GetHas(skeletalAnimation->enabled);
+            BOOL isEnabled = AF_Component_GetEnabled(skeletalAnimation->enabled);
             
-            if(hasComponent == TRUE && isEnabled == TRUE){
-                animation->model = (void*)models[MODEL_SNAKE];
-                debugf("AF_Renderer: create skeletal animation %i\n",i);
-                AF_Renderer_LoadAnimation(animation, i);
+            if(hasSkeletalComponent == TRUE && isEnabled == TRUE){
+                skeletalAnimation->model = (void*)models[mesh->meshID];
+                AF_Renderer_LoadAnimation(skeletalAnimation, i);
             }
 
             // ============ MESH ==============
@@ -310,13 +307,14 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             
             // TODO: put a flag in that can signal a mesh is skinned
             // The snake model needs special color and call to skinned command
-            if(mesh->meshID == MODEL_SNAKE){
-                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+            
+            if(hasSkeletalComponent == TRUE){
+                color_t color ={mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
+                rdpq_set_prim_color(color); //RGBA32(255, 255, 255, 255));
                 t3d_model_draw_skinned(models[mesh->meshID], &skeletons[i]);//animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
             }
-            
             else{
                 rdpq_set_prim_color(RGBA32(0, 0, 0, 0xFF));
                 t3d_model_draw(models[mesh->meshID]);

@@ -27,5 +27,7 @@ ASSETS_LIST += \
 	filesystem/old_gods/shadow.t3dm \
 	filesystem/old_gods/map.t3dm \
 	filesystem/old_gods/snake.t3dm \
+	filesystem/old_gods/spider.t3dm \
+	filesystem/old_gods/frog.t3dm \
 	
 #filesystem/old_gods/ZenDots-Regular.font64: MKFONT_FLAGS += --outline 3 --size 16
