@@ -29,8 +29,8 @@ Game::Game() :
     rdpq_font_style(fnt, 3, &p4Style);
     rdpq_font_style(fnt, 4, &style);
 
-    camTarget = (T3DVec3){{0, 0, 40}};
-    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
+    camTarget = T3DVec3 {{0, 0, 40}};
+    camPos = T3DVec3 {{0, 125.0f, 100.0f}};
 
     debugf("Paintball minigame initialized\n");
 }
@@ -46,8 +46,13 @@ void Game::render(float deltaTime) {
     uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
 
     // Update camera
-    t3d_vec3_add(camTarget, state.avPos, T3DVec3{0, 0, 40});
-    t3d_vec3_add(camPos, state.avPos, T3DVec3{0, 125.0f, 100.0f});
+    T3DVec3 tmpPos = {0};
+    t3d_vec3_add(tmpPos, state.avPos, T3DVec3{0, 0, 40});
+    t3d_vec3_lerp(camTarget, camTarget, tmpPos, 0.2);
+
+    t3d_vec3_add(tmpPos, state.avPos, T3DVec3{0, 125.0f, 100.0f});
+    // TODO: maybe reduce this lerping for a more dynamic camera
+    t3d_vec3_lerp(camPos, camPos, tmpPos, 0.2);
 
     T3DVec3 up = (T3DVec3){{0,1,0}};
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
