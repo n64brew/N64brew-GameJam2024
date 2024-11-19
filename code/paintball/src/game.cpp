@@ -7,9 +7,10 @@ Game::Game() :
     mapRenderer(std::make_shared<MapRenderer>()),
     gameplayController(mapRenderer),
     state({
+        .state = STATE_COUNTDOWN,
         .gameTime = 0.0f,
-        .isCountdown = true,
-        .gameFinished = false
+        .currentRound = 0,
+        .scores = {0},
     })
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
@@ -86,19 +87,85 @@ void Game::fixedUpdate(float deltaTime) {
     state.gameTime += deltaTime;
     gameplayController.fixedUpdate(deltaTime, state);
 
-    updateState();
+    processState();
+
+    // if (timer.get() == nullptr) {
+    //     timer = {
+    //         new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
+    //         delete_timer
+    //     };
+    // }
 }
 
-void Game::updateState() {
-    if (state.isCountdown && state.gameTime > 3.0f) {
-        state.isCountdown = false;
+void Game::processState() {
+    if (state.state == STATE_FINISHED) {
+        state.state = STATE_FINISHED;
+        return;
     }
 
-    if (state.gameFinished && timer.get() == nullptr) {
-        timer = {
-            new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
-            delete_timer
-        };
+    if (state.currentRound == RoundCount) {
+        state.state = STATE_FINISHED;
+        return;
+    }
+
+    if (state.state == STATE_COUNTDOWN && state.gameTime > 3.0f) {
+        state.state = STATE_GAME;
+        return;
+    }
+
+    if (state.state == STATE_WAIT_FOR_NEW_ROUND && state.gameTime > 3.0f) {
+        gameplayController.newRound();
+        state.state = STATE_COUNTDOWN;
+        return;
+    }
+
+    auto&& playerGameplayData = gameplayController.getPlayerGameplayData();
+    std::array<int, MAXPLAYERS> counts = {0};
+
+    int largestTeamCount = 0;
+    PlyNum largestTeam = PLAYER_1;
+    for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
+        counts[it->team]++;
+        if (counts[it->team] > largestTeamCount) {
+            largestTeamCount = counts[it->team];
+            largestTeam = it->team;
+        }
+    }
+
+    if (largestTeamCount == 4) {
+        state.currentRound++;
+        state.scores[largestTeam]++;
+
+        int i = 0;
+        for (auto& player : playerGameplayData) {
+            state.scores[i] += player.fragCount;
+            i++;
+        }
+
+        state.gameTime = 0.0f;
+        state.state = STATE_WAIT_FOR_NEW_ROUND;
+        return;
+    }
+
+    if (largestTeamCount == 3) {
+        state.gameTime = 0.0f;
+        state.state = STATE_LAST_ONE_STANDING;
+        return;
+    }
+
+    if (state.state == STATE_LAST_ONE_STANDING && state.gameTime > LastOneStandingTime) {
+        int i = 0;
+        PlyNum lastPlayerTeam = PLAYER_1;
+        for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
+            if (it->team != largestTeam) {
+                lastPlayerTeam = (PlyNum)i;
+            }
+            i++;
+        }
+        state.scores[lastPlayerTeam]++;
+        state.gameTime = 0.0f;
+        state.state = STATE_WAIT_FOR_NEW_ROUND;
+        return;
     }
 }
 

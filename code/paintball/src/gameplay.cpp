@@ -25,6 +25,8 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
         playerGameplayData.emplace_back(Player::GameplayData {{0,0,-100}, PLAYER_2});
         playerGameplayData.emplace_back(Player::GameplayData {{100,0,0}, PLAYER_3});
         playerGameplayData.emplace_back(Player::GameplayData {{0,0,100}, PLAYER_4});
+
+        newRound();
     }
 
 void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player::OtherData &otherData, uint32_t id, float deltaTime)
@@ -119,13 +121,13 @@ void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player:
     }
 }
 
-void GameplayController::handleActions(Player::GameplayData &player, uint32_t id, GameState &state) {
+void GameplayController::handleActions(Player::GameplayData &player, uint32_t id, bool enabled) {
     if (id < core_get_playercount()) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
 
         if (pressed.start) minigame_end();
 
-        if (state.isCountdown || player.temperature > 1.f) return;
+        if (!enabled || player.temperature > 1.f) return;
 
         auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
 
@@ -157,6 +159,7 @@ void GameplayController::handleActions(Player::GameplayData &player, uint32_t id
     }
 }
 
+// TODO: stop passing state around
 void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
     state.avPos = {0};
@@ -165,7 +168,7 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
     {
         auto& playerGameplay = playerGameplayData[i];
 
-        handleActions(playerGameplay, i, state);
+        handleActions(playerGameplay, i, state.state != STATE_COUNTDOWN);
         Player::render(playerGameplay, playerOther, i, viewport, deltaTime);
 
         t3d_vec3_add(state.avPos, state.avPos, playerGameplay.pos);
@@ -197,34 +200,39 @@ void GameplayController::fixedUpdate(float deltaTime, GameState &state)
         i++;
     }
 
-    std::array<bool, PlayerCount>playerHitStatus = bulletController.fixedUpdate(deltaTime, playerGameplayData);
-
-    // TODO: do this check less frequently
-    checkGameFinished(state, playerHitStatus);
+    bulletController.fixedUpdate(deltaTime, playerGameplayData);
 }
 
-void GameplayController::checkGameFinished(GameState &state, std::array<bool, PlayerCount> &playerHitStatus)
+void GameplayController::newRound()
 {
-    PlyNum team = playerGameplayData[0].team;
-    bool isFinished = true;
-    for (auto it = playerGameplayData.begin() + 1; it != playerGameplayData.end(); ++it) {
-        // All players must be in the same team to finish the game
-        if (it->team != team) {
-            isFinished = false;
-        }
-        team = it->team;
+    PlyNum ply = PLAYER_1;
+    for (Player::GameplayData &player : playerGameplayData)
+    {
+        auto& playerOther = playerOtherData[ply];
+
+        // TODO: fix this
+        playerOther.direction = 0;
+        playerOther.velocity = {0};
+        playerOther.accel = {0};
+
+        player.team = ply;
+        player.firstHit = ply;
+        ply = (PlyNum)(ply + 1);
     }
 
-    // If you died last, you lose!
-    if (isFinished && !state.gameFinished) {
-        uint32_t i = 0;
-        for (auto& died : playerHitStatus) {
-            if (i < core_get_playercount() && !died) {
-                // TODO: probably better to do this in Game
-                core_set_winner((PlyNum)i);
-            }
-            i++;
-        }
-        state.gameFinished = true;
-    }
+    playerGameplayData[0].pos = {-100, 0, 0};
+    playerGameplayData[0].prevPos = {-100, 0, 0};
+
+    playerGameplayData[1].pos = {0, 0, -100};
+    playerGameplayData[1].prevPos = {0, 0, -100};
+
+    playerGameplayData[2].pos = {100, 0, 0};
+    playerGameplayData[2].prevPos = {100, 0, 0};
+
+    playerGameplayData[3].pos = {0, 0, 100};
+    playerGameplayData[3].prevPos = {0, 0, 100};
+}
+
+const std::vector<Player::GameplayData> &GameplayController::getPlayerGameplayData() const {
+    return playerGameplayData;
 }

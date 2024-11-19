@@ -19,6 +19,7 @@
 
 class GameplayController;
 class BulletController;
+class Game;
 
 namespace Player {
     class OtherData;
@@ -27,6 +28,7 @@ namespace Player {
     {
         friend class ::GameplayController;
         friend class ::BulletController;
+        friend class ::Game;
         friend void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
         friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id);
 
@@ -39,6 +41,7 @@ namespace Player {
             // the player moves to that team
             PlyNum firstHit;
             float temperature;
+            int fragCount;
 
         public:
             GameplayData(T3DVec3 pos, PlyNum team);

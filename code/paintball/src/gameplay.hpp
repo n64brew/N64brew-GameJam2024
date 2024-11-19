@@ -44,12 +44,13 @@ class GameplayController
 
         // Player calculations
         void simulatePhysics(Player::GameplayData &gameplayData, Player::OtherData &other, uint32_t id, float deltaTime);
-        void handleActions(Player::GameplayData &gameplayData, uint32_t id, GameState &state);
+        void handleActions(Player::GameplayData &gameplayData, uint32_t id, bool enabled);
 
-        void checkGameFinished(GameState &state, std::array<bool, PlayerCount> &playerHitStatus);
     public:
         GameplayController(std::shared_ptr<MapRenderer> map);
-        void updateState(GameState state);
+        void newRound();
+        const std::vector<Player::GameplayData> &getPlayerGameplayData() const;
+
         void render(float deltaTime, T3DViewport &viewport, GameState &state);
         void renderUI();
         void fixedUpdate(float deltaTime, GameState &state);

@@ -1,7 +1,7 @@
 #include "player.hpp"
 
 Player::GameplayData::GameplayData(T3DVec3 pos, PlyNum team) :
-    pos(pos), prevPos(pos), team(team), firstHit(team), temperature(0) {}
+    pos(pos), prevPos(pos), team(team), firstHit(team), temperature(0), fragCount(0) {}
 
 Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
     accel({0}),

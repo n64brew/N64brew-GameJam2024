@@ -23,6 +23,9 @@
 #include <functional>
 #include <memory>
 
+constexpr int RoundCount = 3;
+constexpr float LastOneStandingTime = 20;
+
 class Game
 {
     private:
@@ -49,7 +52,7 @@ class Game
         GameState state;
 
         void gameOver();
-        void updateState();
+        void processState();
 
     public:
         Game();

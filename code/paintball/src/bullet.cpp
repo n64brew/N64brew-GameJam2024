@@ -86,7 +86,7 @@ void BulletController::killBullet(Bullet &bullet) {
 /**
  * Returns true if the player changed team
  */
-bool BulletController::applyDamage(Player::GameplayData &gameplayData, PlyNum team) {
+bool BulletController::processHit(Player::GameplayData &gameplayData, PlyNum team) {
     // Already on same team, heal
     if (gameplayData.team == team) {
         gameplayData.firstHit = team;
@@ -95,6 +95,7 @@ bool BulletController::applyDamage(Player::GameplayData &gameplayData, PlyNum te
 
     if (gameplayData.firstHit == team) {
         gameplayData.team = team;
+        gameplayData.fragCount = 0;
         return true;
     }
 
@@ -124,9 +125,7 @@ void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
 /**
  * Returns an array of players changed status this tick
  */
-std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData) {
-    std::array<bool, PlayerCount> playerHitStatus {0};
-
+void BulletController::fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData) {
     for (auto& bullet : bullets)
     {
         // TODO: this will prevent firing once every slot is occupied
@@ -161,14 +160,14 @@ std::array<bool, PlayerCount> BulletController::fixedUpdate(float deltaTime, std
                 (player.pos.v[2] - bullet.pos.v[2]) * (player.pos.v[2] - bullet.pos.v[2]);
 
             if (dist2 < PlayerRadius * PlayerRadius) {
-                playerHitStatus[i] = applyDamage(player, bullet.team);
+                // TODO: delegate to Player
+                bool hit = processHit(player, bullet.team);
+                gameplayData[bullet.owner].fragCount += hit ? 1 : 0;
                 killBullet(bullet);
             }
             i++;
         }
     }
-
-    return playerHitStatus;
 }
 
 void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team) {

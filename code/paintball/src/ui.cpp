@@ -17,7 +17,7 @@ void UIRenderer::render(const GameState &state)
     rdpq_sync_pipe(); // Hardware crashes otherwise
 
     rdpq_textparms_t textparms = { .width = ScreenWidth, .height = ScreenHeight, .align = ALIGN_CENTER, .valign = VALIGN_CENTER, .disable_aa_fix = true };
-    if (state.isCountdown) {
+    if (state.state == STATE_COUNTDOWN) {
         rdpq_text_printf(&textparms, BigFont, 0, 0, "%d", (int)ceilf(3.f - state.gameTime));
 
         rdpq_textparms_t textparms2 = { .style_id = 4, .width = ScreenWidth, .height = ScreenHeight / 2, .align = ALIGN_CENTER, .valign = VALIGN_CENTER };
