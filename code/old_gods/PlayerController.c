@@ -7,7 +7,6 @@
 
 #define STICK_DEAD_ZONE 0.01
 #define PLAYER_SPEED 1
-#define PI 3.14159265358979f
 #define PLAYER_COUNT 4
 
 #define A_KEY 0			// A Button		
@@ -22,12 +21,7 @@ void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _ent
 	}	
 }
 
-/// @brief Interpolates between two angles (radians) by 't', from T3D
-float Lerp_Angle(float a, float b, float t) {
-  float angleDiff = fmodf((b - a), PI*2);
-  float shortDist = fmodf(angleDiff*2, PI*2) - angleDiff;
-  return a + shortDist * t;
-}
+
 
 void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _input, AF_Entity* _entity){
 	// Handle attack
@@ -105,5 +99,5 @@ void PlayerController_Attack(AF_Entity* _entity){
 	AF_Physics_ApplyLinearImpulse(_entity->rigidbody, movementForce);
 	// adjust rotation
 	float newAngle = atan2f(-vecX, vecY);
-	_entity->transform->rot.y = Lerp_Angle(_entity->transform->rot.y, newAngle, 0.25f);
+	_entity->transform->rot.y = AF_Math_Lerp_Angle(_entity->transform->rot.y, newAngle, 0.25f);
  }
