@@ -11,6 +11,7 @@
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
 #include "AF_Physics.h"
+#include "AF_Math.h"
 
 // ECS system
 AF_Entity* camera = NULL;
@@ -74,6 +75,7 @@ PlyNum winner;
 
 #define ATTACK_OFFSET       10.f
 #define ATTACK_RADIUS       5.0f
+#define ATTACK_FORCE_STRENGTH 10.0f
 
 #define ATTACK_TIME_START   0.333f
 #define ATTACK_TIME_END     0.4f
@@ -148,13 +150,14 @@ void PlayerController_DamageHandler(AppData* _appData){
                         // Other player is in range
                         // attack
                         AF_C3DRigidbody* otherPlayerRigidbody = otherPlayerEntity->rigidbody;
-                        Vec3 forceVector = Vec3_ADD(*playerPos, *otherPlayerPos);
+
+                        Vec3 forceVector = Vec3_MULT_SCALAR( Vec3_NORMALIZE((Vec3_MINUS(*playerPos, *otherPlayerPos))), -ATTACK_FORCE_STRENGTH);
                         AF_Physics_ApplyLinearImpulse(otherPlayerRigidbody, forceVector);
-                        //*otherPlayerPos = Vec3_ADD(forceVector, *otherPlayerPos);
-                        playerData->isAttacking = FALSE;
                     }
                 }
             }
+        }else{
+
         }
     }
 }
