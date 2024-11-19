@@ -46,4 +46,4 @@ assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)
 	$(BLENDER_4_0) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
 
-filesystem/rampage/QuirkyRobot.font64: MKFONT_FLAGS += --size 16
+filesystem/rampage/QuirkyRobot.font64: MKFONT_FLAGS += --size 32

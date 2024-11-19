@@ -26,7 +26,11 @@ struct RampagePlayer {
     rspq_block_t* render_block;
     T3DSkeleton skeleton;
     T3DAnim animWalk;
+    T3DAnim animIdle;
+    T3DAnim animStun;
     T3DAnim animAttack;
+    T3DAnim animWin;
+    T3DAnim animLose;
     enum PlayerType type;
     T3DMat4FP mtx;
     struct health health;
@@ -39,12 +43,13 @@ struct RampagePlayer {
     uint32_t is_attacking: 1;
     uint32_t player_index: 2;
     uint32_t is_active: 1;
+    uint32_t did_win: 1;
+    uint32_t did_lose: 1;
 
     uint16_t score;
 
     struct Vector3 current_target;
     float attack_timer;
-    float stun_timer;
 };
 
 void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, struct Vector2* start_rotation, int player_index, enum PlayerType type);
@@ -52,5 +57,7 @@ void rampage_player_destroy(struct RampagePlayer* player);
 
 void rampage_player_update(struct RampagePlayer* player, float delta_time);
 void rampage_player_render(struct RampagePlayer* player);
+
+void rampage_player_set_did_win(struct RampagePlayer* player, bool did_win);
 
 #endif

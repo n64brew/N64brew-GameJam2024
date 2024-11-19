@@ -35,7 +35,7 @@ const MinigameDef minigame_def = {
     .gamename = "Rampage",
     .developername = "Ultrarare",
     .description = "Destroy the most buildings to win",
-    .instructions = "Press A to win."
+    .instructions = "Press B to attack."
 };
 
 static struct mesh_triangle_indices global_mesh_collider_triangles[] = {
@@ -148,13 +148,22 @@ void minigame_find_winners() {
     }
 
     if (gRampage.winner_count == 4) {
-        return;
+        gRampage.winner_count = 0;
+        gRampage.winner_mask = 0;
     }
+    
+    struct Vector2 lookRotation = gRight2;
+    vector2ComplexFromAngle(0.64f, &lookRotation);
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
-        if (gRampage.winner_mask & (1 << 1)) {
+        if (gRampage.winner_mask & (1 << i)) {
             core_set_winner(i);
+            rampage_player_set_did_win(&gRampage.players[i], true);
+        } else {
+            rampage_player_set_did_win(&gRampage.players[i], false);
         }
+
+        gRampage.players[i].dynamic_object.rotation = lookRotation;        
     }
 }
 
@@ -246,8 +255,8 @@ float pointLightDistance[] = {
 };
 
 struct Vector2 scorePosition[] = {
-    {30.0f, 36.0f},
-    {550.0f, 36.0f},
+    {30.0f, 52.0f},
+    {550.0f, 52.0f},
     {550.0f, 460.0f},
     {30.0f, 460.0f},
 };
@@ -360,11 +369,11 @@ void minigame_loop(float deltatime) {
             case 1:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 320.0f, 
+                        .width = 640.0f, 
                         .align = ALIGN_CENTER,
                         .style_id = get_winner_index(0),
                     }, FONT_TEXT, 
-                    0.0f, 120.0f, 
+                    0.0f, 240.0f, 
                     "Player %d wins!",
                     get_winner_index(0)
                 );
@@ -372,11 +381,11 @@ void minigame_loop(float deltatime) {
             case 2:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 320.0f, 
+                        .width = 640.0f, 
                         .align = ALIGN_CENTER,
                         .style_id = 0,
                     }, FONT_TEXT, 
-                    0.0f, 120.0f, 
+                    0.0f, 240.0f, 
                     "Players %d and %d wins!",
                     get_winner_index(0),
                     get_winner_index(1)
@@ -385,11 +394,11 @@ void minigame_loop(float deltatime) {
             case 3:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 320.0f, 
+                        .width = 640.0f, 
                         .align = ALIGN_CENTER,
                         .style_id = 0,
                     }, FONT_TEXT, 
-                    0.0f, 120.0f, 
+                    0.0f, 240.0f, 
                     "Player %d, %d and %d wins!",
                     get_winner_index(0),
                     get_winner_index(1),
@@ -400,11 +409,11 @@ void minigame_loop(float deltatime) {
             case 4:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 320.0f, 
+                        .width = 640.0f, 
                         .align = ALIGN_CENTER,
                         .style_id = 0,
                     }, FONT_TEXT, 
-                    0.0f, 120.0f, 
+                    0.0f, 240.0f, 
                     "Draw"
                 );
                 break;

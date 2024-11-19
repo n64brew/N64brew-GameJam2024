@@ -14,9 +14,10 @@
 
 #include <stdint.h>
 
-#define PLAYER_MOVE_SPEED   128
-#define PLAYER_ACCEL        5000
-#define PLAYER_AIR_ACCEL    2000
+#define PLAYER_MOVE_SPEED       128
+#define PLAYER_ANIM_WALK_SPEED  80
+#define PLAYER_ACCEL            5000
+#define PLAYER_AIR_ACCEL        2000
 #define PLAYER_ATTACK_DAMAGE_DELAY  0.5f
 
 #define PLAYER_JUMP_IMPULSE 250
@@ -186,11 +187,15 @@ void rampage_player_update_damager(struct RampagePlayer* player) {
 void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampagePlayer* player = (struct RampagePlayer*)data;
 
-    if (player->stun_timer <= 0.0f) {
-        player->stun_timer = PLAYER_STUN_TIME;
+    if (!player->animStun.isPlaying) {
+        t3d_anim_set_playing(&player->animStun, true);
+        t3d_anim_set_time(&player->animStun, 0.0f);
         player->is_attacking = 0;
         player->dynamic_object.velocity = (struct Vector3){velocity->x, 0.0f, velocity->z};
         vector3Normalize(&player->dynamic_object.velocity, &player->dynamic_object.velocity);
+
+        player->dynamic_object.rotation.x = -player->dynamic_object.velocity.x;
+        player->dynamic_object.rotation.y = -player->dynamic_object.velocity.z;
 
         vector3Scale(&player->dynamic_object.velocity, &player->dynamic_object.velocity, PLAYER_ATTACK_VELOCITY);
         player->dynamic_object.velocity.y = PLAYER_STUN_IMPULSE;
@@ -235,10 +240,24 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->skeleton = t3d_skeleton_create(model);
     player->animWalk = t3d_anim_create(model, "Walk");
     t3d_anim_attach(&player->animWalk, &player->skeleton);
+    player->animIdle = t3d_anim_create(model, "Idle");
+    t3d_anim_attach(&player->animIdle, &player->skeleton);
     player->animAttack = t3d_anim_create(model, "Left_Swipe");
     t3d_anim_attach(&player->animAttack, &player->skeleton);
     t3d_anim_set_looping(&player->animAttack, false);
     t3d_anim_set_playing(&player->animAttack, false);
+    player->animStun = t3d_anim_create(model, "Stun");
+    t3d_anim_attach(&player->animStun, &player->skeleton);
+    t3d_anim_set_looping(&player->animStun, false);
+    t3d_anim_set_playing(&player->animStun, false);
+    player->animWin = t3d_anim_create(model, "Victory");
+    t3d_anim_attach(&player->animWin, &player->skeleton);
+    t3d_anim_set_looping(&player->animWin, false);
+    t3d_anim_set_playing(&player->animWin, false);
+    player->animLose = t3d_anim_create(model, "Defeat");
+    t3d_anim_attach(&player->animLose, &player->skeleton);
+    t3d_anim_set_looping(&player->animLose, false);
+    t3d_anim_set_playing(&player->animLose, false);
 
     collision_scene_add(&player->damage_trigger);
 
@@ -260,9 +279,10 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->is_jumping = 0;
     player->was_jumping = 1;
     player->is_slamming = 0;
-    player->stun_timer = 0.0f;
     player->is_attacking = 0;
     player->is_active = 0;
+    player->did_win = 0;
+    player->did_lose = 0;
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 }
@@ -270,7 +290,11 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
 void rampage_player_destroy(struct RampagePlayer* player) {
     rspq_block_free(player->render_block);
     t3d_anim_destroy(&player->animWalk);
+    t3d_anim_destroy(&player->animIdle);
     t3d_anim_destroy(&player->animAttack);
+    t3d_anim_destroy(&player->animStun);
+    t3d_anim_destroy(&player->animWin);
+    t3d_anim_destroy(&player->animLose);
     t3d_skeleton_destroy(&player->skeleton);
     collision_scene_remove(&player->dynamic_object);
     collision_scene_remove(&player->damage_trigger);
@@ -377,8 +401,18 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     
     rampage_player_update_damager(player);
 
-    if (player->stun_timer > 0.0f) {
-        player->stun_timer -= delta_time;
+    if (player->did_win) {
+        t3d_anim_update(&player->animWin, delta_time);
+        player->dynamic_object.velocity.x *= 0.5f;
+        player->dynamic_object.velocity.z *= 0.5f;
+        return;
+    } else if (player->did_lose) {
+        t3d_anim_update(&player->animLose, delta_time);
+        player->dynamic_object.velocity.x *= 0.5f;
+        player->dynamic_object.velocity.z *= 0.5f;
+        return;
+    } else if (player->animStun.isPlaying) {
+        t3d_anim_update(&player->animStun, delta_time);
 
         if (is_grounded) {
             player->dynamic_object.velocity.x *= 0.5f;
@@ -419,6 +453,8 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
 
     player->last_attack_state = input.do_attack;
     player->was_jumping = input.do_jump;
+    
+    float currentSpeed = sqrtf(vector3MagSqrd(&player->dynamic_object.velocity));
 
     if (player->is_attacking) {
         t3d_anim_update(&player->animAttack, delta_time);
@@ -426,18 +462,22 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         if (!player->animAttack.isPlaying) {
             player->is_attacking = 0;
         }
-    } else {
+    } else if (currentSpeed > 4.0f) {
+        t3d_anim_set_speed(&player->animWalk, currentSpeed / PLAYER_ANIM_WALK_SPEED);
         t3d_anim_update(&player->animWalk, delta_time);
+    } else {
+        t3d_anim_update(&player->animIdle, delta_time);
     }
 }
 
 #define PLAYER_SCALE    0.5f
 
+
 static color_t player_colors[] = {
-    {0x00, 0x54, 0x74, 0xFF},
-    {0x74, 0x00, 0x37, 0xFF},
-    {0x74, 0x3B, 0x00, 0xFF},
-    {0x00, 0x0A, 0x74, 0xFF},
+    {0x00, 0x4E, 0x81, 0xFF},
+    {0x24, 0x00, 0x81, 0xFF},
+    {0x81, 0x2D, 0x00, 0xFF},
+    {0x00, 0x1B, 0x81, 0xFF},
 };
 
 void rampage_player_render(struct RampagePlayer* player) {
@@ -452,4 +492,14 @@ void rampage_player_render(struct RampagePlayer* player) {
     t3d_skeleton_update(&player->skeleton);
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);
     rspq_block_run(player->render_block);
+}
+
+void rampage_player_set_did_win(struct RampagePlayer* player, bool did_win) {
+    if (did_win) {
+        player->did_win = 1;
+        t3d_anim_set_playing(&player->animWin, true);
+    } else {
+        player->did_lose = 1;
+        t3d_anim_set_playing(&player->animLose, true);
+    }
 }
