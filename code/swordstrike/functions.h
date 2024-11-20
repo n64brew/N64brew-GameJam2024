@@ -35,6 +35,6 @@ void pollAttackInput(struct player *p, joypad_buttons_t *joypad_held);
 void rdpq_draw_one_rectangle(int *x, int *y, int *w, int *h, color_t color);
 void rdpq_draw_one_floor_piece(int *x, int *y, int *w, int *h, color_t color);
 void draw_players_and_level(struct player** players, sprite_t** player_sprites, sprite_t** player_left_attack_anim,
-                            struct floorPiece** floors, int *numFloors, color_t WHITE);
+                            sprite_t** player_right_attack_anim, struct floorPiece** floors, int *numFloors, color_t WHITE);
 
 #endif

@@ -63,9 +63,12 @@ joypad_port_t pausePlayerPort;
 float pauseCheckDelay;
 
 // player sprites init
-sprite_t *fighter_left_sprite;
-sprite_t *fighter_right_sprite;
-sprite_t *fighter_jump_sprite;
+sprite_t *fighter_left_neutral;
+sprite_t *fighter_right_neutral;
+sprite_t *fighter_left_jump;
+sprite_t *fighter_right_jump;
+
+// left attack animation sprites
 sprite_t *fighter_left_attack_1;
 sprite_t *fighter_left_attack_2;
 sprite_t *fighter_left_attack_3;
@@ -82,8 +85,26 @@ sprite_t *fighter_left_attack_13;
 sprite_t *fighter_left_attack_14;
 sprite_t *fighter_left_attack_15;
 
-sprite_t* player_sprites[3];
+// right attack animation sprites
+sprite_t *fighter_right_attack_1;
+sprite_t *fighter_right_attack_2;
+sprite_t *fighter_right_attack_3;
+sprite_t *fighter_right_attack_4;
+sprite_t *fighter_right_attack_5;
+sprite_t *fighter_right_attack_6;
+sprite_t *fighter_right_attack_7;
+sprite_t *fighter_right_attack_8;
+sprite_t *fighter_right_attack_9;
+sprite_t *fighter_right_attack_10;
+sprite_t *fighter_right_attack_11;
+sprite_t *fighter_right_attack_12;
+sprite_t *fighter_right_attack_13;
+sprite_t *fighter_right_attack_14;
+sprite_t *fighter_right_attack_15;
+
+sprite_t* player_sprites[4];
 sprite_t* player_left_attack_anim[20];
+sprite_t* player_right_attack_anim[20];
     
 // font
 rdpq_font_t *font;
@@ -97,15 +118,15 @@ void minigame_init(){
     // load sprites from rom
     char fn1[64];
     sprintf(fn1, "rom:/swordstrike/fighter_left_neutral.sprite");
-    fighter_left_sprite = sprite_load(fn1);
+    fighter_left_neutral = sprite_load(fn1);
 
     char fn2[64];
     sprintf(fn2, "rom:/swordstrike/fighter_right_neutral.sprite");
-    fighter_right_sprite = sprite_load(fn2);
+    fighter_right_neutral = sprite_load(fn2);
 
     char fn3[64];
-    sprintf(fn3, "rom:/swordstrike/fighter_jumping.sprite");
-    fighter_jump_sprite = sprite_load(fn3);
+    sprintf(fn3, "rom:/swordstrike/fighter_jumping_left.sprite");
+    fighter_left_jump = sprite_load(fn3);
 
     char fn4[64];
     sprintf(fn4, "rom:/swordstrike/fighter_left_attack_1.sprite");
@@ -167,30 +188,116 @@ void minigame_init(){
     sprintf(fn18, "rom:/swordstrike/fighter_left_attack_15.sprite");
     fighter_left_attack_15 = sprite_load(fn18);
 
-    player_sprites[0] = fighter_left_sprite;
-    player_sprites[1] = fighter_right_sprite;
-    player_sprites[2] = fighter_jump_sprite;
+    char fn19[64];
+    sprintf(fn19, "rom:/swordstrike/fighter_right_attack_1.sprite");
+    fighter_right_attack_1 = sprite_load(fn19);
 
-    player_left_attack_anim[0] = fighter_left_attack_13;
-    player_left_attack_anim[1] = fighter_left_attack_15;
-    player_left_attack_anim[2] = fighter_left_attack_15;
-    player_left_attack_anim[3] = fighter_left_attack_14;
-    player_left_attack_anim[4] = fighter_left_attack_13;
-    player_left_attack_anim[5] = fighter_left_attack_12;
-    player_left_attack_anim[6] = fighter_left_attack_11;
+    char fn20[64];
+    sprintf(fn20, "rom:/swordstrike/fighter_right_attack_2.sprite");
+    fighter_right_attack_2 = sprite_load(fn20);
+
+    char fn21[64];
+    sprintf(fn21, "rom:/swordstrike/fighter_right_attack_3.sprite");
+    fighter_right_attack_3 = sprite_load(fn21);
+
+    char fn22[64];
+    sprintf(fn22, "rom:/swordstrike/fighter_right_attack_4.sprite");
+    fighter_right_attack_4 = sprite_load(fn22);
+
+    char fn23[64];
+    sprintf(fn23, "rom:/swordstrike/fighter_right_attack_5.sprite");
+    fighter_right_attack_5 = sprite_load(fn23);
+
+    char fn24[64];
+    sprintf(fn24, "rom:/swordstrike/fighter_right_attack_6.sprite");
+    fighter_right_attack_6 = sprite_load(fn24);
+
+    char fn25[64];
+    sprintf(fn25, "rom:/swordstrike/fighter_right_attack_7.sprite");
+    fighter_right_attack_7 = sprite_load(fn25);
+
+    char fn26[64];
+    sprintf(fn26, "rom:/swordstrike/fighter_right_attack_8.sprite");
+    fighter_right_attack_8 = sprite_load(fn26);
+
+    char fn27[64];
+    sprintf(fn27, "rom:/swordstrike/fighter_right_attack_9.sprite");
+    fighter_right_attack_9 = sprite_load(fn27);
+
+    char fn28[64];
+    sprintf(fn28, "rom:/swordstrike/fighter_right_attack_10.sprite");
+    fighter_right_attack_10 = sprite_load(fn28);
+
+    char fn29[64];
+    sprintf(fn29, "rom:/swordstrike/fighter_right_attack_11.sprite");
+    fighter_right_attack_11 = sprite_load(fn29);
+
+    char fn30[64];
+    sprintf(fn30, "rom:/swordstrike/fighter_right_attack_12.sprite");
+    fighter_right_attack_12 = sprite_load(fn30);
+
+    char fn31[64];
+    sprintf(fn31, "rom:/swordstrike/fighter_right_attack_13.sprite");
+    fighter_right_attack_13 = sprite_load(fn31);
+
+    char fn32[64];
+    sprintf(fn32, "rom:/swordstrike/fighter_right_attack_14.sprite");
+    fighter_right_attack_14 = sprite_load(fn32);
+
+    char fn33[64];
+    sprintf(fn33, "rom:/swordstrike/fighter_right_attack_15.sprite");
+    fighter_right_attack_15 = sprite_load(fn33);
+
+    char fn34[64];
+    sprintf(fn34, "rom:/swordstrike/fighter_jumping_right.sprite");
+    fighter_right_jump = sprite_load(fn34);
+
+    player_sprites[0] = fighter_left_neutral;
+    player_sprites[1] = fighter_right_neutral;
+    player_sprites[2] = fighter_left_jump;
+    player_sprites[3] = fighter_right_jump;
+
+    player_left_attack_anim[0] = fighter_left_attack_3;
+    player_left_attack_anim[1] = fighter_left_attack_1;
+    player_left_attack_anim[2] = fighter_left_attack_2;
+    player_left_attack_anim[3] = fighter_left_attack_4;
+    player_left_attack_anim[4] = fighter_left_attack_6;
+    player_left_attack_anim[5] = fighter_left_attack_8;
+    player_left_attack_anim[6] = fighter_left_attack_9;
     player_left_attack_anim[7] = fighter_left_attack_10;
-    player_left_attack_anim[8] = fighter_left_attack_9;
-    player_left_attack_anim[9] = fighter_left_attack_8;
-    player_left_attack_anim[10] = fighter_left_attack_7;
-    player_left_attack_anim[11] = fighter_left_attack_6;
-    player_left_attack_anim[12] = fighter_left_attack_5;
-    player_left_attack_anim[13] = fighter_left_attack_1;
-    player_left_attack_anim[14] = fighter_left_attack_4;
-    player_left_attack_anim[15] = fighter_left_attack_2;
-    player_left_attack_anim[16] = fighter_left_attack_3;
-    player_left_attack_anim[17] = fighter_left_attack_2;
-    player_left_attack_anim[18] = fighter_left_attack_4;
+    player_left_attack_anim[8] = fighter_left_attack_11;
+    player_left_attack_anim[9] = fighter_left_attack_12;
+    player_left_attack_anim[10] = fighter_left_attack_14;
+    player_left_attack_anim[11] = fighter_left_attack_15;
+    player_left_attack_anim[12] = fighter_left_attack_13;
+    player_left_attack_anim[13] = fighter_left_attack_11;
+    player_left_attack_anim[14] = fighter_left_attack_10;
+    player_left_attack_anim[15] = fighter_left_attack_9;
+    player_left_attack_anim[16] = fighter_left_attack_7;
+    player_left_attack_anim[17] = fighter_left_attack_5;
+    player_left_attack_anim[18] = fighter_left_attack_3;
     player_left_attack_anim[19] = fighter_left_attack_1;
+
+    player_right_attack_anim[0] = fighter_right_attack_3;
+    player_right_attack_anim[1] = fighter_right_attack_1;
+    player_right_attack_anim[2] = fighter_right_attack_2;
+    player_right_attack_anim[3] = fighter_right_attack_4;
+    player_right_attack_anim[4] = fighter_right_attack_6;
+    player_right_attack_anim[5] = fighter_right_attack_8;
+    player_right_attack_anim[6] = fighter_right_attack_9;
+    player_right_attack_anim[7] = fighter_right_attack_10;
+    player_right_attack_anim[8] = fighter_right_attack_11;
+    player_right_attack_anim[9] = fighter_right_attack_12;
+    player_right_attack_anim[10] = fighter_right_attack_14;
+    player_right_attack_anim[11] = fighter_right_attack_15;
+    player_right_attack_anim[12] = fighter_right_attack_13;
+    player_right_attack_anim[13] = fighter_right_attack_11;
+    player_right_attack_anim[14] = fighter_right_attack_10;
+    player_right_attack_anim[15] = fighter_right_attack_9;
+    player_right_attack_anim[16] = fighter_right_attack_7;
+    player_right_attack_anim[17] = fighter_right_attack_5;
+    player_right_attack_anim[18] = fighter_right_attack_3;
+    player_right_attack_anim[19] = fighter_right_attack_1;
 
     // default to 0
     pauseCheckDelay = 0.0f;
@@ -202,21 +309,21 @@ void minigame_init(){
     basicSword.id = 0;
     basicSword.xPos = 0;
     basicSword.yPos = 0;
-    basicSword.width = 15;
-    basicSword.height = 15;
+    basicSword.width = 5;
+    basicSword.height = 20;
     basicSword.attackTimer = 20;
-    basicSword.attackCooldown = 20;
+    basicSword.attackCooldown = 15;
 
-    heavySword.id = 1;
-    heavySword.xPos = 0;
-    heavySword.yPos = 0;
-    heavySword.width = 25;
-    heavySword.height = 30;
-    heavySword.attackTimer = 25;
-    heavySword.attackCooldown = 25;
+    // heavySword.id = 1;
+    // heavySword.xPos = 0;
+    // heavySword.yPos = 0;
+    // heavySword.width = 25;
+    // heavySword.height = 30;
+    // heavySword.attackTimer = 25;
+    // heavySword.attackCooldown = 20;
 
     weapons[0] = basicSword;
-    weapons[1] = heavySword;
+    // weapons[1] = heavySword;
 
     player1.height = 25;
     player1.width = 20;
@@ -459,16 +566,16 @@ void minigame_loop(float deltatime){
     rdpq_clear(DARK_GREY);
 
     // draw player sprites and floors
-    draw_players_and_level(players, player_sprites, player_left_attack_anim, floors, &numFloors, WHITE);
+    draw_players_and_level(players, player_sprites, player_left_attack_anim, player_right_attack_anim, floors, &numFloors, WHITE);
 
     // draw hitboxs => REMOVE LATER
-    if(game_state == 1){
-        for(int i = 0; i < 4; i++){
-            if(players[i]->isAlive && players[i]->attackTimer > 0){
-                rdpq_draw_one_rectangle(&players[i]->weapon.xPos, &players[i]->weapon.yPos, &players[i]->weapon.width, &players[i]->weapon.height, DARK_GREEN);
-            }
-        }
-    }
+    // if(game_state == 1){
+    //     for(int i = 0; i < 4; i++){
+    //         if(players[i]->isAlive && players[i]->attackTimer > 0){
+    //             rdpq_draw_one_rectangle(&players[i]->weapon.xPos, &players[i]->weapon.yPos, &players[i]->weapon.width, &players[i]->weapon.height, DARK_GREEN);
+    //         }
+    //     }
+    // }
 
     // set rdpq for drawing text
     rdpq_set_mode_standard();
@@ -490,7 +597,7 @@ void minigame_loop(float deltatime){
     }
 
     // DEBUG DATA ---- REMOVE LATER
-    rdpq_text_printf(NULL, FONT_TEXT, 10, 10, "%s, %i", "P1 ATT TIMER: ", players[0]->attackTimer);
+    // rdpq_text_printf(NULL, FONT_TEXT, 10, 10, "%s, %i", "P1 ATT TIMER: ", players[0]->attackTimer);
 
     // detach rdp before updating display
     rdpq_detach_show();
@@ -514,9 +621,10 @@ void minigame_cleanup(){
     free_level_data(floors);
 
     // free sprites
-    sprite_free(fighter_left_sprite);
-    sprite_free(fighter_right_sprite);
-    sprite_free(fighter_jump_sprite);
+    sprite_free(fighter_left_neutral);
+    sprite_free(fighter_right_neutral);
+    sprite_free(fighter_left_jump);
+    sprite_free(fighter_right_jump);
     sprite_free(fighter_left_attack_1);
     sprite_free(fighter_left_attack_2);
     sprite_free(fighter_left_attack_3);
@@ -532,6 +640,21 @@ void minigame_cleanup(){
     sprite_free(fighter_left_attack_13);
     sprite_free(fighter_left_attack_14);
     sprite_free(fighter_left_attack_15);
+    sprite_free(fighter_right_attack_1);
+    sprite_free(fighter_right_attack_2);
+    sprite_free(fighter_right_attack_3);
+    sprite_free(fighter_right_attack_4);
+    sprite_free(fighter_right_attack_5);
+    sprite_free(fighter_right_attack_6);
+    sprite_free(fighter_right_attack_7);
+    sprite_free(fighter_right_attack_8);
+    sprite_free(fighter_right_attack_9);
+    sprite_free(fighter_right_attack_10);
+    sprite_free(fighter_right_attack_11);
+    sprite_free(fighter_right_attack_12);
+    sprite_free(fighter_right_attack_13);
+    sprite_free(fighter_right_attack_14);
+    sprite_free(fighter_right_attack_15);
 
     // free fonts
     rdpq_font_free(font);

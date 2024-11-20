@@ -474,55 +474,46 @@ void rdpq_draw_one_floor_piece(int *x, int *y, int *w, int *h, color_t color){
     rdpq_fill_rectangle(*x, *y, *x + *w, *y + *h);
 }
 
-void draw_players_and_level(struct player** players, sprite_t** player_sprites, sprite_t** player_left_attack_anim, struct floorPiece** floors, int* numFloors, color_t WHITE){
-        // draw floors
-        for(int i = 0; i < *numFloors; i++){
-            rdpq_draw_one_floor_piece(&floors[i]->xPos, &floors[i]->yPos, &floors[i]->width, &floors[i]->height, WHITE);
-        }
+void draw_players_and_level(struct player** players, sprite_t** player_sprites, sprite_t** player_left_attack_anim, 
+                            sprite_t** player_right_attack_anim, struct floorPiece** floors, int* numFloors, color_t WHITE){
+    // draw floors
+    for(int i = 0; i < *numFloors; i++){
+        rdpq_draw_one_floor_piece(&floors[i]->xPos, &floors[i]->yPos, &floors[i]->width, &floors[i]->height, WHITE);
+    }
 
-        // DRAW PLAYER SPRITES
-        sprite_t* fighter_left_sprite = player_sprites[0];
-        sprite_t* fighter_right_sprite = player_sprites[1];
-        sprite_t* fighter_jump_sprite = player_sprites[2];
-        for(int i = 0; i < MAXPLAYERS; i++){
-            // draw player if alive
-            if(players[i]->isAlive){
-                if(players[i]->onFloor || players[i]->onTopOfEnemy){
-                    if(players[i]->attackTimer > 0){
-                        // pull attack animation frame based on attack timer value
-                        int animIndex = (players[i]->attackTimer)-1;
-                        if(players[i]->attackDirection == 0 && player_left_attack_anim[animIndex]){
-                            rdpq_set_mode_standard();
-                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-                            rdpq_sprite_blit(player_left_attack_anim[animIndex], players[i]->xPos, players[i]->yPos, NULL);
-                        } else if(players[i]->attackDirection == 1){
-                            rdpq_set_mode_standard();
-                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-                            rdpq_sprite_blit(fighter_right_sprite, players[i]->xPos, players[i]->yPos, NULL);
-                        }
+    // DRAW PLAYER SPRITES
+    sprite_t* fighter_left_neutral = player_sprites[0];
+    sprite_t* fighter_right_neutral = player_sprites[1];
+    sprite_t* fighter_left_jump = player_sprites[2];
+    sprite_t* fighter_right_jump = player_sprites[3];
+    for(int i = 0; i < MAXPLAYERS; i++){
+        // draw player if alive
+        if(players[i]->isAlive){
+            rdpq_set_mode_standard();
+            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+            if(players[i]->attackTimer > 0){
+                // pull attack animation frame based on attack timer value
+                int animIndex = (players[i]->attackTimer)-1;
+                if(players[i]->attackDirection == 0 && player_left_attack_anim[animIndex]){
+                    rdpq_sprite_blit(player_left_attack_anim[animIndex], players[i]->xPos, players[i]->yPos, NULL);
+                } else if(players[i]->attackDirection == 1 && player_left_attack_anim[animIndex]){
+                    rdpq_sprite_blit(player_right_attack_anim[animIndex], players[i]->xPos, players[i]->yPos, NULL);
+                }
+            } else {
+                if(players[i]->direction == 0){
+                    if(players[i]->onFloor || players[i]->onTopOfEnemy){
+                        rdpq_sprite_blit(fighter_left_neutral, players[i]->xPos, players[i]->yPos, NULL);
                     } else {
-                        if(players[i]->direction == 0){
-                            rdpq_set_mode_standard();
-                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-                            rdpq_sprite_blit(fighter_left_sprite, players[i]->xPos, players[i]->yPos, NULL);
-                        } else if(players[i]->direction == 1){
-                            rdpq_set_mode_standard();
-                            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-                            rdpq_sprite_blit(fighter_right_sprite, players[i]->xPos, players[i]->yPos, NULL);
-                        }
+                        rdpq_sprite_blit(fighter_left_jump, players[i]->xPos, players[i]->yPos, NULL);
                     }
-                } else {
-                    // rdpq_set_mode_standard();
-                    // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-                    // rdpq_mode_combiner(RDPQ_COMBINER1((PRIM,ENV,TEX0,ENV), (0,0,0,TEX0)));
-                    // rdpq_set_prim_color(BREWFONT);  // fill color
-                    // rdpq_set_env_color(BLACK);      // outline color
-                    // rdpq_sprite_blit(logo, 35, 20, NULL);
-
-                    rdpq_set_mode_standard();
-                    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-                    rdpq_sprite_blit(fighter_jump_sprite, players[i]->xPos, players[i]->yPos, NULL);
+                } else if(players[i]->direction == 1){
+                    if(players[i]->onFloor || players[i]->onTopOfEnemy){
+                        rdpq_sprite_blit(fighter_right_neutral, players[i]->xPos, players[i]->yPos, NULL);
+                    } else {
+                        rdpq_sprite_blit(fighter_right_jump, players[i]->xPos, players[i]->yPos, NULL);
+                    }
                 }
             }
         }
+    }
 }
