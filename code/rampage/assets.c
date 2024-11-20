@@ -32,9 +32,16 @@ void rampage_model_free_split(struct RampageSplitMesh* result) {
     rspq_block_free(result->mesh);
 }
 
+static const char* building_models[] = {
+    "rom:/rampage/house.t3dm",
+    "rom:/rampage/building_2story.t3dm",
+};
+
 void rampage_assets_init() {
-    gRampageAssets.building = t3d_model_load("rom:/rampage/house.t3dm");
-    rampage_model_separate_material(gRampageAssets.building, &gRampageAssets.buildingSplit);
+    for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
+        gRampageAssets.building[i] = t3d_model_load(building_models[i]);
+        rampage_model_separate_material(gRampageAssets.building[i], &gRampageAssets.buildingSplit[i]);
+    }
 
     gRampageAssets.player = t3d_model_load("rom:/rampage/Jira_01.t3dm");
 
@@ -71,10 +78,12 @@ void rampage_assets_init() {
 }
 
 void rampage_assets_destroy() {
-    rampage_model_free_split(&gRampageAssets.buildingSplit);
-    rampage_model_free_split(&gRampageAssets.tankSplit);
+    for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
+        rampage_model_free_split(&gRampageAssets.buildingSplit[i]);
+        t3d_model_free(gRampageAssets.building[i]);
+    }
 
-    t3d_model_free(gRampageAssets.building);
+    rampage_model_free_split(&gRampageAssets.tankSplit);
     t3d_model_free(gRampageAssets.player);
     t3d_model_free(gRampageAssets.ground);
     t3d_model_free(gRampageAssets.tank);

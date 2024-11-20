@@ -14,6 +14,9 @@
 #include "./health.h"
 #include "./assets.h"
 #include "./rampage.h"
+#include "./math/mathf.h"
+
+#define HIGH_RES    1
 
 surface_t *depthBuffer;
 T3DViewport viewport;
@@ -73,7 +76,7 @@ static struct mesh_collider global_mesh_collider = {
 };
 
 void minigame_init() {
-    display_init(RESOLUTION_640x480, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(HIGH_RES ? RESOLUTION_640x240 : RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     t3d_init((T3DInitParams){});
 
     collision_scene_init();
@@ -254,11 +257,15 @@ float pointLightDistance[] = {
     0.2f,
 };
 
+#define SCREEN_WIDTH    (HIGH_RES ? 640 : 320)
+// #define SCREEN_HEIGHT   (HIGH_RES ? 480 : 240)
+#define SCREEN_HEIGHT   240
+
 struct Vector2 scorePosition[] = {
     {30.0f, 52.0f},
-    {550.0f, 52.0f},
-    {550.0f, 460.0f},
-    {30.0f, 460.0f},
+    {SCREEN_WIDTH - 90, 52.0f},
+    {SCREEN_WIDTH - 90, SCREEN_HEIGHT - 20},
+    {30.0f, SCREEN_HEIGHT - 20},
 };
 
 int get_winner_index(int index) {
@@ -292,6 +299,11 @@ void minigame_loop(float deltatime) {
     t3d_screen_clear_color(RGBA32(0, 0, 0, 0xFF));
     t3d_screen_clear_depth();
 
+    t3d_light_set_ambient(colorWhite);
+    t3d_light_set_count(0);
+
+    rspq_block_run(rampage_assets_get()->ground->userBlock);
+
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_count(sizeof(pointLightPositions) / sizeof(*pointLightPositions));
 
@@ -303,10 +315,12 @@ void minigame_loop(float deltatime) {
         rampage_player_render(&gRampage.players[i]);
     }
 
-    rspq_block_run(rampage_assets_get()->buildingSplit.material);
-    for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
-        for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
-            rampage_building_render(&gRampage.buildings[y][x]);
+    for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
+        rspq_block_run(rampage_assets_get()->buildingSplit[i].material);
+        for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
+            for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
+                rampage_building_render(&gRampage.buildings[y][x], i);
+            }
         }
     }
 
@@ -318,12 +332,10 @@ void minigame_loop(float deltatime) {
         rampage_tank_render_bullets(&gRampage.tanks[i]);
     }
 
-    t3d_light_set_ambient(colorWhite);
-    t3d_light_set_count(0);
-
-    rspq_block_run(rampage_assets_get()->ground->userBlock);
-
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        rdpq_sync_pipe();
+        rdpq_sync_tile();
+
         rdpq_text_printf(
             &(rdpq_textparms_t){
                 .width = 60, 
@@ -336,6 +348,9 @@ void minigame_loop(float deltatime) {
         );
     }
 
+    rdpq_sync_pipe();
+    rdpq_sync_tile(); 
+
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,TEX0), (0,0,0,TEX0)));
@@ -345,23 +360,23 @@ void minigame_loop(float deltatime) {
         if (countdown_number <= 3) {
             rdpq_sprite_blit(
                 rampage_assets_get()->countdown_numbers[countdown_number],
-                320 - 9,
-                240 - 16,
+                SCREEN_WIDTH / 2 - 9,
+                SCREEN_HEIGHT / 2 - 16,
                 NULL
             );
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
         rdpq_sprite_blit(
             rampage_assets_get()->destroy_image,
-            320 - 137 / 2,
-            240 - 16,
+            (SCREEN_WIDTH - 137) / 2,
+            SCREEN_HEIGHT / 2 - 16,
             NULL
         );
     } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
         rdpq_sprite_blit(
             rampage_assets_get()->finish_image,
-            320 - 118 / 2,
-            240 - 16,
+            (SCREEN_WIDTH - 118) / 2,
+            SCREEN_HEIGHT / 2 - 16,
             NULL
         );
     } else if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
@@ -369,11 +384,11 @@ void minigame_loop(float deltatime) {
             case 1:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 640.0f, 
+                        .width = SCREEN_WIDTH, 
                         .align = ALIGN_CENTER,
                         .style_id = get_winner_index(0),
                     }, FONT_TEXT, 
-                    0.0f, 240.0f, 
+                    0.0f, SCREEN_HEIGHT / 2, 
                     "Player %d wins!",
                     get_winner_index(0)
                 );
@@ -381,11 +396,11 @@ void minigame_loop(float deltatime) {
             case 2:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 640.0f, 
+                        .width = SCREEN_WIDTH, 
                         .align = ALIGN_CENTER,
                         .style_id = 0,
                     }, FONT_TEXT, 
-                    0.0f, 240.0f, 
+                    0.0f, SCREEN_HEIGHT / 2, 
                     "Players %d and %d wins!",
                     get_winner_index(0),
                     get_winner_index(1)
@@ -394,11 +409,11 @@ void minigame_loop(float deltatime) {
             case 3:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 640.0f, 
+                        .width = SCREEN_WIDTH, 
                         .align = ALIGN_CENTER,
                         .style_id = 0,
                     }, FONT_TEXT, 
-                    0.0f, 240.0f, 
+                    0.0f, SCREEN_HEIGHT / 2, 
                     "Player %d, %d and %d wins!",
                     get_winner_index(0),
                     get_winner_index(1),
@@ -409,11 +424,11 @@ void minigame_loop(float deltatime) {
             case 4:
                 rdpq_text_printf(
                     &(rdpq_textparms_t){
-                        .width = 640.0f, 
+                        .width = SCREEN_WIDTH, 
                         .align = ALIGN_CENTER,
                         .style_id = 0,
                     }, FONT_TEXT, 
-                    0.0f, 240.0f, 
+                    0.0f, SCREEN_HEIGHT / 2, 
                     "Draw"
                 );
                 break;
@@ -475,7 +490,7 @@ void rampage_init(struct Rampage* rampage) {
                 0.0f,
                 (y - (BUILDING_COUNT_Y - 1) * 0.5f) * BUILDING_SPACING,
             }};
-            rampage_building_init(&rampage->buildings[y][x], &position);
+            rampage_building_init(&rampage->buildings[y][x], &position, randomInRange(0, 4));
         }
     }
 

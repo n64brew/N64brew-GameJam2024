@@ -106,19 +106,15 @@ void rampage_building_damage(void* data, int amount, struct Vector3* velocity, i
     }
 }
 
-void rampage_building_init(struct RampageBuilding* building, T3DVec3* position) {
+void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, int rotation) {
     int entity_id = entity_id_next();
 
     float random_height = randomInRangef(0.0f, 1.0f);
 
-    if (random_height < 0.125f) {
+    if (random_height < 0.25f) {
         building->height = 1;
-    } else if (random_height < 0.75f) {
-        building->height = 2;
-    } else if (random_height < 0.95) {
-        building->height = 3;
     } else {
-        building->height = 4;
+        building->height = 2;
     }
 
     dynamic_object_init(
@@ -134,6 +130,7 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position) 
     building->dynamic_object.center.y = building_colliders[building->height].data.box.half_size.y;
     building->dynamic_object.is_fixed = true;
     building->is_destroyed = false;
+    building->rotation = rotation;
 
     building->hp = building->height * BUILDING_HEALTH;
     building->shake_timer = 0.0f;
@@ -165,13 +162,22 @@ void rampage_building_destroy(struct RampageBuilding* building) {
     building->is_destroyed = true;
 }
 
-void rampage_building_render(struct RampageBuilding* building) {
+static T3DQuat rotations[] = {
+    {{0, 0, 0, 1}},
+    {{0, 0.707f, 0, 0.707f}},
+    {{0, 1, 0, 0}},
+    {{0, 0.707f, 0, -0.707f}},
+};
+
+void rampage_building_render(struct RampageBuilding* building, int height_pass) {
     if (building->is_destroyed) {
         return;
     }
 
-    T3DQuat rotation;
-    t3d_quat_identity(&rotation);
+    if (building->height - 1 != height_pass) {
+        return;
+    }
+
     T3DVec3 scale = {{1.0f, 1.0f, 1.0f}};
 
     struct Vector3 final_pos = building->dynamic_object.position;
@@ -186,16 +192,10 @@ void rampage_building_render(struct RampageBuilding* building) {
         final_pos.z += randomInRangef(-amplitude, amplitude);
     }
 
-    t3d_mat4fp_from_srt(UncachedAddr(&building->mtx), scale.v, rotation.v, (float*)&final_pos);
+    t3d_mat4fp_from_srt(UncachedAddr(&building->mtx), scale.v, rotations[building->rotation].v, (float*)&final_pos);
     t3d_matrix_push(&building->mtx);
-    rspq_block_run(rampage_assets_get()->buildingSplit.mesh);
-
-    for (int i = 1; i < building->height; i += 1) {
-        t3d_matrix_push(&offsetMatrix[building->is_collapsing ? randomInRange(0, 9) : 5]);
-        rspq_block_run(rampage_assets_get()->buildingSplit.mesh);
-    }
-    
-    t3d_matrix_pop(building->height);
+    rspq_block_run(rampage_assets_get()->buildingSplit[height_pass].mesh);
+    t3d_matrix_pop(1);
 }
 
 void rampage_building_update(struct RampageBuilding* building, float delta_time) {
