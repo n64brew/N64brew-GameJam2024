@@ -11,6 +11,7 @@ sprite_t *sequence_game_mallard_idle_sprite;
 sprite_t *sequence_game_background_lakeview_terrace_sprite;
 
 sprite_t *sequence_game_start_button_sprite;
+sprite_t *sequence_game_paused_text_sprite;
 
 int sequence_game_frame = 0;
 bool sequence_game_initialized = false;
@@ -36,6 +37,8 @@ void sequence_game_init()
 
     sequence_game_start_button_sprite = sprite_load("rom:/core/StartButton.sprite");
 
+    sequence_game_paused_text_sprite = sprite_load("rom:/mallard/mallard_game_paused_text.rgba32.sprite");
+
     sequence_game_initialized = true;
 }
 
@@ -48,6 +51,7 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_background_lakeview_terrace_sprite);
 
     sprite_free(sequence_game_start_button_sprite);
+    sprite_free(sequence_game_paused_text_sprite);
 
     // Close the display and free the allocated memory.
     rspq_wait();

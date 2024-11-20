@@ -7,6 +7,7 @@ ASSETS_LIST += \
 	filesystem/mallard/mallard_logo_white.rgba32.sprite \
 	filesystem/mallard/mallard_logo_black.rgba32.sprite \
 	filesystem/mallard/mallard_idle.rgba32.sprite \
+	filesystem/mallard/mallard_game_paused_text.rgba32.sprite \
 	filesystem/mallard/mallard_background_park.rgba32.sprite
 
 filesystem/mallard/HaloDekBig.font64: $(ASSETS_DIR)/mallard/HaloDekBig.ttf
