@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include <stdlib.h>
 #include "mallard.h"
 #include "sequence_game.h"
 #include "sequence_game_graphics.h"
@@ -6,6 +7,7 @@
 #include "../../minigame.h"
 
 float sequence_game_fade_in_elapsed = 0.0f;
+float sequence_game_start_held_elapsed = 0.0f;
 
 void sequence_game_draw_mallard_idle_sprite()
 {
@@ -64,10 +66,22 @@ void sequence_game_draw_paused()
 {
     if (sequence_game_paused == true)
     {
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_text_print(NULL, FONT_HALODEK_BIG, RESOLUTION_320x240.width / 2 - 90, RESOLUTION_320x240.height / 2 + 20, "$02^00Paused");
-        rdpq_mode_pop();
+        rdpq_set_mode_fill(RGBA32(0xFF, 0x00, 0x00, 0xFF));
+        rdpq_fill_rectangle(
+            RESOLUTION_320x240.width / 2,
+            RESOLUTION_320x240.height / 2 - 30,
+            RESOLUTION_320x240.width / 2 + 100,
+            RESOLUTION_320x240.height / 2 + 30);
+
+        float x = sequence_game_start_held_elapsed * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+        float y = sequence_game_start_held_elapsed * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+
+        fprintf(stderr, "%f\n", sequence_game_start_held_elapsed);
+
+        rdpq_text_print(NULL, FONT_HALODEK_BIG, RESOLUTION_320x240.width / 2 - 90 + x, RESOLUTION_320x240.height / 2 + 20 + y, "$02^00Paused");
+
+        // rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, ZERO)));
+        // rdpq_set_prim_color(RGBA32(0xFF, 0x00, 0x00, 0xFF));
     }
 }
 
