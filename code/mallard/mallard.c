@@ -50,6 +50,11 @@ void minigame_init()
         .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
     };
 
+    rdpq_fontstyle_t fontstyle_red_outlined = {
+        .color = RGBA32(0xFF, 0x00, 0x00, 0xFF),
+        .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
+    };
+
     font_halo_dek = rdpq_font_load("rom:/mallard/HaloDek.font64");
     font_halo_dek_big = rdpq_font_load("rom:/mallard/HaloDekBig.font64");
     font_celtic_garamond_the_second = rdpq_font_load("rom:/mallard/CelticGaramondTheSecond.font64");
@@ -58,6 +63,7 @@ void minigame_init()
     rdpq_font_style(font_halo_dek, 1, &fontstyle_white_transparent);
 
     rdpq_font_style(font_halo_dek_big, 0, &fontstyle_white_outlined);
+    rdpq_font_style(font_halo_dek_big, 1, &fontstyle_red_outlined);
 
     rdpq_font_style(font_celtic_garamond_the_second, 0, &fontstyle_white);
 

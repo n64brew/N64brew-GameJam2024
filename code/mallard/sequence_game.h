@@ -3,12 +3,9 @@
 
 #include <libdragon.h>
 
-#define BLACK RGBA32(0, 0, 0, 255)
-#define RED RGBA32(255, 0, 0, 255)
-
 #define GAME_FADE_IN_DURATION 1.0f
 #define GAME_EXIT_DURATION 2.0f
-#define GAME_EXIT_THRESHOLD_DURATION 0.2f
+#define GAME_EXIT_THRESHOLD_DURATION 0.1f
 
 extern bool sequence_game_finished;
 

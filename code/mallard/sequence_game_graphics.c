@@ -76,35 +76,43 @@ void sequence_game_draw_paused()
         int width_red = sequence_game_paused_text_sprite->width * percentage;
         int width_white = sequence_game_paused_text_sprite->width - width_red;
 
-        if (width_red > 0)
-        {
-            // RED
-            rdpq_set_mode_standard();
-            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-            rdpq_mode_combiner(RDPQ_COMBINER1((PRIM, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
-            rdpq_set_prim_color(RED);  // fill color
-            rdpq_set_env_color(BLACK); // outline color
-            rdpq_sprite_blit(sequence_game_paused_text_sprite,
-                             160 - sequence_game_paused_text_sprite->width / 2 + x,
-                             120 - sequence_game_paused_text_sprite->height / 2 + y,
-                             &(rdpq_blitparms_t){
-                                 .width = width_red,
-                             });
-        }
+        // if (width_red > 0)
+        // {
+        //     // RED
+        //     rdpq_set_mode_standard();
+        //     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        //     rdpq_mode_combiner(RDPQ_COMBINER1((PRIM, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
+        //     rdpq_set_prim_color(RED);  // fill color
+        //     rdpq_set_env_color(BLACK); // outline color
+        //     rdpq_sprite_blit(sequence_game_paused_text_sprite,
+        //                      160 - sequence_game_paused_text_sprite->width / 2 + x,
+        //                      120 - sequence_game_paused_text_sprite->height / 2 + y,
+        //                      &(rdpq_blitparms_t){
+        //                          .width = width_red,
+        //                      });
+        // }
 
-        // WHITE
-        if (width_white > 0)
-        {
-            rdpq_set_mode_standard();
-            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-            rdpq_sprite_blit(sequence_game_paused_text_sprite,
-                             160 - sequence_game_paused_text_sprite->width / 2 + x + width_red,
-                             120 - sequence_game_paused_text_sprite->height / 2 + y,
-                             &(rdpq_blitparms_t){
-                                 .s0 = width_red,
-                                 .width = width_white,
-                             });
-        }
+        // // WHITE
+        // if (width_white > 0)
+        // {
+        //     rdpq_set_mode_standard();
+        //     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        //     rdpq_sprite_blit(sequence_game_paused_text_sprite,
+        //                      160 - sequence_game_paused_text_sprite->width / 2 + x + width_red,
+        //                      120 - sequence_game_paused_text_sprite->height / 2 + y,
+        //                      &(rdpq_blitparms_t){
+        //                          .s0 = width_red,
+        //                          .width = width_white,
+        //                      });
+        // }
+
+        // RED
+        rdpq_set_scissor(0, 0, 70 + x + (180.0f * percentage), 240);
+        rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$02^01PAUSED");
+
+        // // WHITE
+        rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 320, 240);
+        rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$02^00PAUSED");
     }
 }
 
