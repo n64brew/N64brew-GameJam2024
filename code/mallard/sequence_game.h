@@ -8,6 +8,7 @@
 
 #define GAME_FADE_IN_DURATION 1.0f
 #define GAME_EXIT_DURATION 2.0f
+#define GAME_EXIT_THRESHOLD_DURATION 0.2f
 
 extern bool sequence_game_finished;
 

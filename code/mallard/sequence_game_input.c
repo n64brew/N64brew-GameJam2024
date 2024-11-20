@@ -74,7 +74,10 @@ void sequence_game_process_controller(float deltatime)
         }
         if (sequence_game_paused == true && controller->start_up == 1 && controller->start_down == 1)
         {
-            sequence_game_paused = false;
+            if (sequence_game_start_held_elapsed == 0.0f)
+            {
+                sequence_game_paused = false;
+            }
 
             for (size_t i = 0; i < core_get_playercount(); i++)
             {
@@ -96,12 +99,15 @@ void sequence_game_process_controller(float deltatime)
 
                 if (__player_holding_start == i)
                 {
-                    if (controller->start_held_elapsed >= GAME_EXIT_DURATION)
+                    if (sequence_game_start_held_elapsed >= GAME_EXIT_DURATION)
                     {
                         sequence_game_finished = true;
                     }
+                    if (controller->start_held_elapsed >= GAME_EXIT_THRESHOLD_DURATION)
+                    {
+                        sequence_game_start_held_elapsed += deltatime;
+                    }
                     controller->start_held_elapsed += deltatime;
-                    sequence_game_start_held_elapsed = controller->start_held_elapsed;
                 }
             }
             else
