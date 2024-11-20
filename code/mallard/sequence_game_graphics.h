@@ -14,7 +14,7 @@ extern sprite_t *sequence_game_background_lakeview_terrace_sprite;
 extern sprite_t *sequence_game_start_button_sprite;
 extern sprite_t *sequence_game_paused_text_sprite;
 
-void sequence_game_draw_mallard_idle_sprite();
+void sequence_game_draw_p1();
 void sequence_game_draw_background_lakeview_terrace();
 void sequence_game_draw_paused();
 void sequence_game_render(float deltatime);

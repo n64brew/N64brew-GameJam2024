@@ -9,8 +9,11 @@
 float sequence_game_fade_in_elapsed = 0.0f;
 float sequence_game_start_held_elapsed = 0.0f;
 
-void sequence_game_draw_mallard_idle_sprite()
+void sequence_game_draw_p1()
 {
+    // int x = 160 - 16;
+    // float x = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+
     int sequence_game_mallard_idle_frame = (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
     rdpq_blitparms_t blitparms = {
         .s0 = sequence_game_mallard_idle_frame * 32,
@@ -66,8 +69,8 @@ void sequence_game_draw_paused()
 {
     if (sequence_game_paused == true)
     {
-        float x = powf(sequence_game_start_held_elapsed,3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
-        float y = powf(sequence_game_start_held_elapsed,3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+        float x = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+        float y = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
 
         float percentage = sequence_game_start_held_elapsed / GAME_EXIT_DURATION > 1.0 ? 1.0 : sequence_game_start_held_elapsed / GAME_EXIT_DURATION;
         int width_red = sequence_game_paused_text_sprite->width * percentage;
@@ -110,7 +113,25 @@ void sequence_game_render(float deltatime)
     if (sequence_game_started == true && sequence_game_finished == false)
     {
         sequence_game_draw_background_lakeview_terrace();
-        sequence_game_draw_mallard_idle_sprite();
+
+        // Player 1: (20, 135) -> (168, 220) BOTTOM LEFT
+        // Player 2: (168, 135) -> (316, 220) BOTOTM RIGHT
+        // Player 3: (20, 50) -> (168, 135) TOP LEFT
+        // Player 4: (168, 50) -> (316, 135) TOP RIGHT
+
+        rdpq_set_mode_fill(PLAYERCOLOR_1);
+        rdpq_fill_rectangle(20, 135, 168, 220);
+
+        rdpq_set_mode_fill(PLAYERCOLOR_2);
+        rdpq_fill_rectangle(168, 135, 316, 220);
+
+        rdpq_set_mode_fill(PLAYERCOLOR_3);
+        rdpq_fill_rectangle(20, 50, 168, 135);
+
+        rdpq_set_mode_fill(PLAYERCOLOR_4);
+        rdpq_fill_rectangle(168, 50, 316, 135);
+
+        sequence_game_draw_p1();
         sequence_game_draw_press_start_to_pause();
         sequence_game_draw_paused();
 
