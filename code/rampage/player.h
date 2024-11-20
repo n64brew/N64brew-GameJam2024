@@ -33,6 +33,7 @@ struct RampagePlayer {
     T3DAnim animLose;
     enum PlayerType type;
     T3DMat4FP mtx;
+    T3DMat4FP pointer_mtx;
     struct health health;
     uint32_t last_attack_state: 1;
     uint32_t moving_to_target: 1;
@@ -45,6 +46,7 @@ struct RampagePlayer {
     uint32_t is_active: 1;
     uint32_t did_win: 1;
     uint32_t did_lose: 1;
+    uint32_t tail_bone_index: 5;
 
     uint16_t score;
 

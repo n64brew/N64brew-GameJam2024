@@ -283,6 +283,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->is_active = 0;
     player->did_win = 0;
     player->did_lose = 0;
+    player->tail_bone_index = t3d_skeleton_find_bone(&player->skeleton, "j_tail_2");
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 }
@@ -480,6 +481,24 @@ static color_t player_colors[] = {
     {0x00, 0x1B, 0x81, 0xFF},
 };
 
+void t3d_skeleton_evaluate_position(T3DSkeleton* skel, unsigned int bone_index, T3DVec3* input, T3DVec3* output) {
+    T3DVec3 current_pos = *input;
+    while (bone_index < skel->skeletonRef->boneCount) {
+        T3DBone* bone = &skel->bones[bone_index];
+
+        t3d_vec3_mul(&current_pos, &current_pos, &bone->scale);
+        quatMultVector((struct Quaternion*)&bone->rotation, (struct Vector3*)&current_pos, (struct Vector3*)&current_pos);
+        t3d_vec3_add(&current_pos, &current_pos, &bone->position);
+
+        bone_index = skel->skeletonRef->bones[bone_index].parentIdx;
+    }
+    *output = current_pos;
+}
+
+T3DVec3 tail_tip = {
+    {0.0f, 55.0f, 0.0f},
+};
+
 void rampage_player_render(struct RampagePlayer* player) {
     struct Quaternion quat;
     quatAxisComplex(&gUp, &player->dynamic_object.rotation, &quat);
@@ -492,6 +511,20 @@ void rampage_player_render(struct RampagePlayer* player) {
     t3d_skeleton_update(&player->skeleton);
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);
     rspq_block_run(player->render_block);
+
+    T3DVec3 local_position;
+    t3d_skeleton_evaluate_position(&player->skeleton, player->tail_bone_index, &tail_tip, &local_position);
+    T3DVec3 rotated_position;
+    quatMultVector((struct Quaternion*)&quat, (struct Vector3*)&local_position, (struct Vector3*)&rotated_position);
+    rotated_position.v[0] *= PLAYER_SCALE;
+    rotated_position.v[1] *= PLAYER_SCALE;
+    rotated_position.v[2] *= PLAYER_SCALE;
+    t3d_vec3_add(&rotated_position, &rotated_position, (T3DVec3*)&player->dynamic_object.position);
+
+    t3d_mat4fp_from_srt(UncachedAddr(&player->pointer_mtx), scale.v, (float*)&quat, rotated_position.v);
+    t3d_matrix_push(&player->pointer_mtx);
+    rspq_block_run(rampage_assets_get()->pointer->userBlock);
+    t3d_matrix_pop(1);
 }
 
 void rampage_player_set_did_win(struct RampagePlayer* player, bool did_win) {

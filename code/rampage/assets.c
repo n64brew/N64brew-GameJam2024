@@ -50,6 +50,11 @@ void rampage_assets_init() {
     t3d_model_draw(gRampageAssets.ground);
     gRampageAssets.ground->userBlock = rspq_block_end();
 
+    gRampageAssets.pointer = t3d_model_load("rom://rampage/pointer.t3dm");
+    rspq_block_begin();
+    t3d_model_draw(gRampageAssets.pointer);
+    gRampageAssets.pointer->userBlock = rspq_block_end();
+
     gRampageAssets.tank = t3d_model_load("rom://rampage/tank0.t3dm");
     rampage_model_separate_material(gRampageAssets.tank, &gRampageAssets.tankSplit);
 
@@ -88,6 +93,7 @@ void rampage_assets_destroy() {
     t3d_model_free(gRampageAssets.ground);
     t3d_model_free(gRampageAssets.tank);
     t3d_model_free(gRampageAssets.bullet);
+    t3d_model_free(gRampageAssets.pointer);
 
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         sprite_free(gRampageAssets.countdown_numbers[i]);

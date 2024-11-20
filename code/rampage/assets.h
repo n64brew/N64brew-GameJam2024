@@ -19,6 +19,7 @@ struct RampageAssets {
     T3DModel* ground;
     T3DModel* tank;
     T3DModel* bullet;
+    T3DModel* pointer;
     struct RampageSplitMesh tankSplit;
 
     sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
