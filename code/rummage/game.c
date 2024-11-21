@@ -26,7 +26,7 @@
 #define T3D_MODEL_SCALE 64
 #define MAP_REDUCTION_FACTOR 4
 #define MAX_PATH_VISIT 300
-#define PATH_8_WAYS 0
+#define PATH_8_WAYS 1
 #define PATH_LOOKUP 30
 #define PATH_LENGTH 10
 #define NO_PATH 9999
@@ -41,7 +41,7 @@
 #define ATTACK_RADIUS 10.0f
 #define HURT_TIME (50.0f/60.0f)
 #define ROOM_SCALE 1.25f
-#define FURNITURE_KEEPOUT 60
+#define FURNITURE_KEEPOUT 65
 #define FURNITURES_ROWS 4
 #define FURNITURES_COLS 4
 #define FURNITURES_COUNT (FURNITURES_ROWS * FURNITURES_COLS)
@@ -207,7 +207,7 @@ inline static void from_pathmap_coords(T3DVec3 *res, const T3DVec3 *a) {
 void update_obstacles() {
     // Precompute obstacles in map coordinates (is_walkable takes 150-400 cyces vs 4000+ when computing on-the-fly)
     // Margin around walls and obstacles to account for players width
-    float margin = MAP_REDUCTION_FACTOR + players[0].w/2.0f;
+    float margin = ((players[0].w/2.0f) / MAP_REDUCTION_FACTOR) + 2;
     // Walls
     for (int x=0; x<margin; x++) {
         for (int y=0; y<room.h; y++) {
@@ -434,6 +434,7 @@ bool follow_path(PlyNum i) {
 }
 
 void abort_path(int i) {
+    //debugf("abort path player #%d\n", i);
     //reset_idle_delay(i);
     players[i].state = IDLE;
 }
@@ -575,7 +576,7 @@ void game_init()
         furnitures[i].h = 0.42f * FURNITURE_SCALE * T3D_MODEL_SCALE;
         furnitures[i].max_y = 0.70f * FURNITURE_SCALE * T3D_MODEL_SCALE;
         furnitures[i].zone_w = furnitures[i].w/2.0f;
-        furnitures[i].zone_h = 10.0f;
+        furnitures[i].zone_h = 15.0f;
         furnitures[i].scale = (T3DVec3){{FURNITURE_SCALE, FURNITURE_SCALE, FURNITURE_SCALE}};
         int rotated = rand() % 4;
         furnitures[i].rotated = rotated % 2;
@@ -613,7 +614,7 @@ void game_init()
         vaults[i].h = 0.11f * T3D_MODEL_SCALE;
         vaults[i].max_y = 1.50f * T3D_MODEL_SCALE;
         vaults[i].zone_w = vaults[i].w/1.5f;
-        vaults[i].zone_h = 10.0f;
+        vaults[i].zone_h = 15.0f;
         vaults[i].scale = (T3DVec3){{1, 1, 1}};
         // Vaults are place in-between furniture rows
         float slot_w = (room.w-2*FURNITURE_KEEPOUT)/(FURNITURES_COLS-1);
