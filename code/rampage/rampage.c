@@ -27,7 +27,8 @@ T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 rdpq_font_t* font;
 #define FONT_TEXT 1
 
-#define START_DELAY 4.5f
+#define START_DELAY 0.5f
+// #define START_DELAY 4.5f
 #define FINISH_DELAY 3.0f
 #define END_SCREEN_DELAY    4.0f
 #define DESTROY_TITLE_TIME  2.0f

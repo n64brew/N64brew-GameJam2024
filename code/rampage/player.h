@@ -9,6 +9,7 @@
 #include "./math/vector2.h"
 #include "./collision/dynamic_object.h"
 #include "./health.h"
+#include "./swing_effect.h"
 
 enum PlayerType {
     PLAYER_TYPE_0,
@@ -46,12 +47,13 @@ struct RampagePlayer {
     uint32_t is_active: 1;
     uint32_t did_win: 1;
     uint32_t did_lose: 1;
-    uint32_t tail_bone_index: 5;
+    uint32_t tail_tip_index: 5;
 
     uint16_t score;
 
     struct Vector3 current_target;
     float attack_timer;
+    struct swing_effect swing_effect;
 };
 
 void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, struct Vector2* start_rotation, int player_index, enum PlayerType type);

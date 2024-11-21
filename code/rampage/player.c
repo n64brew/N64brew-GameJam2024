@@ -20,6 +20,8 @@
 #define PLAYER_AIR_ACCEL        2000
 #define PLAYER_ATTACK_DAMAGE_DELAY  0.5f
 
+#define PLAYER_SCALE    0.5f
+
 #define PLAYER_JUMP_IMPULSE 250
 #define PLAYER_JUMP_FLOAT   400
 
@@ -283,9 +285,11 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->is_active = 0;
     player->did_win = 0;
     player->did_lose = 0;
-    player->tail_bone_index = t3d_skeleton_find_bone(&player->skeleton, "j_tail_2");
+    player->tail_tip_index = t3d_skeleton_find_bone(&player->skeleton, "j_tail_2");
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
+
+    swing_effect_init(&player->swing_effect);
 }
 
 void rampage_player_destroy(struct RampagePlayer* player) {
@@ -300,6 +304,7 @@ void rampage_player_destroy(struct RampagePlayer* player) {
     collision_scene_remove(&player->dynamic_object);
     collision_scene_remove(&player->damage_trigger);
     health_unregister(player->dynamic_object.entity_id);
+    swing_effect_end(&player->swing_effect);
 }
 
 bool rampage_player_is_grounded(struct RampagePlayer* player) {
@@ -395,6 +400,44 @@ void rampage_player_handle_slam(struct RampagePlayer* player, struct RampageInpu
     player->dynamic_object.velocity.z = 0.0f;
 }
 
+void t3d_skeleton_evaluate_position(T3DSkeleton* skel, unsigned int bone_index, T3DVec3* input, T3DVec3* output) {
+    T3DVec3 current_pos = *input;
+    while (bone_index < skel->skeletonRef->boneCount) {
+        T3DBone* bone = &skel->bones[bone_index];
+
+        t3d_vec3_mul(&current_pos, &current_pos, &bone->scale);
+        quatMultVector((struct Quaternion*)&bone->rotation, (struct Vector3*)&current_pos, (struct Vector3*)&current_pos);
+        t3d_vec3_add(&current_pos, &current_pos, &bone->position);
+
+        bone_index = skel->skeletonRef->bones[bone_index].parentIdx;
+    }
+    *output = current_pos;
+}
+
+void player_tail_evaluation_position(struct RampagePlayer* player, unsigned int bone_index, T3DVec3* input, T3DVec3* output) {
+    T3DVec3 local_position;
+    t3d_skeleton_evaluate_position(&player->skeleton, bone_index, input, &local_position);
+    struct Quaternion quat;
+    quatAxisComplex(&gUp, &player->dynamic_object.rotation, &quat);
+    quatMultVector((struct Quaternion*)&quat, (struct Vector3*)&local_position, (struct Vector3*)output);
+    output->v[0] *= PLAYER_SCALE;
+    output->v[1] *= PLAYER_SCALE;
+    output->v[2] *= PLAYER_SCALE;
+    t3d_vec3_add(output, output, (T3DVec3*)&player->dynamic_object.position);
+}
+
+static T3DVec3 tail_tip = {
+    {0.0f, 55.0f, 0.0f},
+};
+static T3DVec3 tail_base = {
+    {0.0f, -25.0f, 0.0f},
+};
+
+void player_calc_tail_positions(struct RampagePlayer* player, T3DVec3* a, T3DVec3* b) {
+    player_tail_evaluation_position(player, player->tail_tip_index, &tail_tip, a);
+    player_tail_evaluation_position(player, player->tail_tip_index, &tail_base, b);
+}
+
 void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     struct RampageInput input = rampage_player_get_input(player, delta_time);
 
@@ -434,6 +477,7 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     if (input.do_attack && !player->last_attack_state && !player->is_attacking) {
         t3d_anim_set_playing(&player->animAttack, true);
         t3d_anim_set_time(&player->animAttack, 0.0f);
+        swing_effect_start(&player->swing_effect);
         player->is_attacking = 1;
         player->attack_timer = PLAYER_ATTACK_DAMAGE_DELAY;
     }
@@ -452,6 +496,15 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         }
     }
 
+    if (player->is_attacking) {
+        T3DVec3 a;
+        T3DVec3 b;
+        player_calc_tail_positions(player, &a, &b);
+        swing_effect_update(&player->swing_effect, &a, &b);
+    } else {
+        swing_effect_update(&player->swing_effect, NULL, NULL);
+    }
+
     player->last_attack_state = input.do_attack;
     player->was_jumping = input.do_jump;
     
@@ -462,6 +515,7 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
 
         if (!player->animAttack.isPlaying) {
             player->is_attacking = 0;
+            swing_effect_end(&player->swing_effect);
         }
     } else if (currentSpeed > 4.0f) {
         t3d_anim_set_speed(&player->animWalk, currentSpeed / PLAYER_ANIM_WALK_SPEED);
@@ -471,32 +525,11 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     }
 }
 
-#define PLAYER_SCALE    0.5f
-
-
 static color_t player_colors[] = {
     {0x00, 0x4E, 0x81, 0xFF},
     {0x24, 0x00, 0x81, 0xFF},
     {0x81, 0x2D, 0x00, 0xFF},
     {0x00, 0x1B, 0x81, 0xFF},
-};
-
-void t3d_skeleton_evaluate_position(T3DSkeleton* skel, unsigned int bone_index, T3DVec3* input, T3DVec3* output) {
-    T3DVec3 current_pos = *input;
-    while (bone_index < skel->skeletonRef->boneCount) {
-        T3DBone* bone = &skel->bones[bone_index];
-
-        t3d_vec3_mul(&current_pos, &current_pos, &bone->scale);
-        quatMultVector((struct Quaternion*)&bone->rotation, (struct Vector3*)&current_pos, (struct Vector3*)&current_pos);
-        t3d_vec3_add(&current_pos, &current_pos, &bone->position);
-
-        bone_index = skel->skeletonRef->bones[bone_index].parentIdx;
-    }
-    *output = current_pos;
-}
-
-T3DVec3 tail_tip = {
-    {0.0f, 55.0f, 0.0f},
 };
 
 void rampage_player_render(struct RampagePlayer* player) {
@@ -512,19 +545,15 @@ void rampage_player_render(struct RampagePlayer* player) {
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);
     rspq_block_run(player->render_block);
 
-    T3DVec3 local_position;
-    t3d_skeleton_evaluate_position(&player->skeleton, player->tail_bone_index, &tail_tip, &local_position);
     T3DVec3 rotated_position;
-    quatMultVector((struct Quaternion*)&quat, (struct Vector3*)&local_position, (struct Vector3*)&rotated_position);
-    rotated_position.v[0] *= PLAYER_SCALE;
-    rotated_position.v[1] *= PLAYER_SCALE;
-    rotated_position.v[2] *= PLAYER_SCALE;
-    t3d_vec3_add(&rotated_position, &rotated_position, (T3DVec3*)&player->dynamic_object.position);
+    player_tail_evaluation_position(player, player->tail_tip_index, &tail_base, &rotated_position);
 
     t3d_mat4fp_from_srt(UncachedAddr(&player->pointer_mtx), scale.v, (float*)&quat, rotated_position.v);
     t3d_matrix_push(&player->pointer_mtx);
     rspq_block_run(rampage_assets_get()->pointer->userBlock);
     t3d_matrix_pop(1);
+
+    swing_effect_render(&player->swing_effect);
 }
 
 void rampage_player_set_did_win(struct RampagePlayer* player, bool did_win) {
