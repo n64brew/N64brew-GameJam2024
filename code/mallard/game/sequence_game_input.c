@@ -1,8 +1,8 @@
 #include <libdragon.h>
 #include "sequence_game.h"
 #include "sequence_game_input.h"
-#include "../../core.h"
-#include "../../minigame.h"
+#include "../../../core.h"
+#include "../../../minigame.h"
 
 struct Controller
 {

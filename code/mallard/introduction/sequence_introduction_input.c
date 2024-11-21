@@ -1,8 +1,8 @@
 #include <libdragon.h>
 #include "sequence_introduction.h"
 #include "sequence_introduction_input.h"
-#include "../../core.h"
-#include "../../minigame.h"
+#include "../../../core.h"
+#include "../../../minigame.h"
 
 void sequence_introduction_process_controller(float deltatime)
 {

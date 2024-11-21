@@ -2,8 +2,8 @@
 #include "../../core.h"
 #include "../../minigame.h"
 
-#include "sequence_introduction.h"
-#include "sequence_game.h"
+#include "introduction/sequence_introduction.h"
+#include "game/sequence_game.h"
 #include "mallard.h"
 
 #include <stdio.h>

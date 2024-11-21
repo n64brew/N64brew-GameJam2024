@@ -1,9 +1,9 @@
 #include <libdragon.h>
-#include "mallard.h"
+#include "../mallard.h"
 #include "sequence_introduction.h"
 #include "sequence_introduction_graphics.h"
-#include "../../core.h"
-#include "../../minigame.h"
+#include "../../../core.h"
+#include "../../../minigame.h"
 
 void sequence_introduction_draw_press_start_to_skip()
 {

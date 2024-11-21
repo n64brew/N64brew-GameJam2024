@@ -1,9 +1,9 @@
 #include <libdragon.h>
-#include "mallard.h"
+#include "../mallard.h"
 #include "sequence_introduction.h"
 #include "sequence_introduction_input.h"
 #include "sequence_introduction_graphics.h"
-#include "../../minigame.h"
+#include "../../../minigame.h"
 
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
