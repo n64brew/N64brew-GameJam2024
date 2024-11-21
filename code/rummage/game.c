@@ -692,6 +692,7 @@ void game_init()
         t3d_anim_attach(&players[i].anim_idle, &players[i].skel);
         players[i].anim_walk = t3d_anim_create(players[i].model, "Action_Marche");
         t3d_anim_attach(&players[i].anim_walk, &players[i].skel);
+        t3d_anim_set_playing(&players[i].anim_walk, false);
         players[i].anim_act = t3d_anim_create(players[i].model, "Action_Act");
         t3d_anim_attach(&players[i].anim_act, &players[i].skel);
         t3d_anim_set_looping(&players[i].anim_act, false);
@@ -843,7 +844,7 @@ void game_logic(float deltatime)
                     players[i].rotation.v[1] = t3d_lerp_angle(players[i].rotation.v[1], newAngle, 0.5f);
                     players[i].speed = t3d_lerp(players[i].speed, speed * 0.3f, 0.15f);
                 } else {
-                    players[i].speed *= 0.64f;
+                    players[i].speed = 0.0f;
                 }
                 // Move player
                 players[i].position.v[0] += players[i].direction.v[0] * players[i].speed;
@@ -1137,9 +1138,6 @@ void game_render(float deltatime)
 
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
-        t3d_anim_update(&players[i].anim_idle, deltatime);
-        t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);   // TODO Very animation depending on player's speed
-        t3d_anim_update(&players[i].anim_walk, deltatime);
         if (players[i].action_playing_time > 0) {
             t3d_anim_update(&players[i].anim_act, deltatime);
         } else if (players[i].attack_playing_time > 0) {
@@ -1149,9 +1147,14 @@ void game_render(float deltatime)
         } else if (players[i].speed > 0.0f) {
             // TODO only set anim when switching state ?
             t3d_anim_set_playing(&players[i].anim_walk, true);
+            t3d_anim_set_playing(&players[i].anim_idle, false);
+            t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);
+            t3d_anim_update(&players[i].anim_walk, deltatime);
         } else {
             // TODO only set anim when switching state ?
             t3d_anim_set_playing(&players[i].anim_idle, true);
+            t3d_anim_set_playing(&players[i].anim_walk, false);
+            t3d_anim_update(&players[i].anim_idle, deltatime);
         }
         t3d_skeleton_update(&players[i].skel);
         // FIXME Need sync??
@@ -1159,6 +1162,8 @@ void game_render(float deltatime)
         rspq_block_run(players[i].dpl);
         // Display key
         if (players[i].has_key && !key.hidden) {
+            // Rotate key
+            key.rotation.v[1] += deltatime / 4.0f;
             t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, players[i].position.v);
             rspq_block_run(key.dpl);
         }
