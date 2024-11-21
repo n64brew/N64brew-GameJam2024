@@ -25,7 +25,7 @@
 
 #define T3D_MODEL_SCALE 64
 #define MAP_REDUCTION_FACTOR 4
-#define MAX_PATH_VISIT 300
+#define MAX_PATH_VISIT 500
 #define PATH_8_WAYS 1
 #define PATH_LOOKUP 30
 #define PATH_LENGTH 10
@@ -398,8 +398,9 @@ bool follow_path(PlyNum i) {
         t3d_vec3_diff(&newDir, &next_point, &players[i].position);
         //debugf("AI NEW DIR LENGTH: %f\n", t3d_vec3_len2(&newDir));
         float speed = sqrtf(t3d_vec3_len2(&newDir));
-        if (speed > 4.8) {  // FIXME AI speed limit ??
-            speed = 4.8;
+        float max_speed = 7.66f + core_get_aidifficulty();
+        if (speed > max_speed) {
+            speed = max_speed;
         }
         // Smooth movements and stop
         if(speed > 0.15f) {
