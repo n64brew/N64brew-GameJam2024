@@ -16,6 +16,11 @@ ASSETS_LIST += \
 	filesystem/rummage/music.wav64 \
 	filesystem/rummage/thickhead.font64
 
+filesystem/rummage/%.wav64: $(ASSETS_DIR)/rummage/%.mp3
+	@mkdir -p $(dir $@)
+	@echo "    [SFX] $@"
+	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o $(dir $@) "$<"
+
 filesystem/rummage/thickhead.font64: MKFONT_FLAGS += --outline 1 --size 36
 
 N64_CFLAGS += -fms-extensions
