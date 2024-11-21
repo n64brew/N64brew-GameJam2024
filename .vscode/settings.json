@@ -42,7 +42,7 @@
         "xm64.h": "c",
         "sequence_introduction.h": "c",
         "sequence_game.h": "c",
-        "sequence_introduction_graphics.h": "c",
-        "sequence_game_graphics.h": "c"
+        "sequence_game_graphics.h": "c",
+        "sequence_game_input.h": "c"
     }
 }

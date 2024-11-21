@@ -4,8 +4,6 @@
 #include "../../core.h"
 #include "../../minigame.h"
 
-int __player_holding_start = -1;
-
 struct Controller
 {
     unsigned int start_down;
@@ -92,12 +90,12 @@ void sequence_game_process_controller(float deltatime)
         {
             if (held.start == true)
             {
-                if (__player_holding_start == -1)
+                if (sequence_game_player_holding_start == -1)
                 {
-                    __player_holding_start = i;
+                    sequence_game_player_holding_start = i;
                 }
 
-                if (__player_holding_start == i)
+                if (sequence_game_player_holding_start == i)
                 {
                     if (sequence_game_start_held_elapsed >= GAME_EXIT_DURATION)
                     {
@@ -113,9 +111,9 @@ void sequence_game_process_controller(float deltatime)
             else
             {
                 controller->start_held_elapsed = 0.0f;
-                if (__player_holding_start == i)
+                if (sequence_game_player_holding_start == i)
                 {
-                    __player_holding_start = -1;
+                    sequence_game_player_holding_start = -1;
                     sequence_game_start_held_elapsed = 0.0f;
                 }
             }

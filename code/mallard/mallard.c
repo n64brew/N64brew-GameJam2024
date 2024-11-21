@@ -50,8 +50,20 @@ void minigame_init()
         .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
     };
 
-    rdpq_fontstyle_t fontstyle_red_outlined = {
-        .color = RGBA32(0xFF, 0x00, 0x00, 0xFF),
+    rdpq_fontstyle_t fontstyle_player1_outlined = {
+        .color = PLAYERCOLOR_1,
+        .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
+    };
+    rdpq_fontstyle_t fontstyle_player2_outlined = {
+        .color = PLAYERCOLOR_2,
+        .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
+    };
+    rdpq_fontstyle_t fontstyle_player3_outlined = {
+        .color = PLAYERCOLOR_3,
+        .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
+    };
+    rdpq_fontstyle_t fontstyle_player4_outlined = {
+        .color = PLAYERCOLOR_4,
         .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
     };
 
@@ -63,7 +75,10 @@ void minigame_init()
     rdpq_font_style(font_halo_dek, 1, &fontstyle_white_transparent);
 
     rdpq_font_style(font_halo_dek_big, 0, &fontstyle_white_outlined);
-    rdpq_font_style(font_halo_dek_big, 1, &fontstyle_red_outlined);
+    rdpq_font_style(font_halo_dek_big, 1, &fontstyle_player1_outlined);
+    rdpq_font_style(font_halo_dek_big, 2, &fontstyle_player2_outlined);
+    rdpq_font_style(font_halo_dek_big, 3, &fontstyle_player3_outlined);
+    rdpq_font_style(font_halo_dek_big, 4, &fontstyle_player4_outlined);
 
     rdpq_font_style(font_celtic_garamond_the_second, 0, &fontstyle_white);
 
