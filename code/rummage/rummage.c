@@ -60,7 +60,6 @@ wav64_t sfx_winner;
 bool show_wireframe = false;
 #endif
 bool show_debug_text = false;
-int camera_angle = 0;
 
 
 /*==============================
@@ -193,17 +192,6 @@ void minigame_loop(float deltatime)
     // Show/hide debug text by pressing R
     if (pressed.r) {
         show_debug_text = !show_debug_text;
-    }
-    // Switch camera position by pressing C-Up
-    if (pressed.c_up) {
-        camera_angle = (camera_angle+1) % 2;
-        if (camera_angle == 0) {
-            camPos = (T3DVec3){{0, 160.0f, 200.0f}};
-            camTarget = (T3DVec3){{0, 0, 40.0f}};
-        } else {
-            camPos = (T3DVec3){{0, 200.0f, 80.0f}};
-            camTarget = (T3DVec3){{0, 0, 0}};
-        }
     }
 
     // 3D viewport

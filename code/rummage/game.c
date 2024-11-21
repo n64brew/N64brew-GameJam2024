@@ -50,7 +50,6 @@
 #define PLAYER_SCALE 0.2f
 
 bool playing = false;
-bool paused = false;
 
 typedef struct actor_t {
     T3DModel* model;
@@ -151,7 +150,7 @@ player_t players[MAXPLAYERS];
 actor_t key;
 
 
-// Sound FX FIXME increase sfx volume to match countdown sfx
+// Sound FX
 wav64_t sfx_rummage;
 wav64_t sfx_key;
 
@@ -275,9 +274,7 @@ bool is_walkable(cell_t cell) {
     return walkable;
 }
 
-int visited = 0;    // FIXME DEBUG ONLY
 void add_neighbours(node_list_t* list, cell_t cell) {
-    visited++;
     for (int x=cell.x-1; x<=cell.x+1; x++) {
         for (int y=cell.y-1; y<=cell.y+1; y++) {
             if ((x != cell.x || y != cell.y) && is_walkable((cell_t){x, y})) {
@@ -295,16 +292,11 @@ void add_neighbours(node_list_t* list, cell_t cell) {
 }
 
 float heuristic(cell_t from, cell_t to) {
-    // Manhattan distance FIXME use diagonal/octile distance? euclidian distance?
+    // Manhattan distance
     return (fabs(from.x - to.x) + fabs(from.y - to.y));
 }
 
 void update_path(PlyNum i) {
-    // Keep track of latest waypoint, if any
-    T3DVec3 latest_waypoint = (T3DVec3){{NO_PATH, 0, NO_PATH}};
-    if (players[i].path_pos > 0) {
-        latest_waypoint = players[i].path[players[i].path_pos-1];
-    }
     // Clear path
     for (int j=0; j<PATH_LENGTH; j++) {
         players[i].path[j].v[0] = NO_PATH;
@@ -318,66 +310,21 @@ void update_path(PlyNum i) {
     to_pathmap_coords(&target, &players[i].target);
     cell_t start_node = {(int)start.v[0], (int)start.v[2]};
     cell_t target_node = {(int)target.v[0], (int)target.v[2]};
-    //debugf("find_path(%d %d, %d %d)\n", start_node.x, start_node.y, target_node.x, target_node.y);
-    visited = 0;
-    // If start point is not walkable, start from last waypoint
-    if (!is_walkable(start_node)) {
-        /*
-        debugf("Player #%d looking for a path from an unwalkable cell (%f %f) (%d %d): walk back a bit\n", i, players[i].position.v[0], players[i].position.v[2], start_node.x, start_node.y);
-        int steps=1;
-        cell_t walkback = {(int) start_node.x - steps * players[i].direction.v[0], (int) start_node.y - steps * players[i].direction.v[2]};
-        while (steps < 5 && !is_walkable(walkback)) {
-            steps++;
-            walkback.x = (int) start_node.x - steps * players[i].direction.v[0];
-            walkback.y = (int) start_node.y - steps * players[i].direction.v[2];
-        }
-        players[i].path[players[i].path_pos].v[0] = walkback.x;
-        players[i].path[players[i].path_pos].v[2] = walkback.y;
-        debugf("Walk back %d cells to (%d %d)\n", steps, walkback.x, walkback.y);
-        //start_node = walkback;
-        return;
-        */
-
-        debugf("Player #%d looking for a path from an unwalkable cell (%f %f) (%d %d): search path from latest waypoint %f %f\n", i, players[i].position.v[0], players[i].position.v[2], start_node.x, start_node.y, latest_waypoint.v[0], latest_waypoint.v[2]);
-        start_node.x = (int)latest_waypoint.v[0];
-        start_node.y = (int)latest_waypoint.v[2];
-
-        //players[i].state = DEADFISH;
-    }
     path_t* path = find_path(start_node, target_node, players[i].path_lookup, MAX_PATH_VISIT);
     if (get_path_count(path) > 1) {
-        debugf("path points count: %d (complete: %d)\n", get_path_count(path), get_path_complete(path));
-            // Keep fexer waypoints when chasing a player
-            int keep = players[i].state == MOVING_TO_PLAYER ? players[i].path_keep_chase : players[i].path_keep;
+        // Keep fewer waypoints when chasing a player
+        int keep = players[i].state == MOVING_TO_PLAYER ? players[i].path_keep_chase : players[i].path_keep;
         for (int j=0; j<get_path_count(path); j++) {
             if (players[i].path_pos >= keep)   break;
-            //debugf("getting point #%d\n", j);
             cell_t* node = get_path_cell(path, j);
-            if (players[i].state == DEADFISH) {
-                debugf("add point: %d %d\n", node->x, node->y);
-            }
             players[i].path[players[i].path_pos].v[0] = node->x;
             players[i].path[players[i].path_pos].v[2] = node->y;
             players[i].path_pos++;
         }
         players[i].path_pos = 0;
-        if (players[i].state == DEADFISH) {
-            for (int x=0; x<map_width; x++) {
-                debugf("%s", (x%10==0) ? "|" : " ");
-            }
-            debugf("\n");
-            for (int y=0; y<map_height; y++) {
-                debugf("%s", (y%10==0) ? ">" : " ");
-                for (int x=0; x<map_width; x++) {
-                    debugf("%d", *(map+y*map_width+x));
-                }
-                debugf("\n");
-            }
-        }
     } else {
         debugf("No path from %d %d to %d %d\n", start_node.x, start_node.y, target_node.x, target_node.y);
     }
-    debugf("visited: %d\n", visited);
     free_path(path);
 }
 
@@ -391,12 +338,9 @@ bool follow_path(PlyNum i) {
         // Follow path
         // Move towards next point in path
         T3DVec3 next_point = (T3DVec3){{next->v[0], 0, next->v[2]}};
-        //debugf("next_point: %f %f\n", next_point.v[0], next_point.v[2]);
         from_pathmap_coords(&next_point, &next_point);
-        //debugf("next_point_converted: %f %f\n", next_point.v[0], next_point.v[2]);
         T3DVec3 newDir;
         t3d_vec3_diff(&newDir, &next_point, &players[i].position);
-        //debugf("AI NEW DIR LENGTH: %f\n", t3d_vec3_len2(&newDir));
         float speed = sqrtf(t3d_vec3_len2(&newDir));
         float max_speed = 7.66f + core_get_aidifficulty();
         if (speed > max_speed) {
@@ -419,9 +363,8 @@ bool follow_path(PlyNum i) {
 
         players[i].path_delay--;
 
-        // FIXME after collision resolution?
+        // Reached waypoint
         if (t3d_vec3_distance(&players[i].position, &next_point) < WAYPOINT_DISTANCE_THRESHOLD) {
-            //debugf("reached waypoint #%d\n", players[i].path_pos);
             players[i].path_pos++;
             players[i].path_delay = WAYPOINT_DELAY;
         }
@@ -435,8 +378,6 @@ bool follow_path(PlyNum i) {
 }
 
 void abort_path(int i) {
-    //debugf("abort path player #%d\n", i);
-    //reset_idle_delay(i);
     players[i].state = IDLE;
 }
 
@@ -771,7 +712,6 @@ void game_init()
     map_width = room.w/MAP_REDUCTION_FACTOR;
     map_height = room.h/MAP_REDUCTION_FACTOR;
     origin = (T3DVec3){{-map_width/2.0f, 0, -map_height/2.0f}};
-    //debugf("Allocate pathfinder obstacle map (%d bytes)\n", sizeof(char) * map_width * map_height);
     map = calloc(1, sizeof(char) * map_width * map_height);
     update_obstacles();
 }
@@ -779,7 +719,7 @@ void game_init()
 
 void game_logic(float deltatime)
 {
-    if (is_playing() && !paused) {
+    if (is_playing()) {
         // Player controls
         for (size_t i = 0; i < MAXPLAYERS; i++) {
             if (players[i].hurt_playing_time > 0) {
@@ -860,11 +800,7 @@ void game_logic(float deltatime)
                         }
 
                         // Find a new target and path
-                        debugf("AI Player #%d needs a new path\n", i);
-
-                        // TODO Adjust difficulty
-                        // - by decreasing reaction time
-                        // - by increasing frequency of pathfinder (store fewer waypoints), especially when chasing player?
+                        //debugf("AI Player #%d needs a new path\n", i);
 
                         ai_state_t next_state = IDLE;
                         if (leader() != MAXPLAYERS) {
@@ -877,19 +813,16 @@ void game_logic(float deltatime)
                                 players[i].target_idx = target_idx;
                                 // Go to a point in front of the vault
                                 players[i].target = vaults[target_idx].zone_target;
-                                debugf("Player #%d now targeting vault #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                //debugf("Player #%d now targeting vault #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
                                 next_state = MOVING_TO_VAULT;
                             } else {
                                 // Another player has the key, go after them!
                                 int target_idx = leader();
                                 players[i].target_idx = target_idx;
-                                // FIXME Go to a (REACHABLE) point in front of the player
-                                //t3d_vec3_scale(&players[i].target, &players[target_idx].direction, players[target_idx].h/2.0f + players[i].h/2.0f);
-                                //t3d_vec3_add(&players[i].target, &players[i].target, &players[target_idx].position);
                                 players[i].target.v[0] = players[target_idx].position.v[0];
                                 players[i].target.v[1] = players[target_idx].position.v[1];
                                 players[i].target.v[2] = players[target_idx].position.v[2];
-                                debugf("Player #%d now targeting player #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                //debugf("Player #%d now targeting player #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
                                 next_state = MOVING_TO_PLAYER;
                             }
                         } else {
@@ -901,7 +834,7 @@ void game_logic(float deltatime)
                             players[i].target_idx = target_idx;
                             // Go to a point in front of the furniture
                             players[i].target = furnitures[target_idx].zone_target;
-                            debugf("Player #%d now targeting furniture #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                            //debugf("Player #%d now targeting furniture #%d at coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
                             next_state = MOVING_TO_FURNITURE;
                         }
 
@@ -972,7 +905,7 @@ void game_logic(float deltatime)
                                 players[i].target.v[0] = players[target_idx].position.v[0];
                                 players[i].target.v[1] = players[target_idx].position.v[1];
                                 players[i].target.v[2] = players[target_idx].position.v[2];
-                                debugf("Player #%d now chasing player #%d at *new* coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
+                                //debugf("Player #%d now chasing player #%d at *new* coords: %f %f\n", i, target_idx, players[i].target.v[0], players[i].target.v[2]);
                                 update_path(i);
                             }
                         }
@@ -1100,25 +1033,22 @@ void game_render(float deltatime)
                 joypad_buttons_t btn = joypad_get_buttons_pressed(port);
                 // Exit minigame by pressing start
                 if (btn.start) {
-                    // FIXME minigame_end();
-                    paused = !paused;
+                    minigame_end();
                 }
-                if (!paused) {
-                    // Player actions: rummage, open vault, grab other player
-                    if(btn.a) {
-                        // If the player is close to a furniture, search for the key
-                        for (int j=0; j<FURNITURES_COUNT; j++) {
-                            rummage(i, j);
-                        }
-                        if (players[i].has_key) {
-                            for (int j=0; j<VAULTS_COUNT; j++) {
-                                open(i, j);
-                            }
-                        }
-                    } else if (btn.b) {
-                        wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
-                        start_player_attack(i);
+                // Player actions: rummage, open vault, grab other player
+                if(btn.a) {
+                    // If the player is close to a furniture, search for the key
+                    for (int j=0; j<FURNITURES_COUNT; j++) {
+                        rummage(i, j);
                     }
+                    if (players[i].has_key) {
+                        for (int j=0; j<VAULTS_COUNT; j++) {
+                            open(i, j);
+                        }
+                    }
+                } else if (btn.b) {
+                    wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                    start_player_attack(i);
                 }
             }
         }
@@ -1158,7 +1088,6 @@ void game_render(float deltatime)
             t3d_anim_update(&players[i].anim_idle, deltatime);
         }
         t3d_skeleton_update(&players[i].skel);
-        // FIXME Need sync??
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_run(players[i].dpl);
         // Display key
