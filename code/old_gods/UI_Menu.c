@@ -4,6 +4,9 @@
 #include "AF_UI.h"
 #include "EntityFactory.h"
 
+#include "../../minigame.h"
+#include "../../core.h"
+
 // Key mappings for n64 controller to joypad_button struct, polled from libdragon
 #define A_KEY 0			// A Button		
 #define B_KEY 1			// B Button
@@ -62,9 +65,7 @@ void UI_Menu_Awake(AppData* _appData){
 
 }
 
-
 //======= SETUP ========
-
 void UI_Menu_Start(AppData* _appData){
     
     // TODO: get rid of magic numbers
@@ -77,18 +78,18 @@ void UI_Menu_Start(AppData* _appData){
     whiteColor[2] = 255;
     whiteColor[3] = 255;
 
-    AF_LoadFont(FONT1_ID, fontPath, whiteColor);
-    AF_LoadFont(FONT2_ID, fontPath2, whiteColor); // title font
+    AF_LoadFont(FONT3_ID, fontPath, whiteColor);
+    AF_LoadFont(FONT4_ID, fontPath2, whiteColor); // title font
 	gameTitleEntity = AF_ECS_CreateEntity(&_appData->ecs);
 	*gameTitleEntity->text = AF_CText_ADD();
 
 	gameTitleEntity->text->text = titleText;
-	gameTitleEntity->text->fontID = 1;
+	gameTitleEntity->text->fontID = FONT3_ID;
 	gameTitleEntity->text->fontPath = fontPath2;
 
 	// Text Color
 	//gameTitleEntity->text->textColor = whiteColor;
-    gameTitleEntity->text->fontID = FONT1_ID;
+    gameTitleEntity->text->fontID = FONT3_ID;
 
 	// Title Text position
     int box_width = 262;
@@ -105,12 +106,11 @@ void UI_Menu_Start(AppData* _appData){
     godEatCountLabelEntity = AF_ECS_CreateEntity(&_appData->ecs);
 	*godEatCountLabelEntity->text = AF_CText_ADD();
 	godEatCountLabelEntity->text->text = godsCountLabelText;
-	godEatCountLabelEntity->text->fontID = FONT2_ID;
+	godEatCountLabelEntity->text->fontID = FONT3_ID;
 	godEatCountLabelEntity->text->fontPath = fontPath2;
 
 	// Text Color
-    godEatCountLabelEntity->text->fontID = FONT2_ID;
-
+    godEatCountLabelEntity->text->fontID = FONT3_ID;
     int godLabelBox_width = 262;
     int godLabelBox_height = 0;
     int godLabelBoxPosX = 250;
@@ -126,12 +126,12 @@ void UI_Menu_Start(AppData* _appData){
 	*countdownTimerLabelEntity->text = AF_CText_ADD();
 
 	countdownTimerLabelEntity->text->text = countdownTimerLabelText;
-	countdownTimerLabelEntity->text->fontID = 2;
+	countdownTimerLabelEntity->text->fontID = FONT3_ID;
 	countdownTimerLabelEntity->text->fontPath = fontPath2;
 
 	// Text Color
 	//countdownTimerLabelEntity->text->textColor = whiteColor;
-    countdownTimerLabelEntity->text->fontID = FONT1_ID;
+    countdownTimerLabelEntity->text->fontID = FONT3_ID;
 
     int countdownTimerBox_width = 262;
     int countdownTimerBox_height = 0;//150;
@@ -145,15 +145,15 @@ void UI_Menu_Start(AppData* _appData){
  // Create Player 1 card
     Vec2 playe1CountLabelPos = {20, 180};
     Vec2 playe1CountLabelSize = {320, 50};
-    playersCountUIEntity = Entity_Factory_CreateUILabel(&_appData->ecs, playerCountCharBuff, FONT2_ID, fontPath2, whiteColor, playe1CountLabelPos, playe1CountLabelSize);
+    playersCountUIEntity = Entity_Factory_CreateUILabel(&_appData->ecs, playerCountCharBuff, FONT3_ID, fontPath2, whiteColor, playe1CountLabelPos, playe1CountLabelSize);
 
     // game over
     Vec2 gameOverTitlePos = {120, 100};
     Vec2 gameOverTitleSize = {320, 50};
     Vec2 gameOverSubTitlePos = {20, 140};
     Vec2 gameOverSubTitleSize = {320, 50};
-    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, gameOverTitlePos, gameOverTitleSize);
-    gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitleLoseCharBuffer, FONT2_ID, fontPath2, whiteColor, gameOverSubTitlePos, gameOverSubTitleSize);
+    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath2, whiteColor, gameOverTitlePos, gameOverTitleSize);
+    gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitleLoseCharBuffer, FONT3_ID, fontPath2, whiteColor, gameOverSubTitlePos, gameOverSubTitleSize);
     // disable at the start
 	gameOverTitleEntity->text->isShowing = FALSE;
     gameOverSubTitleEntity->text->isShowing = FALSE;
@@ -163,9 +163,9 @@ void UI_Menu_Start(AppData* _appData){
     Vec2 mainMenuTitleSize = {320, 50};
     Vec2 mainMenuSubTitlePos = {80, 140};
     Vec2 mainMenuSubTitleSize = {320, 50};
-    mainMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
+    mainMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuTitleCharBuffer, FONT3_ID, fontPath2, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
 
-    mainMenuSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuSubTitleCharBuffer, FONT2_ID, fontPath2, whiteColor, mainMenuSubTitlePos, mainMenuSubTitleSize);
+    mainMenuSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuSubTitleCharBuffer, FONT3_ID, fontPath2, whiteColor, mainMenuSubTitlePos, mainMenuSubTitleSize);
     // disable at the start
 	mainMenuTitleEntity->text->isShowing = FALSE;
     mainMenuSubTitleEntity->text->isShowing = FALSE;
@@ -195,12 +195,25 @@ void UI_Menu_Update(AppData* _appData){
         case GAME_STATE_GAME_OVER_WIN:
             UI_Menu_RenderGameOverScreen(_appData);
         break;
+
+        case GAME_STATE_GAME_RESTART:
+            
+        break;
+
+        case GAME_STATE_GAME_END:
+            minigame_end();
+        break;
+
     }
     
 }
 
+
+
 void UI_Menu_Shutdown(AF_ECS* _ecs){
-    
+    debugf("UI Renderer Shutdow: Unregistering fonts \n");
+    rdpq_text_unregister_font(FONT3_ID);
+    rdpq_text_unregister_font(FONT4_ID);
 }
 
 // ===================== ===================== ===================== =====================
@@ -255,10 +268,7 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
 
             gameplayData->gameState = GAME_STATE_PLAYING;
             
-            // reset the player score
-            for(int i = 0; i < PLAYER_COUNT; ++i){
-                _appData->gameplayData.playerEntities[i]->playerData->score = 0;
-            }
+           
         }
 }
 
@@ -322,9 +332,18 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
 
      UI_Menu_GameOverUISetShowing(TRUE);
 
-    // detect start button pressed
-    if(_appData->input.keys[A_KEY]->pressed == TRUE){
-        gameplayData->gameState = GAME_STATE_MAIN_MENU;
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        // detect start button pressed to restart the game
+        if(_appData->input.keys[i][A_KEY].pressed == TRUE){
+            gameplayData->gameState = GAME_STATE_GAME_RESTART;
+        }
+
+        // Let the game jam template handle the game ending
+        if(_appData->input.keys[i][START_KEY].pressed == TRUE){
+            debugf("End minigame\n");
+            gameplayData->gameState = GAME_STATE_GAME_END;
+        }
     }
+    
 
 }

@@ -15,7 +15,7 @@ Game also will take in ECS Entities and then apply gameplay to those.
 void Game_Awake(AF_ECS* _ecs);
 void Game_Start(AF_ECS* _ecs);
 void Game_Update(AppData* _appData);
-void Game_LateUpdate(AF_ECS* _ecs);
+void Game_LateUpdate(AppData* _ecs);
 void Game_OnCollision(AF_Collision* _collision);
 void Game_Shutdown(void);
 

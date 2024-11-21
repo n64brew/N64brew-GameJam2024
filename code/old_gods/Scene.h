@@ -16,6 +16,7 @@ Contains functions and code relating to the scene including all the entities tha
 void Scene_Awake(AppData* _appData);
 void Scene_Start(AppData* _appData);
 void Scene_Update(AppData* _appData);
+void Scene_LateUpdate(AppData* _appData);
 void Scene_Destroy(AF_ECS* _ecs);
 
 // Setup the games entities

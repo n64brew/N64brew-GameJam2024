@@ -85,9 +85,9 @@ Game_LateUpdate
 used to run in-between render start and render end. 
 Good for rendering debug data.
 ================*/
-void Game_LateUpdate(AF_ECS* _ecs){
-	assert(_ecs != NULL && "Game_LateUpdate: passed null ecs reference \n");
-
+void Game_LateUpdate(AppData* _appData){
+	assert(_appData != NULL && "Game_LateUpdate: passed null ecs reference \n");
+	Scene_LateUpdate(_appData);
 }
 
 /*================

@@ -71,8 +71,8 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i);
 
 // Animation stuff
 // TODO: move to component
-static T3DModel *modelMap;
-static T3DModel *modelShadow;
+//static T3DModel *modelMap;
+//static T3DModel *modelShadow;
 float lastTime;
 
 
@@ -81,7 +81,7 @@ float newTime;
 float deltaTime;
 
 // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
-static T3DModel *snakeModel;// = t3d_model_load("rom:/snake.t3dm");
+//static T3DModel *snakeModel;// = t3d_model_load("rom:/snake.t3dm");
 
 
 
@@ -237,11 +237,11 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     
 
     // ===========Animation models
-    modelMap = models[MODEL_MAP];
-    modelShadow = models[MODEL_SHADOW];
+    //modelMap = models[MODEL_MAP];
+    //modelShadow = models[MODEL_SHADOW];
 
     // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
-    snakeModel = models[MODEL_SNAKE];
+    //snakeModel = models[MODEL_SNAKE];
 
     t3d_vec3_norm(&lightDirVec);
 
@@ -449,13 +449,13 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     }
 
     //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 20, "Entities  : %lu", _ecs->entitiesCount);
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 30, "Meshs  : %i", totalMeshes);
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 40, "Tris  : %i", totalTris);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 20, "Entities  : %lu", _ecs->entitiesCount);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 30, "Meshs  : %i", totalMeshes);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 40, "Tris  : %i", totalTris);
     
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 50, "Total Render: %.2fms", totalRenderTime);
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 60, "Entity Render: %.2fms", totalEntityRenderTime);
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 50, 70, "FPS   : %.2f", display_get_fps());
+    rdpq_text_printf(NULL, FONT3_ID, 50, 50, "Total Render: %.2fms", totalRenderTime);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 60, "Entity Render: %.2fms", totalEntityRenderTime);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 70, "FPS   : %.2f", display_get_fps());
 }
 
 void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
@@ -573,36 +573,34 @@ void AF_Renderer_Finish(){
 // Shutdown Renderer
 void AF_Renderer_Shutdown(AF_ECS* _ecs){
 
-
-    for(int i = 0; i < MODEL_COUNT; ++i){
-        // TODO destroy the skeletal animation
-        /*
-      t3d_skeleton_destroy(animations[i].skeleton);
-      t3d_skeleton_destroy(animations[i].skeletonBlend);
-
-      t3d_anim_destroy(animations[i].idleAnimationData);
-      t3d_anim_destroy(animations[i].idleAnimationData);
-      t3d_anim_destroy(animations[i].idleAnimationData);
-      */
-    }
     
    
     for (int i = 0; i < MODEL_COUNT; ++i){
       free(models[i]);
-    }
-    //t3d_model_free(snakeModel);
-    t3d_model_free(modelMap);
-    t3d_model_free(modelShadow);
 
+      
+    }
     // free the malloc'd mat4s
     for(int i = 0; i < AF_ECS_TOTAL_ENTITIES; ++i){
         AF_CMesh* mesh = &_ecs->meshes[i];
         
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
-            
             free_uncached(mesh->modelMatrix);
         }
+
+        /*
+        AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+        if(AF_Component_GetHas(skeletalAnimation->enabled)){
+            
+            t3d_skeleton_destroy(animations[i].skeleton);
+            t3d_skeleton_destroy(animations[i].skeletonBlend);
+
+            t3d_anim_destroy(animations[i].idleAnimationData);
+            t3d_anim_destroy(animations[i].idleAnimationData);
+            t3d_anim_destroy(animations[i].idleAnimationData);
+      */
     }
+        
 
     t3d_destroy();
 }

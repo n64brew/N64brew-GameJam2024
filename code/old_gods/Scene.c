@@ -12,6 +12,7 @@
 #include <t3d/t3danim.h>
 #include "AF_Physics.h"
 #include "AF_Math.h"
+#include "AI.h"
 
 // ECS system
 AF_Entity* camera = NULL;
@@ -23,16 +24,12 @@ AF_Entity* godEye1 = NULL;
 AF_Entity* godEye2 = NULL;
 AF_Entity* godEye3 = NULL;
 AF_Entity* godEye4 = NULL;
-AF_Entity* godEyeInner1 = NULL;
-AF_Entity* godEyeInner2 = NULL;
-AF_Entity* godMouth = NULL;
 
 // Environment
 AF_Entity* leftWall = NULL;
 AF_Entity* rightWall = NULL;
 AF_Entity* backWall = NULL;
 AF_Entity* frontWall = NULL;
-//AF_Entity* groundPlaneEntity = NULL;
 AF_Entity* levelMapEntity = NULL;
 
 // Pickup
@@ -43,14 +40,11 @@ AF_Entity* bucket4 = NULL;
 
 // Villagers
 AF_Entity* villager1 = NULL;
-//AF_Entity* villager2 = NULL;
-//AF_Entity* villager3 = NULL;
-//AF_Entity* villager4 = NULL;
 
 // Audio
-AF_Entity* laserSoundEntity = NULL;
-AF_Entity* cannonSoundEntity = NULL;
-AF_Entity* musicSoundEntity = NULL;
+//AF_Entity* laserSoundEntity = NULL;
+//AF_Entity* cannonSoundEntity = NULL;
+//AF_Entity* musicSoundEntity = NULL;
 
 // Gameplay Var
 uint8_t g_currentBucket = 0;
@@ -65,11 +59,6 @@ float endTimer;
 PlyNum winner;
 
 
-
-#define FONT_TEXT           1
-#define FONT_BILLBOARD      2
-#define TEXT_COLOR          0x6CBB3CFF
-#define TEXT_OUTLINE        0x30521AFF
 
 #define HITBOX_RADIUS       10.f
 
@@ -86,6 +75,10 @@ PlyNum winner;
 #define WIN_SHOW_DELAY      2.0f
 
 #define BILLBOARD_YOFFSET   15.0f
+
+#define PLAYER_MOVEMENT_SPEED 1.0f
+#define AI_MOVEMENT_SPEED_MOD 0.3f
+
 AF_Color WHITE_COLOR = {255, 255, 255, 255};
 AF_Color PLAYER1_COLOR = {255, 0,0, 255};
 AF_Color PLAYER2_COLOR = {0, 255,0, 255};
@@ -117,6 +110,10 @@ typedef struct
 
 player_data players[MAXPLAYERS];
 
+
+
+// Player AI behaviours
+
 float countDownTimer;
 bool isEnding;
 float endTimer;
@@ -127,7 +124,12 @@ wav64_t sfx_countdown;
 wav64_t sfx_stop;
 wav64_t sfx_winner;
 
+
+
+// Forward declare functions found in this implementation file
 void PlayerController_DamageHandler(AppData* _appData);
+void Scene_AIFollowEntity(AF_AI_Action* _aiAction);
+void Scene_AIStateMachine(AF_AI_Action* _aiAction);
 
 void PlayerController_DamageHandler(AppData* _appData){
     for(int i = 0; i < PLAYER_COUNT; ++i){
@@ -174,6 +176,22 @@ void Scene_Start(AppData* _appData){
 }
 
 void Scene_Update(AppData* _appData){
+    // handle restart/mainMenu
+    if(_appData->gameplayData.gameState == GAME_STATE_GAME_RESTART){
+        // do restart things
+        // reset the player score
+        for(int i = 0; i < PLAYER_COUNT; ++i){
+            AF_Entity* entity = _appData->gameplayData.playerEntities[i];
+            entity->playerData->score = 0;
+            entity->playerData->isCarrying = FALSE;
+            // reset the player posotions
+            entity->transform->pos = entity->playerData->startPosition;
+            villager1->playerData->isCarried = FALSE;
+        }
+        _appData->gameplayData.godEatCount = 0;
+        _appData->gameplayData.gameState = GAME_STATE_MAIN_MENU;
+        Scene_Start(_appData);
+    }
     // TODO
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
         
@@ -199,6 +217,8 @@ void Scene_Update(AppData* _appData){
             
             //debugf("entity carrying villager: x: %f y: %f x: %f \n", villagerCarryPos.x, villagerCarryPos.y, villagerCarryPos.z);
         }
+
+        
     }
 
     // Update the god count by summing the players scores
@@ -213,7 +233,23 @@ void Scene_Update(AppData* _appData){
         updatedTotalScore += playerData->score;
     }
     _appData->gameplayData.godEatCount = updatedTotalScore;
+
     
+    
+}
+
+void Scene_LateUpdate(AppData* _appData){
+
+
+    // lock the y position to stop falling through ground.
+	for(int i = 0; i < PLAYER_COUNT; ++i){
+	AF_C3DRigidbody* rigidbody = _appData->gameplayData.playerEntities[i]->rigidbody;
+	if((AF_Component_GetHas(rigidbody->enabled) == TRUE) && (AF_Component_GetEnabled(rigidbody->enabled) == TRUE)){
+		AF_CTransform3D* transform = _appData->gameplayData.playerEntities[i]->transform;
+			Vec3 lockedYPosition = {transform->pos.x, 0.0f, transform->pos.z};
+			transform->pos = lockedYPosition;
+		}
+	}
 }
 
 void Scene_Destroy(AF_ECS* _ecs){
@@ -241,6 +277,7 @@ void Scene_SetupEntities(AppData* _appData){
     godEntity->mesh->meshID = MODEL_SNAKE;
     godEntity->mesh->material.color = WHITE_COLOR;
     godEntity->rigidbody->inverseMass = zeroInverseMass;
+    //godEntity->rigidbody->isKinematic = TRUE;
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->boundingVolume = godBoundingScale;
     godEntity->collider->showDebug = TRUE;
@@ -248,9 +285,8 @@ void Scene_SetupEntities(AppData* _appData){
 
     // setup animations
 	// ---------Create Player1------------------
-	Vec3 player1Pos = {2.0f, 1.0f, 1.0f};
+	Vec3 player1Pos = {2.0f, 1.5f, 1.0f};
 	Vec3 player1Scale = {1.0f,1.0f,1.0f};
-    
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
     player1Entity->mesh->meshID = MODEL_SNAKE;//MODEL_SNAKE2;
@@ -258,11 +294,16 @@ void Scene_SetupEntities(AppData* _appData){
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
+    player1Entity->playerData->startPosition = player1Pos;
+    player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
-
+    // Get AI Level
+    //AI_MOVEMENT_SPEED_MOD * ((2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3));
+    float aiReactionSpeed = AI_MOVEMENT_SPEED_MOD * ((1+core_get_aidifficulty()) + rand()%((1+core_get_aidifficulty())));
+    
     // Create Player2
-	Vec3 player2Pos = {-2.0f, 1.0f, 1.0f};
+	Vec3 player2Pos = {-2.0f, 1.5f, 1.0f};
 	Vec3 player2Scale = {1,1,1};
     
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
@@ -272,10 +313,14 @@ void Scene_SetupEntities(AppData* _appData){
     player2Entity->rigidbody->inverseMass = 1.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
+    player2Entity->playerData->startPosition = player2Pos;
+    player2Entity->playerData->movementSpeed = aiReactionSpeed;
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+    
+    
 
     // Create Player3
-	Vec3 player3Pos = {-2.0f, 1.0f, -1.0f};
+	Vec3 player3Pos = {-2.0f, 1.5f, -1.0f};
 	Vec3 player3Scale = {.75f,.75f,.75f};
     
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
@@ -285,10 +330,13 @@ void Scene_SetupEntities(AppData* _appData){
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = 1.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
+    player3Entity->playerData->startPosition = player3Pos;
+    player3Entity->playerData->movementSpeed = aiReactionSpeed;
     *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+    
 
     // Create Player4
-	Vec3 player4Pos = {2.0f, 1.0f, -1.0f};
+	Vec3 player4Pos = {2.0f, 1.5f, -1.0f};
 	Vec3 player4Scale = {1,1,1};
     
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
@@ -298,14 +346,29 @@ void Scene_SetupEntities(AppData* _appData){
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = 1.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
+    player4Entity->playerData->startPosition = player4Pos;
+    player4Entity->playerData->movementSpeed = aiReactionSpeed;
     *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+
+
+    // assign AI to other players based on the players choosen in the game jam menu
+    // skip the first player as its always controllable
+    for(int i = core_get_playercount(); i < PLAYER_COUNT; ++i){
+        AF_Entity* aiPlayerEntity = _appData->gameplayData.playerEntities[i];
+        *aiPlayerEntity->aiBehaviour = AF_CAI_Behaviour_ADD();
+        AI_CreateFollow_Action(aiPlayerEntity, player1Entity,  Scene_AIStateMachine);
+    }
+    
 
 	//=========ENVIRONMENT========
     Vec3 levelMapPos = {0, 0, 2};
 	Vec3 levelMapScale = {2,1,1};
     levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_MESH, AABB);
     levelMapEntity->mesh->meshID = MODEL_MAP;
+    // disable the map collider
+    AF_Component_SetHas(levelMapEntity->collider->enabled, FALSE);
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
+    //levelMapEntity->rigidbody->isKinematic = TRUE;
     Vec3 mapBoundingVolume = {12,.1, 12};
     levelMapEntity->collider->boundingVolume = mapBoundingVolume;
     // ============Buckets=============
@@ -456,28 +519,42 @@ Scene_OnGodTrigger
 Callback Behaviour triggered when the player dropps off a sacrafice to the gods
 */
 void Scene_OnGodTrigger(AF_Collision* _collision){
-	AF_Entity* entity2 =  _collision->entity2;
-	BOOL hasPlayerData = AF_Component_GetHas(entity2->playerData->enabled);
+	AF_Entity* entity1 =  _collision->entity1;
+	BOOL hasPlayerData1 = AF_Component_GetHas(entity1->playerData->enabled);
+
+    AF_Entity* entity2 =  _collision->entity2;
+	BOOL hasPlayerData2 = AF_Component_GetHas(entity2->playerData->enabled);
     
-    if(hasPlayerData == FALSE){
+    // figure out which collision is a playable character
+    AF_Entity* collidedEntity;
+    if(hasPlayerData1 == TRUE){
+        collidedEntity = entity1;
+    }else if (hasPlayerData2 == TRUE){
+        collidedEntity = entity2;
+    }else{
         return;
     }
 
+    //== FALSE && hasPlayerData2 == FALSE){
+
+
     // if entity is carrying, eat and shift the villager into the distance
-    if(entity2->playerData->isCarrying == TRUE){
+    if(collidedEntity->playerData->isCarrying == TRUE){
+        debugf("trigger god eat entity: %lu \n", AF_ECS_GetID(collidedEntity->id_tag));
        
         //debugf("Scene_GodTrigger: eat count %i \n", godEatCount);
         // TODO: update godEatCount. observer pattern would be nice right now
         //godEatCount++;
         
         // update the player who collided with gods score.
-        entity2->playerData->score ++;
+        collidedEntity->playerData->score ++;
         
 
-        entity2->playerData->isCarrying = FALSE;
-        entity2->playerData->carryingEntity = 0;
+        collidedEntity->playerData->isCarrying = FALSE;
+        collidedEntity->playerData->carryingEntity = 0;
         Vec3 poolLocation = {100, 0,0};
         villager1->transform->pos = poolLocation;
+        villager1->playerData->isCarried = FALSE;
         // randomly call for a colour bucket
         Scene_SpawnBucket(&g_currentBucket);
         // play sound
@@ -495,24 +572,32 @@ Scene_BucketCollisionBehaviour
 Perform gameplay logic if bucket has been collided with by a player character
 */
 void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision, AF_Entity* _villager, AF_Entity* _godEntity){
+    
      //debugf("Scene_BucketCollisionBehaviour \n ");
     // Don't react if this bucket isn't activated
     if(_currentBucket != _bucketID){
         return;
     }
 
-    
-	//AF_Entity* entity1 =  _collision->entity1;
+    //AF_Entity* entity1 =  _collision->entity1;
 	AF_Entity* entity2 =  _collision->entity2;
 
     // Second collision is the playable character
+    // skip if collision object doesn't have player data
     AF_CPlayerData* playerData2 = entity2->playerData;
+    if(AF_Component_GetHas(playerData2->enabled) == FALSE){
+        return;
+    }
+    
+	
    
         // attatch the villager to this player
         if(_villager->playerData->isCarried == FALSE){
             playerData2->carryingEntity = _villager->id_tag;
             _villager->mesh->material.textureID = _godEntity->mesh->material.textureID;
+            debugf("carry villager \n");
             playerData2->isCarrying = TRUE;
+            _villager->playerData->isCarried = TRUE;
         }
 }
 
@@ -602,6 +687,83 @@ AF_Entity* GetPlayerEntity(uint8_t _index){
     }
     return playerEntities[_index];
 }*/
+
+void Scene_AIStateMachine(AF_AI_Action* _aiAction){
+    // We need to 
+    assert(_aiAction != NULL);
+
+    AF_Entity* sourceEntity = (AF_Entity*)_aiAction->sourceEntity;
+    AF_Entity* targetEntity = (AF_Entity*)_aiAction->targetEntity;
+    assert(sourceEntity != NULL);
+    assert(targetEntity != NULL);
+
+    AF_CPlayerData* sourceEntityPlayerData = sourceEntity->playerData;
+    if(sourceEntityPlayerData->isCarrying){
+        // change the AI action to head towards god
+        _aiAction->sourceEntity = sourceEntity;
+        // TODO: don't like this. need better control flow
+        _aiAction->targetEntity = godEntity;
+    }else{
+        // change the AI action to head towards food
+        _aiAction->sourceEntity = sourceEntity;
+        // TODO: don't like this. need better control flow
+        _aiAction->targetEntity = villager1;
+    }
+
+    Scene_AIFollowEntity(_aiAction);
+}
+
+
+// AI behaviour tester function
+// take in a void* that we know will be a FollowBehaviour struct
+// this allows our original callback to be generically re-used
+// But its hella risky. YOLO
+void Scene_AIFollowEntity(AF_AI_Action* _aiAction){
+    // We need to 
+    assert(_aiAction != NULL);
+
+    AF_Entity* sourceEntity = (AF_Entity*)_aiAction->sourceEntity;
+    AF_Entity* targetEntity = (AF_Entity*)_aiAction->targetEntity;
+    assert(sourceEntity != NULL);
+    assert(targetEntity != NULL);
+    // Move towards 
+    Vec3 startPos = sourceEntity->transform->pos;
+    Vec3 destination = targetEntity->transform->pos;
+    
+    // stap at distance from object
+    float stopAtDistance = 0.5f;
+    float distance = Vec3_DISTANCE(startPos, destination);
+
+    // move towards the player until close enough
+    if(distance > stopAtDistance){
+        Vec3 movementDirection = Vec3_NORMALIZE(Vec3_MINUS(startPos, destination));
+        Vec2 movementDirection2D = {-movementDirection.x, movementDirection.z};
+        //player->transform->pos = Vec3_Lerp(startPos, destination, playerSpeed);
+        // create a direction vector to use
+        PlayerController_UpdatePlayerMovement(movementDirection2D, sourceEntity);
+    }
+    
+    // data needed:
+    //  - gameState
+    //  - current player ID
+    //  - the other players
+    //  - AI difficulty
+    //  - Speed
+    //  - Villager Location
+    //  - god location
+    //  - AI player carrying
+    //  - Current player carrying and their state
+    //  - distance to other players
+    // if game is playing
+    // Head towards the available food
+        // speed * AI difficult
+    // if we have food, head towards god
+        // speed * AI difficult
+    // if the food is held by a human, head towards the human
+        // speed * AI difficult
+    // if we are close to any player that is holding the food
+        // Attack * AI difficulty
+}
 
 
 AF_Entity* GetBucket1(){

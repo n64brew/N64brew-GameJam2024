@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "Scene.h"
 #include "UI_Menu.h"
+#include "AI.h"
 
 
 
@@ -116,6 +117,8 @@ void App_Update(AppData* _appData){
     //print to the screen
     // TODO: get input to retrun a struct of buttons pressed/held
     AF_Input_Update(&_appData->input);
+    // update the game AI
+    AI_Update(_appData);
 
     //AF_Physics_EarlyUpdate(&ecs);
 
@@ -129,6 +132,8 @@ void App_Update(AppData* _appData){
     // late update for physics
     AF_Physics_LateUpdate(ecs);
 
+    Game_LateUpdate(_appData);
+
     // TODO: Pass ECS entities to renderer to render them
     //AF_Renderer_Update(&ecs);
     //AF_Renderer_Debug();
@@ -136,9 +141,6 @@ void App_Update(AppData* _appData){
     /*if(isDebug == TRUE){
         AF_Physics_LateRenderUpdate(&ecs);
     }*/
-    
-
-    Game_LateUpdate(ecs);
     //AF_Renderer_Finish(); 
     // update the tick
     time->currentTick++;
@@ -174,6 +176,7 @@ void App_Shutdown(AppData* _appData){
     Game_Shutdown();
 	AF_Renderer_Shutdown(&_appData->ecs);
     AF_UI_Renderer_Shutdown();
+    UI_Menu_Shutdown(&_appData->ecs);
 	AF_Physics_Shutdown();
 	AF_Input_Shutdown();	
 	//AF_ECS_Shutdown();

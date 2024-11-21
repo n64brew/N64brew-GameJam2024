@@ -43,8 +43,9 @@ extern const char* musicFXPath;
 // ================ FONT ==============
 extern const char* fontPath;
 extern const char* fontPath2;
-#define FONT1_ID 1
-#define FONT2_ID 2
+//#define FONT1_ID 1
+#define FONT3_ID 3
+#define FONT4_ID 4
 
 
 

@@ -6,7 +6,6 @@
 #include "AF_Renderer.h"
 
 #define STICK_DEAD_ZONE 0.01
-#define PLAYER_SPEED 1
 #define PLAYER_COUNT 4
 
 #define A_KEY 0			// A Button		
@@ -91,9 +90,9 @@ void PlayerController_Attack(AF_Entity* _entity){
 	if(_stick.y == 0){
 		vecY = 0;
 	}
-
+	AF_CPlayerData* playerData = _entity->playerData;
     // update the cube rigidbody velocity
-	Vec3 movementForce = {PLAYER_SPEED * vecX, 0, PLAYER_SPEED * vecY};
+	Vec3 movementForce = {playerData->movementSpeed * vecX, 0, playerData->movementSpeed * vecY};
 	
 	//_entity->rigidbody->velocity = newVelocity;//newVelocity; 
 	AF_Physics_ApplyLinearImpulse(_entity->rigidbody, movementForce);

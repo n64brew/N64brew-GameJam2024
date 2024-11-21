@@ -11,7 +11,7 @@ Definition gameplay data struct
 
 // Gameplay variables
 #define COUNT_DOWN_TIME 120
-#define GODS_EAT_COUNT 10
+#define GODS_EAT_COUNT 5
 #define MAX_OBSERVERS 10
 #define PLAYER_COUNT 4
 
@@ -21,6 +21,8 @@ enum GAME_STATE{
     GAME_STATE_PLAYING = 1,
     GAME_STATE_GAME_OVER_LOSE = 2,
     GAME_STATE_GAME_OVER_WIN = 3,
+    GAME_STATE_GAME_END = 4,
+    GAME_STATE_GAME_RESTART = 5
 };
 
 
