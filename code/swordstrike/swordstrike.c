@@ -9,6 +9,12 @@
 #include "levels.h"
 #include "../../core.h"
 #include "../../minigame.h"
+#include <t3d/t3d.h>
+#include <t3d/t3dmath.h>
+#include <t3d/t3dmodel.h>
+#include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
+#include <t3d/t3ddebug.h>
 
 const MinigameDef minigame_def = {
     .gamename = "Sword Strike",
@@ -108,6 +114,16 @@ sprite_t* player_right_attack_anim[20];
     
 // font
 rdpq_font_t *font;
+
+// T3D stuff
+surface_t *depthBuffer;
+rspq_block_t *dplMap;
+T3DViewport viewport;
+T3DMat4FP* mapMatFP;
+T3DModel *modelMap;
+T3DVec3 camPos;
+T3DVec3 camTarget;
+T3DVec3 lightDirVec;
 
 void minigame_init(){
     // load font
@@ -388,6 +404,28 @@ void minigame_init(){
 
     // initialize display
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE);
+
+    // t3d stuff
+    depthBuffer = display_get_zbuf();
+    t3d_init((T3DInitParams){});
+
+    viewport = t3d_viewport_create();
+    mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
+    
+    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
+    camTarget = (T3DVec3){{0, 0, 40}};
+
+    lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
+    t3d_vec3_norm(&lightDirVec);
+
+    modelMap = t3d_model_load("rom:/snake3d/map.t3dm");
+
+    rspq_block_begin();
+    t3d_matrix_push(mapMatFP);
+    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+    t3d_model_draw(modelMap);
+    t3d_matrix_pop(1);
+    dplMap = rspq_block_end();
 }
 
 void minigame_fixedloop(float deltatime){
@@ -556,14 +594,37 @@ void minigame_loop(float deltatime){
         }
     }
 
+    uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
+    uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
+
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
+    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+
     // get display
     surface_t *disp = display_get();
     
     // attach rdp so we can use rdp functions
-    rdpq_attach(disp, NULL);
+    // rdpq_attach(disp, NULL);
 
     // draw background
-    rdpq_clear(DARK_GREY);
+    // rdpq_clear(DARK_GREY);
+
+    // ======== Draw (3D) ======== //
+    rdpq_attach(disp, depthBuffer);
+    t3d_frame_start();
+    t3d_viewport_attach(&viewport);
+
+    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    t3d_screen_clear_depth();
+
+    t3d_light_set_ambient(colorAmbient);
+    t3d_light_set_directional(0, colorDir, &lightDirVec);
+    t3d_light_set_count(1);
+
+    rspq_block_run(dplMap);
+
+    rdpq_sync_tile();
+    rdpq_sync_pipe(); // Hardware crashes otherwise
 
     // draw player sprites and floors
     draw_players_and_level(players, player_sprites, player_left_attack_anim, player_right_attack_anim, floors, &numFloors, WHITE);
@@ -659,6 +720,12 @@ void minigame_cleanup(){
     // free fonts
     rdpq_font_free(font);
     rdpq_text_unregister_font(FONT_TEXT);
+
+    // t3d cleanup
+    rspq_block_free(dplMap);
+    t3d_model_free(modelMap);
+    free_uncached(mapMatFP);
+    t3d_destroy();
 
     display_close();
 }
