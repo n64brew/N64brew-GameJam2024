@@ -235,21 +235,43 @@ void Scene_Update(AppData* _appData){
     _appData->gameplayData.godEatCount = updatedTotalScore;
 
     
-    
+    // lock the y position to stop falling through ground.
+	for(int i = 0; i < PLAYER_COUNT; ++i){
+        AF_C3DRigidbody* rigidbody = _appData->gameplayData.playerEntities[i]->rigidbody;
+        if((AF_Component_GetHas(rigidbody->enabled) == TRUE) && (AF_Component_GetEnabled(rigidbody->enabled) == TRUE)){
+            AF_CTransform3D* transform = _appData->gameplayData.playerEntities[i]->transform;
+            Vec3* pos = &transform->pos;
+            Vec3 lockedYPosition = {pos->x, 0.0f, pos->z};
+            transform->pos = lockedYPosition;
+            
+        // Lock players to remaining inside the game level bounds.
+        // Quick AABB check of the level bounds 
+            Vec3 levelBounds = _appData->gameplayData.levelBounds;
+            Vec3 adjustedPlayerPos = Vec3_MINUS(*pos, _appData->gameplayData.levelPos);
+            if (adjustedPlayerPos.x < -levelBounds.x ||
+                adjustedPlayerPos.x > levelBounds.x ||
+                adjustedPlayerPos.z < -levelBounds.z ||
+                adjustedPlayerPos.z > levelBounds.z){
+                    debugf("PlayerPos: x: %f, y: %f, z: %f, Level Bounds: x: %f, y: %f, z: %f \n", pos->x, pos->y, pos->z, levelBounds.z, levelBounds.y, levelBounds.z);
+            
+                    // zero out the velocity so we don't travel further 
+                    Vec3 zeroVelocity = {0,0,0};
+                    Vec3 negativeVelocity = Vec3_NORMALIZE(Vec3_MULT_SCALAR(rigidbody->velocity, -1.0f));
+                    // remove y and make the amount to back back very very small amount
+                    Vec3 removeY = {0.5f,0.0f,0.5f};
+                    negativeVelocity = Vec3_MULT(negativeVelocity, removeY);
+                    Vec3 positionBack = Vec3_ADD(transform->pos, negativeVelocity);
+                    rigidbody->velocity = zeroVelocity;
+                    transform->pos = positionBack;
+            }
+        }
+	}
 }
 
 void Scene_LateUpdate(AppData* _appData){
 
 
-    // lock the y position to stop falling through ground.
-	for(int i = 0; i < PLAYER_COUNT; ++i){
-	AF_C3DRigidbody* rigidbody = _appData->gameplayData.playerEntities[i]->rigidbody;
-	if((AF_Component_GetHas(rigidbody->enabled) == TRUE) && (AF_Component_GetEnabled(rigidbody->enabled) == TRUE)){
-		AF_CTransform3D* transform = _appData->gameplayData.playerEntities[i]->transform;
-			Vec3 lockedYPosition = {transform->pos.x, 0.0f, transform->pos.z};
-			transform->pos = lockedYPosition;
-		}
-	}
+    
 }
 
 void Scene_Destroy(AF_ECS* _ecs){
@@ -289,14 +311,34 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 player1Scale = {1.0f,1.0f,1.0f};
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
-    player1Entity->mesh->meshID = MODEL_SNAKE;//MODEL_SNAKE2;
-    player1Entity->mesh->material.color = PLAYER1_COLOR;
+    player1Entity->mesh->meshID = MODEL_RAT;//MODEL_SNAKE2;
+    player1Entity->mesh->material.color = WHITE_COLOR;
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
     player1Entity->playerData->startPosition = player1Pos;
     player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+
+    // Create Player1 Hat
+    // position needs to be thought of as local to the parent it will be inherited by
+    Vec3 player1HatPos = {0.0f, 1.5f, 1.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 player1HatScale = {0.5f, 0.5f, 0.5f};
+    AF_Entity* player1Hat = AF_ECS_CreateEntity(_ecs);
+	//move the position up a little
+	player1Hat->transform->localPos = player1HatPos;
+    player1Hat->transform->localScale = player1HatScale;
+    player1Hat->parentTransform = player1Entity->transform;
+	// add a rigidbody to our cube
+	*player1Hat->mesh = AF_CMesh_ADD();
+	player1Hat->mesh->meshType = AF_MESH_TYPE_MESH;
+    player1Hat->mesh->material.color = PLAYER1_COLOR;
+
+    //player1Hat->parentTransform = player1Entity->transform;
+    player1Hat->mesh->meshID = MODEL_BOX;//MODEL_SNAKE2;
+    player1Hat->mesh->material.color = PLAYER1_COLOR;
+
+
 
     // Get AI Level
     //AI_MOVEMENT_SPEED_MOD * ((2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3));
@@ -369,7 +411,9 @@ void Scene_SetupEntities(AppData* _appData){
     AF_Component_SetHas(levelMapEntity->collider->enabled, FALSE);
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
     //levelMapEntity->rigidbody->isKinematic = TRUE;
-    Vec3 mapBoundingVolume = {12,.1, 12};
+    Vec3 mapBoundingVolume = {7,.1, 3.5};
+    _appData->gameplayData.levelPos = levelMapPos;
+    _appData->gameplayData.levelBounds = mapBoundingVolume;
     levelMapEntity->collider->boundingVolume = mapBoundingVolume;
     // ============Buckets=============
     // Bucket 1
@@ -419,6 +463,7 @@ void Scene_SetupEntities(AppData* _appData){
 	villager1->rigidbody->inverseMass = zeroInverseMass;
 	villager1->rigidbody->isKinematic = TRUE;
     villager1->collider->collision.callback = Scene_OnCollision;
+    /*
 
    float wallHeight = 3;
     // Create Left Wall
@@ -448,7 +493,7 @@ void Scene_SetupEntities(AppData* _appData){
 	frontWall = Entity_Factory_CreatePrimative(_ecs, frontWallPos, frontWallScale,AF_MESH_TYPE_MESH, AABB);
     frontWall->mesh->meshID = MODEL_BOX;
     frontWall->rigidbody->inverseMass = zeroInverseMass;
-    
+    */
 
 	// Scale everything due to strange model sizes exported from blender
     for(int i = 0; i < _ecs->entitiesCount; ++i){

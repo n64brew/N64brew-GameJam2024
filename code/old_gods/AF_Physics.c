@@ -41,9 +41,19 @@ void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
 	assert(_ecs != NULL && "Physics: AF_Physics_Update pass in a null reference\n");
 	// loop through and update all transforms based on their velocities
 	for(int i = 0; i < _ecs->entitiesCount; ++i){
+	AF_CTransform3D* transform = &_ecs->transforms[i];
+
+	AF_CTransform3D* parentTransform =_ecs->entities[i].parentTransform;
+	// make sure the position matches the parent if we have one
+	if(_ecs->entities[i].parentTransform != NULL){
+		transform->pos = Vec3_ADD(parentTransform->pos, transform->localPos);
+		transform->scale = Vec3_MULT(parentTransform->scale, transform->localScale);
+		transform->rot = Vec3_ADD(parentTransform->rot, transform->localRot);
+	}
 	AF_C3DRigidbody* rigidbody = &_ecs->rigidbodies[i];
 	if((AF_Component_GetHas(rigidbody->enabled) == TRUE) && (AF_Component_GetEnabled(rigidbody->enabled) == TRUE)){
-		AF_CTransform3D* transform = &_ecs->transforms[i];
+		
+		
 
 		// Negate the velocities before adding more
 		//Vec3 zeroVelocity = {0,0,0};
