@@ -4,29 +4,30 @@ UIRenderer::UIRenderer() :
     mediumFont("rom:/paintball/FingerPaint-Regular-Medium.font64", MediumFont),
     bigFont("rom:/paintball/FingerPaint-Regular-Big.font64", BigFont)
 {
+    rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
+    rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
+    rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
+    rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
+
     auto fnt = mediumFont.font.get();
     assertf(fnt, "MediumFont is null");
 
     rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 200, 255) };
 
     rdpq_font_style(fnt, 4, &style);
-
-    fnt = bigFont.font.get();
-    assertf(fnt, "BigFont is null");
-
-    rdpq_font_style(fnt, 0, &style);
-
-    rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
-    rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
-    rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
-    rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
-
     rdpq_font_style(fnt, 0, &p1Style);
     rdpq_font_style(fnt, 1, &p2Style);
     rdpq_font_style(fnt, 2, &p3Style);
     rdpq_font_style(fnt, 3, &p4Style);
-    rdpq_font_style(fnt, 4, &style);
 
+    fnt = bigFont.font.get();
+    assertf(fnt, "BigFont is null");
+
+    rdpq_font_style(fnt, 4, &style);
+    rdpq_font_style(fnt, 0, &p1Style);
+    rdpq_font_style(fnt, 1, &p2Style);
+    rdpq_font_style(fnt, 2, &p3Style);
+    rdpq_font_style(fnt, 3, &p4Style);
 }
 
 void UIRenderer::render(const GameState &state)
@@ -71,19 +72,16 @@ void UIRenderer::render(const GameState &state)
 
             rdpq_text_printf(&textparms3, MediumFont, ScreenWidth * 0.1, ScreenHeight * 0.1, "%d", (int)ceilf(LastOneStandingTime - state.gameTime));
         }
-    } else if (state.state == STATE_WAIT_FOR_NEW_ROUND) {
-        rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Scoreboard");
-
-        for (int i = 0; i < MAXPLAYERS; i++) {
-            centerparms.style_id = i;
-            rdpq_text_printf(&centerparms, SmallFont, 0, (i) * 20, "Player %d: %d", i + 1, state.scores[i]);
+    } else if (state.state == STATE_WAIT_FOR_NEW_ROUND || state.state == STATE_FINISHED) {
+        if (state.state == STATE_FINISHED) {
+            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Player %d wins!", state.winner + 1);
+        } else {
+            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Scoreboard");
         }
-    } else if (state.state == STATE_FINISHED) {
-        rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 4, "Player %d wins!", state.winner + 1);
 
         for (int i = 0; i < MAXPLAYERS; i++) {
             centerparms.style_id = i;
-            rdpq_text_printf(&centerparms, SmallFont, 0, (i) * 20, "Player %d: %d", i + 1, state.scores[i]);
+            rdpq_text_printf(&centerparms, MediumFont, 0, (i-1) * 30, "Player %d: %d", i + 1, state.scores[i]);
         }
     }
 }
