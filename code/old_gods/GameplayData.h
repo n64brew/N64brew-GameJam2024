@@ -38,6 +38,8 @@ typedef struct GameplayData {
     // SpriteSheet
     int currentBucket;
     AF_Entity* playerEntities[PLAYER_COUNT];
+    Vec3 levelPos;
+    Vec3 levelBounds;
     //Observer observers[MAX_OBSERVERS];
     //int observerCount;
 } GameplayData;
