@@ -311,7 +311,7 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 player1Scale = {1.0f,1.0f,1.0f};
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
-    player1Entity->mesh->meshID = MODEL_RAT;//MODEL_SNAKE2;
+    player1Entity->mesh->meshID = MODEL_SNAKE;//MODEL_SNAKE2;
     player1Entity->mesh->material.color = PLAYER1_COLOR;
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;

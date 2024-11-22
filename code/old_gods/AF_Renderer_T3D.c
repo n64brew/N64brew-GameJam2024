@@ -77,6 +77,7 @@ float lastTime;
 
 
 rspq_syncpoint_t syncPoint;
+rspq_block_t* bufferList;
 float newTime;
 float deltaTime;
 
@@ -272,7 +273,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
 
     // TODO: render this based off the entities with models.
     // Render a model based on the model loaded by referencing its ID found in the mesh->modelID
-    
+    rspq_block_begin();
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
         
@@ -302,7 +303,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
                 continue;
             }
-            rspq_block_begin();
+            //rspq_block_begin();
            
             t3d_matrix_push(mesh->modelMatrix);
              
@@ -326,9 +327,10 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             t3d_matrix_pop(1);
             // cast to void pointer to store in our mesh data, which knows nothing about T3D
             
-            mesh->displayListBuffer = (void*)rspq_block_end();
+            //mesh->displayListBuffer = (void*)rspq_block_end();
         }
     }
+    bufferList = rspq_block_end();
 
 }
 
@@ -364,32 +366,18 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(60.0f), 1.0f, 1000.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
-
-    // Update player matrix
-    // ======== Draw (3D) ======== //
-    
-    // This is very expensive
-    rdpq_attach(display_get(), display_get_zbuf());
-
-    // Start counting the true render time
-    float totalEntityRenderTime = get_time_ms();
-    t3d_frame_start();
-    t3d_viewport_attach(&viewport);
-
-    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
-    t3d_screen_clear_depth();
-
-    syncPoint = rspq_syncpoint_new();
-    
-    // ======== Draw actors (3D) ======== //
-   
+    // ======== Update Animations, and collect data about the mesh ======== //
+    int totalTris = 0;
+    int totalMeshes = 0;
     for(int i = 0; i < _ecs->entitiesCount; ++i){
        
         // show debug
         AF_CMesh* mesh = &_ecs->meshes[i];
         
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
-             
+            // update the total meshes and tris
+            totalMeshes += 1;
+            totalTris += models[mesh->meshID]->totalVertCount;
             // ======== ANIMATION ========
             AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
             assert(skeletalAnimation != NULL);
@@ -398,15 +386,9 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
                 // update animation speed based on the movement velocity
                 skeletalAnimation->animationSpeed = Vec3_MAGNITUDE(_ecs->rigidbodies[i].velocity);
                 
-                // disabled animations
-                // delay and do every 3 frames
-                if(_time->currentFrame % 3 == 0){
-                    Renderer_UpdateAnimations( skeletalAnimation, _time->timeSinceLastFrame);
-                }
+                Renderer_UpdateAnimations( skeletalAnimation, _time->timeSinceLastFrame);
             }
-            /**/
-
-            
+   
             // ======== MODELS ========
             // Update the mesh model matrix based on the entity transform.
             AF_CTransform3D* entityTransform = &_ecs->transforms[i];
@@ -421,20 +403,40 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
                 continue;
             }
             t3d_mat4fp_from_srt_euler(meshMat,  scale, rot, pos);
-            // Use the display list buffer stored in our mesh data.
         
-            // cast the display buffer back from our void* stored in the mesh component
-            rspq_block_run((rspq_block_t*)mesh->displayListBuffer);
-           
         }
-        
-        //if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
-        
     }
     
-    // for each 
-    //t3d_matrix_pop(1);
+    // do this part seperate. as its expensive
+    for(int i = 0; i < _ecs->entitiesCount; ++i){
+        AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+            assert(skeletalAnimation != NULL);
+            
+            if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
+                t3d_skeleton_update(skeletalAnimation->skeleton);
+            }
+    }
+    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
+    
+    // ======== Draw (3D) ======== //
+    
+    // This is very expensive
+    rdpq_attach(display_get(), display_get_zbuf());
 
+    // Start counting the true render time
+    float totalEntityRenderTime = get_time_ms();
+    t3d_frame_start();
+    t3d_viewport_attach(&viewport);
+
+    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    t3d_screen_clear_depth();
+
+    // Tell the RSP to draw our command list
+    rspq_block_run(bufferList);
+
+    // sync the RSP
+    syncPoint = rspq_syncpoint_new();
+    
     
     // ======== Draw (2D) ======== //
     // ======== Draw (UI) ======== //
@@ -452,18 +454,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     
 
     //rdpq_sync_pipe();
-    int totalTris = 0;
-    int totalMeshes = 0;
-    for(int i=0; i<_ecs->entitiesCount; ++i) {
-      AF_CMesh* mesh = &_ecs->meshes[i];
-      if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
-        totalMeshes += 1;
-        AF_CMesh* mesh = &_ecs->meshes[i];
-        totalTris += models[mesh->meshID]->totalVertCount;
-      }
-        
-    }
-
+   
     //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
     rdpq_text_printf(NULL, FONT3_ID, 50, 20, "Entities  : %lu", _ecs->entitiesCount);
     rdpq_text_printf(NULL, FONT3_ID, 50, 30, "Meshs  : %i", totalMeshes);
@@ -487,7 +478,7 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     // attack
     // animIsPlaying
     //animBlend = currSpeed / 0.51f;
-   /*
+   
     //_animation->animationBlend = _animation->animationSpeed / 0.51f;
     _animation->animationBlend = _animation->animationSpeed * 1.9607843137254901f;
 
@@ -527,17 +518,17 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
         //animAttackData->isPlaying = false;
     }
     
-    */
+    
     // We now blend the walk animation with the idle/attack one
     T3DSkeleton* skeleton = (T3DSkeleton*)_animation->skeleton;
     T3DSkeleton* skeletonBlend = (T3DSkeleton*)_animation->skeletonBlend;
 
-    //t3d_skeleton_blend(skeleton, skeleton, skeletonBlend, _animation->animationBlend);
+    t3d_skeleton_blend(skeleton, skeleton, skeletonBlend, _animation->animationBlend);
     
     //if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
     
     // Now recalc. the matrices, this will cause any model referencing them to use the new pose
-    t3d_skeleton_update(skeleton);
+    //t3d_skeleton_update(skeleton);
     /**/
 }
 
