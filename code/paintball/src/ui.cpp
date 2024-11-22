@@ -32,6 +32,7 @@ UIRenderer::UIRenderer() :
 
 void UIRenderer::render(const GameState &state)
 {
+    rdpq_set_mode_standard();
     rdpq_sync_tile();
     rdpq_sync_pipe(); // Hardware crashes otherwise
 

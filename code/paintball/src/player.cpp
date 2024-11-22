@@ -11,7 +11,9 @@ Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
     skel({new T3DSkeleton(t3d_skeleton_create(model)), t3d_skeleton_destroy}),
     animWalk({new T3DAnim(t3d_anim_create(model, "Walk")), t3d_anim_destroy}),
-    screenPos({0})
+    screenPos({0}),
+    displayTemperature(0),
+    timer(0)
     {
         assertf(skel.get(), "Player skel is null");
         assertf(matFP.get(), "Player matrix is null");
@@ -64,7 +66,7 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
     t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
     t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 0, 0});
 
-    const color_t colors[] = {
+    color_t colors[] = {
         PLAYERCOLOR_1,
         PLAYERCOLOR_2,
         PLAYERCOLOR_3,
@@ -77,9 +79,32 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
     t3d_anim_update(playerOther.animWalk.get(), deltaTime);
     t3d_skeleton_update(playerOther.skel.get());
 
+    bool hidden = false;
+    float temp = playerGameplay.temperature;
+    if (temp > 1.f) {
+        temp = 1.f;
+        playerOther.timer += deltaTime;
+        if (playerOther.timer >= 0.1) {
+            hidden = true;
+        }
+        if (playerOther.timer >= 0.2) {
+            playerOther.timer -= 0.2;
+        }
+    };
+
+    if (hidden) {
+        for (int i = 0; i < MAXPLAYERS; i++) {
+            colors[i].a = 150;
+        }
+    };
+
+    float factor = temp > 0.5 ? temp * temp * temp * 0.015f : 0.f;
+
+    playerOther.displayTemperature = t3d_lerp(playerOther.displayTemperature, factor, 0.2);
+
     t3d_mat4fp_from_srt_euler(
         playerOther.matFP.get(),
-        (float[3]){0.12f, 0.12f, 0.12f},
+        (float[3]){0.12f+playerOther.displayTemperature, 0.12f+playerOther.displayTemperature, 0.12f+playerOther.displayTemperature},
         (float[3]){0.0f, playerOther.direction, 0},
         currentPos.v
     );
@@ -101,7 +126,7 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
 
 void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite)
 {
-    constexpr int margin = ScreenWidth / 16;
+    constexpr int margin = ScreenWidth / 8;
     int x = floorf(playerOther.screenPos.v[0]);
     int y = floorf(playerOther.screenPos.v[1]);
     float theta = 0.f;
@@ -126,32 +151,47 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
         theta = T3D_PI;
     }
 
-    if (theta == 0.f) {
-        return;
+    if (theta != 0.f) {
+        rdpq_sync_pipe();
+        rdpq_sync_tile();
+        rdpq_set_mode_standard();
+
+        const color_t colors[] = {
+            PLAYERCOLOR_1,
+            PLAYERCOLOR_2,
+            PLAYERCOLOR_3,
+            PLAYERCOLOR_4,
+        };
+
+        rdpq_mode_zbuf(false, false);
+        rdpq_mode_alphacompare(1);
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
+        rdpq_set_fog_color(RGBA32(0, 0, 0, 160));
+        rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
+
+        rdpq_set_prim_color(colors[playerGameplay.team]);
+
+        rdpq_blitparms_t params {
+            .width = 32,
+            .height = 32,
+            .cx = 16,
+            .cy = 16,
+            .theta = theta,
+        };
+        rdpq_sprite_blit(arrowSprite, x, y, &params);
     }
 
-    rdpq_sync_pipe();
-    rdpq_sync_tile();
+    // if (playerGameplay.temperature > 0.5f) {
+    //     constexpr int barHalfWidth = 8;
+    //     constexpr int barHeight = 3;
+    //     constexpr int barYOffset = 10;
 
-    const color_t colors[] = {
-        PLAYERCOLOR_1,
-        PLAYERCOLOR_2,
-        PLAYERCOLOR_3,
-        PLAYERCOLOR_4,
-    };
+    //     int finalWidth = 2 * barHalfWidth * std::min({playerGameplay.temperature, 1.f});
 
-    rdpq_mode_zbuf(false, false);
-    rdpq_mode_alphacompare(1);
-    rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
+    //     rdpq_sync_tile();
+    //     rdpq_sync_pipe();
+    //     rdpq_set_mode_fill(RGBA32(255, 0, 0, 255));
 
-    rdpq_set_prim_color(colors[playerGameplay.team]);
-
-    rdpq_blitparms_t params {
-        .width = 32,
-        .height = 32,
-        .cx = 16,
-        .cy = 16,
-        .theta = theta,
-    };
-    rdpq_sprite_blit(arrowSprite, x, y, &params);
+    //     rdpq_fill_rectangle(x-barHalfWidth, y-barYOffset, x-barHalfWidth+finalWidth, y-barYOffset+barHeight);
+    // }
 }

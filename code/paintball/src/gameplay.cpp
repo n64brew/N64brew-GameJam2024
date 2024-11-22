@@ -215,10 +215,12 @@ void GameplayController::newRound()
         playerOther.direction = 0;
         playerOther.velocity = {0};
         playerOther.accel = {0};
+        playerOther.displayTemperature = 0;
 
         player.team = ply;
         player.firstHit = ply;
         player.fragCount = 0;
+        player.temperature = 0;
 
         ply = (PlyNum)(ply + 1);
     }

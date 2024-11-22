@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 #include "../../../core.h"
 #include "../../../minigame.h"
@@ -68,6 +69,9 @@ namespace Player {
             U::T3DAnim animWalk;
 
             T3DVec3 screenPos;
+
+            float displayTemperature;
+            float timer;
 
         public:
             OtherData(T3DModel *model, T3DModel *shadowModel);
