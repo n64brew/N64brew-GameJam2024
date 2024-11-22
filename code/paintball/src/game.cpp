@@ -85,7 +85,7 @@ void Game::render(float deltaTime) {
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
-    debugf("FPS: %.2f, heap Mem: %d KiB\n", display_get_fps(), heap_stats.used/1024);
+    debugf("msFP: %.2f, heap Mem: %d KiB\n", 1000/display_get_fps(), heap_stats.used);
 }
 
 void Game::fixedUpdate(float deltaTime) {
