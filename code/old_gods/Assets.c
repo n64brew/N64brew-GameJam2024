@@ -22,7 +22,8 @@ const char *model_paths[MODEL_COUNT] = {
     "rom:/old_gods/shadow.t3dm",
     "rom:/old_gods/snake.t3dm",  // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
     "rom:/old_gods/spider.t3dm",  // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
-    "rom:/old_gods/frog.t3dm"
+    "rom:/old_gods/frog.t3dm",
+    "rom:/old_gods/rat.t3dm"
 };
 
 
