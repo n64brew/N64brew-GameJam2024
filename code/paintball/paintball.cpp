@@ -12,7 +12,7 @@ extern "C" const MinigameDef minigame_def = {
     .gamename = "Paintball",
     .developername = "Ali Naci Erdem",
     .description = "Paint enemies to capture & score for your team. Winning color or last one standing gets more points!",
-    .instructions = "Move with analog stick, press C/D pad to shoot paintballs. Hold START to exit."
+    .instructions = "Move with analog stick, press C/D pad to shoot."
 };
 
 /*==============================

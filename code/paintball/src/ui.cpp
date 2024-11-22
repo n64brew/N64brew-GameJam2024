@@ -12,7 +12,7 @@ UIRenderer::UIRenderer() :
     auto fnt = mediumFont.font.get();
     assertf(fnt, "MediumFont is null");
 
-    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 200, 255) };
+    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 180, 255) };
 
     rdpq_font_style(fnt, 4, &style);
     rdpq_font_style(fnt, 0, &p1Style);
@@ -32,9 +32,9 @@ UIRenderer::UIRenderer() :
 
 void UIRenderer::render(const GameState &state)
 {
-    rdpq_set_mode_standard();
     rdpq_sync_tile();
     rdpq_sync_pipe(); // Hardware crashes otherwise
+    rdpq_set_mode_standard();
 
     rdpq_textparms_t centerparms = {
         .style_id = 4,
@@ -58,7 +58,7 @@ void UIRenderer::render(const GameState &state)
         rdpq_text_printf(&centerparms, BigFont, 0, 0, "Go!");
     } else if(state.state == STATE_LAST_ONE_STANDING){
         if(state.gameTime < 3.f) {
-            rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Last one standing!");
+            rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Run to score!");
         }
 
         if(state.state == STATE_LAST_ONE_STANDING && state.gameTime < LastOneStandingTime){
@@ -74,11 +74,11 @@ void UIRenderer::render(const GameState &state)
             rdpq_text_printf(&textparms3, MediumFont, ScreenWidth * 0.1, ScreenHeight * 0.1, "%d", (int)ceilf(LastOneStandingTime - state.gameTime));
         }
     } else if (state.state == STATE_WAIT_FOR_NEW_ROUND || state.state == STATE_FINISHED) {
+        centerparms.style_id = state.winner;
         if (state.state == STATE_FINISHED) {
-            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Player %d wins!", state.winner + 1);
+            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Game Over!");
         } else {
-            // TODO: announce current winner instead
-            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Scoreboard");
+            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Player %d wins!", state.winner + 1);
         }
 
         for (int i = 0; i < MAXPLAYERS; i++) {

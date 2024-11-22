@@ -17,7 +17,7 @@ Game::Game() :
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
     rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
     rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
-    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 200, 255) };
+    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 180, 255) };
 
     auto fnt = font.font.get();
     assertf(fnt, "Font is null");
@@ -158,6 +158,7 @@ void Game::processState() {
 
         // One point to the team owner
         state.scores[largestTeam]++;
+        state.winner = largestTeam;
 
         // First MAXPLAYERS players are eligible for kill points
         for (int i = 0; i < MAXPLAYERS; i++) {
@@ -193,6 +194,7 @@ void Game::processState() {
         state.currentRound++;
         // Two points if can escape
         state.scores[lastPlayerTeam] += 2;
+        state.winner = lastPlayerTeam;
 
         state.gameTime = 0.0f;
         state.state = STATE_WAIT_FOR_NEW_ROUND;
