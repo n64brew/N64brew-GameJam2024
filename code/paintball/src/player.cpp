@@ -101,28 +101,27 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
 
 void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite)
 {
-    constexpr int threshold = ScreenWidth / 16;
     constexpr int margin = ScreenWidth / 16;
     int x = floorf(playerOther.screenPos.v[0]);
     int y = floorf(playerOther.screenPos.v[1]);
     float theta = 0.f;
 
-    if (x < -threshold) {
+    if (x < margin) {
         x = margin;
         theta = T3D_PI / 2;
     }
 
-    if (x > (ScreenWidth+threshold) ) {
+    if (x > (ScreenWidth-margin) ) {
         x = (ScreenWidth-margin);
         theta = 3* T3D_PI / 2;
     }
 
-    if (y < -threshold) {
+    if (y < margin) {
         y = margin;
         theta = 2 * T3D_PI;
     }
 
-    if (y > (ScreenHeight+threshold) ) {
+    if (y > (ScreenHeight-margin) ) {
         y = (ScreenHeight-margin);
         theta = T3D_PI;
     }
@@ -141,11 +140,9 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
         PLAYERCOLOR_4,
     };
 
-    rdpq_set_mode_standard();
-    rdpq_mode_antialias(AA_NONE);
+    rdpq_mode_zbuf(false, false);
     rdpq_mode_alphacompare(1);
     rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
-    rdpq_mode_filter(FILTER_BILINEAR);
 
     rdpq_set_prim_color(colors[playerGameplay.team]);
 
