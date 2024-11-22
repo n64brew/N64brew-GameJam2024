@@ -20,6 +20,7 @@ struct GameState
     int currentRound;
 
     int scores[MAXPLAYERS];
+    PlyNum winner;
 
     T3DVec3 avPos;
 };

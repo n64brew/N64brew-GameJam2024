@@ -15,10 +15,10 @@ MapRenderer::MapRenderer() :
     debugf("Map renderer initialized\n");
     assertf(surface.get(), "surface is null");
 
-    rdpq_attach(surface.get(), nullptr);
-        rdpq_set_scissor(0, 0, MapWidth, MapWidth);
-        rdpq_clear(RGBA32(0, 0, 0, 0));
-    rdpq_detach();
+    // rdpq_attach(surface.get(), nullptr);
+    //     rdpq_set_scissor(0, 0, MapWidth, MapWidth);
+    //     rdpq_clear(RGBA32(0, 0, 0, 0));
+    // rdpq_detach();
 
     // Initialize TLUT
     uint16_t *p_tlut = tlut.get();
@@ -27,7 +27,7 @@ MapRenderer::MapRenderer() :
         else if (i == 2) p_tlut[i] = color_to_packed16(PLAYERCOLOR_2);
         else if (i == 3) p_tlut[i] = color_to_packed16(PLAYERCOLOR_3);
         else if (i == 4) p_tlut[i] = color_to_packed16(PLAYERCOLOR_4);
-        else p_tlut[i] = color_to_packed16(RGBA32(255, 255, 255, 255));
+        else p_tlut[i] = color_to_packed16(RGBA32(239, 239, 239, 255));
     }
 
     // TODO: use managed memory

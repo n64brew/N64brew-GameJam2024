@@ -9,7 +9,8 @@
 class UIRenderer
 {
     private:
-        RDPQFont font;
+        RDPQFont mediumFont;
+        RDPQFont bigFont;
 
     public:
         UIRenderer();

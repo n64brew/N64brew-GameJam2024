@@ -2,7 +2,7 @@
 
 Game::Game() :
     viewport(t3d_viewport_create()),
-    font("rom:/squarewave.font64", MainFont),
+    font("rom:/paintball/FingerPaint-Regular.font64", SmallFont),
     timer({nullptr, delete_timer}),
     mapRenderer(std::make_shared<MapRenderer>()),
     gameplayController(mapRenderer),
@@ -17,12 +17,12 @@ Game::Game() :
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
     rdpq_fontstyle_t p3Style = { .color = PLAYERCOLOR_3 };
     rdpq_fontstyle_t p4Style = { .color = PLAYERCOLOR_4 };
-    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 0, 255) };
+    rdpq_fontstyle_t style = { .color = RGBA32(255, 255, 200, 255) };
 
     auto fnt = font.font.get();
     assertf(fnt, "Font is null");
 
-    // TODO: move to player.cpp
+    // TODO: move to player.cpp?
     rdpq_font_style(fnt, 0, &p1Style);
     rdpq_font_style(fnt, 1, &p2Style);
     rdpq_font_style(fnt, 2, &p3Style);
@@ -112,6 +112,7 @@ void Game::processState() {
             }
         }
 
+        state.winner = winner;
         core_set_winner(winner);
 
         if (timer.get() == nullptr) {
@@ -129,7 +130,7 @@ void Game::processState() {
         return;
     }
 
-    if (state.state == STATE_WAIT_FOR_NEW_ROUND && state.gameTime > 3.0f) {
+    if (state.state == STATE_WAIT_FOR_NEW_ROUND && state.gameTime > 5.0f) {
         gameplayController.newRound();
         state.gameTime = 0.0f;
         state.state = STATE_COUNTDOWN;

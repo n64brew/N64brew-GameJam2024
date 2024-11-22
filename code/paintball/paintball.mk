@@ -5,6 +5,10 @@ ASSETS_LIST += \
 	filesystem/paintball/splash.ia4.sprite \
 	filesystem/paintball/shadow.t3dm \
 	filesystem/paintball/shadow.i8.sprite \
-	filesystem/paintball/FingerPaint-Regular.font64
+	filesystem/paintball/FingerPaint-Regular.font64 \
+	filesystem/paintball/FingerPaint-Regular-Medium.font64 \
+	filesystem/paintball/FingerPaint-Regular-Big.font64 \
 
-filesystem/paintball/FingerPaint-Regular.font64: MKFONT_FLAGS += --outline 2 --size 36
+filesystem/paintball/FingerPaint-Regular.font64: MKFONT_FLAGS += --outline 1 --size 12
+filesystem/paintball/FingerPaint-Regular-Medium.font64: MKFONT_FLAGS += --outline 2 --size 24
+filesystem/paintball/FingerPaint-Regular-Big.font64: MKFONT_FLAGS += --outline 2 --size 36

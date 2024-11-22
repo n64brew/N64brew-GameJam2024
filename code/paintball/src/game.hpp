@@ -23,9 +23,6 @@
 #include <functional>
 #include <memory>
 
-constexpr int RoundCount = 3;
-constexpr float LastOneStandingTime = 20;
-
 class Game
 {
     private:

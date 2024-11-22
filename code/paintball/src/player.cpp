@@ -122,7 +122,7 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
         .align = ALIGN_CENTER, .disable_aa_fix = true };
     rdpq_text_printf(
         &fontParams,
-        MainFont,
+        SmallFont,
         x,
         y,
         "P%lu %4.2f",
