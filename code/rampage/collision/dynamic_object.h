@@ -21,14 +21,14 @@ enum collision_group {
 
 typedef void (*bounding_box_calculator)(void* data, struct Vector2* rotation, struct Box3D* box);
 
-union dynamic_object_type_data
-{
+union dynamic_object_type_data {
     struct { float radius; } sphere;
     struct { float radius; float inner_half_height; } capsule;
     struct { struct Vector3 half_size; } box;
     struct { struct Vector3 size; } cone;
     struct { float radius; float half_height; } cylinder;
     struct { struct Vector2 range; float radius; float half_height; } sweep;
+    struct { struct Vector3i16 points[4]; } swing_collider;
 };
 
 struct dynamic_object_type {

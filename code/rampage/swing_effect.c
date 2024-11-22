@@ -8,16 +8,6 @@ void swing_effect_init(struct swing_effect* effect) {
     effect->current_tail_length = 0;
     effect->first_vertex = 0;
 
-    T3DVec3 normal = {{0.0f, 1.0f, 0.0f}};
-
-    for (int i = 0; i < MAX_TAIL_LENGTH; i += 1) {
-        effect->vertices[i].normA = 
-        effect->vertices[i].normB = t3d_vert_pack_normal(&normal);
-
-        effect->vertices[i].rgbaA = 
-        effect->vertices[i].rgbaB = 0xFFFFFFFF;
-    }
-
     data_cache_hit_writeback(&effect->vertices[0], sizeof(effect->vertices));
 }
 
@@ -51,6 +41,8 @@ void swing_effect_update(struct swing_effect* effect, T3DVec3* a, T3DVec3* b) {
     vertex->posB[0] = (int16_t)b->v[0];
     vertex->posB[1] = (int16_t)b->v[1];
     vertex->posB[2] = (int16_t)b->v[2];
+    
+    data_cache_hit_writeback(vertex, sizeof(T3DVertPacked));
 
     if (effect->current_tail_length < MAX_TAIL_LENGTH) {
         effect->current_tail_length += 1;
@@ -68,7 +60,7 @@ void swing_effect_end(struct swing_effect* effect) {
 }
 
 void swing_effect_render(struct swing_effect* effect) {
-    if (effect->current_tail_length == 0) {
+    if (effect->current_tail_length < 2) {
         return;
     }
 
@@ -78,8 +70,11 @@ void swing_effect_render(struct swing_effect* effect) {
     int next_index = (curr_index + 2) & (MAX_TAIL_VERTEX - 1);
 
     for (int i = 0 ; i + 1 < effect->current_tail_length; i += 1) {
-        t3d_tri_draw(curr_index, curr_index + 1, next_index);
-        t3d_tri_draw(curr_index + 1, next_index + 1, next_index);
+        t3d_tri_draw(curr_index + 1, curr_index, next_index);
+        t3d_tri_draw(curr_index + 1, next_index, next_index + 1);
+
+        curr_index = next_index;
+        next_index = (curr_index + 2) & (MAX_TAIL_VERTEX - 1);
     }
 
     t3d_tri_sync();

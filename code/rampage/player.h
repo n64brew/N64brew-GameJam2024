@@ -23,6 +23,7 @@ enum PlayerType {
 
 struct RampagePlayer {
     struct dynamic_object dynamic_object;
+    struct dynamic_object_type damage_shape;
     struct dynamic_object damage_trigger;
     rspq_block_t* render_block;
     T3DSkeleton skeleton;
@@ -48,11 +49,11 @@ struct RampagePlayer {
     uint32_t did_win: 1;
     uint32_t did_lose: 1;
     uint32_t tail_tip_index: 5;
+    uint32_t next_shape_offset: 1;
 
     uint16_t score;
 
     struct Vector3 current_target;
-    float attack_timer;
     struct swing_effect swing_effect;
 };
 

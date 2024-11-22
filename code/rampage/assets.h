@@ -18,9 +18,11 @@ struct RampageAssets {
     struct RampageSplitMesh buildingSplit[BUILDING_HEIGHT_STEPS];
     T3DModel* ground;
     T3DModel* tank;
+    struct RampageSplitMesh tankSplit;
     T3DModel* bullet;
     T3DModel* pointer;
-    struct RampageSplitMesh tankSplit;
+    T3DModel* swing_effect;
+    struct RampageSplitMesh swing_split;
 
     sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
     sprite_t* destroy_image;

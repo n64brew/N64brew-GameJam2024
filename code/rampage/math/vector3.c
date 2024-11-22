@@ -135,6 +135,12 @@ void vector3TripleProduct(struct Vector3* a, struct Vector3* b, struct Vector3* 
     vector3AddScaled(output, a, -vector3Dot(b, c), output);
 }
 
+void vector3i16ToF(struct Vector3i16* from, struct Vector3* to) {
+    to->x = from->x;
+    to->y = from->y;
+    to->z = from->z;
+}
+
 void vector3Max(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
     out->x = fmaxf(a->x, b->x);
     out->y = fmaxf(a->y, b->y);

@@ -7,7 +7,7 @@
 #include "../../core.h"
 #include "./collision/collision_scene.h"
 #include "./collision/capsule.h"
-#include "./collision/cylinder.h"
+#include "./collision/swing_collider.h"
 #include "./rampage.h"
 #include "./util/entity_id.h"
 #include "./scene_query.h"
@@ -18,7 +18,6 @@
 #define PLAYER_ANIM_WALK_SPEED  80
 #define PLAYER_ACCEL            5000
 #define PLAYER_AIR_ACCEL        2000
-#define PLAYER_ATTACK_DAMAGE_DELAY  0.5f
 
 #define PLAYER_SCALE    0.5f
 
@@ -44,17 +43,6 @@ struct dynamic_object_type player_collider = {
     },
     .bounce = 0.0f,
     .friction = 0.0f,
-};
-
-struct dynamic_object_type damage_trigger_collider = {
-    .minkowsi_sum = cylinder_minkowski_sum,
-    .bounding_box = cylinder_bounding_box,
-    .data = {
-        .cylinder = {
-            .radius = SCALE_FIXED_POINT(0.5f),
-            .half_height = SCALE_FIXED_POINT(1.0f),
-        },
-    }
 };
 
 #define DAMAGE_DISTANCE SCALE_FIXED_POINT(0.75f)
@@ -222,10 +210,20 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
 
     collision_scene_add(&player->dynamic_object);
 
+    player->damage_shape = (struct dynamic_object_type){
+        .minkowsi_sum = swing_colliderminkowski_sum,
+        .bounding_box = swing_colliderbounding_box,
+        .data = {
+            .swing_collider = {},
+        },
+        .friction = 0.0f,
+        .bounce = 0.0f,
+    };
+
     dynamic_object_init(
         entity_id,
         &player->damage_trigger,
-        &damage_trigger_collider,
+        &player->damage_shape,
         COLLISION_LAYER_TANGIBLE,
         start_position,
         &gRight2
@@ -277,7 +275,6 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->moving_to_target = 0;
     player->attacking_target = 0;
     player->current_target = gZeroVec;
-    player->attack_timer = 0.0f;
     player->is_jumping = 0;
     player->was_jumping = 1;
     player->is_slamming = 0;
@@ -286,6 +283,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->did_win = 0;
     player->did_lose = 0;
     player->tail_tip_index = t3d_skeleton_find_bone(&player->skeleton, "j_tail_2");
+    player->next_shape_offset = 0;
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 
@@ -438,6 +436,29 @@ void player_calc_tail_positions(struct RampagePlayer* player, T3DVec3* a, T3DVec
     player_tail_evaluation_position(player, player->tail_tip_index, &tail_base, b);
 }
 
+void rampage_player_start_attack(struct RampagePlayer* player) {
+    t3d_anim_set_playing(&player->animAttack, true);
+    t3d_anim_set_time(&player->animAttack, 0.0f);
+    swing_effect_start(&player->swing_effect);
+    player->is_attacking = 1;
+
+    T3DVec3 a;
+    T3DVec3 b;
+    player_calc_tail_positions(player, &a, &b);
+    
+    struct Vector3i16* points = player->damage_shape.data.swing_collider.points;
+    points[0].x = (short)a.v[0];
+    points[0].y = (short)a.v[1];
+    points[0].z = (short)a.v[2];
+
+    points[1].x = (short)b.v[0];
+    points[1].y = (short)b.v[1];
+    points[1].z = (short)b.v[2];
+
+    points[2] = points[0];
+    points[3] = points[1];
+}
+
 void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     struct RampageInput input = rampage_player_get_input(player, delta_time);
 
@@ -475,25 +496,14 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     }
 
     if (input.do_attack && !player->last_attack_state && !player->is_attacking) {
-        t3d_anim_set_playing(&player->animAttack, true);
-        t3d_anim_set_time(&player->animAttack, 0.0f);
-        swing_effect_start(&player->swing_effect);
-        player->is_attacking = 1;
-        player->attack_timer = PLAYER_ATTACK_DAMAGE_DELAY;
-    }
-
-    if (player->is_attacking && player->attack_timer > 0.0f) {
-        player->attack_timer -= delta_time;
-
-        if (player->attack_timer <= 0.0f) {
-            struct Vector3 attack_velocity = (struct Vector3){
-                player->dynamic_object.rotation.y * PLAYER_ATTACK_VELOCITY, 
-                0.0f, 
-                player->dynamic_object.rotation.x * PLAYER_ATTACK_VELOCITY
-            };
-            health_contact_damage(player->damage_trigger.active_contacts, 1, &attack_velocity, player->dynamic_object.entity_id);
-            player->attack_timer = 0.0f;
-        }
+        rampage_player_start_attack(player);
+    } else if (player->is_attacking) {
+        struct Vector3 attack_velocity = (struct Vector3){
+            player->dynamic_object.rotation.y * PLAYER_ATTACK_VELOCITY, 
+            0.0f, 
+            player->dynamic_object.rotation.x * PLAYER_ATTACK_VELOCITY
+        };
+        health_contact_damage(player->damage_trigger.active_contacts, 1, &attack_velocity, player->dynamic_object.entity_id);
     }
 
     if (player->is_attacking) {
@@ -501,6 +511,19 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         T3DVec3 b;
         player_calc_tail_positions(player, &a, &b);
         swing_effect_update(&player->swing_effect, &a, &b);
+
+        int offset = player->next_shape_offset ? 0 : 2;
+
+        struct Vector3i16* points = player->damage_shape.data.swing_collider.points;
+        points[offset].x = (short)a.v[0];
+        points[offset].y = (short)a.v[1];
+        points[offset].z = (short)a.v[2];
+
+        points[offset + 1].x = (short)b.v[0];
+        points[offset + 1].y = (short)b.v[1];
+        points[offset + 1].z = (short)b.v[2];
+
+        player->next_shape_offset ^= 1;
     } else {
         swing_effect_update(&player->swing_effect, NULL, NULL);
     }
@@ -545,14 +568,8 @@ void rampage_player_render(struct RampagePlayer* player) {
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);
     rspq_block_run(player->render_block);
 
-    T3DVec3 rotated_position;
-    player_tail_evaluation_position(player, player->tail_tip_index, &tail_base, &rotated_position);
-
-    t3d_mat4fp_from_srt(UncachedAddr(&player->pointer_mtx), scale.v, (float*)&quat, rotated_position.v);
-    t3d_matrix_push(&player->pointer_mtx);
-    rspq_block_run(rampage_assets_get()->pointer->userBlock);
-    t3d_matrix_pop(1);
-
+    T3DModelState state = t3d_model_state_create();
+    rspq_block_run(rampage_assets_get()->swing_split.material);
     swing_effect_render(&player->swing_effect);
 }
 
