@@ -9,7 +9,8 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
     shadowModel({
         t3d_model_load("rom:/paintball/shadow.t3dm"),
         t3d_model_free
-    })
+    }),
+    arrowSprite {sprite_load("rom:/paintball/arrow.ia4.sprite"), sprite_free}
     {
         assertf(model.get(), "Player model is null");
 
@@ -185,7 +186,7 @@ void GameplayController::renderUI()
     for (auto& playerOther : playerOtherData)
     {
         auto& playerGameplay = playerGameplayData[i];
-        Player::renderUI(playerGameplay, playerOther, i);
+        Player::renderUI(playerGameplay, playerOther, i, arrowSprite.get());
         i++;
     }
 }

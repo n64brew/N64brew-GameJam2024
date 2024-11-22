@@ -96,37 +96,65 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
         currentPos.v[2]
     }};
 
-    t3d_viewport_calc_viewspace_pos(viewport,  playerOther.screenPos, billboardPos);
+    t3d_viewport_calc_viewspace_pos(viewport, playerOther.screenPos, billboardPos);
 }
 
-void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id)
+void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite)
 {
+    constexpr int threshold = ScreenWidth / 16;
     constexpr int margin = ScreenWidth / 16;
-    constexpr int textHalfWidth = 10;
-    constexpr int textHalfHeight = 6;
-    int x = floorf(playerOther.screenPos.v[0]) - textHalfWidth;
-    int y = floorf(playerOther.screenPos.v[1]) - textHalfHeight;
+    int x = floorf(playerOther.screenPos.v[0]);
+    int y = floorf(playerOther.screenPos.v[1]);
+    float theta = 0.f;
 
-    if (x < margin) x = margin;
-    if (x > (ScreenWidth-margin-2*textHalfWidth) ) x = (ScreenWidth-margin-2*textHalfWidth);
+    if (x < -threshold) {
+        x = margin;
+        theta = T3D_PI / 2;
+    }
 
-    if (y < (margin + textHalfHeight)) y = (margin + textHalfHeight);
-    if (y > (ScreenHeight-margin-2*textHalfHeight) ) y = (ScreenHeight-margin-2*textHalfHeight);
+    if (x > (ScreenWidth+threshold) ) {
+        x = (ScreenWidth-margin);
+        theta = 3* T3D_PI / 2;
+    }
 
-    rdpq_sync_pipe(); // Hardware crashes otherwise
-    rdpq_sync_tile(); // Hardware crashes otherwise
+    if (y < -threshold) {
+        y = margin;
+        theta = 2 * T3D_PI;
+    }
 
-    rdpq_textparms_t fontParams {
-        .style_id = playerGameplay.team,
-        .width = 20,
-        .align = ALIGN_CENTER, .disable_aa_fix = true };
-    rdpq_text_printf(
-        &fontParams,
-        SmallFont,
-        x,
-        y,
-        "P%lu %4.2f",
-        id + 1,
-        playerGameplay.temperature
-    );
+    if (y > (ScreenHeight+threshold) ) {
+        y = (ScreenHeight-margin);
+        theta = T3D_PI;
+    }
+
+    if (theta == 0.f) {
+        return;
+    }
+
+    rdpq_sync_pipe();
+    rdpq_sync_tile();
+
+    const color_t colors[] = {
+        PLAYERCOLOR_1,
+        PLAYERCOLOR_2,
+        PLAYERCOLOR_3,
+        PLAYERCOLOR_4,
+    };
+
+    rdpq_set_mode_standard();
+    rdpq_mode_antialias(AA_NONE);
+    rdpq_mode_alphacompare(1);
+    rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
+    rdpq_mode_filter(FILTER_BILINEAR);
+
+    rdpq_set_prim_color(colors[playerGameplay.team]);
+
+    rdpq_blitparms_t params {
+        .width = 32,
+        .height = 32,
+        .cx = 16,
+        .cy = 16,
+        .theta = theta,
+    };
+    rdpq_sprite_blit(arrowSprite, x, y, &params);
 }

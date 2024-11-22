@@ -30,7 +30,7 @@ namespace Player {
         friend class ::BulletController;
         friend class ::Game;
         friend void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
-        friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id);
+        friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite);
 
         private:
             T3DVec3 pos;
@@ -51,7 +51,7 @@ namespace Player {
     {
         friend class ::GameplayController;
         friend void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
-        friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id);
+        friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite);
 
         private:
             // Physics
@@ -74,7 +74,7 @@ namespace Player {
     };
 
     void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
-    void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id);
+    void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite);
 }
 
 #endif // __PLAYER_H

@@ -76,6 +76,7 @@ void UIRenderer::render(const GameState &state)
         if (state.state == STATE_FINISHED) {
             rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Player %d wins!", state.winner + 1);
         } else {
+            // TODO: announce current winner instead
             rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Scoreboard");
         }
 

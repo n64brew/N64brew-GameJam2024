@@ -37,6 +37,7 @@ class GameplayController
         BulletController bulletController;
         U::T3DModel model;
         U::T3DModel shadowModel;
+        U::Sprite arrowSprite {sprite_load("rom:/paintball/arrow.ia4.sprite"), sprite_free};
 
         // Player data
         std::vector<Player::OtherData> playerOtherData;
