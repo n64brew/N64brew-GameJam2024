@@ -303,8 +303,9 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 continue;
             }
             rspq_block_begin();
+           
             t3d_matrix_push(mesh->modelMatrix);
-            
+             
             // TODO: put a flag in that can signal a mesh is skinned
             // The snake model needs special color and call to skinned command
             
@@ -321,8 +322,10 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
             }
+            
             t3d_matrix_pop(1);
             // cast to void pointer to store in our mesh data, which knows nothing about T3D
+            
             mesh->displayListBuffer = (void*)rspq_block_end();
         }
     }
@@ -354,11 +357,11 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     float zDist = 2.5;
     camTarget.v[2] += zDist;//40;
     camPos.v[0] = camTarget.v[0];
-    camPos.v[1] = camTarget.v[1] +7;// + 45;
-    camPos.v[2] = camTarget.v[2] + 5;//65;
+    camPos.v[1] = camTarget.v[1] +8;// + 45;
+    camPos.v[2] = camTarget.v[2] + 8;//65;
 
     //
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(45.0f), 1.0f, 1000.0f);
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(60.0f), 1.0f, 1000.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
@@ -379,21 +382,31 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     syncPoint = rspq_syncpoint_new();
     
     // ======== Draw actors (3D) ======== //
+   
     for(int i = 0; i < _ecs->entitiesCount; ++i){
+       
         // show debug
         AF_CMesh* mesh = &_ecs->meshes[i];
         
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
-            
+             
             // ======== ANIMATION ========
-            AF_CSkeletalAnimation* animation = &_ecs->skeletalAnimations[i];
-            assert(animation != NULL);
+            AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+            assert(skeletalAnimation != NULL);
+            
+            if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
+                // update animation speed based on the movement velocity
+                skeletalAnimation->animationSpeed = Vec3_MAGNITUDE(_ecs->rigidbodies[i].velocity);
+                
+                // disabled animations
+                // delay and do every 3 frames
+                if(_time->currentFrame % 3 == 0){
+                    Renderer_UpdateAnimations( skeletalAnimation, _time->timeSinceLastFrame);
+                }
+            }
+            /**/
 
-            // update animation speed based on the movement velocity
-            animation->animationSpeed = Vec3_MAGNITUDE(_ecs->rigidbodies[i].velocity);
-            Renderer_UpdateAnimations(animation, _time->timeSinceLastFrame);
-
-
+            
             // ======== MODELS ========
             // Update the mesh model matrix based on the entity transform.
             AF_CTransform3D* entityTransform = &_ecs->transforms[i];
@@ -409,16 +422,19 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
             }
             t3d_mat4fp_from_srt_euler(meshMat,  scale, rot, pos);
             // Use the display list buffer stored in our mesh data.
-
+        
             // cast the display buffer back from our void* stored in the mesh component
             rspq_block_run((rspq_block_t*)mesh->displayListBuffer);
-            
+           
         }
+        
+        //if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
+        
     }
-
+    
     // for each 
     //t3d_matrix_pop(1);
-    /**/
+
     
     // ======== Draw (2D) ======== //
     // ======== Draw (UI) ======== //
@@ -471,38 +487,58 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     // attack
     // animIsPlaying
     //animBlend = currSpeed / 0.51f;
-    _animation->animationBlend = _animation->animationSpeed / 0.51f;
+   /*
+    //_animation->animationBlend = _animation->animationSpeed / 0.51f;
+    _animation->animationBlend = _animation->animationSpeed * 1.9607843137254901f;
+
     if(_animation->animationBlend  > 1.0f){
       _animation->animationBlend = 1.0f;
     }
+    // get the anims
     T3DAnim* animAttackData = (T3DAnim*)_animation->attackAnimationData;
-    
-     // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
     T3DAnim* animIdleData = (T3DAnim*)_animation->idleAnimationData;
-    t3d_anim_update(animIdleData, _dt);
-    
     T3DAnim* animWalkData = (T3DAnim*)_animation->walkAnimationData;
-    t3d_anim_set_speed(animWalkData, _animation->animationBlend + 0.15f);
-    t3d_anim_update(animWalkData, _dt);
     
+    // if we are not moving then we can update the idle anim, otherwise skip it
+    //if(_animation->animationSpeed < 1.0f){
+        // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
+        
+   // }else{
+        
+    //}
+    
+    if(animIdleData->isPlaying == TRUE ){
+        t3d_anim_update(animIdleData, _dt);
+    }
+    
+    if(animWalkData->isPlaying == TRUE){
+        t3d_anim_set_speed(animWalkData, _animation->animationBlend + 0.15f);
+        t3d_anim_update(animWalkData, _dt);
+    }
+       
+     
     //t3d_anim_update(&animWalk, deltaTime);
+    // disabled attack anim for now
     //if attacking
+    
     if(animAttackData->isPlaying){
         //debugf("Update animation %f \n", _dt);
         t3d_anim_update(animAttackData, _dt);
         //animAttackData->isPlaying = false;
     }
-
+    
+    */
     // We now blend the walk animation with the idle/attack one
     T3DSkeleton* skeleton = (T3DSkeleton*)_animation->skeleton;
     T3DSkeleton* skeletonBlend = (T3DSkeleton*)_animation->skeletonBlend;
 
-    t3d_skeleton_blend(skeleton, skeleton, skeletonBlend, _animation->animationBlend);
-
-    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
-
+    //t3d_skeleton_blend(skeleton, skeleton, skeletonBlend, _animation->animationBlend);
+    
+    //if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
+    
     // Now recalc. the matrices, this will cause any model referencing them to use the new pose
     t3d_skeleton_update(skeleton);
+    /**/
 }
 
 

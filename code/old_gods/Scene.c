@@ -252,7 +252,7 @@ void Scene_Update(AppData* _appData){
                 adjustedPlayerPos.x > levelBounds.x ||
                 adjustedPlayerPos.z < -levelBounds.z ||
                 adjustedPlayerPos.z > levelBounds.z){
-                    debugf("PlayerPos: x: %f, y: %f, z: %f, Level Bounds: x: %f, y: %f, z: %f \n", pos->x, pos->y, pos->z, levelBounds.z, levelBounds.y, levelBounds.z);
+                    //debugf("PlayerPos: x: %f, y: %f, z: %f, Level Bounds: x: %f, y: %f, z: %f \n", pos->x, pos->y, pos->z, levelBounds.z, levelBounds.y, levelBounds.z);
             
                     // zero out the velocity so we don't travel further 
                     Vec3 zeroVelocity = {0,0,0};
@@ -312,7 +312,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
     player1Entity->mesh->meshID = MODEL_RAT;//MODEL_SNAKE2;
-    player1Entity->mesh->material.color = WHITE_COLOR;
+    player1Entity->mesh->material.color = PLAYER1_COLOR;
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
