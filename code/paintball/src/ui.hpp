@@ -20,14 +20,9 @@ class UIRenderer
         RDPQFont mediumFont;
         RDPQFont bigFont;
 
-        std::size_t newHitCount;
-        std::array<HitMark, PlayerCount> newHits;
-
-        std::array<HitMark, PlayerCount * 4> activeHits;
-
         U::Sprite hitSprite;
 
-        List<HitMark, PlayerCount * 4> test;
+        List<HitMark, PlayerCount * 4> hits;
 
         void renderHitMarks(T3DViewport &viewport, float deltaTime);
 

@@ -31,6 +31,8 @@ struct Bullet
 {
     public:
         Bullet();
+        Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team);
+
         T3DVec3 pos;
         T3DVec3 prevPos;
         T3DVec3 velocity;
@@ -46,15 +48,12 @@ class BulletController
         U::T3DModel model;
         U::RSPQBlock block;
 
-        // Assume all players firing in all possible directions
-        std::array<Bullet, PlayerCount * 4> newBullets;
-
-        std::array<Bullet, BulletLimit> bullets;
+        List<Bullet, BulletLimit> bullets;
 
         std::shared_ptr<MapRenderer> map;
         std::shared_ptr<UIRenderer> ui;
 
-        void simulatePhysics(float deltaTime, Bullet &bullet);
+        bool simulatePhysics(float deltaTime, Bullet &bullet);
         void killBullet(Bullet &bullet);
         bool processHit(Player::GameplayData &gameplayData, PlyNum team);
 

@@ -5,6 +5,15 @@ Bullet::Bullet() :
     prevPos {0},
     velocity {0},
     team {PLAYER_1},
+    owner {PLAYER_1},
+    matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
+
+Bullet::Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team) :
+    pos {pos},
+    prevPos {pos},
+    velocity {velocity},
+    team {team},
+    owner {owner},
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
 
 BulletController::BulletController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui) :
@@ -50,38 +59,26 @@ void BulletController::render(float deltaTime) {
 
     double interpolate = core_get_subtick();
 
-    for (auto& bullet : bullets)
-    {
-        if (bullet.velocity.v[0] != 0 || bullet.velocity.v[1] != 0 || bullet.velocity.v[2] != 0) {
-            assertf(bullet.matFP.get(), "Bullet matrix is null");
-            assertf(block.get(), "Bullet dl is null");
+    for (auto bullet = bullets.begin(); bullet != bullets.end(); ++bullet) {
+        assertf(bullet->matFP.get(), "Bullet matrix is null");
+        assertf(block.get(), "Bullet dl is null");
 
-            T3DVec3 currentPos {0};
-            t3d_vec3_lerp(currentPos, bullet.prevPos, bullet.pos, interpolate);
+        T3DVec3 currentPos {0};
+        t3d_vec3_lerp(currentPos, bullet->prevPos, bullet->pos, interpolate);
 
-            t3d_mat4fp_from_srt_euler(
-                bullet.matFP.get(),
-                T3DVec3 {0.2f, 0.2f, 0.2f},
-                // TODO: add some random rotation
-                T3DVec3 {0.0f, 0.0f, 0.0f},
-                T3DVec3 {currentPos.v[0], currentPos.v[1], currentPos.v[2]}
-            );
+        t3d_mat4fp_from_srt_euler(
+            bullet->matFP.get(),
+            T3DVec3 {0.2f, 0.2f, 0.2f},
+            // TODO: add some random rotation
+            T3DVec3 {0.0f, 0.0f, 0.0f},
+            T3DVec3 {currentPos.v[0], currentPos.v[1], currentPos.v[2]}
+        );
 
-            t3d_matrix_push(bullet.matFP.get());
-                rdpq_set_prim_color(colors[bullet.team]);
-                rspq_block_run(block.get());
-            t3d_matrix_pop(1);
-        }
+        t3d_matrix_push(bullet->matFP.get());
+            rdpq_set_prim_color(colors[bullet->team]);
+            rspq_block_run(block.get());
+        t3d_matrix_pop(1);
     }
-}
-
-// TODO: shift everything to left to fill in holes & gain performance
-void BulletController::killBullet(Bullet &bullet) {
-    assertf(map.get(), "Map renderer is null");
-    bullet.velocity.v[0] = 0;
-    bullet.velocity.v[1] = 0;
-    bullet.velocity.v[2] = 0;
-    map->splash(bullet.pos.v[0], bullet.pos.v[2], bullet.team);
 }
 
 /**
@@ -105,7 +102,10 @@ bool BulletController::processHit(Player::GameplayData &gameplayData, PlyNum tea
     return false;
 }
 
-void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
+/**
+ * Returns true if bullet is dead
+ */
+bool BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
     bullet.prevPos = bullet.pos;
 
     T3DVec3 velocityDiff = {0};
@@ -116,57 +116,52 @@ void BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
     t3d_vec3_scale(posDiff, bullet.velocity, deltaTime);
     t3d_vec3_add(bullet.pos, bullet.pos, posDiff);
 
+    // TODO: use the actual map bounds
     if (bullet.pos.v[0] > 1000.f || bullet.pos.v[0] < -1000.f ||
         bullet.pos.v[2] > 1000.f || bullet.pos.v[2] < -1000.f ||
         bullet.pos.v[1] < 0.f) {
-        killBullet(bullet);
+        return true;
     }
+    return false;
 }
 
-/**
- * Returns an array of players changed status this tick
- */
 void BulletController::fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData) {
-    for (auto& bullet : bullets)
-    {
-        // TODO: this will prevent firing once every slot is occupied
-        // This is a free bullet slot, fill it if we have pending bullets
-        if (bullet.velocity.v[0] == 0 && bullet.velocity.v[1] == 0 && bullet.velocity.v[2] == 0) {
-            if (newBulletCount > 0) {
-                int bulletIndex = --newBulletCount;
-                bullet.pos = newBullets[bulletIndex].pos;
-                bullet.prevPos = bullet.pos;
-                bullet.velocity = newBullets[bulletIndex].velocity;
-                bullet.team = newBullets[bulletIndex].team;
-                bullet.owner = newBullets[bulletIndex].owner;
-            } else {
-                continue;
-            }
+    assertf(map.get(), "Map renderer is null");
+    // TODO: Couldn't find a better way to convert the comparison to != here
+    for (auto bullet = bullets.begin(); bullet < bullets.end(); ++bullet) {
+        bool isDead = simulatePhysics(deltaTime, *bullet);
+        if (isDead) {
+            map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
+            bullets.remove(bullet);
+            continue;
         }
-
-        simulatePhysics(deltaTime, bullet);
 
         int i = 0;
         // TODO: if we could delegate this to player.cpp, b/c collider doesn't belong here
         for (auto& player : gameplayData)
         {
             // Don't hit the player that fired the bullet
-            if (i == bullet.owner) {
+            if (i == bullet->owner) {
                 i++;
                 continue;
             }
 
             // 2D distance
             auto dist2 =
-                (player.pos.v[0] - bullet.pos.v[0]) * (player.pos.v[0] - bullet.pos.v[0]) +
-                (player.pos.v[2] - bullet.pos.v[2]) * (player.pos.v[2] - bullet.pos.v[2]);
+                (player.pos.v[0] - bullet->pos.v[0]) * (player.pos.v[0] - bullet->pos.v[0]) +
+                (player.pos.v[2] - bullet->pos.v[2]) * (player.pos.v[2] - bullet->pos.v[2]);
 
             if (dist2 < PlayerRadius * PlayerRadius) {
                 // TODO: delegate to Player
-                bool hit = processHit(player, bullet.team);
-                gameplayData[bullet.owner].fragCount += hit ? 1 : 0;
-                killBullet(bullet);
-                ui->registerHit(HitMark {bullet.pos, bullet.owner});
+                bool hit = processHit(player, bullet->team);
+                gameplayData[bullet->owner].fragCount += hit ? 1 : 0;
+
+                ui->registerHit(HitMark {bullet->pos, bullet->owner});
+                map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
+                bullets.remove(bullet);
+
+                // No need to check other players, we don't have the bullet anymore
+                break;
             }
             i++;
         }
@@ -174,11 +169,6 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player::Gameplay
 }
 
 void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team) {
-    if (newBulletCount >= newBullets.size()) return;
-
-    newBullets[newBulletCount].pos = pos;
-    newBullets[newBulletCount].velocity = velocity;
-    newBullets[newBulletCount].owner = owner;
-    newBullets[newBulletCount].team = team;
-    newBulletCount++;
+    // TODO: this will prevent firing once every slot is occupied
+    bullets.add(Bullet {pos, velocity, owner, team});
 }

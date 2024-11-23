@@ -8,22 +8,19 @@ class List : public std::array<T, S> {
     private:
         std::size_t count = 0;
     public:
-        void add(const T &item) {
+        // TODO: return success/failure
+        void add(T &&item) {
             if (count >= this->size()) return;
-            auto &newItem = std::array<T,S>::operator[](count);
-            newItem = item;
+            auto &&newItem = std::array<T,S>::operator[](count);
+            // TODO: this still does allocation
+            newItem = std::move(item);
             count++;
         }
 
-        void remove(std::size_t index) {
-            if (count == 0) return;
-            this->at(index) = std::array<T,S>::operator[](count);
-            count--;
-        }
-
         void remove(typename std::array<T,S>::iterator it) {
-            *it = std::array<T,S>::operator[](count);
+            if (count == 0) return;
             count--;
+            *it = std::move(std::array<T,S>::operator[](count));
         }
 
         typename std::array<T,S>::iterator end() noexcept {

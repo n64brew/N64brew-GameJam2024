@@ -3,8 +3,6 @@
 UIRenderer::UIRenderer() :
     mediumFont("rom:/paintball/FingerPaint-Regular-Medium.font64", MediumFont),
     bigFont("rom:/paintball/FingerPaint-Regular-Big.font64", BigFont),
-    newHitCount(0),
-    activeHits {0},
     hitSprite {sprite_load("rom:/paintball/marker.ia4.sprite"), sprite_free}
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
@@ -94,12 +92,13 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
 }
 
 void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
-    for (auto hit = test.begin(); hit < test.end(); ++hit) {
-        hit->lifetime -= deltaTime;
+    for (auto hit = hits.begin(); hit < hits.end(); ++hit) {
         if (hit->lifetime <= 0.) {
-            test.remove(hit);
+            hits.remove(hit);
             continue;
         }
+
+        hit->lifetime -= deltaTime;
 
         T3DVec3 screenPos;
         t3d_viewport_calc_viewspace_pos(viewport, screenPos, hit->pos);
@@ -132,7 +131,5 @@ void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
 }
 
 void UIRenderer::registerHit(const HitMark &hit) {
-    HitMark newHit = hit;
-    newHit.lifetime = 0.1f;
-    test.add(newHit);
+    hits.add(HitMark {hit.pos, hit.team, 0.1f});
 }
