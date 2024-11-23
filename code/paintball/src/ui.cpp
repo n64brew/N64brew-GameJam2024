@@ -2,7 +2,10 @@
 
 UIRenderer::UIRenderer() :
     mediumFont("rom:/paintball/FingerPaint-Regular-Medium.font64", MediumFont),
-    bigFont("rom:/paintball/FingerPaint-Regular-Big.font64", BigFont)
+    bigFont("rom:/paintball/FingerPaint-Regular-Big.font64", BigFont),
+    newHitCount(0),
+    activeHits {0},
+    hitSprite {sprite_load("rom:/paintball/marker.ia4.sprite"), sprite_free}
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
@@ -30,8 +33,10 @@ UIRenderer::UIRenderer() :
     rdpq_font_style(fnt, 3, &p4Style);
 }
 
-void UIRenderer::render(const GameState &state)
+void UIRenderer::render(const GameState &state, T3DViewport &viewport, float deltaTime)
 {
+    renderHitMarks(viewport, deltaTime);
+
     rdpq_sync_tile();
     rdpq_sync_pipe(); // Hardware crashes otherwise
     rdpq_set_mode_standard();
@@ -86,4 +91,59 @@ void UIRenderer::render(const GameState &state)
             rdpq_text_printf(&centerparms, MediumFont, 0, (i-1) * 30, "Player %d: %d", i + 1, state.scores[i]);
         }
     }
+}
+
+void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
+    for (std::size_t i = 0; i < activeHits.size(); i++) {
+        auto& hit = activeHits[i];
+
+        // Fill with new hit
+        if (hit.lifetime <= 0.) {
+            if (newHitCount > 0) {
+                int idx = --newHitCount;
+
+                hit = newHits[idx];
+            } else {
+                continue;
+            }
+        }
+
+        hit.lifetime -= deltaTime;
+
+        T3DVec3 screenPos;
+        t3d_viewport_calc_viewspace_pos(viewport, screenPos, hit.pos);
+
+        rdpq_sync_pipe();
+        rdpq_sync_tile();
+        rdpq_set_mode_standard();
+
+        const color_t colors[] = {
+            PLAYERCOLOR_1,
+            PLAYERCOLOR_2,
+            PLAYERCOLOR_3,
+            PLAYERCOLOR_4,
+        };
+
+        rdpq_mode_zbuf(false, false);
+        rdpq_mode_alphacompare(1);
+        rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
+
+        rdpq_set_prim_color(colors[hit.team]);
+
+        rdpq_blitparms_t params {
+            .width = 32,
+            .height = 32,
+            .cx = 16,
+            .cy = 16,
+        };
+        rdpq_sprite_blit(hitSprite.get(), screenPos.v[0], screenPos.v[1], &params);
+    }
+}
+
+void UIRenderer::registerHit(const HitMark &hit) {
+    // TODO: we have a lot of these, let's make this a common abstraction
+    if (newHitCount >= newHits.size()) return;
+    auto &newHit = newHits[newHitCount++];
+    newHit = hit;
+    newHit.lifetime = 0.1f;
 }

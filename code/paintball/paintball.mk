@@ -4,6 +4,7 @@ ASSETS_LIST += \
 	filesystem/paintball/bullet.t3dm \
 	filesystem/paintball/splash.ia4.sprite \
 	filesystem/paintball/arrow.ia4.sprite \
+	filesystem/paintball/marker.ia4.sprite \
 	filesystem/paintball/shadow.t3dm \
 	filesystem/paintball/shadow.i8.sprite \
 	filesystem/paintball/FingerPaint-Regular.font64 \

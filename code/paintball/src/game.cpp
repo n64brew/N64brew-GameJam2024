@@ -5,7 +5,8 @@ Game::Game() :
     font("rom:/paintball/FingerPaint-Regular.font64", SmallFont),
     timer({nullptr, delete_timer}),
     mapRenderer(std::make_shared<MapRenderer>()),
-    gameplayController(mapRenderer),
+    uiRenderer(std::make_shared<UIRenderer>()),
+    gameplayController(mapRenderer, uiRenderer),
     state({
         .state = STATE_COUNTDOWN,
         .gameTime = 0.0f,
@@ -79,13 +80,13 @@ void Game::render(float deltaTime) {
 
     // 2D
     gameplayController.renderUI();
-    uiRenderer.render(state);
+    uiRenderer->render(state, viewport, deltaTime);
     rdpq_detach_show();
 
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
-    debugf("msFP: %.2f, heap Mem: %d KiB\n", 1000/display_get_fps(), heap_stats.used);
+    // debugf("msPF: %.2f, heap Mem: %d KiB\n", 1000/display_get_fps(), heap_stats.used);
 }
 
 void Game::fixedUpdate(float deltaTime) {

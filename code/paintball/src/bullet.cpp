@@ -7,14 +7,15 @@ Bullet::Bullet() :
     team {PLAYER_1},
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
 
-BulletController::BulletController(std::shared_ptr<MapRenderer> map) :
+BulletController::BulletController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui) :
     newBulletCount(0),
     model({
         t3d_model_load("rom:/paintball/bullet.t3dm"),
         t3d_model_free
     }),
     block({nullptr, rspq_block_free}),
-    map(map) {
+    map(map),
+    ui(ui) {
         assertf(model.get(), "Bullet model is null");
 
         rspq_block_begin();
@@ -165,6 +166,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player::Gameplay
                 bool hit = processHit(player, bullet.team);
                 gameplayData[bullet.owner].fragCount += hit ? 1 : 0;
                 killBullet(bullet);
+                ui->registerHit(HitMark {bullet.pos, bullet.owner});
             }
             i++;
         }

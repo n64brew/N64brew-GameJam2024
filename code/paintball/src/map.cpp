@@ -160,7 +160,6 @@ void MapRenderer::__splash(int x, int y, PlyNum player) {
 
     surface_t s = sprite_get_pixels(sprite.get());
 
-    // TODO: move this to its own block & batch all the blits
     rdpq_attach(surface.get(), nullptr);
         rspq_block_run(paintBlock.get());
 

@@ -19,6 +19,7 @@
 #include "./constants.hpp"
 #include "./player.hpp"
 #include "./map.hpp"
+#include "./ui.hpp"
 
 constexpr float BulletVelocity = 300;
 constexpr float BulletHeight = 35.f;
@@ -26,7 +27,7 @@ constexpr int BulletLimit = 100;
 constexpr float PlayerRadius = 13;
 constexpr float Gravity = -200;
 
-class Bullet
+struct Bullet
 {
     public:
         Bullet();
@@ -51,13 +52,14 @@ class BulletController
         std::array<Bullet, BulletLimit> bullets;
 
         std::shared_ptr<MapRenderer> map;
+        std::shared_ptr<UIRenderer> ui;
 
         void simulatePhysics(float deltaTime, Bullet &bullet);
         void killBullet(Bullet &bullet);
         bool processHit(Player::GameplayData &gameplayData, PlyNum team);
 
     public:
-        BulletController(std::shared_ptr<MapRenderer> map);
+        BulletController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui);
         void render(float deltaTime);
         void fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData);
         void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team);

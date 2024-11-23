@@ -36,11 +36,11 @@ class Game
         // Map
         std::shared_ptr<MapRenderer> mapRenderer;
 
+        // UI
+        std::shared_ptr<UIRenderer> uiRenderer;
+
         // Controllers
         GameplayController gameplayController;
-
-        // UI
-        UIRenderer uiRenderer;
 
         // Camera
         T3DVec3 camTarget;

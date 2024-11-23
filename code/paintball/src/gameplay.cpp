@@ -1,7 +1,7 @@
 #include "./gameplay.hpp"
 
-GameplayController::GameplayController(std::shared_ptr<MapRenderer> map) :
-    bulletController(map),
+GameplayController::GameplayController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui) :
+    bulletController(map, ui),
     model({
         t3d_model_load("rom:/paintball/char.t3dm"),
         t3d_model_free
@@ -161,6 +161,7 @@ void GameplayController::handleActions(Player::GameplayData &player, uint32_t id
 }
 
 // TODO: stop passing state around
+// TODO: remove viewport from here, move to UI
 void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
     state.avPos = {0};
