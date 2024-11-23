@@ -20,7 +20,11 @@ char godsCountLabelText[20] = "666";
 char countdownTimerLabelText[20] = "6666";
 
 // player counter char buffers
-char playerCountCharBuff[320] = "0                 0                  0                  0";
+char playerCountCharBuff[640] = "\
+0                                  \
+0                                   \
+0                                   \
+0";
 
 char mainMenuTitleCharBuffer[20] = "OLD GODS";
 char mainMenuSubTitleCharBuffer[40] = "Press Start to begin";
@@ -78,6 +82,11 @@ void UI_Menu_Start(AppData* _appData){
     whiteColor[2] = 255;
     whiteColor[3] = 255;
 
+    uint16_t screenWidth = RESOLUTION_640x240.width;
+    uint16_t screenHeight = RESOLUTION_640x240.height;
+    uint16_t padding = 32;
+    uint16_t margin = 32;
+
     AF_LoadFont(FONT3_ID, fontPath, whiteColor);
     AF_LoadFont(FONT4_ID, fontPath2, whiteColor); // title font
 	gameTitleEntity = AF_ECS_CreateEntity(&_appData->ecs);
@@ -92,15 +101,24 @@ void UI_Menu_Start(AppData* _appData){
     gameTitleEntity->text->fontID = FONT3_ID;
 
 	// Title Text position
-    int box_width = 262;
-    int box_height = 0;
-    int x0 = 10;
-	int y0 = 20;
+    int box_width = screenWidth;
+    int box_height = screenHeight;
 
-	Vec2 textScreenPos = {x0, y0};
+    float screenHalfWdith = screenWidth * 0.5f;
+    float screenHalfHeight = screenHeight * 0.5f;
+    float paddingMargin = padding + margin;
+
+    Vec2 titlePos = {screenHalfWdith - padding, paddingMargin};
+    Vec2 titleSize = {screenWidth, 0};
+    Vec2 subTitlePos = {titlePos.x - padding, titlePos.y + paddingMargin};
+    Vec2 subTitleSize = {screenWidth, 0};
 	Vec2 textBounds = {box_width, box_height};
-    gameTitleEntity->text->screenPos = textScreenPos;
-	gameTitleEntity->text->textBounds = textBounds;
+
+
+    Vec2 buildTitlePos = {screenWidth - paddingMargin*2, screenHeight - (padding)};
+    Vec2 buildTitleBounds = {paddingMargin, padding};
+    gameTitleEntity->text->screenPos = buildTitlePos;
+	gameTitleEntity->text->textBounds = buildTitleBounds;
 
     // ======God Eat Label Text position
     godEatCountLabelEntity = AF_ECS_CreateEntity(&_appData->ecs);
@@ -111,13 +129,8 @@ void UI_Menu_Start(AppData* _appData){
 
 	// Text Color
     godEatCountLabelEntity->text->fontID = FONT3_ID;
-    int godLabelBox_width = 262;
-    int godLabelBox_height = 0;
-    int godLabelBoxPosX = 250;
-	int godLabelBoxPosY = 20;
-
-	Vec2 godLabelTextScreenPos = {godLabelBoxPosX, godLabelBoxPosY};
-	Vec2 godLabelTextBounds = {godLabelBox_width, godLabelBox_height};
+	Vec2 godLabelTextScreenPos = {screenHalfWdith, padding};
+	Vec2 godLabelTextBounds = {screenWidth, 0};
     godEatCountLabelEntity->text->screenPos = godLabelTextScreenPos;
 	godEatCountLabelEntity->text->textBounds = godLabelTextBounds;
 
@@ -133,25 +146,24 @@ void UI_Menu_Start(AppData* _appData){
 	//countdownTimerLabelEntity->text->textColor = whiteColor;
     countdownTimerLabelEntity->text->fontID = FONT3_ID;
 
-    int countdownTimerBox_width = 262;
+    int countdownTimerBox_width = screenWidth - padding;
     int countdownTimerBox_height = 0;//150;
-    int countdownTimerBoxPosX = 150;//(320-box_width);///2;
-	int countdownTimerBoxPosY = 20;//(240-box_height);///2; 
+    int countdownTimerBoxPosX = screenWidth - paddingMargin;//(320-box_width);///2;
 
-	Vec2 countdownTimerLabelTextScreenPos = {countdownTimerBoxPosX, countdownTimerBoxPosY};
+	Vec2 countdownTimerLabelTextScreenPos = {countdownTimerBoxPosX, padding};
 	Vec2 countdownTimerLabelTextBounds = {countdownTimerBox_width, countdownTimerBox_height};
     countdownTimerLabelEntity->text->screenPos = countdownTimerLabelTextScreenPos;
 	countdownTimerLabelEntity->text->textBounds = countdownTimerLabelTextBounds;
  // Create Player 1 card
-    Vec2 playe1CountLabelPos = {20, 180};
-    Vec2 playe1CountLabelSize = {320, 50};
+    Vec2 playe1CountLabelPos = {padding, screenHeight - paddingMargin};
+    Vec2 playe1CountLabelSize = {screenWidth, paddingMargin};
     playersCountUIEntity = Entity_Factory_CreateUILabel(&_appData->ecs, playerCountCharBuff, FONT3_ID, fontPath2, whiteColor, playe1CountLabelPos, playe1CountLabelSize);
 
     // game over
-    Vec2 gameOverTitlePos = {120, 100};
-    Vec2 gameOverTitleSize = {320, 50};
-    Vec2 gameOverSubTitlePos = {20, 140};
-    Vec2 gameOverSubTitleSize = {320, 50};
+    Vec2 gameOverTitlePos = titlePos;
+    Vec2 gameOverTitleSize = titleSize;
+    Vec2 gameOverSubTitlePos = subTitlePos;
+    Vec2 gameOverSubTitleSize = subTitleSize;
     gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath2, whiteColor, gameOverTitlePos, gameOverTitleSize);
     gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitleLoseCharBuffer, FONT3_ID, fontPath2, whiteColor, gameOverSubTitlePos, gameOverSubTitleSize);
     // disable at the start
@@ -159,10 +171,10 @@ void UI_Menu_Start(AppData* _appData){
     gameOverSubTitleEntity->text->isShowing = FALSE;
 
     // Create Main Menu
-    Vec2 mainMenuTitlePos = {120, 100};
-    Vec2 mainMenuTitleSize = {320, 50};
-    Vec2 mainMenuSubTitlePos = {80, 140};
-    Vec2 mainMenuSubTitleSize = {320, 50};
+    Vec2 mainMenuTitlePos = titlePos;
+    Vec2 mainMenuTitleSize = titleSize;
+    Vec2 mainMenuSubTitlePos = subTitlePos;
+    Vec2 mainMenuSubTitleSize = subTitleSize;
     mainMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuTitleCharBuffer, FONT3_ID, fontPath2, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
 
     mainMenuSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuSubTitleCharBuffer, FONT3_ID, fontPath2, whiteColor, mainMenuSubTitlePos, mainMenuSubTitleSize);
@@ -218,18 +230,19 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
 
 // ===================== ===================== ===================== =====================
 
+/*
 
-void RefreshUIEntity(AF_Entity* _entity, const char* _text){
+void RefreshUIEntity(AF_Entity* _entity, const char* _text, uint16_t _screenWidth){
     // countdown timer
     // buffer as wide as the screen
     // TODO, check buffer length is matched with _text
-    char charBuff[320];
+    char charBuff[_screenWidth];
     sprintf(charBuff, "%s", _text);
     // TODO include component guards around this
     _entity->text->text = charBuff;
     // update the text
     _entity->text->isDirty = TRUE;
-}
+}*/
 
 
 
@@ -289,7 +302,7 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
     godEatCountLabelEntity->text->isDirty = TRUE;
     
     // TODO, figure out how to reference the player entities
-    sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", (int)gameplayData->playerEntities[0]->playerData->score, (int)gameplayData->playerEntities[1]->playerData->score, (int)gameplayData->playerEntities[2]->playerData->score, (int)gameplayData->playerEntities[3]->playerData->score);
+    sprintf(playerCountCharBuff, "%i                                                    %i                                                     %i                                                     %i", (int)gameplayData->playerEntities[0]->playerData->score, (int)gameplayData->playerEntities[1]->playerData->score, (int)gameplayData->playerEntities[2]->playerData->score, (int)gameplayData->playerEntities[3]->playerData->score);
     //sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", 123, 12, 123, 123);
     //debugf("playerScore %s \n", playerCountCharBuff);
     

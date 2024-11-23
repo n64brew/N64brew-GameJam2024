@@ -451,7 +451,7 @@ void Scene_SetupEntities(AppData* _appData){
     bucket3->collider->collision.callback = Scene_OnBucket3Trigger;
     // Bucket 4
     // World pos and scale for bucket
-	Vec3 bucket4Pos =  {mapBoundingVolume.x + offsetX, bucketY, mapBoundingVolume.z + offsetZ};
+	Vec3 bucket4Pos =  {mapBoundingVolume.x - offsetX, bucketY, mapBoundingVolume.z - offsetZ};
 	//Vec3 bucket4Scale = {1,1,1};
 	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket4->mesh->meshID = MODEL_BOX;
