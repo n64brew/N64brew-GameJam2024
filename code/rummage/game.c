@@ -108,6 +108,11 @@ typedef struct {
     T3DAnim anim_act;
     T3DAnim anim_attack;
     T3DAnim anim_hurt;
+    wav64_t sfx_rummage;
+    wav64_t sfx_open;
+    wav64_t sfx_attack;
+    wav64_t sfx_hurt;
+    int sfx_channel;
     float speed;
     bool had_key;
     bool has_key;
@@ -151,7 +156,6 @@ actor_t key;
 
 
 // Sound FX
-wav64_t sfx_rummage;
 wav64_t sfx_key;
 
 
@@ -428,7 +432,7 @@ bool can_rummage(int i, int j) {
 bool rummage(int i, int j) {
     if (can_rummage(i, j)) {
         debugf("Player #%d rummaging through furniture #%d!\n", i, j);
-        wav64_play(&sfx_rummage, 31);
+        wav64_play(&players[i].sfx_rummage, players[i].sfx_channel);
         players[i].furnitures[players[i].target_idx] = true;
         start_player_action(i);
         if (furnitures[j].has_key) {
@@ -472,7 +476,7 @@ bool can_open(int i, int j) {
 bool open(int i, int j) {
     if (players[i].has_key && can_open(i, j)) {
         debugf("Player #%d trying open vault #%d!\n", i, j);
-        wav64_play(&sfx_rummage, 31);   // TODO Vault sfx
+        wav64_play(&players[i].sfx_open, players[i].sfx_channel);
         players[i].vaults[players[i].target_idx] = true;
         start_player_action(i);
         if (vaults[j].is_target) {
@@ -655,6 +659,12 @@ void game_init()
             t3d_model_draw_skinned(players[i].model, &players[i].skel);
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
+        // FIXME use correct sfx files
+        wav64_open(&players[i].sfx_rummage, "rom:/rummage/rummage.wav64");
+        wav64_open(&players[i].sfx_open, "rom:/rummage/rummage.wav64");
+        wav64_open(&players[i].sfx_attack, "rom:/core/Countdown.wav64");
+        wav64_open(&players[i].sfx_hurt, "rom:/core/Countdown.wav64");
+        players[i].sfx_channel = 20 + i;
         players[i].plynum = i;
         players[i].is_human = (i < playercount);
         players[i].speed = 0.0f;
@@ -705,7 +715,6 @@ void game_init()
     key.hidden = true;
 
     // Sound FX
-    wav64_open(&sfx_rummage, "rom:/rummage/rummage.wav64");
     wav64_open(&sfx_key, "rom:/rummage/key.wav64");
 
     // Init pathfinder
@@ -748,8 +757,8 @@ void game_logic(float deltatime)
                     for (int j=0; j<MAXPLAYERS; j++) {
                         if (i != j && players[j].hurt_playing_time == 0) {
                             if (c2CircletoAABB(players[i].attack_range, players[j].bbox)) {
-                                // TODO Hurt SFX ?
                                 debugf("player #%d hurting player #%d\n", i, j);
+                                wav64_play(&players[j].sfx_hurt, players[j].sfx_channel);
                                 start_player_hurt(j);
                                 // Steal key, if any
                                 if (players[j].has_key && !players[j].has_won) {
@@ -913,7 +922,7 @@ void game_logic(float deltatime)
                     }
                     case ATTACKING:
                     {
-                        wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                        wav64_play(&players[i].sfx_attack, players[i].sfx_channel);
                         start_player_attack(i);
                         reset_idle_delay(i);
                         players[i].state = IDLE;
@@ -1047,7 +1056,7 @@ void game_render(float deltatime)
                         }
                     }
                 } else if (btn.b) {
-                    wav64_play(&sfx_rummage, 31);   // TODO Attack sfx
+                    wav64_play(&players[i].sfx_attack, players[i].sfx_channel);
                     start_player_attack(i);
                 }
             }
@@ -1093,7 +1102,7 @@ void game_render(float deltatime)
         // Display key
         if (players[i].has_key && !key.hidden) {
             // Rotate key
-            key.rotation.v[1] += deltatime / 4.0f;
+            key.rotation.v[1] += deltatime * 4.0f;
             t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, players[i].position.v);
             rspq_block_run(key.dpl);
         }
@@ -1222,7 +1231,6 @@ void game_cleanup()
 {
     free(map);
 
-    wav64_close(&sfx_rummage);
     wav64_close(&sfx_key);
     
     rspq_block_free(room.dpl);
@@ -1247,6 +1255,10 @@ void game_cleanup()
         t3d_anim_destroy(&players[i].anim_attack);
         t3d_anim_destroy(&players[i].anim_hurt);
         free_uncached(players[i].mat_fp);
+        wav64_close(&players[i].sfx_rummage);
+        wav64_close(&players[i].sfx_open);
+        wav64_close(&players[i].sfx_attack);
+        wav64_close(&players[i].sfx_hurt);
     }
     t3d_model_free(players[0].model);
     rspq_block_free(key.dpl);
@@ -1280,6 +1292,10 @@ void start_game() {
 }
 
 void stop_game() {
+    // TODO Update player's animation
+    for (int i=0; i<MAXPLAYERS; i++) {
+        players[i].speed = 0;
+    }
     playing = false;
 }
 
