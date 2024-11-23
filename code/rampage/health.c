@@ -1,6 +1,8 @@
 #include "./health.h"
 
 #include "./util/hash_map.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 static struct hash_map g_health_callbacks;
 
@@ -32,9 +34,31 @@ void health_apply_damage(int entity_id, int amount, struct Vector3* velocity, in
     }
 }
 
-void health_contact_damage(struct contact* contact, int amount, struct Vector3* velocity, int source_id) {
+bool health_contact_check_prev_contacts(int target_id, uint8_t* already_hit, int max_hit_count) {
+    if (!already_hit) {
+        return true;
+    }
+
+    for (int i = 0; i < max_hit_count; i += 1) {
+        if (already_hit[i] == target_id) {
+            return false;
+        }
+
+        if (already_hit[i] == 0) {
+            already_hit[i] = target_id;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void health_contact_damage(struct contact* contact, int amount, struct Vector3* velocity, int source_id, uint8_t* already_hit, int max_hit_count) {
     while (contact) {
-        health_apply_damage(contact->other_object, amount, velocity, source_id);
+        if (health_contact_check_prev_contacts(contact->other_object, already_hit, max_hit_count)) {
+            health_apply_damage(contact->other_object, amount, velocity, source_id);
+        }
+
         contact = contact->next;
     }
 }

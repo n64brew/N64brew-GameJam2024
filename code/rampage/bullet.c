@@ -77,7 +77,9 @@ void bullet_update(struct Bullet* bullet, float delta_time) {
             bullet->dynamic_object.active_contacts, 
             1, 
             &bullet->dynamic_object.velocity, 
-            bullet->dynamic_object.entity_id
+            bullet->dynamic_object.entity_id,
+            NULL,
+            0
         );
         bullet_deactivate(bullet);
         return;

@@ -32,6 +32,9 @@
 #define PLAYER_STUN_IMPULSE     200
 #define PLAYER_ATTACK_VELOCITY  100
 
+#define MIN_ATTACK_TIME         0.16f
+#define MAX_ATTACK_TIME         0.708f
+
 struct dynamic_object_type player_collider = {
     .minkowsi_sum = capsule_minkowski_sum,
     .bounding_box = capsule_bounding_box,
@@ -164,16 +167,6 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
     return result;
 }
 
-void rampage_player_update_damager(struct RampagePlayer* player) {
-    struct Vector3 offset = {
-        player->dynamic_object.rotation.y * DAMAGE_DISTANCE,
-        0.0f,
-        player->dynamic_object.rotation.x * DAMAGE_DISTANCE
-    };
-
-    vector3Add(&player->dynamic_object.position, &offset, &player->damage_trigger.position);
-}
-
 void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampagePlayer* player = (struct RampagePlayer*)data;
 
@@ -225,11 +218,10 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
         &player->damage_trigger,
         &player->damage_shape,
         COLLISION_LAYER_TANGIBLE,
-        start_position,
+        &gZeroVec,
         &gRight2
     );
 
-    player->damage_trigger.center.y = SCALE_FIXED_POINT(1.0f);
     player->damage_trigger.is_trigger = true;
     player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
     player->player_index = player_index;
@@ -358,7 +350,7 @@ void rampage_player_handle_ground_movement(struct RampagePlayer* player, struct 
     );
 
     if (player->is_slamming) {
-        health_contact_damage(player->dynamic_object.active_contacts, 3, &gZeroVec, player->dynamic_object.entity_id);
+        health_contact_damage(player->dynamic_object.active_contacts, 3, &gZeroVec, player->dynamic_object.entity_id, NULL, 0);
         player->is_slamming = false;
     }
 
@@ -457,14 +449,16 @@ void rampage_player_start_attack(struct RampagePlayer* player) {
 
     points[2] = points[0];
     points[3] = points[1];
+
+    memset(player->already_hit_ids, 0, MAX_HIT_COUNT);
+
+    player->attack_timer = 0.0f;
 }
 
 void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     struct RampageInput input = rampage_player_get_input(player, delta_time);
 
     bool is_grounded = rampage_player_is_grounded(player);
-    
-    rampage_player_update_damager(player);
 
     if (player->did_win) {
         t3d_anim_update(&player->animWin, delta_time);
@@ -498,19 +492,28 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
     if (input.do_attack && !player->last_attack_state && !player->is_attacking) {
         rampage_player_start_attack(player);
     } else if (player->is_attacking) {
-        struct Vector3 attack_velocity = (struct Vector3){
-            player->dynamic_object.rotation.y * PLAYER_ATTACK_VELOCITY, 
-            0.0f, 
-            player->dynamic_object.rotation.x * PLAYER_ATTACK_VELOCITY
-        };
-        health_contact_damage(player->damage_trigger.active_contacts, 1, &attack_velocity, player->dynamic_object.entity_id);
+        if (player->attack_timer >= MIN_ATTACK_TIME && player->attack_timer <= MAX_ATTACK_TIME) {
+            struct Vector3 attack_velocity = (struct Vector3){
+                player->dynamic_object.rotation.y * PLAYER_ATTACK_VELOCITY, 
+                0.0f, 
+                player->dynamic_object.rotation.x * PLAYER_ATTACK_VELOCITY
+            };
+            health_contact_damage(player->damage_trigger.active_contacts, 1, &attack_velocity, player->dynamic_object.entity_id, player->already_hit_ids, MAX_HIT_COUNT);
+        }
+
+        player->attack_timer += delta_time;
     }
 
     if (player->is_attacking) {
         T3DVec3 a;
         T3DVec3 b;
         player_calc_tail_positions(player, &a, &b);
-        swing_effect_update(&player->swing_effect, &a, &b);
+
+        if (player->attack_timer >= MIN_ATTACK_TIME && player->attack_timer <= MAX_ATTACK_TIME) {
+            swing_effect_update(&player->swing_effect, &a, &b);
+        } else {
+            swing_effect_update(&player->swing_effect, NULL, NULL);
+        }
 
         int offset = player->next_shape_offset ? 0 : 2;
 

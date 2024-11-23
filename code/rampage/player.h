@@ -11,6 +11,8 @@
 #include "./health.h"
 #include "./swing_effect.h"
 
+#define MAX_HIT_COUNT   8
+
 enum PlayerType {
     PLAYER_TYPE_0,
     PLAYER_TYPE_1,
@@ -55,6 +57,9 @@ struct RampagePlayer {
 
     struct Vector3 current_target;
     struct swing_effect swing_effect;
+
+    uint8_t already_hit_ids[MAX_HIT_COUNT];
+    float attack_timer;
 };
 
 void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, struct Vector2* start_rotation, int player_index, enum PlayerType type);
