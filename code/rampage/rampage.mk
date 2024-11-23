@@ -18,6 +18,11 @@ ASSETS_LIST += \
 	filesystem/rampage/level.t3dm \
 	filesystem/rampage/bullet.t3dm \
 	filesystem/rampage/swing_effect.t3dm \
+	filesystem/rampage/blockade.t3dm \
+	filesystem/rampage/directionsign.t3dm \
+	filesystem/rampage/streetlight.t3dm \
+	filesystem/rampage/trafficlight.t3dm \
+	filesystem/rampage/van.t3dm \
 	filesystem/rampage/tank1_32x4.ci4.sprite \
 	filesystem/rampage/tank1_64x4.ci4.sprite \
 	filesystem/rampage/tank2_32x4.ci4.sprite \
@@ -36,6 +41,7 @@ ASSETS_LIST += \
 	filesystem/rampage/road_straight.sprite \
 	filesystem/rampage/road_tjunction.sprite \
 	filesystem/rampage/road_warning1.sprite \
+	filesystem/rampage/props.sprite \
 	filesystem/rampage/QuirkyRobot.font64 \
 	filesystem/rampage/stompin.wav64 \
 	filesystem/rampage/Collapse.wav64 \
@@ -43,10 +49,16 @@ ASSETS_LIST += \
 	filesystem/rampage/hit.wav64 \
 	filesystem/rampage/Roar1.wav64 \
 	filesystem/rampage/RoarShort.wav64 \
-	filesystem/rampage/startjingle.wav64
+	filesystem/rampage/startjingle.wav64 \
+	filesystem/rampage/ground.layout
 
 assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 	@mkdir -p $(@D)
 	$(BLENDER_4_0) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
+
+filesystem/rampage/ground.layout: assets/rampage/ground.blend tools/export_linked_objects.py
+	@mkdir -p $(@D)
+	$(BLENDER_4_0) $< --background --python tools/export_linked_objects.py -- $@
+
 
 filesystem/rampage/QuirkyRobot.font64: MKFONT_FLAGS += --size 32
