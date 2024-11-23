@@ -135,20 +135,20 @@ void GameplayController::handleActions(Player::GameplayData &player, uint32_t id
         bool fired = false;
         // Fire button
         if (pressed.c_up || pressed.d_up) {
-            t3d_vec3_add(position, position, (T3DVec3){0, 0, -BulletOffset});
-            bulletController.fireBullet(position, (T3DVec3){0, 0, -BulletVelocity}, (PlyNum)id, player.team);
+            t3d_vec3_add(position, position, T3DVec3 {0, 0, -BulletOffset});
+            bulletController.fireBullet(position, T3DVec3{0, 0, -BulletVelocity}, (PlyNum)id, player.team);
             fired = true;
         } else if (pressed.c_down || pressed.d_down) {
-            t3d_vec3_add(position, position, (T3DVec3){0, 0, BulletOffset});
-            bulletController.fireBullet(position, (T3DVec3){0, 0, BulletVelocity}, (PlyNum)id, player.team);
+            t3d_vec3_add(position, position, T3DVec3 {0, 0, BulletOffset});
+            bulletController.fireBullet(position, T3DVec3 {0, 0, BulletVelocity}, (PlyNum)id, player.team);
             fired = true;
         } else if (pressed.c_left || pressed.d_left) {
-            t3d_vec3_add(position, position, (T3DVec3){-BulletOffset, 0, 0});
-            bulletController.fireBullet(position, (T3DVec3){-BulletVelocity, 0, 0}, (PlyNum)id, player.team);
+            t3d_vec3_add(position, position, T3DVec3 {-BulletOffset, 0, 0});
+            bulletController.fireBullet(position, T3DVec3 {-BulletVelocity, 0, 0}, (PlyNum)id, player.team);
             fired = true;
         } else if (pressed.c_right || pressed.d_right) {
-            t3d_vec3_add(position, position, (T3DVec3){BulletOffset, 0, 0});
-            bulletController.fireBullet(position, (T3DVec3){BulletVelocity, 0, 0}, (PlyNum)id, player.team);
+            t3d_vec3_add(position, position, T3DVec3 {BulletOffset, 0, 0});
+            bulletController.fireBullet(position, T3DVec3 {BulletVelocity, 0, 0}, (PlyNum)id, player.team);
             fired = true;
         }
 
