@@ -413,13 +413,13 @@ void minigame_init(){
     mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0, 0, -10});
     
-    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
-    camTarget = (T3DVec3){{0, 0, 40}};
+    camPos = (T3DVec3){{0, 150.0f, 5.0f}};
+    camTarget = (T3DVec3){{0, 0, 0}};
 
-    lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
+    lightDirVec = (T3DVec3){{0, 0, 5.0f}};
     t3d_vec3_norm(&lightDirVec);
 
-    modelMap = t3d_model_load("rom:/snake3d/map.t3dm");
+    modelMap = t3d_model_load("rom:/swordstrike/background_4.t3dm");
 
     rspq_block_begin();
     t3d_matrix_push(mapMatFP);

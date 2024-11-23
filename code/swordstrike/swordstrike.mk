@@ -32,4 +32,5 @@ ASSETS_LIST += \
 	filesystem/swordstrike/fighter_right_attack_12.sprite \
 	filesystem/swordstrike/fighter_right_attack_13.sprite \
 	filesystem/swordstrike/fighter_right_attack_14.sprite \
-	filesystem/swordstrike/fighter_right_attack_15.sprite
+	filesystem/swordstrike/fighter_right_attack_15.sprite \
+	filesystem/swordstrike/background_4.t3dm
