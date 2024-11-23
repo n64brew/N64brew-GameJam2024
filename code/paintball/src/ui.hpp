@@ -2,9 +2,11 @@
 #define __UI_HPP
 
 #include <libdragon.h>
+
 #include "./wrappers.hpp"
 #include "./constants.hpp"
 #include "./gamestate.hpp"
+#include "./list.hpp"
 
 struct HitMark {
     T3DVec3 pos;
@@ -24,6 +26,8 @@ class UIRenderer
         std::array<HitMark, PlayerCount * 4> activeHits;
 
         U::Sprite hitSprite;
+
+        List<HitMark, PlayerCount * 4> test;
 
         void renderHitMarks(T3DViewport &viewport, float deltaTime);
 

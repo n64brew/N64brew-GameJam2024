@@ -94,24 +94,15 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
 }
 
 void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
-    for (std::size_t i = 0; i < activeHits.size(); i++) {
-        auto& hit = activeHits[i];
-
-        // Fill with new hit
-        if (hit.lifetime <= 0.) {
-            if (newHitCount > 0) {
-                int idx = --newHitCount;
-
-                hit = newHits[idx];
-            } else {
-                continue;
-            }
+    for (auto hit = test.begin(); hit < test.end(); ++hit) {
+        hit->lifetime -= deltaTime;
+        if (hit->lifetime <= 0.) {
+            test.remove(hit);
+            continue;
         }
 
-        hit.lifetime -= deltaTime;
-
         T3DVec3 screenPos;
-        t3d_viewport_calc_viewspace_pos(viewport, screenPos, hit.pos);
+        t3d_viewport_calc_viewspace_pos(viewport, screenPos, hit->pos);
 
         rdpq_sync_pipe();
         rdpq_sync_tile();
@@ -128,7 +119,7 @@ void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
         rdpq_mode_alphacompare(1);
         rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
 
-        rdpq_set_prim_color(colors[hit.team]);
+        rdpq_set_prim_color(colors[hit->team]);
 
         rdpq_blitparms_t params {
             .width = 32,
@@ -141,9 +132,7 @@ void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
 }
 
 void UIRenderer::registerHit(const HitMark &hit) {
-    // TODO: we have a lot of these, let's make this a common abstraction
-    if (newHitCount >= newHits.size()) return;
-    auto &newHit = newHits[newHitCount++];
-    newHit = hit;
+    HitMark newHit = hit;
     newHit.lifetime = 0.1f;
+    test.add(newHit);
 }
