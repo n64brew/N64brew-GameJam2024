@@ -17,7 +17,6 @@ ASSETS_LIST += \
 	filesystem/rampage/Jira_01.t3dm \
 	filesystem/rampage/level.t3dm \
 	filesystem/rampage/bullet.t3dm \
-	filesystem/rampage/pointer.t3dm \
 	filesystem/rampage/swing_effect.t3dm \
 	filesystem/rampage/tank1_32x4.ci4.sprite \
 	filesystem/rampage/tank1_64x4.ci4.sprite \
