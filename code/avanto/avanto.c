@@ -66,10 +66,18 @@ void minigame_init() {
   };
   for (size_t i = 0; i < 4; i++) {
     players[i].rotation = 0;
-    skeleton_init(&players[i].s, player_model, 0);
-    //players[i].s.anims[0] = t3d_anim_create(player_model, "Snake_Idle");
-    players[i].pos = (T3DVec3) {{200, 110, 110}};
-    players[i].scale = 1.f/.5f;
+    skeleton_init(&players[i].s, player_model, 4);
+    players[i].s.anims[WALK] = t3d_anim_create(player_model, "walking");
+    players[i].s.anims[CLIMB] = t3d_anim_create(player_model, "climbing");
+    t3d_anim_set_looping(&players[i].s.anims[CLIMB], false);
+    players[i].s.anims[SIT] = t3d_anim_create(player_model, "sitting");
+    t3d_anim_set_looping(&players[i].s.anims[SIT], false);
+    players[i].s.anims[BEND] = t3d_anim_create(player_model, "bending");
+    t3d_anim_set_looping(&players[i].s.anims[BEND], false);
+    players[i].pos = (T3DVec3) {{0, 0, 0}};
+    players[i].scale = 2.5f;
+    players[i].current_anim = -1;
+    players[i].visible = false;
     player_draw_conf.userData = &player_colors[i];
     entity_init(&players[i].e,
         player_model,
@@ -78,14 +86,12 @@ void minigame_init() {
         &players[i].pos,
         &players[i].s.skeleton,
         player_draw_conf);
-    //t3d_anim_attach(&players[i].s.anims[0], &players[i].s.skeleton);
   }
 
   debug_font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
   rdpq_text_register_font(FONT_DEBUG, debug_font);
 
   xm64player_open(&music, "rom:/avanto/sj-polkka.xm64");
-  xm64player_play(&music, 0);
 
   wav64_open(&sfx_start, "rom:/core/Start.wav64");
   wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");

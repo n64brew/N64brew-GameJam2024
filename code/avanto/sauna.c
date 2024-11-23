@@ -18,6 +18,7 @@ extern struct character players[];
 extern surface_t *z_buffer;
 extern T3DViewport viewport;
 extern struct camera cam;
+extern xm64player_t music;
 
 static T3DModel *ukko_model;
 static struct character ukko;
@@ -26,6 +27,7 @@ static bool loyly_sound_queued;
 static bool loyly_queued;
 static float loyly_strength;
 static wav64_t sfx_loyly;
+static int sauna_stage;
 
 static void sauna_do_light() {
   uint8_t light_color[4] = {255, 255, 255, 255};
@@ -64,6 +66,11 @@ enum sauna_stages {
   SAUNA_COUNTDOWN,
   SAUNA_GAME,
   SAUNA_WALK_OUT,
+  SAUNA_DONE,
+};
+
+enum ukko_anims {
+  THROW,
 };
 
 void sauna_init() {
@@ -82,6 +89,8 @@ void sauna_init() {
       (T3DModelDrawConf) {NULL, NULL, NULL, NULL, NULL});
   t3d_anim_attach(&ukko.s.anims[THROW], &ukko.s.skeleton);
   t3d_anim_update(&ukko.s.anims[THROW], 0);
+  ukko.current_anim = THROW;
+  ukko.visible = true;
   t3d_skeleton_update(&ukko.s.skeleton);
   t3d_anim_set_looping(&ukko.s.anims[THROW], false);
   t3d_anim_set_playing(&ukko.s.anims[THROW], false);
@@ -100,29 +109,131 @@ void sauna_init() {
 
   wav64_open(&sfx_loyly, "rom:/avanto/loyly.wav64");
 
+  sauna_stage = SAUNA_INTRO;
+}
+
+static void sauna_intro_fixed_loop(float delta_time) {
+  static float delay = 1.f;
+  static bool thrown = false;
+
+  if (delay > 0) {
+      delay -= delta_time;
+      if (delay > 0) {
+        return;
+      }
+  }
+
+  if (!thrown) {
+    thrown = true;
+    t3d_anim_set_playing(&ukko.s.anims[THROW], true);
+    loyly_sound_queued = true;
+    loyly_queued = true;
+    delay = 5.f;
+    return;
+  }
+
+  xm64player_play(&music, 0);
+  sauna_stage++;
+}
+
+struct script_action walk_in_actions[][12] = {
+  {
+    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .b = true},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .i = WALK},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(-90.f), .f2 = -T3D_PI},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{300, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
+    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_END},
+  },
+  {
+    {.type = ACTION_WAIT, .f = 2.f*1.f},
+    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .b = true},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .i = WALK},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(-90.f), .f2 = -T3D_PI},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{210, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
+    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_END},
+  },
+  {
+    {.type = ACTION_WAIT, .f = 2.f*3.f},
+    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .b = true},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .i = WALK},
+    //{.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(-90.f), .f2 = -T3D_PI},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{120, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
+    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_END},
+  },
+  {
+    {.type = ACTION_WAIT, .f = 2.f*2.f},
+    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .b = true},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .i = WALK},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(90.f), .f2 = T3D_PI},
+    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{30, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = T3D_PI},
+    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_END},
+  },
+};
+static void sauna_walk_in_fixed_loop(float delta_time) {
+  static struct script_state script_states[] = {
+    {.character = &players[0], .action = walk_in_actions[0], .time = 0.f},
+    {.character = &players[1], .action = walk_in_actions[1], .time = 0.f},
+    {.character = &players[2], .action = walk_in_actions[2], .time = 0.f},
+    {.character = &players[3], .action = walk_in_actions[3], .time = 0.f},
+  };
+
+  bool done = true;
   for (size_t i = 0; i < 4; i++) {
-    players[i].pos = (T3DVec3) {{50*(i+1), 110, 110}};
+    if (!script_update(&script_states[i], delta_time)) {
+      done = false;
+    }
+  }
+
+  if (done) {
+    sauna_stage++;
   }
 }
 
 void sauna_fixed_loop(float delta_time) {
+  switch (sauna_stage) {
+    case SAUNA_INTRO:
+      sauna_intro_fixed_loop(delta_time);
+      break;
+
+    case SAUNA_WALK_IN:
+      sauna_walk_in_fixed_loop(delta_time);
+      break;
+  }
+
   for (size_t i = 0; i < 4; i++) {
-    players[i].pos.v[2] += 1;
-    if (players[i].pos.v[2] >= 400) {
-      players[i].pos.v[2] = 0;
+    if (players[i].current_anim != CLIMB) {
+      players[i].pos.v[1] = get_ground_height(players[i].pos.v[2],
+          &sauna_scene.ground);
     }
-    players[i].pos.v[1] = get_ground_height(players[i].pos.v[2],
-        &sauna_scene.ground);
   }
 }
 
 void sauna_loop(float delta_time) {
   joypad_buttons_t pressed = joypad_get_buttons_pressed(0);
-
-  if (pressed.start) {
-    core_set_winner(0);
-    minigame_end();
-  }
 
   if (pressed.a) {
     t3d_anim_set_playing(&ukko.s.anims[THROW], true);
@@ -166,19 +277,25 @@ void sauna_loop(float delta_time) {
 
   // Players
   for (size_t i = 0; i < 4; i++) {
-    //t3d_anim_update(&players[i].s.anims[0], delta_time);
-    t3d_skeleton_update(&players[i].s.skeleton);
-    t3d_mat4fp_from_srt_euler(players[i].e.transform,
-      (float[3]) {players[i].scale, players[i].scale, players[i].scale},
-      (float[3]) {0, players[i].rotation, 0},
-      players[i].pos.v);
-    rspq_block_run(players[i].e.display_block);
+    if (players[i].current_anim != -1) {
+      t3d_anim_update(&players[i].s.anims[players[i].current_anim], delta_time);
+      t3d_skeleton_update(&players[i].s.skeleton);
+    }
+    if (players[i].visible) {
+      t3d_mat4fp_from_srt_euler(players[i].e.transform,
+        (float[3]) {players[i].scale, players[i].scale, players[i].scale},
+        (float[3]) {0, players[i].rotation, 0},
+        players[i].pos.v);
+      rspq_block_run(players[i].e.display_block);
+    }
   }
 
   // Ukko
-  t3d_anim_update(&ukko.s.anims[THROW], delta_time);
+  t3d_anim_update(&ukko.s.anims[ukko.current_anim], delta_time);
   t3d_skeleton_update(&ukko.s.skeleton);
-  rspq_block_run(ukko.e.display_block);
+  if (ukko.visible) {
+    rspq_block_run(ukko.e.display_block);
+  }
 
   if (loyly_strength > 0) {
     rdpq_mode_push();

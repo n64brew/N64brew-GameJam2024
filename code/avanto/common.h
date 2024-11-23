@@ -2,6 +2,9 @@
 // From main.c
 #define NUM_SFX_CHANNELS 1
 #define FIRST_SFX_CHANNEL (31-NUM_SFX_CHANNELS)
+#define WALK_SPEED 100.f
+#define CLIMB_TIME .5f
+#define EPS 1e-6
 
 struct entity {
   const T3DModel *model;
@@ -27,6 +30,8 @@ struct character {
   float rotation;
   float scale;
   struct skeleton s;
+  size_t current_anim;
+  bool visible;
 };
 
 struct ground_height_change {
@@ -50,12 +55,50 @@ struct scene {
   struct ground ground;
 };
 
-enum ukko_anims {
-  THROW,
+struct script_action {
+  int type;
+  union {
+    struct {
+      float f;
+      float f2;
+      float f3;
+    };
+    T3DVec3 v;
+    struct {
+      int i;
+      int i2;
+      int i3;
+    };
+    bool b;
+  };
+};
+
+struct script_state {
+  struct character *character;
+  const struct script_action *action;
+  float time;
+};
+
+enum script_actions {
+  ACTION_WAIT,
+  ACTION_WALK_TO,
+  ACTION_WARP_TO,
+  ACTION_CLIMB_TO,
+  ACTION_ROTATE_TO,
+  ACTION_START_ANIM,
+  ACTION_SET_VISIBILITY,
+  ACTION_END,
 };
 
 enum fonts {
   FONT_DEBUG = 1,
+};
+
+enum player_anims {
+  WALK,
+  CLIMB,
+  SIT,
+  BEND,
 };
 
 float get_ground_height(float z, struct ground *ground);
@@ -73,3 +116,4 @@ void entity_init(struct entity *e,
     T3DSkeleton *skeleton,
     T3DModelDrawConf draw_conf);
 void entity_free(struct entity *e);
+bool script_update(struct script_state *state, float delta_time);
