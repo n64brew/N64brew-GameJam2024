@@ -1,4 +1,7 @@
 #define MAX_GROUND_CHANGES 4
+// From main.c
+#define NUM_SFX_CHANNELS 1
+#define FIRST_SFX_CHANNEL (31-NUM_SFX_CHANNELS)
 
 struct entity {
   const T3DModel *model;
@@ -54,3 +57,19 @@ enum ukko_anims {
 enum fonts {
   FONT_DEBUG = 1,
 };
+
+float get_ground_height(float z, struct ground *ground);
+int get_next_sfx_channel();
+void init_sfx();
+void skeleton_init(struct skeleton *s,
+    const T3DModel *model,
+    size_t num_anims);
+void skeleton_free(struct skeleton *s);
+void entity_init(struct entity *e,
+    const T3DModel *model,
+    const T3DVec3 *scale,
+    const T3DVec3 *rotation,
+    const T3DVec3 *pos,
+    T3DSkeleton *skeleton,
+    T3DModelDrawConf draw_conf);
+void entity_free(struct entity *e);
