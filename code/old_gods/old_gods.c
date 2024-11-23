@@ -7,9 +7,9 @@
 #include "AF_Time.h"
 #include "GameplayData.h"
 
-#define WINDOW_WIDTH 320
+#define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 240
-
+resolution_t resolution;
 AppData g_appData;
 
 const MinigameDef minigame_def = {
@@ -27,9 +27,10 @@ const MinigameDef minigame_def = {
     The minigame initialization function
 ==============================*/
 void minigame_init()
-{
+{   
+    resolution = RESOLUTION_640x240;
     //Initialise the app data structure to default values or zero before use
-    AppData_Init(&g_appData, WINDOW_WIDTH, WINDOW_HEIGHT);
+    AppData_Init(&g_appData, resolution.width, resolution.height);
     g_appData.gameTime.lastTime = timer_ticks();
 
     // init the other app things

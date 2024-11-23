@@ -21,7 +21,9 @@ Tiny3D rendering functions
 #include "Assets.h"
 
 #define DEBUG_RDP 0
-
+#define DEBUG_CAM_ON 1
+#define DEBUG_CAM_OFF 0
+uint8_t debugCam = DEBUG_CAM_OFF;
 
 
 // T3D variables and defines
@@ -38,8 +40,9 @@ static uint8_t colorAmbient[4] = {80, 50, 50, 0xFF};
 static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static T3DVec3 lightDirVec = {{1.0f, 1.0f, 0.0f}};
 
-static T3DVec3 camPos = {{0, 45.0f, 10.0f}};
-static T3DVec3 camTarget = {{0, 0,-10}};
+static T3DVec3 camPos = {{0, 14.0f, 10.0f}};
+static T3DVec3 camTarget = {{0, 0,1.0}};
+static float fov = 45.0f; // Initial field of view
 
 // TODO: i dont like this
 static T3DModel *models[MODEL_COUNT];
@@ -78,6 +81,18 @@ float lastTime;
 
 rspq_syncpoint_t syncPoint;
 rspq_block_t* bufferList;
+
+typedef struct RendererDebugData {
+    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
+    uint16_t entitiesCount;
+    uint16_t totalMeshes;
+    uint16_t totalTris;
+    float totalRenderTime;
+    float totalEntityRenderTime;
+} RendererDebugData;
+
+RendererDebugData rendererDebugData;
+
 float newTime;
 float deltaTime;
 
@@ -109,7 +124,7 @@ float deltaTime;
 // forward declare
 void Renderer_RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt);
 void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt);
-
+void Renderer_DebugCam();
 /*=================
 AF_LoadTexture
 
@@ -209,7 +224,7 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
 }
 
 // Init Rendering
-void AF_Renderer_Init(AF_ECS* _ecs){
+void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
     assert(_ecs != NULL && "AF_Renderer_T3D: Renderer_Init has null ecs referenced passed in \n");
     debugf("AF_Renderer_T3D: AF_Renderer_Init: To be implemented\n");
    	
@@ -253,7 +268,8 @@ void AF_Renderer_Init(AF_ECS* _ecs){
     // create a viewport, this defines the section to draw to (by default the whole screen)
     // and contains the projection & view (camera) matrices
     viewport = t3d_viewport_create();
-
+    viewport.size[0] = _screenSize.x;
+    viewport.size[1] = _screenSize.y;
 
     // Setup lights
     t3d_light_set_ambient(colorAmbient);
@@ -342,7 +358,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 	assert(_ecs != NULL && "AF_Renderer_T3D: AF_Renderer_Update has null ecs referenced passed in \n");
   
     float newTime = get_time_s();
-    float totalRenderTime = get_time_ms();
+    rendererDebugData.totalRenderTime = get_time_ms();
 
     // ======= Animation stuff =======
     // ======== Update ======== //
@@ -352,7 +368,8 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     deltaTime = newTime - lastTime;
     lastTime = newTime;
 
-
+    
+    /*
     // position the camera behind the player
     T3DVec3 vec3Zero = {{0.0f,0.0f,0.0f}};
     camTarget = vec3Zero;//playerPos;
@@ -363,12 +380,31 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     camPos.v[2] = camTarget.v[2] + 8;//65;
 
     //
+    joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_2);
+	joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_2);
+
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(60.0f), 1.0f, 1000.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+    */
+    // Initialize the camera position, target, and FOV
+    //T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
+    //T3DVec3 camPos = {{0.0f, 8.0f, 10.5f}};
+    
+
+    
+    //camTarget.v[2] += zDist;//40;
+    //camTarget.v[0] = playerPos.v[0];
+    //camTarget.v[1] = playerPos.v[1];
+    //camTarget.v[2] = playerPos.v[2];
+
+    // Set the viewport with the updated FOV and camera position
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(fov), 1.0f, 1000.0f);
+    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0, 1, 0}});
+
 
     // ======== Update Animations, and collect data about the mesh ======== //
-    int totalTris = 0;
-    int totalMeshes = 0;
+    rendererDebugData.totalTris = 0;
+    rendererDebugData.totalMeshes = 0;
     for(int i = 0; i < _ecs->entitiesCount; ++i){
        
         // show debug
@@ -376,8 +412,8 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
         
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
             // update the total meshes and tris
-            totalMeshes += 1;
-            totalTris += models[mesh->meshID]->totalVertCount;
+            rendererDebugData.totalMeshes += 1;
+            rendererDebugData.totalTris += models[mesh->meshID]->totalVertCount;
             // ======== ANIMATION ========
             AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
             assert(skeletalAnimation != NULL);
@@ -424,7 +460,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     rdpq_attach(display_get(), display_get_zbuf());
 
     // Start counting the true render time
-    float totalEntityRenderTime = get_time_ms();
+    rendererDebugData.totalEntityRenderTime = get_time_ms();
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
@@ -440,29 +476,29 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     
     // ======== Draw (2D) ======== //
     // ======== Draw (UI) ======== //
-    //float posX = 16;
-    //float posY = 24;
-
     rdpq_sync_pipe();
-    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "[A] Attack: %d", isAttack);
+    rendererDebugData.totalEntityRenderTime = get_time_ms() - rendererDebugData.totalEntityRenderTime;
+    rendererDebugData.totalRenderTime = get_time_ms() - rendererDebugData.totalRenderTime;
 
-    //posY = 216;
-    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Speed: %.4f", currSpeed); posY += 10;
-    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Blend: %.4f", animBlend); posY += 10;
-    totalEntityRenderTime = get_time_ms() - totalEntityRenderTime;
-    totalRenderTime = get_time_ms() - totalRenderTime;
     
 
-    //rdpq_sync_pipe();
-   
-    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 20, "Entities  : %lu", _ecs->entitiesCount);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 30, "Meshs  : %i", totalMeshes);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 40, "Tris  : %i", totalTris);
+  
     
-    rdpq_text_printf(NULL, FONT3_ID, 50, 50, "Total Render: %.2fms", totalRenderTime);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 60, "Entity Render: %.2fms", totalEntityRenderTime);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 70, "FPS   : %.2f", display_get_fps());
+    // ======== DEBUG Editor =========
+    joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_1);
+    // TODO: Move this to outside renderer
+    if (pressed1.start & 1) {
+        if(debugCam == DEBUG_CAM_OFF){
+            debugCam = DEBUG_CAM_ON;
+        }else{
+            debugCam = DEBUG_CAM_OFF;
+        }
+    }
+
+    if(debugCam == DEBUG_CAM_ON){
+        Renderer_DebugCam(&rendererDebugData);
+    }
+
 }
 
 void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
@@ -699,3 +735,69 @@ void AF_Renderer_PlayAnimation(AF_CSkeletalAnimation* _animation){
 }
 
 
+void Renderer_DebugCam(RendererDebugData* _rendererDebugData){
+    // Read joypad inputs
+    joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_2);
+    joypad_buttons_t pressed1 = joypad_get_buttons_held(JOYPAD_PORT_2);
+
+    // Adjust camera FOV
+    
+    if (pressed1.c_left & 1) {
+        fov += 1.0f; // Increase FOV
+        
+        if (fov > 120.0f) fov = 120.0f; // Limit max FOV
+    }
+    if (pressed1.c_right & 1) {
+        fov -= 1.0f; // Decrease FOV
+        if (fov < 30.0f) fov = 30.0f; // Limit min FOV
+    }
+
+    // Move camera position along X, Y, Z axes
+    float moveSpeed = 0.1f; // Movement speed
+    if (inputs.stick_x > 1) { // Move right
+        //camPos.v[0] += moveSpeed;
+    }
+    if (inputs.stick_x < -1) { // Move left
+        //camPos.v[0] -= moveSpeed;
+    }
+    if (inputs.stick_y > 1) { // Move forward (closer to target)
+        camPos.v[2] -= moveSpeed;
+    }
+    if (inputs.stick_y < -1) { // Move backward (away from target)
+        camPos.v[2] += moveSpeed;
+    }
+    if (pressed1.c_up & 1) { // Move up
+        camPos.v[1] += moveSpeed;
+    }
+    if (pressed1.c_down & 1) { // Move down
+        camPos.v[1] -= moveSpeed;
+    }
+
+  
+
+    // Update the target position (optional if the camera should always point at a fixed location)
+    //camTarget = vec3Zero;//playerPos;
+    if (pressed1.l & 1) {
+        camTarget.v[2] += 1.0f;
+    }
+    if (pressed1.r & 1) {
+        camTarget.v[2] -= 1.0f;
+    }
+
+
+    rdpq_text_printf(NULL, FONT3_ID, 300, 20, 
+    "DEBUG_CAM\n\
+    FOV: %f\n\
+    CAM_POS: x: %f, y: %f, z: %f\n\
+    zDist: %f",
+    fov, camPos.v[0], camPos.v[1], camPos.v[2], camTarget.v[2]);
+
+    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 20, "Entities  : %i", _rendererDebugData->entitiesCount);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 30, "Meshs  : %i", _rendererDebugData->totalMeshes);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 40, "Tris  : %i", _rendererDebugData->totalTris);
+    
+    rdpq_text_printf(NULL, FONT3_ID, 50, 50, "Total Render: %.2fms", _rendererDebugData->totalRenderTime);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 60, "Entity Render: %.2fms", _rendererDebugData->totalEntityRenderTime);
+    rdpq_text_printf(NULL, FONT3_ID, 50, 70, "FPS   : %.2f", display_get_fps());
+}

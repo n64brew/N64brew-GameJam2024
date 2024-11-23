@@ -403,24 +403,28 @@ void Scene_SetupEntities(AppData* _appData){
     
 
 	//=========ENVIRONMENT========
-    Vec3 levelMapPos = {0, 0, 2};
-	Vec3 levelMapScale = {2,1,1};
+    Vec3 levelMapPos = {0, 0, 0};
+	Vec3 levelMapScale = {4,1,2};
     levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_MESH, AABB);
     levelMapEntity->mesh->meshID = MODEL_MAP;
     // disable the map collider
     AF_Component_SetHas(levelMapEntity->collider->enabled, FALSE);
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
     //levelMapEntity->rigidbody->isKinematic = TRUE;
-    Vec3 mapBoundingVolume = {7,.1, 3.5};
+    Vec3 mapBoundingVolume = {15,.1, 7.5};
     _appData->gameplayData.levelPos = levelMapPos;
     _appData->gameplayData.levelBounds = mapBoundingVolume;
     levelMapEntity->collider->boundingVolume = mapBoundingVolume;
     // ============Buckets=============
+    uint8_t offsetX = 4;
+    uint8_t offsetZ = 2;
+    Vec3 bucketScale = {2,2,2};
+    float bucketY = 1.0f;
     // Bucket 1
     // World pos and scale for bucket
-	Vec3 bucket1Pos = {-5.0f, .5f, 0.0f};
-	Vec3 bucket1Scale = {1,1,1};
-    bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucket1Scale,AF_MESH_TYPE_MESH, AABB);
+	Vec3 bucket1Pos = {-mapBoundingVolume.x + offsetX, bucketY, -mapBoundingVolume.z + offsetZ};
+	//Vec3 bucket1Scale = {1,1,1};
+    bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket1->mesh->meshID = MODEL_BOX;
     bucket1->rigidbody->inverseMass = zeroInverseMass;
 
@@ -428,9 +432,9 @@ void Scene_SetupEntities(AppData* _appData){
     bucket1->collider->collision.callback = Scene_OnBucket1Trigger;
     // Bucket 2
     // World pos and scale for bucket
-	Vec3 bucket2Pos = {5.0f, .5f, 0.0f};
-	Vec3 bucket2Scale = {1,1,1};
-	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucket2Scale,AF_MESH_TYPE_MESH, AABB);
+	Vec3 bucket2Pos =  {mapBoundingVolume.x - offsetX, bucketY, -mapBoundingVolume.z + offsetZ};
+	//Vec3 bucket2Scale = {1,1,1};
+	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket2->mesh->meshID = MODEL_BOX;
     bucket2->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
@@ -438,18 +442,18 @@ void Scene_SetupEntities(AppData* _appData){
 
     // Bucket 3
     // World pos and scale for bucket
-	Vec3 bucket3Pos = {5.0f, .5f, 5.0f};
-	Vec3 bucket3Scale = {1,1,1};
-	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucket3Scale,AF_MESH_TYPE_MESH, AABB);
+	Vec3 bucket3Pos =  {-mapBoundingVolume.x + offsetX, bucketY, mapBoundingVolume.z - offsetZ};
+	//Vec3 bucket3Scale = {1,1,1};
+	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket3->mesh->meshID = MODEL_BOX;
     bucket3->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
     bucket3->collider->collision.callback = Scene_OnBucket3Trigger;
     // Bucket 4
     // World pos and scale for bucket
-	Vec3 bucket4Pos = {-5.0f, .5f, 5.0f};
-	Vec3 bucket4Scale = {1,1,1};
-	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucket4Scale,AF_MESH_TYPE_MESH, AABB);
+	Vec3 bucket4Pos =  {mapBoundingVolume.x + offsetX, bucketY, mapBoundingVolume.z + offsetZ};
+	//Vec3 bucket4Scale = {1,1,1};
+	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket4->mesh->meshID = MODEL_BOX;
     bucket4->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback

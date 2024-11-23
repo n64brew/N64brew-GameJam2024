@@ -81,7 +81,8 @@ void App_Init(AppData* _appData){
     // Init Rendering
     
     // 3D rendering
-    AF_Renderer_Init(ecs); 
+    Vec2 screenSize = {_appData->windowWidth, _appData->windowHeight};
+    AF_Renderer_Init(ecs, screenSize); 
     
     Game_Awake(ecs);
     Scene_Awake(_appData);
