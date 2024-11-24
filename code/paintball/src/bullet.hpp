@@ -29,16 +29,24 @@ constexpr float Gravity = -200;
 
 struct Bullet
 {
+    friend class ::BulletController;
+
     public:
         Bullet();
         Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team);
+        Bullet(Bullet&& other) = delete;
+        Bullet& operator=(Bullet&& rhs) = delete;
+        Bullet& operator=(Bullet& rhs);
 
+    private:
         T3DVec3 pos;
         T3DVec3 prevPos;
         T3DVec3 velocity;
         PlyNum team;
         PlyNum owner;
-        U::T3DMat4FP matFP;
+
+        // This is non-movable, it can only be created with default ctor
+        const U::T3DMat4FP matFP;
 };
 
 class BulletController

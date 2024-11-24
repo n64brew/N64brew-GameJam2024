@@ -12,15 +12,14 @@ class List : public std::array<T, S> {
         void add(T &&item) {
             if (count >= this->size()) return;
             auto &&newItem = std::array<T,S>::operator[](count);
-            // TODO: this still does allocation
-            newItem = std::move(item);
+            newItem = item;
             count++;
         }
 
         void remove(typename std::array<T,S>::iterator it) {
             if (count == 0) return;
             count--;
-            *it = std::move(std::array<T,S>::operator[](count));
+            *it = (std::array<T,S>::operator[](count));
         }
 
         typename std::array<T,S>::iterator end() noexcept {

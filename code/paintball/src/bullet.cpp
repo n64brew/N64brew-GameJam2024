@@ -6,7 +6,7 @@ Bullet::Bullet() :
     velocity {0},
     team {PLAYER_1},
     owner {PLAYER_1},
-    matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
+    matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)),free_uncached}) { }
 
 Bullet::Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team) :
     pos {pos},
@@ -14,7 +14,17 @@ Bullet::Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team) :
     velocity {velocity},
     team {team},
     owner {owner},
-    matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}) {}
+    matFP({nullptr, free_uncached}) { }
+
+Bullet& Bullet::operator=(Bullet& rhs) {
+    if (this == &rhs) return *this;
+    pos = rhs.pos;
+    prevPos = rhs.prevPos;
+    velocity = rhs.velocity;
+    team = rhs.team;
+    owner = rhs.owner;
+    return *this;
+};
 
 BulletController::BulletController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui) :
     newBulletCount(0),
