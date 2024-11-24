@@ -4,6 +4,7 @@
 #include "./player.h"
 #include "./building.h"
 #include "./tank.h"
+#include "./props.h"
 
 #define BUILDING_COUNT_X    5
 #define BUILDING_COUNT_Y    4
@@ -26,6 +27,7 @@ struct Rampage {
     struct RampagePlayer players[PLAYER_COUNT];
     struct RampageBuilding buildings[BUILDING_COUNT_Y][BUILDING_COUNT_X];
     struct RampageTank tanks[TANK_COUNT];
+    struct AllProps props;
     enum RampageState state;
     float delay_timer;
     int winner_count;

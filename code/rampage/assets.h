@@ -20,7 +20,6 @@ struct RampageAssets {
     T3DModel* tank;
     struct RampageSplitMesh tankSplit;
     T3DModel* bullet;
-    T3DModel* pointer;
     T3DModel* swing_effect;
     struct RampageSplitMesh swing_split;
 
@@ -40,5 +39,8 @@ void rampage_assets_init();
 void rampage_assets_destroy();
 
 struct RampageAssets* rampage_assets_get();
+
+void rampage_model_separate_material(T3DModel* model, struct RampageSplitMesh* result);
+void rampage_model_free_split(struct RampageSplitMesh* result);
 
 #endif

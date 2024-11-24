@@ -5,7 +5,8 @@ import mathutils
 import math
 import struct
 
-base_transform = mathutils.Matrix.Rotation(-math.pi * 0.5, 4, 'X') @ mathutils.Matrix.Scale(64, 4)
+base_transform = mathutils.Matrix.Scale(64, 4) @ mathutils.Matrix.Rotation(-math.pi * 0.5, 4, 'X')
+mesh_coordinate_convert = mathutils.Matrix.Rotation(math.pi * 0.5, 4, 'X') @ mathutils.Matrix.Rotation(math.pi, 4, 'Z')
 
 asset_list = [
     "blockade",
@@ -26,9 +27,14 @@ for obj in bpy.data.objects:
     if not mesh.library:
         continue
 
-    transform = base_transform @ obj.matrix_world
+    transform = base_transform @ obj.matrix_world @ mesh_coordinate_convert
 
     to_write.append([asset_list.index(mesh.library.filepath[2:-6]), transform])
+
+def get_obj_x(obj):
+    return obj[1].to_translation()[0]
+
+to_write.sort(key=get_obj_x)
 
 with open(sys.argv[-1], 'wb') as file:
     file.write(len(to_write).to_bytes(2, 'big'))
@@ -39,4 +45,8 @@ with open(sys.argv[-1], 'wb') as file:
         loc, rot, scale = obj[1].decompose()
 
         file.write(struct.pack(">hhh", int(loc[0]), int(loc[1]), int(loc[2])))
+
+        if rot[3] < 0:
+            rot.negate()
+
         file.write(struct.pack(">hhh", int(rot[0] * 32000), int(rot[1] * 32000), int(rot[2] * 32000)))

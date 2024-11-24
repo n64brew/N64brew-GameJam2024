@@ -216,6 +216,14 @@ void minigame_fixedloop(float deltatime) {
     collision_scene_collide(deltatime);
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        props_check_collision(&gRampage.props, &gRampage.players[i].dynamic_object);
+    }
+
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        props_check_collision(&gRampage.props, &gRampage.tanks[i].dynamic_object);
+    }
+
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_update(&gRampage.players[i], deltatime);
     }
 
@@ -332,6 +340,8 @@ void minigame_loop(float deltatime) {
     for (int i = 0; i < TANK_COUNT; i += 1) {
         rampage_tank_render_bullets(&gRampage.tanks[i]);
     }
+
+    props_render(&gRampage.props);
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rdpq_sync_pipe();
@@ -501,6 +511,8 @@ void rampage_init(struct Rampage* rampage) {
 
     rampage->state = RAMPAGE_STATE_START;
     rampage->delay_timer = START_DELAY;
+
+    props_init(&rampage->props, "rom:/rampage/ground.layout");
 }
 
 void rampage_destroy(struct Rampage* rampage) {
@@ -519,4 +531,5 @@ void rampage_destroy(struct Rampage* rampage) {
     }
 
     rampage_assets_destroy();
+    props_destroy(&rampage->props);
 }
