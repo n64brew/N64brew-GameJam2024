@@ -13,11 +13,6 @@ ASSETS_LIST += \
 	filesystem/swordstrike/fighter_left_attack_8.sprite \
 	filesystem/swordstrike/fighter_left_attack_9.sprite \
 	filesystem/swordstrike/fighter_left_attack_10.sprite \
-	filesystem/swordstrike/fighter_left_attack_11.sprite \
-	filesystem/swordstrike/fighter_left_attack_12.sprite \
-	filesystem/swordstrike/fighter_left_attack_13.sprite \
-	filesystem/swordstrike/fighter_left_attack_14.sprite \
-	filesystem/swordstrike/fighter_left_attack_15.sprite \
 	filesystem/swordstrike/fighter_right_attack_1.sprite \
 	filesystem/swordstrike/fighter_right_attack_2.sprite \
 	filesystem/swordstrike/fighter_right_attack_3.sprite \
@@ -28,9 +23,5 @@ ASSETS_LIST += \
 	filesystem/swordstrike/fighter_right_attack_8.sprite \
 	filesystem/swordstrike/fighter_right_attack_9.sprite \
 	filesystem/swordstrike/fighter_right_attack_10.sprite \
-	filesystem/swordstrike/fighter_right_attack_11.sprite \
-	filesystem/swordstrike/fighter_right_attack_12.sprite \
-	filesystem/swordstrike/fighter_right_attack_13.sprite \
-	filesystem/swordstrike/fighter_right_attack_14.sprite \
-	filesystem/swordstrike/fighter_right_attack_15.sprite \
-	filesystem/swordstrike/background_4.t3dm
+	filesystem/swordstrike/background_no_textures.t3dm \
+	filesystem/swordstrike/wilhelm_scream.wav64
