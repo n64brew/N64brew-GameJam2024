@@ -57,7 +57,7 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
         rdpq_text_printf(&centerparms, BigFont, 0, 0, "%d", (int)ceilf(3.f - state.gameTime));
 
         rdpq_text_printf(&centerparms, SmallFont, 0, - ScreenHeight / 8, "^04Prepare to paint!");
-    } else if(state.state == STATE_GAME && state.gameTime < 3.6f){
+    } else if(state.state == STATE_GAME && state.gameTime < 0.6f){
         rdpq_text_printf(&centerparms, BigFont, 0, 0, "Go!");
     } else if(state.state == STATE_LAST_ONE_STANDING){
         if(state.gameTime < 3.f) {

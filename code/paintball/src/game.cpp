@@ -127,6 +127,7 @@ void Game::processState() {
     }
 
     if (state.state == STATE_COUNTDOWN && state.gameTime > 3.0f) {
+        state.gameTime = 0.0f;
         state.state = STATE_GAME;
         return;
     }
@@ -174,6 +175,12 @@ void Game::processState() {
     if (state.state == STATE_GAME && largestTeamCount == (PlayerCount - 1)) {
         state.gameTime = 0.0f;
         state.state = STATE_LAST_ONE_STANDING;
+        return;
+    }
+
+    if (state.state == STATE_LAST_ONE_STANDING && largestTeamCount < 3) {
+        state.gameTime = 0.6f;
+        state.state = STATE_GAME;
         return;
     }
 
