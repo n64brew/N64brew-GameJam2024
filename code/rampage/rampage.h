@@ -5,6 +5,7 @@
 #include "./building.h"
 #include "./tank.h"
 #include "./props.h"
+#include "./spark_effect.h"
 
 #define BUILDING_COUNT_X    5
 #define BUILDING_COUNT_Y    4

@@ -4,6 +4,7 @@
 #include <t3d/t3dmath.h>
 #include <math.h>
 #include "./collision/gjk.h"
+#include "./spark_effect.h"
 
 #define QUAT_SCALE  (1.0f / 32000.0f)
 
@@ -117,6 +118,7 @@ void props_check_collision(struct AllProps* props, struct dynamic_object* obj) {
         struct Simplex simplex;
         if (gjkCheckForOverlap(&simplex, obj, dynamic_object_minkowski_sum, &prop->position, point_minkowski_sum, &gRight)) {
             prop->is_active = false;
+            spark_effects_spawn(&prop->position);
         }
     }
 }

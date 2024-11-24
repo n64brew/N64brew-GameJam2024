@@ -15,6 +15,8 @@
 #include "./assets.h"
 #include "./rampage.h"
 #include "./math/mathf.h"
+#include "./frame_malloc.h"
+#include "./spark_effect.h"
 
 #define HIGH_RES    1
 
@@ -75,6 +77,9 @@ static struct mesh_collider global_mesh_collider = {
         .index_indices = global_mesh_collider_indices,
     }
 };
+
+struct frame_malloc frame_mallocs[2];
+int next_frame_malloc;
 
 void minigame_init() {
     display_init(HIGH_RES ? RESOLUTION_640x240 : RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
@@ -215,19 +220,19 @@ void minigame_fixedloop(float deltatime) {
 
     collision_scene_collide(deltatime);
 
-    props_check_collision(&gRampage.props, &gRampage.players[0].dynamic_object);
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        props_check_collision(&gRampage.props, &gRampage.players[i].dynamic_object);
+    }
 
-    // for (int i = 0; i < PLAYER_COUNT; i += 1) {
-    //     props_check_collision(&gRampage.props, &gRampage.players[i].dynamic_object);
-    // }
-
-    // for (int i = 0; i < TANK_COUNT; i += 1) {
-    //     props_check_collision(&gRampage.props, &gRampage.tanks[i].dynamic_object);
-    // }
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        props_check_collision(&gRampage.props, &gRampage.tanks[i].dynamic_object);
+    }
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_update(&gRampage.players[i], deltatime);
     }
+
+    spark_effects_update(deltatime);
 
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
         for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
@@ -296,6 +301,11 @@ int get_winner_index(int index) {
 void minigame_loop(float deltatime) {   
     uint8_t colorAmbient[4] = {0x60, 0x60, 0x60, 0xFF};
 
+    struct frame_malloc* fm = &frame_mallocs[next_frame_malloc];
+
+    frame_malloc_init(fm);
+    next_frame_malloc ^= 1;
+
     t3d_viewport_set_ortho(
         &viewport, 
         SCALE_FIXED_POINT(-ORTHO_SCALE * 1.5f), SCALE_FIXED_POINT(ORTHO_SCALE * 1.5f),
@@ -325,6 +335,8 @@ void minigame_loop(float deltatime) {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_render(&gRampage.players[i]);
     }
+
+    spark_effects_render(fm);
 
     for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
         rspq_block_run(rampage_assets_get()->buildingSplit[i].material);
@@ -515,6 +527,7 @@ void rampage_init(struct Rampage* rampage) {
     rampage->delay_timer = START_DELAY;
 
     props_init(&rampage->props, "rom:/rampage/ground.layout");
+    spark_effects_init();
 }
 
 void rampage_destroy(struct Rampage* rampage) {
@@ -534,4 +547,5 @@ void rampage_destroy(struct Rampage* rampage) {
 
     rampage_assets_destroy();
     props_destroy(&rampage->props);
+    spark_effects_destroy();
 }
