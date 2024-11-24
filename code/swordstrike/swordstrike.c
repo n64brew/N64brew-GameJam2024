@@ -26,6 +26,10 @@ const MinigameDef minigame_def = {
 #define FONT_TEXT           1
 #define TEXT_COLOR          0x6CBB3CFF
 
+// Mixer channel allocation
+#define CHANNEL_SFX    31
+#define CHANNEL_MUSIC  30
+
 // game state
 // COUNT DOWN = 0, IN GAME = 1, GAME END = 2, PAUSE = 3
 int game_state;
@@ -49,12 +53,8 @@ struct player* players[4];
 int numFloors;
 struct floorPiece **floors;
 
-// init audio files
-wav64_t sfx_start;
-wav64_t sfx_countdown;
-wav64_t sfx_stop;
-wav64_t sfx_winner;
-wav64_t sfx_scream;
+wav64_t sfx_start, sfx_countdown, sfx_stop, sfx_winner, sfx_scream;
+wav64_t music;
 
 // number of players specified before loading game
 uint32_t numPlayers;
@@ -327,6 +327,10 @@ void minigame_init(){
     wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
     wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
     wav64_open(&sfx_scream, "rom:/swordstrike/wilhelm_scream.wav64");
+    wav64_open(&music, "rom:/swordstrike/challengers.wav64");
+    wav64_set_loop(&music, true);
+
+    mixer_ch_set_vol(CHANNEL_MUSIC, 0.4f, 0.4f);
 
     // initialize display
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE);
@@ -362,11 +366,13 @@ void minigame_fixedloop(float deltatime){
         if (countdown_timer > 1) {
             float prevtime = countdown_timer;
             countdown_timer -= deltatime;
-            if ((int)prevtime != (int)countdown_timer && countdown_timer >= 0)
-                wav64_play(&sfx_countdown, 31);
+            if ((int)prevtime != (int)countdown_timer && countdown_timer >= 0) {
+                wav64_play(&sfx_countdown, CHANNEL_SFX);
+            }
         } else {
             game_state = 1;
-            wav64_play(&sfx_start, 31);
+            wav64_play(&sfx_start, CHANNEL_SFX);
+            wav64_play(&music, CHANNEL_MUSIC);
         }
     }
     
@@ -384,7 +390,8 @@ void minigame_fixedloop(float deltatime){
                     winnerIndex = i+1;
                 }
             }
-            wav64_play(&sfx_stop, 31);
+            mixer_ch_set_vol(CHANNEL_MUSIC, 0, 0);
+            wav64_play(&sfx_stop, CHANNEL_SFX);
             game_state = 2;
         }
         // shouldn't be possible but adding this just in case
@@ -394,7 +401,7 @@ void minigame_fixedloop(float deltatime){
 
         // play death sound
         if(alive > 1 && playDeathSound){
-            wav64_play(&sfx_scream, 31);
+            wav64_play(&sfx_scream, CHANNEL_SFX);
             playDeathSound = false;
         }
 
@@ -406,8 +413,8 @@ void minigame_fixedloop(float deltatime){
             if(players[i]->isAlive){
                 if(!isHuman){
                     // Generate AI inputs
-                    // struct player *target = players[players[i]->ai_target];
-                    // generateCompInputs(players[i], target, floors, &numFloors);
+                    struct player *target = players[players[i]->ai_target];
+                    generateCompInputs(players[i], target, floors, &numFloors);
                 }
 
                 // APPLY PHYSICS UPDATES FROM INPUT
@@ -443,7 +450,7 @@ void minigame_fixedloop(float deltatime){
     if(game_state == 2){
         if(game_over_counter < 5.0 && !playedWinnerSound){
             playedWinnerSound = true;
-            wav64_play(&sfx_winner, 31);
+            wav64_play(&sfx_winner, CHANNEL_SFX);
         }
         game_over_counter -= deltatime;
         if(game_over_counter <= 0){
@@ -508,6 +515,8 @@ void minigame_loop(float deltatime){
                     pausePlayerPort = port;
                     pauseCheckDelay = 0.5f;
                     game_state = 3;
+                    mixer_ch_set_vol(CHANNEL_SFX, 0, 0);
+                    mixer_ch_set_vol(CHANNEL_MUSIC, 0, 0);
                 }
             }
         }
@@ -522,6 +531,8 @@ void minigame_loop(float deltatime){
             if(pauseCheckDelay <= 0.0){
                 game_state = 1;
                 pauseCheckDelay = 0.5f;
+                mixer_ch_set_vol(CHANNEL_SFX, 1, 1);
+                mixer_ch_set_vol(CHANNEL_MUSIC, 0.4f, 0.4f);
             }
         }
         
@@ -615,6 +626,7 @@ void minigame_cleanup(){
     wav64_close(&sfx_stop);
     wav64_close(&sfx_winner);
     wav64_close(&sfx_scream);
+    wav64_close(&music);
 
     // free level data
     free_level_data(floors);

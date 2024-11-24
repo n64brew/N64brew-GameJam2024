@@ -308,13 +308,15 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
         // Determine if the target is to the left or right
         int direction = targetDirection(ai, target);
 
+        int aiDiff = core_get_aidifficulty();
+
         // Attack if close, and the reaction time has elapsed
         if (dist < 45) {
             if(ai->attackTimer <= 0){
                 if (ai->ai_reactionspeed <= 0) {
                     ai->attackDirection = ai->direction;
                     ai->attackTimer = ai->weapon.attackTimer;
-                    ai->ai_reactionspeed = (2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3);
+                    ai->ai_reactionspeed = (2-aiDiff)*5 + rand()%((3-aiDiff)*3);
                 } else {
                     ai->ai_reactionspeed--;
                 }
@@ -336,8 +338,16 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
             // randomly slide in direction of the enemy
             if(ai->onFloor || ai->onTopOfEnemy){
                 if(ai->slideCooldown == 0){
-                    if(rand25 == 1){
-                        initAiSlide(ai, direction);
+                    // EASY + MED: 25% CHANCE
+                    if(aiDiff < 2){
+                        if(rand25 == 1){
+                            initAiSlide(ai, direction);
+                        }
+                    // HARD: 50% CHANCE
+                    } else {
+                        if(rand50 == 1){
+                            initAiSlide(ai, direction);
+                        }
                     }
                 }
             }
