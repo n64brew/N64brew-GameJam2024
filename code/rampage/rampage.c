@@ -215,13 +215,15 @@ void minigame_fixedloop(float deltatime) {
 
     collision_scene_collide(deltatime);
 
-    for (int i = 0; i < PLAYER_COUNT; i += 1) {
-        props_check_collision(&gRampage.props, &gRampage.players[i].dynamic_object);
-    }
+    props_check_collision(&gRampage.props, &gRampage.players[0].dynamic_object);
 
-    for (int i = 0; i < TANK_COUNT; i += 1) {
-        props_check_collision(&gRampage.props, &gRampage.tanks[i].dynamic_object);
-    }
+    // for (int i = 0; i < PLAYER_COUNT; i += 1) {
+    //     props_check_collision(&gRampage.props, &gRampage.players[i].dynamic_object);
+    // }
+
+    // for (int i = 0; i < TANK_COUNT; i += 1) {
+    //     props_check_collision(&gRampage.props, &gRampage.tanks[i].dynamic_object);
+    // }
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_update(&gRampage.players[i], deltatime);

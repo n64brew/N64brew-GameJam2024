@@ -63,6 +63,8 @@ void props_init(struct AllProps* props, const char* filename) {
         data_cache_hit_writeback_invalidate(&prop->mtx, sizeof(T3DMat4FP));
 
         props->x_values[i] = pos.x;
+
+        prop->position.y += 64.0f;
     }
 }
 
@@ -83,24 +85,17 @@ void props_render(struct AllProps* props) {
 }
 
 int props_get_start_index(short* x_values, int prop_count, short x) {
-    int lower = 0;
-    int upper = prop_count;
-
-    while (lower <= upper) {
-        int mid = (lower + upper) >> 1;
-
-        if (x < x_values[mid]) {
-            upper = mid;
-        } else {
-            lower = mid + 1;
+    for (int i = 0; i < prop_count; i += 1) {
+        if (x_values[i] > x) {
+            return i;
         }
     }
 
-    return lower;
+    return prop_count;
 }
 
 void point_minkowski_sum(void* data, struct Vector3* direction, struct Vector3* output) {
-    *output = *(struct Vector3*)data;   
+    *output = *(struct Vector3*)data;
 }
 
 void props_check_collision(struct AllProps* props, struct dynamic_object* obj) {
@@ -120,7 +115,7 @@ void props_check_collision(struct AllProps* props, struct dynamic_object* obj) {
         }
 
         struct Simplex simplex;
-        if (gjkCheckForOverlap(&simplex, &obj->type->data, obj->type->minkowsi_sum, &prop->position, point_minkowski_sum, &gRight)) {
+        if (gjkCheckForOverlap(&simplex, obj, dynamic_object_minkowski_sum, &prop->position, point_minkowski_sum, &gRight)) {
             prop->is_active = false;
         }
     }
