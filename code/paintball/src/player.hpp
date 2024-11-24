@@ -63,10 +63,10 @@ namespace Player {
             float direction;
             U::RSPQBlock block;
             U::T3DMat4FP matFP;
-            // TODO: this wrapper is currently heap allocated
-            U::T3DSkeleton skel;
 
-            U::T3DAnim animWalk;
+            T3D::Skeleton skel;
+
+            T3D::Anim animWalk;
 
             T3DVec3 screenPos;
 

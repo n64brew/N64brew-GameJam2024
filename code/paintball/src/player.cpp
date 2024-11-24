@@ -9,13 +9,15 @@ Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
     direction(0),
     block({nullptr, rspq_block_free}),
     matFP({(T3DMat4FP*)malloc_uncached(sizeof(T3DMat4FP)), free_uncached}),
-    skel({new T3DSkeleton(t3d_skeleton_create(model)), t3d_skeleton_destroy}),
-    animWalk({new T3DAnim(t3d_anim_create(model, "Walk")), t3d_anim_destroy}),
+    skel(model),
+    animWalk(model, "Walk"),
     screenPos({0}),
     displayTemperature(0),
     timer(0)
     {
+        debugf("Creating player\n");
         assertf(skel.get(), "Player skel is null");
+        assertf(animWalk.get(), "Player animWalk is null");
         assertf(matFP.get(), "Player matrix is null");
 
         rspq_block_begin();
@@ -75,6 +77,8 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
 
     assertf(playerOther.matFP.get(), "Player %lu matrix is null", id);
     assertf(playerOther.block.get(), "Player %lu block is null", id);
+    assertf(playerOther.animWalk.get(), "Player %lu animWalk is null", id);
+    assertf(playerOther.skel.get(), "Player %lu skel is null", id);
 
     t3d_anim_update(playerOther.animWalk.get(), deltaTime);
     t3d_skeleton_update(playerOther.skel.get());

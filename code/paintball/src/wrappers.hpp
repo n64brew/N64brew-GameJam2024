@@ -6,6 +6,7 @@
 
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
+#include <t3d/t3dmodel.h>
 
 class Display
 {
@@ -23,14 +24,72 @@ class Display
 
 class T3D
 {
-    private:
     public:
-        T3D() {
-            t3d_init((T3DInitParams){});
-        };
-        ~T3D() {
-            t3d_destroy();
-        };
+    class Skeleton
+    {
+        private:
+            T3DSkeleton skel = {0};
+        public:
+            Skeleton(const T3DModel *model) {
+                skel = t3d_skeleton_create(model);
+            };
+
+            // Everything is a copy, we allocate these once anyways
+            Skeleton(Skeleton&& rhs) {
+                skel = *rhs.get();
+                rhs.skel = {0};
+            };
+
+            Skeleton& operator=(Skeleton&& rhs) {
+                skel = *rhs.get();
+                rhs.skel = {0};
+                return *this;
+            };
+
+            ~Skeleton() {
+                t3d_skeleton_destroy(&skel);
+            };
+
+            T3DSkeleton* get() {
+                return &skel;
+            };
+    };
+
+    class Anim
+    {
+        private:
+            T3DAnim anim = {0};
+        public:
+            Anim(const T3DModel *model, const char *name) {
+                anim = t3d_anim_create(model, name);
+            };
+
+            // Everything is a copy, we allocate these once anyways
+            Anim(Anim&& rhs) {
+                anim = *rhs.get();
+                rhs.anim = {0};
+            };
+
+            Anim& operator=(Anim&& rhs) {
+                anim = *rhs.get();
+                rhs.anim = {0};
+                return *this;
+            };
+
+            ~Anim() {
+                t3d_anim_destroy(&anim);
+            };
+            T3DAnim* get() {
+                return &anim;
+            };
+    };
+
+    T3D() {
+        t3d_init((T3DInitParams){});
+    };
+    ~T3D() {
+        t3d_destroy();
+    };
 };
 
 class RDPQFont
@@ -66,7 +125,6 @@ class RDPQSurface
             return &s;
         };
 };
-
 
 namespace U {
     using RSPQBlock = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>;
