@@ -5,13 +5,11 @@
 #define PLAYER_HORIZ_MOVE_SPEED 2
 #define GRAVITY 0.4
 #define HORIZ_RESISTANCE 0.4
-#define JUMP_STRENGTH 7.0
-#define MAX_VERT_VELOCITY 7.0
+#define JUMP_STRENGTH 6.4
+#define MAX_VERT_VELOCITY 6.4
 #define DROPDOWN_STRENGTH 1.5
-#define SLIDE_HORIZ_STRENGTH 8.0 //must be a multiple of 0.4 or bad things will happen
+#define SLIDE_HORIZ_STRENGTH 8.4 //must be a multiple of 0.4 or bad things will happen
 #define SLIDE_VERT_STRENGTH 1
-// #define VERT_KNOCKBACK -2.0
-// #define HORIZ_KNOCKBACK -2.0
 #define TOLERANCE 2 // general tolerance for bounding box detection
 #define FLOOR_TOLERANCE 5 // tolerance for floor detection
 #define SLIDE_COOLDOWN 15

@@ -23,10 +23,11 @@ const MinigameDef minigame_def = {
     .instructions = "DPAD for movement, A to jump, B to attack, Down + A to drop down, L to slide"
 };
 
-#define FONT_TEXT           1
-#define TEXT_COLOR          0x6CBB3CFF
+// font globals
+#define FONT_TEXT      1
+#define TEXT_COLOR     0x6CBB3CFF
 
-// Mixer channel allocation
+// mixer channel allocation
 #define CHANNEL_SFX    31
 #define CHANNEL_MUSIC  30
 
@@ -76,6 +77,8 @@ sprite_t *fighter_left_neutral;
 sprite_t *fighter_right_neutral;
 sprite_t *fighter_left_jump;
 sprite_t *fighter_right_jump;
+sprite_t *fighter_left_slide;
+sprite_t *fighter_right_slide;
 
 // left attack animation sprites
 sprite_t *fighter_left_attack_1;
@@ -101,7 +104,7 @@ sprite_t *fighter_right_attack_8;
 sprite_t *fighter_right_attack_9;
 sprite_t *fighter_right_attack_10;
 
-sprite_t* player_sprites[4];
+sprite_t* player_sprites[6];
 sprite_t* player_left_attack_anim[10];
 sprite_t* player_right_attack_anim[10];
     
@@ -221,10 +224,20 @@ void minigame_init(){
     sprintf(fn34, "rom:/swordstrike/fighter_jumping_right.sprite");
     fighter_right_jump = sprite_load(fn34);
 
+    char fn35[64];
+    sprintf(fn35, "rom:/swordstrike/fighter_sliding_left.sprite");
+    fighter_left_slide = sprite_load(fn35);
+
+    char fn36[64];
+    sprintf(fn36, "rom:/swordstrike/fighter_sliding_right.sprite");
+    fighter_right_slide = sprite_load(fn36);
+
     player_sprites[0] = fighter_left_neutral;
     player_sprites[1] = fighter_right_neutral;
     player_sprites[2] = fighter_left_jump;
     player_sprites[3] = fighter_right_jump;
+    player_sprites[4] = fighter_left_slide;
+    player_sprites[5] = fighter_right_slide;
 
     player_left_attack_anim[0] = fighter_left_attack_10;
     player_left_attack_anim[1] = fighter_left_attack_9;
@@ -310,8 +323,8 @@ void minigame_init(){
     players[2] = &player3;
     players[3] = &player4;
 
-    // floors = loadLevel1(&numFloors);  // load in level 2 data
-    floors = loadLevel2(&numFloors); // load in level 2 data
+    // load in level data
+    floors = loadLevel1(&numFloors);
 
     // set game state + timer
     game_state = 0;
@@ -335,13 +348,13 @@ void minigame_init(){
     // initialize display
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE);
 
-    // t3d stuff
+    // t3d init
     depthBuffer = display_get_zbuf();
     t3d_init((T3DInitParams){});
 
     viewport = t3d_viewport_create();
     mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0, 0, -10});
+    t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0, 0, 0});
     
     camPos = (T3DVec3){{0, 150.0f, 5.0f}};
     camTarget = (T3DVec3){{0, 0, 0}};
@@ -550,14 +563,8 @@ void minigame_loop(float deltatime){
 
     // get display
     surface_t *disp = display_get();
-    
-    // attach rdp so we can use rdp functions
-    // rdpq_attach(disp, NULL);
 
-    // draw background
-    // rdpq_clear(DARK_GREY);
-
-    // ======== Draw (3D) ======== //
+    // draw background cube
     rdpq_attach(disp, depthBuffer);
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
@@ -576,15 +583,6 @@ void minigame_loop(float deltatime){
 
     // draw player sprites and floors
     draw_players_and_level(players, player_sprites, player_left_attack_anim, player_right_attack_anim, floors, &numFloors, WHITE);
-
-    // draw hitboxs => REMOVE LATER
-    // if(game_state == 1){
-    //     for(int i = 0; i < 4; i++){
-    //         if(players[i]->isAlive && players[i]->attackTimer > 0){
-    //             rdpq_draw_one_rectangle(&players[i]->weapon.xPos, &players[i]->weapon.yPos, &players[i]->weapon.width, &players[i]->weapon.height, DARK_GREEN);
-    //         }
-    //     }
-    // }
 
     // set rdpq for drawing text
     rdpq_set_mode_standard();
@@ -636,6 +634,8 @@ void minigame_cleanup(){
     sprite_free(fighter_right_neutral);
     sprite_free(fighter_left_jump);
     sprite_free(fighter_right_jump);
+    sprite_free(fighter_left_slide);
+    sprite_free(fighter_right_slide);
     sprite_free(fighter_left_attack_1);
     sprite_free(fighter_left_attack_2);
     sprite_free(fighter_left_attack_3);

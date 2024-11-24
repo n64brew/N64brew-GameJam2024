@@ -310,7 +310,7 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
 
         int aiDiff = core_get_aidifficulty();
 
-        // Attack if close, and the reaction time has elapsed
+        // attack if close, and the reaction time has elapsed
         if (dist < 45) {
             if(ai->attackTimer <= 0){
                 if (ai->ai_reactionspeed <= 0) {
@@ -322,10 +322,10 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
                 }
             }
 
-            //randomly slide away from enemy
+            // randomly slide away from enemy: 25% chance
             if(ai->onFloor || ai->onTopOfEnemy){
                 if(ai->slideCooldown == 0){
-                    if(rand50 == 0){
+                    if(rand25 == 1){
                         if(direction == 1){
                             initAiSlide(ai, 0);
                         } else {
@@ -334,19 +334,22 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
                     }
                 }
             }
-        } else {
-            // randomly slide in direction of the enemy
-            if(ai->onFloor || ai->onTopOfEnemy){
-                if(ai->slideCooldown == 0){
-                    // EASY + MED: 25% CHANCE
-                    if(aiDiff < 2){
-                        if(rand25 == 1){
-                            initAiSlide(ai, direction);
-                        }
-                    // HARD: 50% CHANCE
-                    } else {
-                        if(rand50 == 1){
-                            initAiSlide(ai, direction);
+        } else if (dist > 80) {
+            // randomly slide in direction of the enemy to chase
+            // EASY: 0% CHANCE
+            if(aiDiff > 0){
+                if(ai->onFloor || ai->onTopOfEnemy){
+                    if(ai->slideCooldown == 0){
+                        // MED: 25% CHANCE
+                        if(aiDiff == 1){
+                            if(rand25 == 1){
+                                initAiSlide(ai, direction);
+                            }
+                        // HARD: 50% CHANCE
+                        } else {
+                            if(rand50 == 1){
+                                initAiSlide(ai, direction);
+                            }
                         }
                     }
                 }
@@ -356,9 +359,6 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
         // jump or slide based on circumstances
         if(ai->onTopOfEnemy){
             if(rand50 == 0){
-                ai->verticalVelocity = -JUMP_STRENGTH;
-                ai->onTopOfEnemy = false; 
-            } else {
                 if(ai->slideCooldown == 0){
                     if(direction == 0){
                         initAiSlide(ai, 1);
@@ -366,14 +366,28 @@ void generateCompInputs(struct player* ai, struct player* target, struct floorPi
                         initAiSlide(ai, 0);
                     }
                 }
+            } else {
+                ai->verticalVelocity = -JUMP_STRENGTH;
+                ai->onTopOfEnemy = false; 
             }
         }
         
         if(ai->onFloor){
             if (isAbove) {
-                if(shouldCompJump(ai, target)){
-                    ai->verticalVelocity = -JUMP_STRENGTH;
-                    ai->onFloor = false;
+                // 25% chance to slide instead of jumping
+                if(rand25 == 1){
+                    if(ai->slideCooldown == 0){
+                        if(direction == 0){
+                            initAiSlide(ai, 1);
+                        } else {
+                            initAiSlide(ai, 0);
+                        }
+                    }
+                } else {
+                    if(shouldCompJump(ai, target)){
+                        ai->verticalVelocity = -JUMP_STRENGTH;
+                        ai->onFloor = false;
+                    }
                 }
             } else {  
                 if(ai->floorDroppable){
@@ -496,6 +510,8 @@ void draw_players_and_level(struct player** players, sprite_t** player_sprites, 
     sprite_t* fighter_right_neutral = player_sprites[1];
     sprite_t* fighter_left_jump = player_sprites[2];
     sprite_t* fighter_right_jump = player_sprites[3];
+    sprite_t* fighter_left_slide = player_sprites[4];
+    sprite_t* fighter_right_slide = player_sprites[5];
     for(int i = 0; i < MAXPLAYERS; i++){
         // draw player if alive
         if(players[i]->isAlive){
@@ -511,16 +527,30 @@ void draw_players_and_level(struct player** players, sprite_t** player_sprites, 
                 }
             } else {
                 if(players[i]->direction == 0){
+                    // NEUTRAL
                     if(players[i]->onFloor || players[i]->onTopOfEnemy){
                         rdpq_sprite_blit(fighter_left_neutral, players[i]->xPos, players[i]->yPos, NULL);
                     } else {
-                        rdpq_sprite_blit(fighter_left_jump, players[i]->xPos, players[i]->yPos, NULL);
+                        // SLIDING
+                        if(players[i]->slideCooldown > 0){
+                            rdpq_sprite_blit(fighter_left_slide, players[i]->xPos, players[i]->yPos, NULL);
+                        // FREE FALL
+                        } else {
+                            rdpq_sprite_blit(fighter_left_jump, players[i]->xPos, players[i]->yPos, NULL);
+                        }
                     }
                 } else if(players[i]->direction == 1){
+                    // NEUTRAL
                     if(players[i]->onFloor || players[i]->onTopOfEnemy){
                         rdpq_sprite_blit(fighter_right_neutral, players[i]->xPos, players[i]->yPos, NULL);
                     } else {
-                        rdpq_sprite_blit(fighter_right_jump, players[i]->xPos, players[i]->yPos, NULL);
+                        // SLIDING
+                        if(players[i]->slideCooldown > 0){
+                            rdpq_sprite_blit(fighter_right_slide, players[i]->xPos, players[i]->yPos, NULL);
+                        // FREE FALL
+                        } else {
+                            rdpq_sprite_blit(fighter_right_jump, players[i]->xPos, players[i]->yPos, NULL);
+                        }
                     }
                 }
             }
