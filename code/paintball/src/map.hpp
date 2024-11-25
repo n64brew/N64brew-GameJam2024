@@ -17,7 +17,7 @@
 
 #include "../../../core.h"
 
-constexpr int MapWidth = 32 * 8;
+constexpr int MapWidth = 32 * 16;
 constexpr int TileSize = 32;
 constexpr int SegmentSize = 75;
 constexpr int MinSegmentCount = 4;

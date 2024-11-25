@@ -124,7 +124,6 @@ void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
         int finalX = (splash->x/distancePerSegment) * MapWidth + MapWidth/2;
         int finalY = (splash->y/distancePerSegment) * MapWidth + MapWidth/2;
-        debugf("Splash %d\n", splash->team);
         __splash(finalX, finalY, splash->team);
     }
     newSplashes.clear();

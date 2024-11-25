@@ -23,7 +23,7 @@
 #include <functional>
 #include <memory>
 
-constexpr float MapShrinkTime = 10.f;
+constexpr float MapShrinkTime = 180.f;
 
 class Game
 {
