@@ -216,6 +216,7 @@ void minigame_init(void)
   wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
   xm64player_open(&music, "rom:/snake3d/bottled_bubbles.xm64");
   xm64player_play(&music, 0);
+  mixer_ch_set_vol(31, 0.5f, 0.5f);
 }
 
 void player_do_damage(player_data *player)
