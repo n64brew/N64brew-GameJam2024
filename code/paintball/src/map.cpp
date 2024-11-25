@@ -14,14 +14,14 @@ MapRenderer::MapRenderer() :
     debugf("Map renderer initialized\n");
     assertf(surface.get(), "surface is null");
 
-    // rdpq_attach(surface.get(), nullptr);
-    //     rdpq_set_scissor(0, 0, MapWidth, MapWidth);
-    //     rdpq_clear(RGBA32(0, 0, 0, 0));
-    // rdpq_detach();
+    rdpq_attach(surface.get(), nullptr);
+        rdpq_set_scissor(0, 0, MapWidth, MapWidth);
+        rdpq_clear(RGBA32(0, 0, 0, 0));
+    rdpq_detach();
 
     // Initialize TLUT
     uint16_t *p_tlut = tlut.get();
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         if (i == 1) p_tlut[i] = color_to_packed16(PLAYERCOLOR_1);
         else if (i == 2) p_tlut[i] = color_to_packed16(PLAYERCOLOR_2);
         else if (i == 3) p_tlut[i] = color_to_packed16(PLAYERCOLOR_3);
@@ -120,6 +120,7 @@ void MapRenderer::render(const T3DViewport &viewport) {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
         int finalX = (splash->x/distancePerSegment) * MapWidth + MapWidth/2;
         int finalY = (splash->y/distancePerSegment) * MapWidth + MapWidth/2;
+        debugf("Splash %d\n", splash->team);
         __splash(finalX, finalY, splash->team);
     }
     newSplashes.clear();
