@@ -53,8 +53,8 @@ MapRenderer::MapRenderer() :
                 .normA = norm,
                 .posB = {(int16_t)(x + SegmentSize), 0, y},
                 .normB = norm,
-                .rgbaA = 0xFF0000'FF,
-                .rgbaB = 0x00FF00'FF,
+                .rgbaA = 0xFFFFFF'FF,
+                .rgbaB = 0xFFFFFF'FF,
                 .stA = {(int16_t)(pixelX << 5), (int16_t)(pixelY << 5)},
                 .stB = {(int16_t)((pixelX + TileSize) << 5), (int16_t)((pixelY) << 5)},
             };
@@ -63,8 +63,8 @@ MapRenderer::MapRenderer() :
                 .normA = norm,
                 .posB = {(int16_t)(x + SegmentSize), 0, (int16_t)(y + SegmentSize)},
                 .normB = norm,
-                .rgbaA = 0x0000FF'FF,
-                .rgbaB = 0xFF00FF'FF,
+                .rgbaA = 0xFFFFFF'FF,
+                .rgbaB = 0xFFFFFF'FF,
                 .stA = {(int16_t)((pixelX) << 5), (int16_t)((pixelY + TileSize) << 5)},
                 .stB = {(int16_t)((pixelX + TileSize) << 5), (int16_t)((pixelY + TileSize) << 5)},
             };
@@ -82,8 +82,8 @@ MapRenderer::MapRenderer() :
         rdpq_sync_pipe();
         rdpq_mode_tlut(TLUT_RGBA16);
         rdpq_tex_upload_tlut(tlut.get(), 0, 5);
-        rdpq_mode_combiner(RDPQ_COMBINER_TEX);
-        t3d_state_set_drawflags((T3DDrawFlags)(T3D_FLAG_TEXTURED | T3D_FLAG_DEPTH));
+        rdpq_mode_combiner(RDPQ_COMBINER_TEX_SHADE);
+        t3d_state_set_drawflags((T3DDrawFlags)(T3D_FLAG_TEXTURED | T3D_FLAG_DEPTH | T3D_FLAG_SHADED));
 
         rdpq_mode_filter(FILTER_POINT);
         rdpq_mode_persp(true);
@@ -138,12 +138,23 @@ void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
             int halfSegmentCount = (MapWidth/TileSize)/2;
             int effectiveCount = (int)(halfSegmentCount * mapSize) + 1;
             if (effectiveCount < MinSegmentCount/2) effectiveCount = MinSegmentCount/2;
-            if (std::abs(ix - halfSegmentCount + 0.5f) > effectiveCount) continue;
-            if (std::abs(iy - halfSegmentCount + 0.5f) > effectiveCount) continue;
 
             // This assumes zero height
             bool visible = t3d_frustum_vs_aabb_s16(&frustum, vertices[idx * 2].posA, vertices[idx * 2+1].posB);
             if (!visible) continue;
+
+            if (std::abs(ix - halfSegmentCount + 0.5f) > effectiveCount ||
+                std::abs(iy - halfSegmentCount + 0.5f) > effectiveCount) {
+                vertices[idx * 2].rgbaA = 0xAAAAAA'FF;
+                vertices[idx * 2].rgbaB = 0xAAAAAA'FF;
+                vertices[idx * 2+1].rgbaA = 0xAAAAAA'FF;
+                vertices[idx * 2+1].rgbaB = 0xAAAAAA'FF;
+            } else {
+                vertices[idx * 2].rgbaA = 0xFFFFFF'FF;
+                vertices[idx * 2].rgbaB = 0xFFFFFF'FF;
+                vertices[idx * 2+1].rgbaA = 0xFFFFFF'FF;
+                vertices[idx * 2+1].rgbaB = 0xFFFFFF'FF;
+            }
 
             int pixelX = ix * TileSize;
             int pixelY = iy * TileSize;
@@ -205,7 +216,7 @@ float MapRenderer::getHalfSize() {
     if (size < MinSegmentCount * SegmentSize) {
         size = MinSegmentCount * SegmentSize;
     }
-    return ((size - SegmentSize) / 2.f) - 10.f;
+    return (size / 2.f) - 10.f;
 }
 
 void MapRenderer::setSize(float size) {
