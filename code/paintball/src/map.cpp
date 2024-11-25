@@ -88,7 +88,9 @@ MapRenderer::MapRenderer() :
         rdpq_mode_filter(FILTER_POINT);
         rdpq_mode_persp(true);
 
-        rdpq_mode_zbuf(false, false);
+        rdpq_mode_zbuf(false, true);
+
+        rdpq_change_other_modes_raw(SOM_COVERAGE_DEST_MASK, SOM_COVERAGE_DEST_ZAP);
     renderModeBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
 
     rspq_block_begin();

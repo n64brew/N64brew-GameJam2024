@@ -22,7 +22,6 @@ Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
 
         rspq_block_begin();
             t3d_matrix_push(matFP.get());
-
                 rdpq_mode_zbuf(true, true);
 
                 T3DModelIter it = t3d_model_iter_create(model, T3D_CHUNK_TYPE_OBJECT);
@@ -30,6 +29,7 @@ Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
                 {
                     if(it.object->material) {
                         t3d_model_draw_material(it.object->material, nullptr);
+                        rdpq_change_other_modes_raw(SOM_COVERAGE_DEST_MASK, SOM_COVERAGE_DEST_ZAP);
                     }
                     t3d_model_draw_object(it.object, skel.get()->boneMatricesFP);
                 }
@@ -66,7 +66,7 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
     double interpolate = core_get_subtick();
     T3DVec3 currentPos {0};
     t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
-    t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 0, 0});
+    t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 2.f, 0});
 
     color_t colors[] = {
         PLAYERCOLOR_1,
