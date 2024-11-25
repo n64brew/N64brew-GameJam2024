@@ -128,7 +128,7 @@ void Game::processState() {
 
         if (timer.get() == nullptr) {
             timer = {
-                new_timer_context(TICKS_FROM_MS(3000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
+                new_timer_context(TICKS_FROM_MS(5000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
                 delete_timer
             };
         }
