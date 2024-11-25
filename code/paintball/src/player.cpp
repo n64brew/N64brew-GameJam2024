@@ -97,9 +97,9 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
     };
 
     if (hidden) {
-        for (int i = 0; i < MAXPLAYERS; i++) {
-            colors[i].a = 150;
-        }
+        if (colors[playerGameplay.team].r == 0) colors[playerGameplay.team].r = 200;
+        if (colors[playerGameplay.team].g == 0) colors[playerGameplay.team].g = 200;
+        if (colors[playerGameplay.team].b == 0) colors[playerGameplay.team].b = 200;
     };
 
     float factor = temp > 0.5 ? temp * temp * temp * 0.015f : 0.f;

@@ -44,16 +44,16 @@ void Game::render(float deltaTime) {
     assertf(mapRenderer.get(), "Map renderer is null");
 
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
-    uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t colorDir[4]     = {0x55, 0x55, 0x55, 0xFF};
+    uint8_t colorPoint[4]   = {0xFF, 0xFF, 0xFF, 0xFF};
 
     // Update camera
     T3DVec3 tmpPos = {0};
     t3d_vec3_add(tmpPos, state.avPos, T3DVec3{0, 0, 40});
-    t3d_vec3_lerp(camTarget, camTarget, tmpPos, 0.2);
+    t3d_vec3_lerp(camTarget, camTarget, tmpPos, 0.12);
 
     t3d_vec3_add(tmpPos, state.avPos, T3DVec3{0, 125.0f, 100.0f});
-    // TODO: maybe reduce this lerping for a more dynamic camera
-    t3d_vec3_lerp(camPos, camPos, tmpPos, 0.2);
+    t3d_vec3_lerp(camPos, camPos, tmpPos, 0.1);
 
     T3DVec3 up = (T3DVec3){{0,1,0}};
     T3DVec3 lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
@@ -67,12 +67,13 @@ void Game::render(float deltaTime) {
     t3d_viewport_attach(&viewport);
 
     rdpq_set_scissor(0, 0, ScreenWidth, ScreenHeight);
-    t3d_screen_clear_color(RGBA32(0, 0, 0, 255));
+    // t3d_screen_clear_color(RGBA32(0xAA, 0xAA, 0xAA, 255));
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
-    t3d_light_set_count(1);
+    t3d_light_set_point(1, colorPoint, T3DVec3 {0, 50.f + (1.f - (state.gameTime / MapShrinkTime)) * 100.f,0}, 0.5f, false );
+    t3d_light_set_count(2);
 
     // 3D
     mapRenderer->render(deltaTime, viewport.viewFrustum);
@@ -86,7 +87,7 @@ void Game::render(float deltaTime) {
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
-    // debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
+    debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
 }
 
 void Game::fixedUpdate(float deltaTime) {
