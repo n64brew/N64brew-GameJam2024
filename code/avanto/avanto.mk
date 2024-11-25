@@ -10,7 +10,9 @@ ASSETS_LIST += \
 	filesystem/avanto/ukko.t3dm \
 	filesystem/avanto/ukko-skin.sprite \
 	filesystem/avanto/loyly.wav64 \
-	filesystem/avanto/sj-polkka.xm64
+	filesystem/avanto/sj-polkka.xm64 \
+	filesystem/avanto/banner.font64 \
+	filesystem/avanto/timer.font64
 
 AVANTO_AUDIOCONV_FLAGS += --wav-mono --wav-resample 22050 --wav-compress 3
 $(FILESYSTEM_DIR)/avanto/%.wav64: $(ASSETS_DIR)/avanto/%.mp3
@@ -23,3 +25,15 @@ $(FILESYSTEM_DIR)/avanto/%.sprite: $(ASSETS_DIR)/avanto/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [AVANTO SPRITE] $@"
 	$(N64_MKSPRITE) $(AVANTO MKSPRITE_FLAGS) -o $(dir $@) "$<"
+
+$(FILESYSTEM_DIR)/avanto/banner.font64: $(ASSETS_DIR)/squarewave.ttf
+	@mkdir -p $(dir $@)
+	@echo "    [AVANTO FONT] $@"
+	$(N64_MKFONT) --outline 2 --range 30-5A -s 100 --ellipsis 30,3 -o $(dir $@) "$<"
+	mv "$(dir $@)/squarewave.font64" "$@"
+
+$(FILESYSTEM_DIR)/avanto/timer.font64: $(ASSETS_DIR)/squarewave.ttf
+	@mkdir -p $(dir $@)
+	@echo "    [AVANTO FONT] $@"
+	$(N64_MKFONT) --outline 1 --range 30-39 -s 48 --ellipsis 30,3 -o $(dir $@) "$<"
+	mv "$(dir $@)/squarewave.font64" "$@"

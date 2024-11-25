@@ -9,6 +9,8 @@
 #include "common.h"
 
 extern T3DViewport viewport;
+extern struct character players[];
+extern rspq_block_t *empty_hud_block;
 
 static int next_sfx_channel = FIRST_SFX_CHANNEL;
 
@@ -164,4 +166,70 @@ bool script_update(struct script_state *state, float delta_time) {
   }
 
   return false;
+}
+
+rspq_block_t *build_empty_hud_block() {
+  const color_t LINE_COLOR = RGBA32(0x00, 0x00, 0x00, 0xff);
+  const color_t BAR_BG_COLOR = RGBA32(0x00, 0xc9, 0xff, 0xff);
+  static const char *const TITLES[] = {
+    SW_PLAYER1_S "P1",
+    SW_PLAYER2_S "P2",
+    SW_PLAYER3_S "P3",
+    SW_PLAYER4_S "P4",
+  };
+
+  rspq_block_begin();
+  rdpq_mode_push();
+  for (size_t i = 0; i < 4; i++) {
+    int y = HUD_VERTICAL_BORDER;
+    int x = HUD_HORIZONTAL_BORDER + i*HUD_INDIVIDUAL_H_SPACE;
+    int mid_x = x + HUD_INDIVIDUAL_H_SPACE/2;
+
+    rdpq_text_print(NULL, FONT_NORMAL, mid_x-4, y, TITLES[i]);
+
+    x += HUD_BAR_X_OFFSET;
+    y += HUD_BAR_Y_OFFSET;
+    int w = HUD_INDIVIDUAL_H_SPACE - HUD_BAR_X_OFFSET*2;
+    int h = HUD_BAR_HEIGHT;
+    rdpq_set_mode_fill(LINE_COLOR);
+    rdpq_fill_rectangle(x, y, x+w, y+1);
+    rdpq_fill_rectangle(x, y, x+1, y+h);
+    rdpq_fill_rectangle(x, y+h-1, x+w, y+h);
+    rdpq_fill_rectangle(x+w-1, y, x+w, y+h);
+    rdpq_set_mode_fill(BAR_BG_COLOR);
+    rdpq_fill_rectangle(x+1, y+1, x+w-1, y+h-1);
+  }
+  rdpq_mode_pop();
+
+  return rspq_block_end();
+}
+
+void draw_hud() {
+  //const color_t BAR_COLOR = RGBA32(0x00, 0xff, 0xa5, 0xff);
+  const color_t BAR_COLOR = RGBA32(0xff, 0x45, 0x00, 0xff);
+
+  rspq_block_run(empty_hud_block);
+
+  rdpq_mode_push();
+  for (size_t i = 0; i < 4; i++) {
+    int y = HUD_VERTICAL_BORDER;
+    int x = HUD_HORIZONTAL_BORDER + i*HUD_INDIVIDUAL_H_SPACE;
+    int mid_x = x + HUD_INDIVIDUAL_H_SPACE/2;
+
+    x += HUD_BAR_X_OFFSET + 1;
+    y += HUD_BAR_Y_OFFSET + 1;
+    int max_w = HUD_INDIVIDUAL_H_SPACE - HUD_BAR_X_OFFSET*2 - 2;
+    int h = HUD_BAR_HEIGHT - 2;;
+    int w = (int) roundf((float) max_w * players[i].temperature);
+    if (w > max_w) {
+      w = max_w;
+    }
+    rdpq_set_mode_fill(BAR_COLOR);
+    rdpq_fill_rectangle(x, y, x+w, y+h);
+
+    if (players[i].out) {
+      rdpq_text_print(NULL, FONT_NORMAL, mid_x-8, y+10, SW_OUT_S "OUT");
+    }
+  }
+  rdpq_mode_pop();
 }

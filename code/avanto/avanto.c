@@ -22,8 +22,13 @@ struct camera cam;
 T3DModel *player_model;
 struct character players[4];
 struct scene *current_scene;
-rdpq_font_t *debug_font;
+rdpq_font_t *normal_font;
+rdpq_font_t *timer_font;
+rdpq_font_t *banner_font;
 color_t player_colors[4];
+struct rdpq_textparms_s banner_params;
+struct rdpq_textparms_s timer_params;
+rspq_block_t *empty_hud_block;
 
 xm64player_t music;
 wav64_t sfx_start;
@@ -66,7 +71,7 @@ void minigame_init() {
   };
   for (size_t i = 0; i < 4; i++) {
     players[i].rotation = 0;
-    skeleton_init(&players[i].s, player_model, 4);
+    skeleton_init(&players[i].s, player_model, 5);
     players[i].s.anims[WALK] = t3d_anim_create(player_model, "walking");
     players[i].s.anims[CLIMB] = t3d_anim_create(player_model, "climbing");
     t3d_anim_set_looping(&players[i].s.anims[CLIMB], false);
@@ -74,10 +79,14 @@ void minigame_init() {
     t3d_anim_set_looping(&players[i].s.anims[SIT], false);
     players[i].s.anims[BEND] = t3d_anim_create(player_model, "bending");
     t3d_anim_set_looping(&players[i].s.anims[BEND], false);
+    players[i].s.anims[UNBEND] = t3d_anim_create(player_model, "unbending");
+    t3d_anim_set_looping(&players[i].s.anims[UNBEND], false);
     players[i].pos = (T3DVec3) {{0, 0, 0}};
     players[i].scale = 2.5f;
     players[i].current_anim = -1;
     players[i].visible = false;
+    players[i].temperature = 0.f;
+    players[i].out = false;
     player_draw_conf.userData = &player_colors[i];
     entity_init(&players[i].e,
         player_model,
@@ -88,8 +97,53 @@ void minigame_init() {
         player_draw_conf);
   }
 
-  debug_font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
-  rdpq_text_register_font(FONT_DEBUG, debug_font);
+  const color_t BLACK = RGBA32(0x00, 0x00, 0x00, 0xff);
+  const color_t YELLOW = RGBA32(0xff, 0xff, 0x00, 0xff);
+  const color_t WHITE = RGBA32(0xff, 0xff, 0xff, 0xff);
+  const color_t LIGHT_BLUE = RGBA32(0x00, 0xc9, 0xff, 0xff);
+  normal_font = rdpq_font_load("rom:/squarewave.font64");
+  rdpq_text_register_font(FONT_NORMAL, normal_font);
+  timer_font = rdpq_font_load("rom:/avanto/timer.font64");
+  rdpq_text_register_font(FONT_TIMER, timer_font);
+  banner_font = rdpq_font_load("rom:/avanto/banner.font64");
+  rdpq_text_register_font(FONT_BANNER, banner_font);
+
+  rdpq_font_t *fonts[] = {normal_font, timer_font, banner_font};
+  for (size_t i = 0; i < 3; i++) {
+    rdpq_font_t *font = fonts[i];
+
+    rdpq_font_style(font,
+        SW_DEBUG,
+        &(rdpq_fontstyle_t) {.color = WHITE, .outline_color = BLACK});
+    rdpq_font_style(font,
+        SW_BANNER,
+        &(rdpq_fontstyle_t) {.color = YELLOW, .outline_color = BLACK});
+    rdpq_font_style(font,
+        SW_TIMER,
+        &(rdpq_fontstyle_t) {.color = YELLOW, .outline_color = BLACK});
+    rdpq_font_style(font,
+        SW_OUT,
+        &(rdpq_fontstyle_t) {.color = LIGHT_BLUE, .outline_color = BLACK});
+    for (size_t j = 0; j < 4; j++) {
+      rdpq_font_style(font,
+          SW_PLAYER1 + j,
+          &(rdpq_fontstyle_t) {
+            .color = player_colors[j],
+            .outline_color = BLACK,
+          });
+    }
+  }
+  memset(&banner_params, 0, sizeof(banner_params));
+  banner_params.style_id = SW_BANNER;
+  banner_params.align = 1;
+  banner_params.valign = 1;
+  banner_params.width = 320;
+  banner_params.height = 240;
+
+  memset(&timer_params, 0, sizeof(timer_params));
+  timer_params.style_id = SW_TIMER;
+  timer_params.align = 1;
+  timer_params.width = 320;
 
   xm64player_open(&music, "rom:/avanto/sj-polkka.xm64");
 
@@ -98,11 +152,12 @@ void minigame_init() {
   wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
   wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
 
-  for (int i = 0; i < NUM_SFX_CHANNELS; i++) {
-    int channel = FIRST_SFX_CHANNEL + i;
-    mixer_ch_set_vol(channel, 0.5f, 0.5f);
-    mixer_ch_set_limits(channel, 0, 48000, 0);
+  for (int i = xm64player_num_channels(&music); i < 32; i++) {
+    mixer_ch_set_vol(i, 0.5f, 0.5f);
+    mixer_ch_set_limits(i, 0, 48000, 0);
   }
+
+  empty_hud_block = build_empty_hud_block();
 
   sauna_init();
 }
@@ -116,6 +171,8 @@ void minigame_loop(float delta_time) {
 }
 
 void minigame_cleanup() {
+  rspq_block_free(empty_hud_block);
+
   sauna_cleanup();
   wav64_close(&sfx_start);
   wav64_close(&sfx_countdown);
@@ -125,8 +182,12 @@ void minigame_cleanup() {
   xm64player_stop(&music);
   xm64player_close(&music);
 
-  rdpq_text_unregister_font(FONT_DEBUG);
-  rdpq_font_free(debug_font);
+  rdpq_text_unregister_font(FONT_NORMAL);
+  rdpq_font_free(normal_font);
+  rdpq_text_unregister_font(FONT_TIMER);
+  rdpq_font_free(timer_font);
+  rdpq_text_unregister_font(FONT_BANNER);
+  rdpq_font_free(banner_font);
 
   for (size_t i = 0; i < 4; i++) {
     entity_free(&players[i].e);

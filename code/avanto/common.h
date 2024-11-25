@@ -1,10 +1,16 @@
 #define MAX_GROUND_CHANGES 4
-// From main.c
-#define NUM_SFX_CHANNELS 1
+#define NUM_SFX_CHANNELS 4
 #define FIRST_SFX_CHANNEL (31-NUM_SFX_CHANNELS)
 #define WALK_SPEED 100.f
 #define CLIMB_TIME .5f
 #define EPS 1e-6
+#define TIMER_Y 220
+#define HUD_HORIZONTAL_BORDER 26
+#define HUD_VERTICAL_BORDER 26
+#define HUD_INDIVIDUAL_H_SPACE ((320 - HUD_HORIZONTAL_BORDER*2)/4)
+#define HUD_BAR_HEIGHT 16
+#define HUD_BAR_Y_OFFSET 4
+#define HUD_BAR_X_OFFSET 1
 
 struct entity {
   const T3DModel *model;
@@ -32,6 +38,8 @@ struct character {
   struct skeleton s;
   size_t current_anim;
   bool visible;
+  float temperature;
+  bool out;
 };
 
 struct ground_height_change {
@@ -91,14 +99,36 @@ enum script_actions {
 };
 
 enum fonts {
-  FONT_DEBUG = 1,
+  FONT_NORMAL = 1,
+  FONT_TIMER,
+  FONT_BANNER,
 };
+
+enum sw_styles {
+  SW_DEBUG,
+  SW_BANNER,
+  SW_TIMER,
+  SW_PLAYER1,
+  SW_PLAYER2,
+  SW_PLAYER3,
+  SW_PLAYER4,
+  SW_OUT,
+};
+#define SW_DEBUG_S "^00"
+#define SW_BANNER_S "^01"
+#define SW_TIMER_S "^02"
+#define SW_PLAYER1_S "^03"
+#define SW_PLAYER2_S "^04"
+#define SW_PLAYER3_S "^05"
+#define SW_PLAYER4_S "^06"
+#define SW_OUT_S "^07"
 
 enum player_anims {
   WALK,
   CLIMB,
   SIT,
   BEND,
+  UNBEND,
 };
 
 float get_ground_height(float z, struct ground *ground);
@@ -117,3 +147,5 @@ void entity_init(struct entity *e,
     T3DModelDrawConf draw_conf);
 void entity_free(struct entity *e);
 bool script_update(struct script_state *state, float delta_time);
+void draw_hud();
+rspq_block_t *build_empty_hud_block();

@@ -13,12 +13,20 @@
 #define LOYLY_DELAY 1.5f
 #define LOYLY_LENGTH 4.f
 #define LOYLY_SCREEN_MAX_ALPHA 200
+#define SAUNA_LEN 60.f
+#define BASE_HEAT (.2f / SAUNA_LEN)
+#define LOYLY_CHANNEL 10
 
 extern struct character players[];
 extern surface_t *z_buffer;
 extern T3DViewport viewport;
 extern struct camera cam;
 extern xm64player_t music;
+extern struct rdpq_textparms_s banner_params;
+extern struct rdpq_textparms_s timer_params;
+extern wav64_t sfx_countdown;
+extern wav64_t sfx_start;
+extern wav64_t sfx_stop;
 
 static T3DModel *ukko_model;
 static struct character ukko;
@@ -28,6 +36,12 @@ static bool loyly_queued;
 static float loyly_strength;
 static wav64_t sfx_loyly;
 static int sauna_stage;
+static bool sauna_stage_inited[8];
+static float upness[4];
+
+char banner_str[16];
+float banner_time;
+float time_left;
 
 static void sauna_do_light() {
   uint8_t light_color[4] = {255, 255, 255, 255};
@@ -97,6 +111,7 @@ void sauna_init() {
   loyly_sound_queued = false;
   loyly_queued = false;
   loyly_strength = 0.f;
+  banner_time = 0.f;
 
   sauna_scene.bg = sprite_load(sauna_scene.bg_path);
   sauna_scene.z = sprite_load(sauna_scene.z_path);
@@ -110,11 +125,21 @@ void sauna_init() {
   wav64_open(&sfx_loyly, "rom:/avanto/loyly.wav64");
 
   sauna_stage = SAUNA_INTRO;
+  sauna_stage = SAUNA_WALK_IN;
+
+  for (int i = 0; i <= SAUNA_DONE; i++) {
+    sauna_stage_inited[i] = false;
+  }
 }
 
 static void sauna_intro_fixed_loop(float delta_time) {
-  static float delay = 1.f;
-  static bool thrown = false;
+  static float delay;
+  static bool thrown;
+  if (!sauna_stage_inited[SAUNA_INTRO]) {
+    sauna_stage_inited[SAUNA_INTRO] = true;
+    delay = 1.f;
+    thrown = false;
+  }
 
   if (delay > 0) {
       delay -= delta_time;
@@ -172,10 +197,10 @@ struct script_action walk_in_actions[][12] = {
     {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
     {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
     {.type = ACTION_START_ANIM, .i = WALK},
-    //{.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(-90.f), .f2 = -T3D_PI},
     {.type = ACTION_WALK_TO, .v = (T3DVec3) {{120, 0, 210}}},
     {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
     {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_WAIT, .f = 2.f},
     {.type = ACTION_END},
   },
   {
@@ -194,16 +219,22 @@ struct script_action walk_in_actions[][12] = {
   },
 };
 static void sauna_walk_in_fixed_loop(float delta_time) {
-  static struct script_state script_states[] = {
-    {.character = &players[0], .action = walk_in_actions[0], .time = 0.f},
-    {.character = &players[1], .action = walk_in_actions[1], .time = 0.f},
-    {.character = &players[2], .action = walk_in_actions[2], .time = 0.f},
-    {.character = &players[3], .action = walk_in_actions[3], .time = 0.f},
-  };
+  static struct script_state script_states[4];
+  if (!sauna_stage_inited[SAUNA_WALK_IN]) {
+    sauna_stage_inited[SAUNA_WALK_IN] = true;
+    script_states[0] = (struct script_state)
+      {.character = &players[0], .action = walk_in_actions[0], .time = 0.f};
+    script_states[1] = (struct script_state)
+      {.character = &players[1], .action = walk_in_actions[1], .time = 0.f};
+    script_states[2] = (struct script_state)
+      {.character = &players[2], .action = walk_in_actions[2], .time = 0.f};
+    script_states[3] = (struct script_state)
+      {.character = &players[3], .action = walk_in_actions[3], .time = 0.f};
+  }
 
   bool done = true;
   for (size_t i = 0; i < 4; i++) {
-    if (!script_update(&script_states[i], delta_time)) {
+    if (!script_update(&script_states[i], delta_time*1000.f)) {
       done = false;
     }
   }
@@ -211,6 +242,123 @@ static void sauna_walk_in_fixed_loop(float delta_time) {
   if (done) {
     sauna_stage++;
   }
+}
+
+static void sauna_countdown_fixed_loop(float delta_time) {
+  static float total_time;
+  static int count;
+  static float next_step;
+  if (!sauna_stage_inited[SAUNA_COUNTDOWN]) {
+    sauna_stage_inited[SAUNA_COUNTDOWN] = true;
+    total_time = 0.f;
+    count = 3;
+    next_step = 0.f;
+  }
+
+  if (total_time == 0.f) {
+    xm64player_set_vol(&music, .5f);
+  }
+
+  if (total_time >= next_step) {
+    if (count) {
+      sprintf(banner_str, "%d", count);
+      count--;
+      next_step += 1.f;
+      wav64_play(&sfx_countdown, get_next_sfx_channel());
+    }
+    else {
+      strcpy(banner_str, "START");
+      sauna_stage++;
+      wav64_play(&sfx_start, get_next_sfx_channel());
+      xm64player_set_vol(&music, 1.f);
+    }
+    banner_time = 1.f;
+  }
+
+  total_time += delta_time;
+}
+
+static float sauna_rand_float(float min, float max) {
+  float r = (float) rand() / (float) RAND_MAX;
+  return r*(max-min) + min;
+}
+
+static void sauna_game_fixed_loop(float delta_time) {
+  static float next_throw;
+  if (!sauna_stage_inited[SAUNA_GAME]) {
+    sauna_stage_inited[SAUNA_GAME] = true;
+    time_left = SAUNA_LEN;
+    next_throw = sauna_rand_float(0.f, LOYLY_LENGTH);
+    delta_time = 0.f;
+
+    for (size_t i = 0; i < 4; i++) {
+      T3DAnim *anim = &players[i].s.anims[UNBEND];
+      players[i].current_anim = UNBEND;
+      t3d_anim_attach(anim, &players[i].s.skeleton);
+      t3d_anim_set_playing(anim, false);
+    }
+    return;
+  }
+
+  time_left -= delta_time;
+  next_throw -= delta_time;
+
+  if (next_throw < EPS) {
+    next_throw = sauna_rand_float(LOYLY_LENGTH * 1.05f, LOYLY_LENGTH * 2.5f);
+
+    if (time_left < next_throw + LOYLY_LENGTH + LOYLY_DELAY) {
+      next_throw = INFINITY;
+    }
+
+    t3d_anim_set_playing(&ukko.s.anims[THROW], true);
+    loyly_sound_queued = true;
+    loyly_queued = true;
+  }
+
+  bool all_out = true;
+  for (size_t i = 0; i < 4; i++) {
+    if (players[i].out) {
+      continue;
+    }
+    all_out = false;
+
+    float loyly_effect = loyly_strength > .5f? 1.f : loyly_strength/.5f;
+    float delta_temp = BASE_HEAT
+      * (1.f + upness[i]*4.f)
+      * (1.f + loyly_effect*4.f)
+      * delta_time;
+    players[i].temperature += delta_temp;
+    if (players[i].temperature > 1.f) {
+      players[i].out = true;
+    }
+  }
+
+  if (time_left < EPS || all_out) {
+    sauna_stage++;
+  }
+}
+
+static void sauna_walk_out_fixed_loop(float delta_time) {
+}
+
+static void sauna_change_anim_and_play_from(struct character *character,
+    size_t anim_id,
+    float normal_time) {
+  T3DAnim *anim = &character->s.anims[anim_id];
+  float time = anim->animRef->duration * normal_time;
+
+  character->current_anim = anim_id;
+  t3d_anim_attach(anim, &character->s.skeleton);
+  t3d_anim_set_time(anim, time);
+  t3d_anim_set_playing(anim, true);
+}
+
+static float sauna_get_anim_normal_time(const T3DAnim *anim) {
+  if (!anim->isPlaying) {
+    return 1.f;
+  }
+
+  return anim->time / anim->animRef->duration;
 }
 
 void sauna_fixed_loop(float delta_time) {
@@ -221,6 +369,14 @@ void sauna_fixed_loop(float delta_time) {
 
     case SAUNA_WALK_IN:
       sauna_walk_in_fixed_loop(delta_time);
+      break;
+
+    case SAUNA_COUNTDOWN:
+      sauna_countdown_fixed_loop(delta_time);
+      break;
+
+    case SAUNA_GAME:
+      sauna_game_fixed_loop(delta_time);
       break;
   }
 
@@ -234,19 +390,23 @@ void sauna_fixed_loop(float delta_time) {
 
 void sauna_loop(float delta_time) {
   joypad_buttons_t pressed = joypad_get_buttons_pressed(0);
-
-  if (pressed.a) {
-    t3d_anim_set_playing(&ukko.s.anims[THROW], true);
-    loyly_sound_queued = true;
-    loyly_queued = true;
+  joypad_buttons_t held[4];
+  for (size_t i = 0; i < core_get_playercount(); i++) {
+    held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
+  }
+  for (size_t i = core_get_playercount(); i < 4; i++) {
+    held[i].raw = 0;
   }
 
-  if (loyly_strength > 0) {
+  if (loyly_strength >= EPS) {
     loyly_strength -= delta_time/LOYLY_LENGTH;
+    if (loyly_strength < EPS) {
+      loyly_strength = 0.f;
+    }
   }
   if (loyly_sound_queued
       && ukko.s.anims[THROW].time + delta_time >= LOYLY_SOUND_DELAY) {
-    wav64_play(&sfx_loyly, get_next_sfx_channel());
+    wav64_play(&sfx_loyly, LOYLY_CHANNEL);
     loyly_sound_queued = false;
   }
   if (loyly_queued && ukko.s.anims[THROW].time + delta_time >= LOYLY_DELAY) {
@@ -297,11 +457,14 @@ void sauna_loop(float delta_time) {
     rspq_block_run(ukko.e.display_block);
   }
 
-  if (loyly_strength > 0) {
+  // Sync after all t3d calls
+  rdpq_sync_pipe();
+  rdpq_sync_tile();
+
+  if (loyly_strength >= EPS) {
     rdpq_mode_push();
     int screen_alpha = (int) (LOYLY_SCREEN_MAX_ALPHA*loyly_strength);
     rdpq_set_fog_color(RGBA32(0xff, 0xff, 0xff, screen_alpha));
-    rdpq_set_mode_standard();
     rdpq_set_prim_color(RGBA32(0xff, 0xff, 0xff, 0xff));
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
@@ -309,13 +472,67 @@ void sauna_loop(float delta_time) {
     rdpq_mode_pop();
   }
 
-  // Debug
-  rdpq_text_printf(NULL, FONT_DEBUG, 10, 15,
-      "FPS: %.2f", 1.f/delta_time);
+  // HUD
+  if (sauna_stage >= SAUNA_COUNTDOWN) {
+    draw_hud();
+  }
 
-  rdpq_sync_tile();
-  rdpq_sync_pipe();
+  // Time
+  if (sauna_stage >= SAUNA_GAME) {
+    rdpq_text_printf(&timer_params,
+      FONT_TIMER,
+      0,
+      TIMER_Y,
+      "%.0f",
+      ceilf(time_left));
+  }
+
+  // Banner
+  if (banner_time > EPS) {
+    banner_time -= delta_time;
+    rdpq_text_print(&banner_params, FONT_BANNER, 0, 0, banner_str);
+  }
+
+  // Debug
+  rdpq_text_printf(NULL,
+    FONT_NORMAL,
+    10,
+    80,
+    SW_DEBUG_S "FPS: %.2f",
+    1.f/delta_time);
+
   rdpq_detach_show();
+
+  if (sauna_stage != SAUNA_GAME || !sauna_stage_inited[SAUNA_GAME]) {
+    return;
+  }
+
+  for (size_t i = 0; i < 4; i++) {
+    if (players[i].out) {
+      continue;
+    }
+
+    // If the player is not out, animation will always be BEND or UNBEND
+    const T3DAnim *anim = &players[i].s.anims[players[i].current_anim];
+    if (players[i].current_anim == BEND) {
+      upness[i] = anim->isPlaying?
+        1.f - anim->time/anim->animRef->duration : 0.f;
+    }
+    else {
+      upness[i] = anim->isPlaying? anim->time/anim->animRef->duration : 1.f;
+    }
+    
+    if (held[i].z && players[i].current_anim != BEND) {
+      sauna_change_anim_and_play_from(&players[i],
+          BEND,
+          1.f - sauna_get_anim_normal_time(&players[i].s.anims[UNBEND]));
+    }
+    else if (!held[i].z && players[i].current_anim != UNBEND) {
+      sauna_change_anim_and_play_from(&players[i],
+          UNBEND,
+          1.f - sauna_get_anim_normal_time(&players[i].s.anims[BEND]));
+    }
+  }
 }
 
 void sauna_cleanup() {
