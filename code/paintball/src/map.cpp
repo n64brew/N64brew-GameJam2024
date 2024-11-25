@@ -9,8 +9,7 @@ MapRenderer::MapRenderer() :
     tlut {
         (uint16_t*)malloc_uncached(sizeof(uint16_t[256])),
         free_uncached
-    },
-    newSplashCount(0)
+    }
 {
     debugf("Map renderer initialized\n");
     assertf(surface.get(), "surface is null");
@@ -117,13 +116,13 @@ MapRenderer::~MapRenderer() {
 }
 
 void MapRenderer::render(const T3DViewport &viewport) {
-    for (std::size_t i = 0; i < newSplashCount; i++) {
+    for (auto splash = newSplashes.begin(); splash < newSplashes.end(); ++splash) {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
-        int finalX = (newSplashes[i].x/distancePerSegment) * MapWidth + MapWidth/2;
-        int finalY = (newSplashes[i].y/distancePerSegment) * MapWidth + MapWidth/2;
-        __splash(finalX, finalY, newSplashes[i].team);
+        int finalX = (splash->x/distancePerSegment) * MapWidth + MapWidth/2;
+        int finalY = (splash->y/distancePerSegment) * MapWidth + MapWidth/2;
+        __splash(finalX, finalY, splash->team);
     }
-    newSplashCount = 0;
+    newSplashes.clear();
 
     rspq_block_run(renderModeBlock.get());
 
@@ -187,10 +186,5 @@ void MapRenderer::__splash(int x, int y, PlyNum player) {
 }
 
 void MapRenderer::splash(float x, float y, PlyNum team) {
-    if (newSplashCount >= newSplashes.size()) return;
-
-    newSplashes[newSplashCount].x = x;
-    newSplashes[newSplashCount].y = y;
-    newSplashes[newSplashCount].team = team;
-    newSplashCount++;
+    newSplashes.add(Splash {x, y, team});
 }

@@ -12,6 +12,7 @@
 
 #include "./constants.hpp"
 #include "./wrappers.hpp"
+#include "./list.hpp"
 
 #include "../../../core.h"
 
@@ -36,10 +37,9 @@ class MapRenderer
 
         U::TLUT tlut;
 
-        std::size_t newSplashCount;
         // Assume all players firing in all possible directions
         // in reality, they can pop in subticks but should be fine
-        std::array<Splash, PlayerCount * 4> newSplashes;
+        List<Splash, PlayerCount * 4> newSplashes;
 
         T3DVertPacked* vertices;
 

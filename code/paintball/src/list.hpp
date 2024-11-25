@@ -22,6 +22,10 @@ class List : public std::array<T, S> {
             *it = (std::array<T,S>::operator[](count));
         }
 
+        void clear() {
+            count = 0;
+        }
+
         typename std::array<T,S>::iterator end() noexcept {
             return this->begin() + count;
         }
