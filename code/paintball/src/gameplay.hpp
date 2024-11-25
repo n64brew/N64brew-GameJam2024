@@ -44,6 +44,9 @@ class GameplayController
         std::vector<Player::OtherData> playerOtherData;
         std::vector<Player::GameplayData> playerGameplayData;
 
+        // Controllers
+        std::shared_ptr<MapRenderer> map;
+
         // Player calculations
         void simulatePhysics(Player::GameplayData &gameplayData, Player::OtherData &other, uint32_t id, float deltaTime);
         void handleActions(Player::GameplayData &gameplayData, uint32_t id, bool enabled);

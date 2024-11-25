@@ -14,6 +14,8 @@ MapRenderer::MapRenderer() :
     debugf("Map renderer initialized\n");
     assertf(surface.get(), "surface is null");
 
+    mapSize = 1.f;
+
     rdpq_attach(surface.get(), nullptr);
         rdpq_set_scissor(0, 0, MapWidth, MapWidth);
         rdpq_clear(RGBA32(0, 0, 0, 0));
@@ -115,7 +117,7 @@ MapRenderer::~MapRenderer() {
     free_uncached(vertices);
 }
 
-void MapRenderer::render(const T3DViewport &viewport) {
+void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
     for (auto splash = newSplashes.begin(); splash < newSplashes.end(); ++splash) {
         float distancePerSegment = SegmentSize * (MapWidth/TileSize);
         int finalX = (splash->x/distancePerSegment) * MapWidth + MapWidth/2;
@@ -131,8 +133,14 @@ void MapRenderer::render(const T3DViewport &viewport) {
         for (int ix = 0; ix < MapWidth/TileSize; ix++ ) {
             int idx = iy * (MapWidth/TileSize) + ix;
 
+            int halfSegmentCount = (MapWidth/TileSize)/2;
+            int effectiveCount = (int)(halfSegmentCount * mapSize) + 1;
+            if (effectiveCount < MinSegmentCount/2) effectiveCount = MinSegmentCount/2;
+            if (std::abs(ix - halfSegmentCount + 0.5f) > effectiveCount) continue;
+            if (std::abs(iy - halfSegmentCount + 0.5f) > effectiveCount) continue;
+
             // This assumes zero height
-            bool visible = t3d_frustum_vs_aabb_s16(&viewport.viewFrustum, vertices[idx * 2].posA, vertices[idx * 2+1].posB);
+            bool visible = t3d_frustum_vs_aabb_s16(&frustum, vertices[idx * 2].posA, vertices[idx * 2+1].posB);
             if (!visible) continue;
 
             int pixelX = ix * TileSize;
@@ -188,4 +196,17 @@ void MapRenderer::__splash(int x, int y, PlyNum player) {
 
 void MapRenderer::splash(float x, float y, PlyNum team) {
     newSplashes.add(Splash {x, y, team});
+}
+
+float MapRenderer::getHalfSize() {
+    float size = mapSize * SegmentSize * MapWidth/TileSize;
+    if (size < MinSegmentCount * SegmentSize) {
+        size = MinSegmentCount * SegmentSize;
+    }
+    return ((size - SegmentSize) / 2.f) - 10.f;
+}
+
+void MapRenderer::setSize(float size) {
+    assertf(size <= 1.f && size >= 0.f, "Incorrect size");
+    mapSize = size;
 }

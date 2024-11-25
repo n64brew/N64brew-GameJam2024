@@ -126,10 +126,7 @@ bool BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
     t3d_vec3_scale(posDiff, bullet.velocity, deltaTime);
     t3d_vec3_add(bullet.pos, bullet.pos, posDiff);
 
-    // TODO: use the actual map bounds
-    if (bullet.pos.v[0] > 1000.f || bullet.pos.v[0] < -1000.f ||
-        bullet.pos.v[2] > 1000.f || bullet.pos.v[2] < -1000.f ||
-        bullet.pos.v[1] < 0.f) {
+    if (bullet.pos.v[1] < 0.f) {
         return true;
     }
     return false;

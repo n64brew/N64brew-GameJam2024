@@ -15,6 +15,7 @@ enum State
 struct GameState
 {
     State state;
+    float timeInState;
     float gameTime;
 
     int currentRound;

@@ -54,17 +54,17 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
         } else {
             rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Round %d", state.currentRound + 1);
         }
-        rdpq_text_printf(&centerparms, BigFont, 0, 0, "%d", (int)ceilf(3.f - state.gameTime));
+        rdpq_text_printf(&centerparms, BigFont, 0, 0, "%d", (int)ceilf(3.f - state.timeInState));
 
         rdpq_text_printf(&centerparms, SmallFont, 0, - ScreenHeight / 8, "^04Prepare to paint!");
-    } else if(state.state == STATE_GAME && state.gameTime < 0.6f){
+    } else if(state.state == STATE_GAME && state.timeInState < 0.6f){
         rdpq_text_printf(&centerparms, BigFont, 0, 0, "Go!");
     } else if(state.state == STATE_LAST_ONE_STANDING){
-        if(state.gameTime < 3.f) {
+        if(state.timeInState < 3.f) {
             rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Run to score!");
         }
 
-        if(state.state == STATE_LAST_ONE_STANDING && state.gameTime < LastOneStandingTime){
+        if(state.state == STATE_LAST_ONE_STANDING && state.timeInState < LastOneStandingTime){
             rdpq_textparms_t textparms3 = {
                 .style_id = 4,
                 .width = (int16_t)(ScreenWidth * 0.8),
@@ -74,7 +74,7 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
                 .disable_aa_fix = true
             };
 
-            rdpq_text_printf(&textparms3, MediumFont, ScreenWidth * 0.1, ScreenHeight * 0.1, "%d", (int)ceilf(LastOneStandingTime - state.gameTime));
+            rdpq_text_printf(&textparms3, MediumFont, ScreenWidth * 0.1, ScreenHeight * 0.1, "%d", (int)ceilf(LastOneStandingTime - state.timeInState));
         }
     } else if (state.state == STATE_WAIT_FOR_NEW_ROUND || state.state == STATE_FINISHED) {
         centerparms.style_id = state.winner;

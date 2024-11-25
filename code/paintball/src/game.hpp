@@ -23,6 +23,8 @@
 #include <functional>
 #include <memory>
 
+constexpr float MapShrinkTime = 10.f;
+
 class Game
 {
     private:
@@ -34,6 +36,7 @@ class Game
         U::Timer timer;
 
         // Map
+        // TODO: gameplay controller is probably a better place for this
         std::shared_ptr<MapRenderer> mapRenderer;
 
         // UI

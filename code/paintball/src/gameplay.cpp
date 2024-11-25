@@ -10,7 +10,8 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map, std::sh
         t3d_model_load("rom:/paintball/shadow.t3dm"),
         t3d_model_free
     }),
-    arrowSprite {sprite_load("rom:/paintball/arrow.ia4.sprite"), sprite_free}
+    arrowSprite {sprite_load("rom:/paintball/arrow.ia4.sprite"), sprite_free},
+    map(map)
     {
         assertf(model.get(), "Player model is null");
 
@@ -53,7 +54,8 @@ void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player:
         T3DVec3 force = {0};
         t3d_vec3_scale(force, direction, strength);
 
-        // TODO: move into static functions?
+        // TODO: move into player.cpp?
+        // Deadzone
         if (strength < 10.0f) {
             // Physics
             T3DVec3 force = otherData.velocity;
@@ -114,6 +116,11 @@ void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player:
         t3d_vec3_scale(posDiff, otherData.velocity, deltaTime);
 
         t3d_vec3_add(gameplay.pos, gameplay.pos, posDiff);
+
+        if (gameplay.pos.v[0] > map->getHalfSize()) gameplay.pos.v[0] = map->getHalfSize();
+        if (gameplay.pos.v[0] < -map->getHalfSize()) gameplay.pos.v[0] = -map->getHalfSize();
+        if (gameplay.pos.v[2] > map->getHalfSize()) gameplay.pos.v[2] = map->getHalfSize();
+        if (gameplay.pos.v[2] < -map->getHalfSize()) gameplay.pos.v[2] = -map->getHalfSize();
 
         otherData.accel = {0};
     } else {

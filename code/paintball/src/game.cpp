@@ -9,7 +9,7 @@ Game::Game() :
     gameplayController(mapRenderer, uiRenderer),
     state({
         .state = STATE_COUNTDOWN,
-        .gameTime = 0.0f,
+        .timeInState = 0.0f,
         .currentRound = 0,
         .scores = {0},
     })
@@ -67,7 +67,7 @@ void Game::render(float deltaTime) {
     t3d_viewport_attach(&viewport);
 
     rdpq_set_scissor(0, 0, ScreenWidth, ScreenHeight);
-    t3d_screen_clear_color(RGBA32(255, 255, 255, 255));
+    t3d_screen_clear_color(RGBA32(0, 0, 0, 255));
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorAmbient);
@@ -75,7 +75,7 @@ void Game::render(float deltaTime) {
     t3d_light_set_count(1);
 
     // 3D
-    mapRenderer->render(viewport);
+    mapRenderer->render(deltaTime, viewport.viewFrustum);
     gameplayController.render(deltaTime, viewport, state);
 
     // 2D
@@ -86,11 +86,20 @@ void Game::render(float deltaTime) {
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
-    debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
+    // debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
 }
 
 void Game::fixedUpdate(float deltaTime) {
-    state.gameTime += deltaTime;
+    state.timeInState += deltaTime;
+
+    if (state.state == STATE_GAME) {
+        state.gameTime += deltaTime;
+        if (state.gameTime > MapShrinkTime) {
+            state.gameTime = MapShrinkTime;
+        }
+        mapRenderer->setSize(1.f - (state.gameTime / MapShrinkTime));
+    }
+
     gameplayController.fixedUpdate(deltaTime, state);
 
     processState();
@@ -126,15 +135,17 @@ void Game::processState() {
         return;
     }
 
-    if (state.state == STATE_COUNTDOWN && state.gameTime > 3.0f) {
+    if (state.state == STATE_COUNTDOWN && state.timeInState > 3.0f) {
+        state.timeInState = 0.0f;
         state.gameTime = 0.0f;
         state.state = STATE_GAME;
         return;
     }
 
-    if (state.state == STATE_WAIT_FOR_NEW_ROUND && state.gameTime > 5.0f) {
+    if (state.state == STATE_WAIT_FOR_NEW_ROUND && state.timeInState > 5.0f) {
         gameplayController.newRound();
-        state.gameTime = 0.0f;
+        mapRenderer->setSize(1.f);
+        state.timeInState = 0.0f;
         state.state = STATE_COUNTDOWN;
         return;
     }
@@ -167,24 +178,24 @@ void Game::processState() {
             state.scores[i] += playerGameplayData[i].fragCount;
         }
 
-        state.gameTime = 0.0f;
+        state.timeInState = 0.0f;
         state.state = STATE_WAIT_FOR_NEW_ROUND;
         return;
     }
 
     if (state.state == STATE_GAME && largestTeamCount == (PlayerCount - 1)) {
-        state.gameTime = 0.0f;
+        state.timeInState = 0.0f;
         state.state = STATE_LAST_ONE_STANDING;
         return;
     }
 
     if (state.state == STATE_LAST_ONE_STANDING && largestTeamCount < 3) {
-        state.gameTime = 0.6f;
+        state.timeInState = 0.6f;
         state.state = STATE_GAME;
         return;
     }
 
-    if (state.state == STATE_LAST_ONE_STANDING && state.gameTime > LastOneStandingTime) {
+    if (state.state == STATE_LAST_ONE_STANDING && state.timeInState > LastOneStandingTime) {
         int i = 0;
         PlyNum lastPlayerTeam = PLAYER_1;
         for (auto it = playerGameplayData.begin(); it != playerGameplayData.end(); ++it) {
@@ -204,7 +215,7 @@ void Game::processState() {
         state.scores[lastPlayerTeam] += 2;
         state.winner = lastPlayerTeam;
 
-        state.gameTime = 0.0f;
+        state.timeInState = 0.0f;
         state.state = STATE_WAIT_FOR_NEW_ROUND;
         return;
     }
