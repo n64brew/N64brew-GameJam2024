@@ -10,6 +10,11 @@ void sequence_game_update(float deltatime)
 {
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
+        struct Controller *controller = &controllers[i];
+        struct Character *character = &characters[i];
+
+        character->frames++;
+        
         joypad_port_t controllerPort = core_get_playercontroller(i);
         joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
         joypad_buttons_t held = joypad_get_buttons_held(controllerPort);
@@ -20,9 +25,6 @@ void sequence_game_update(float deltatime)
         {
             continue;
         }
-
-        struct Controller *controller = &controllers[i];
-        struct Character *character = &characters[i];
 
         // Pause
         if (sequence_game_paused == false && pressed.start)
@@ -103,63 +105,73 @@ void sequence_game_update(float deltatime)
             }
         }
 
-        if (character->locked_for_frames == 0)
+        // if (character->locked_for_frames == 0)
+        // {
+        // Movement
+        switch (direction)
         {
-            // Movement
-            switch (direction)
-            {
-            case JOYPAD_8WAY_UP:
-                character->y -= 1;
+        case JOYPAD_8WAY_UP:
+            character->y -= 1;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_UP_RIGHT:
-                character->x += 1;
-                character->y -= 1;
-                character->direction = RIGHT;
+            break;
+        case JOYPAD_8WAY_UP_RIGHT:
+            character->x += 1;
+            character->y -= 1;
+            character->direction = RIGHT;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_RIGHT:
-                character->x += 1;
-                character->direction = RIGHT;
+            break;
+        case JOYPAD_8WAY_RIGHT:
+            character->x += 1;
+            character->direction = RIGHT;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_DOWN_RIGHT:
-                character->x += 1;
-                character->y += 1;
-                character->direction = RIGHT;
+            break;
+        case JOYPAD_8WAY_DOWN_RIGHT:
+            character->x += 1;
+            character->y += 1;
+            character->direction = RIGHT;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_DOWN:
-                character->y += 1;
+            break;
+        case JOYPAD_8WAY_DOWN:
+            character->y += 1;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_DOWN_LEFT:
-                character->x -= 1;
-                character->y += 1;
-                character->direction = LEFT;
+            break;
+        case JOYPAD_8WAY_DOWN_LEFT:
+            character->x -= 1;
+            character->y += 1;
+            character->direction = LEFT;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_LEFT:
-                character->x -= 1;
-                character->direction = LEFT;
+            break;
+        case JOYPAD_8WAY_LEFT:
+            character->x -= 1;
+            character->direction = LEFT;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            case JOYPAD_8WAY_UP_LEFT:
-                character->x -= 1;
-                character->y -= 1;
-                character->direction = LEFT;
+            break;
+        case JOYPAD_8WAY_UP_LEFT:
+            character->x -= 1;
+            character->y -= 1;
+            character->direction = LEFT;
+            if (character->locked_for_frames == 0)
                 character->action = WALK;
-                break;
-            default:
+            break;
+        default:
+            if (character->locked_for_frames == 0)
                 character->action = BASE;
-                break;
-            }
+            break;
         }
+        // }
 
         if (pressed.a)
         {
-            character->action = SLAP;
             character->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
+            character->action = SLAP;
+            character->frames = 0;
         }
 
         if (character->locked_for_frames > 0)

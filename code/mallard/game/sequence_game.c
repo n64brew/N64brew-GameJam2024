@@ -34,7 +34,6 @@ sprite_t *sequence_game_background_lakeview_terrace_sprite;
 sprite_t *sequence_game_start_button_sprite;
 sprite_t *sequence_game_paused_text_sprite;
 
-int sequence_game_frame = 0;
 bool sequence_game_initialized = false;
 bool sequence_game_paused = false;
 
@@ -146,6 +145,4 @@ void sequence_game(float deltatime)
     sequence_game_update(deltatime);
 
     sequence_game_render(deltatime);
-
-    sequence_game_frame++;
 }

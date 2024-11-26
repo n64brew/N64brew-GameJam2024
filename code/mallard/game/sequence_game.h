@@ -30,6 +30,7 @@ struct Character
     sprite_t *base_sprite;
     sprite_t *walk_sprite;
     sprite_t *slap_sprite;
+    int frames;
     int locked_for_frames;
 };
 
