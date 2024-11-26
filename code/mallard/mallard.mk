@@ -3,13 +3,18 @@ ASSETS_LIST += \
 	filesystem/mallard/HaloDek.font64 \
 	filesystem/mallard/HaloDekBig.font64 \
 	filesystem/mallard/mallard_intro_music.xm64 \
+	filesystem/mallard/mallard_game_music.xm64 \
 	filesystem/mallard/libdragon.rgba32.sprite \
 	filesystem/mallard/mallard_logo_white.rgba32.sprite \
 	filesystem/mallard/mallard_logo_black.rgba32.sprite \
-	filesystem/mallard/mallard_one_idle.rgba32.sprite \
-	filesystem/mallard/mallard_two_idle.rgba32.sprite \
-	filesystem/mallard/mallard_three_idle.rgba32.sprite \
-	filesystem/mallard/mallard_four_idle.rgba32.sprite \
+	filesystem/mallard/one/duck_base.rgba32.sprite \
+	filesystem/mallard/two/duck_base.rgba32.sprite \
+	filesystem/mallard/three/duck_base.rgba32.sprite \
+	filesystem/mallard/four/duck_base.rgba32.sprite \
+	filesystem/mallard/one/duck_walk_1.rgba32.sprite \
+	filesystem/mallard/two/duck_walk_1.rgba32.sprite \
+	filesystem/mallard/three/duck_walk_1.rgba32.sprite \
+	filesystem/mallard/four/duck_walk_1.rgba32.sprite \
 	filesystem/mallard/mallard_game_paused_text.rgba32.sprite \
 	filesystem/mallard/mallard_background_park.rgba32.sprite
 

@@ -9,10 +9,16 @@
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
-sprite_t *sequence_game_mallard_one_idle_sprite;
-sprite_t *sequence_game_mallard_two_idle_sprite;
-sprite_t *sequence_game_mallard_three_idle_sprite;
-sprite_t *sequence_game_mallard_four_idle_sprite;
+sprite_t *sequence_game_mallard_one_base_sprite;
+sprite_t *sequence_game_mallard_two_base_sprite;
+sprite_t *sequence_game_mallard_three_base_sprite;
+sprite_t *sequence_game_mallard_four_base_sprite;
+
+sprite_t *sequence_game_mallard_one_walk_sprite;
+sprite_t *sequence_game_mallard_two_walk_sprite;
+sprite_t *sequence_game_mallard_three_walk_sprite;
+sprite_t *sequence_game_mallard_four_walk_sprite;
+
 sprite_t *sequence_game_background_lakeview_terrace_sprite;
 
 sprite_t *sequence_game_start_button_sprite;
@@ -21,6 +27,8 @@ sprite_t *sequence_game_paused_text_sprite;
 int sequence_game_frame = 0;
 bool sequence_game_initialized = false;
 bool sequence_game_paused = false;
+
+xm64player_t sequence_game_xm;
 
 struct Character *characters;
 struct Controller *controllers;
@@ -38,10 +46,15 @@ void sequence_game_init()
     ///////////////////////////////////////////////////////////
 
     // Game - Mallard
-    sequence_game_mallard_one_idle_sprite = sprite_load("rom:/mallard/mallard_one_idle.rgba32.sprite");
-    sequence_game_mallard_two_idle_sprite = sprite_load("rom:/mallard/mallard_two_idle.rgba32.sprite");
-    sequence_game_mallard_three_idle_sprite = sprite_load("rom:/mallard/mallard_three_idle.rgba32.sprite");
-    sequence_game_mallard_four_idle_sprite = sprite_load("rom:/mallard/mallard_four_idle.rgba32.sprite");
+    sequence_game_mallard_one_base_sprite = sprite_load("rom:/mallard/one/duck_base.rgba32.sprite");
+    sequence_game_mallard_two_base_sprite = sprite_load("rom:/mallard/two/duck_base.rgba32.sprite");
+    sequence_game_mallard_three_base_sprite = sprite_load("rom:/mallard/three/duck_base.rgba32.sprite");
+    sequence_game_mallard_four_base_sprite = sprite_load("rom:/mallard/four/duck_base.rgba32.sprite");
+
+    sequence_game_mallard_one_walk_sprite = sprite_load("rom:/mallard/one/duck_walk_1.rgba32.sprite");
+    sequence_game_mallard_two_walk_sprite = sprite_load("rom:/mallard/two/duck_walk_1.rgba32.sprite");
+    sequence_game_mallard_three_walk_sprite = sprite_load("rom:/mallard/three/duck_walk_1.rgba32.sprite");
+    sequence_game_mallard_four_walk_sprite = sprite_load("rom:/mallard/four/duck_walk_1.rgba32.sprite");
 
     // Gmae - Background
     sequence_game_background_lakeview_terrace_sprite = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
@@ -54,6 +67,13 @@ void sequence_game_init()
 
     initialize_characters();
     initialize_controllers();
+
+    ///////////////////////////////////////////////////////////
+    //                  Set up Audio                         //
+    ///////////////////////////////////////////////////////////
+
+    xm64player_open(&sequence_game_xm, "rom:/mallard/mallard_game_music.xm64");
+    xm64player_play(&sequence_game_xm, 0);
 }
 
 void sequence_game_cleanup()
@@ -61,10 +81,10 @@ void sequence_game_cleanup()
     // Free the sprites.
 
     // Game
-    sprite_free(sequence_game_mallard_one_idle_sprite);
-    sprite_free(sequence_game_mallard_two_idle_sprite);
-    sprite_free(sequence_game_mallard_three_idle_sprite);
-    sprite_free(sequence_game_mallard_four_idle_sprite);
+    sprite_free(sequence_game_mallard_one_base_sprite);
+    sprite_free(sequence_game_mallard_two_base_sprite);
+    sprite_free(sequence_game_mallard_three_base_sprite);
+    sprite_free(sequence_game_mallard_four_base_sprite);
     sprite_free(sequence_game_background_lakeview_terrace_sprite);
 
     sprite_free(sequence_game_start_button_sprite);

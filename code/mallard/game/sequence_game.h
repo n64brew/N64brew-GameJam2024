@@ -7,10 +7,27 @@
 
 extern bool sequence_game_finished;
 
+typedef enum
+{
+    LEFT = 0,
+    RIGHT = 1,
+} Direction;
+
+typedef enum
+{
+    BASE = 0,
+    WALK = 1,
+    IDLE = 2,
+} Action;
+
 struct Character
 {
     unsigned int x;
     unsigned int y;
+    Action action;
+    Direction direction;
+    sprite_t *base_sprite;
+    sprite_t *walk_sprite;
 };
 
 struct Controller

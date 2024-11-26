@@ -29,7 +29,7 @@ extern sprite_t *sequence_introduction_mallard_libdragon_sprite;
 extern sprite_t *sequence_introduction_mallard_logo_black_sprite;
 extern sprite_t *sequence_introduction_mallard_logo_white_sprite;
 
-extern xm64player_t xm;
+extern xm64player_t sequence_introduction_xm;
 
 void sequence_introduction_draw_libdragon_logo(float deltatime);
 void sequence_introduction_draw_mallard_logo(float deltatime);

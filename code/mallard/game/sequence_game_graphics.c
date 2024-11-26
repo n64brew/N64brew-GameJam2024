@@ -30,10 +30,36 @@ float sequence_game_fade_in_elapsed = 0.0f;
 float sequence_game_start_held_elapsed = 0.0f;
 int sequence_game_player_holding_start = -1;
 
+sprite_t *get_sprite_from_character(struct Character *character)
+{
+    switch (character->action)
+    {
+    case BASE:
+        return character->base_sprite;
+    case WALK:
+        return character->walk_sprite;
+    default:
+        return character->base_sprite;
+    }
+}
+
+int get_frame_from_character(struct Character *character)
+{
+    switch (character->action)
+    {
+    case BASE:
+        return 0;
+    case WALK:
+        return (sequence_game_frame >> 2) % SEQUENCE_GAME_MALLARD_WALK_FRAMES;
+    case IDLE:
+        return (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
+    default:
+        return 0;
+    }
+}
+
 void sequence_game_render_ducks()
 {
-    int sequence_game_mallard_idle_frame = (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
-
     rdpq_mode_push();
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -42,42 +68,16 @@ void sequence_game_render_ducks()
         struct Character *character = &characters[i];
 
         rdpq_blitparms_t blitparms = {
-            .s0 = sequence_game_mallard_idle_frame * 32,
+            .s0 = get_frame_from_character(character) * 32,
             .t0 = 0,
             .width = 32,
             .height = 32,
-            .flip_x = true,
+            .flip_x = character->direction == RIGHT ? true : false,
         };
-
-        switch (i)
-        {
-        case 0:
-            rdpq_sprite_blit(sequence_game_mallard_one_idle_sprite,
-                             character->x,
-                             character->y,
-                             &blitparms);
-            break;
-        case 1:
-            rdpq_sprite_blit(sequence_game_mallard_two_idle_sprite,
-                             character->x,
-                             character->y,
-                             &blitparms);
-            break;
-        case 2:
-            rdpq_sprite_blit(sequence_game_mallard_three_idle_sprite,
-                             character->x,
-                             character->y,
-                             &blitparms);
-            break;
-        case 3:
-            rdpq_sprite_blit(sequence_game_mallard_four_idle_sprite,
-                             character->x,
-                             character->y,
-                             &blitparms);
-            break;
-        default:
-            break;
-        }
+        rdpq_sprite_blit(get_sprite_from_character(character),
+                         character->x,
+                         character->y,
+                         &blitparms);
     }
     rdpq_mode_pop();
 }

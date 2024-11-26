@@ -15,7 +15,7 @@ sprite_t *sequence_introduction_mallard_logo_white_sprite;
 sprite_t *sequence_introduction_a_button_sprite;
 sprite_t *sequence_introduction_start_button_sprite;
 
-xm64player_t xm;
+xm64player_t sequence_introduction_xm;
 int sequence_introduction_currentXMPattern = 0;
 
 int sequence_introduction_frame = 0;
@@ -71,9 +71,9 @@ void sequence_introduction_init()
     //                  Set up Audio                         //
     ///////////////////////////////////////////////////////////
 
-    xm64player_open(&xm, "rom:/mallard/mallard_intro_music.xm64");
-    xm64player_play(&xm, 0);
-    xm64player_seek(&xm, sequence_introduction_currentXMPattern, 0, 0);
+    xm64player_open(&sequence_introduction_xm, "rom:/mallard/mallard_intro_music.xm64");
+    xm64player_play(&sequence_introduction_xm, 0);
+    xm64player_seek(&sequence_introduction_xm, sequence_introduction_currentXMPattern, 0, 0);
 
     sequence_introduction_initialized = true;
     sequence_introduction_libdragon_logo_started = true;
@@ -95,8 +95,8 @@ void sequence_introduction_cleanup()
     sprite_free(sequence_introduction_a_button_sprite);
 
     // Stop the music and free the allocated memory.
-    xm64player_stop(&xm);
-    xm64player_close(&xm);
+    xm64player_stop(&sequence_introduction_xm);
+    xm64player_close(&sequence_introduction_xm);
 
     // Close the display and free the allocated memory.
     rspq_wait();
@@ -147,11 +147,11 @@ void sequence_introduction(float deltatime)
 
     int patidx, row;
 
-    xm64player_tell(&xm, &patidx, &row, NULL);
+    xm64player_tell(&sequence_introduction_xm, &patidx, &row, NULL);
 
     // If the pattern index is greater than the currently allowed pattern, loop back to the start of the currently allowed pattern.
     if (patidx > sequence_introduction_currentXMPattern)
-        xm64player_seek(&xm, sequence_introduction_currentXMPattern, 0, 0);
+        xm64player_seek(&sequence_introduction_xm, sequence_introduction_currentXMPattern, 0, 0);
 
     sequence_introduction_frame++;
 }

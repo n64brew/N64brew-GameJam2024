@@ -107,33 +107,48 @@ void sequence_game_update(float deltatime)
         {
         case JOYPAD_8WAY_UP:
             character->y -= 1;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_UP_RIGHT:
             character->x += 1;
             character->y -= 1;
+            character->direction = RIGHT;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_RIGHT:
             character->x += 1;
+            character->direction = RIGHT;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_DOWN_RIGHT:
             character->x += 1;
             character->y += 1;
+            character->direction = RIGHT;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_DOWN:
             character->y += 1;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_DOWN_LEFT:
             character->x -= 1;
             character->y += 1;
+            character->direction = LEFT;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_LEFT:
             character->x -= 1;
+            character->direction = LEFT;
+            character->action = WALK;
             break;
         case JOYPAD_8WAY_UP_LEFT:
             character->x -= 1;
             character->y -= 1;
+            character->direction = LEFT;
+            character->action = WALK;
             break;
         default:
+            character->action = BASE;
             break;
         }
     }

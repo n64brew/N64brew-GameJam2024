@@ -21,6 +21,16 @@
 extern struct Character *characters;
 extern struct Controller *controllers;
 
+extern sprite_t *sequence_game_mallard_one_base_sprite;
+extern sprite_t *sequence_game_mallard_two_base_sprite;
+extern sprite_t *sequence_game_mallard_three_base_sprite;
+extern sprite_t *sequence_game_mallard_four_base_sprite;
+
+extern sprite_t *sequence_game_mallard_one_walk_sprite;
+extern sprite_t *sequence_game_mallard_two_walk_sprite;
+extern sprite_t *sequence_game_mallard_three_walk_sprite;
+extern sprite_t *sequence_game_mallard_four_walk_sprite;
+
 void initialize_characters();
 void free_characters();
 void initialize_controllers();

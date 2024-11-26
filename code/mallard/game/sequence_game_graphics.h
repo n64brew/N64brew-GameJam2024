@@ -3,16 +3,23 @@
 
 #include <libdragon.h>
 
+#define SEQUENCE_GAME_MALLARD_BASE_FRAMES 1
+#define SEQUENCE_GAME_MALLARD_WALK_FRAMES 8
 #define SEQUENCE_GAME_MALLARD_IDLE_FRAMES 4
 
 extern int sequence_game_frame;
 extern bool sequence_game_started;
 extern bool sequence_game_paused;
 
-extern sprite_t *sequence_game_mallard_one_idle_sprite;
-extern sprite_t *sequence_game_mallard_two_idle_sprite;
-extern sprite_t *sequence_game_mallard_three_idle_sprite;
-extern sprite_t *sequence_game_mallard_four_idle_sprite;
+extern sprite_t *sequence_game_mallard_one_base_sprite;
+extern sprite_t *sequence_game_mallard_two_base_sprite;
+extern sprite_t *sequence_game_mallard_three_base_sprite;
+extern sprite_t *sequence_game_mallard_four_base_sprite;
+
+extern sprite_t *sequence_game_mallard_one_walk_sprite;
+extern sprite_t *sequence_game_mallard_two_walk_sprite;
+extern sprite_t *sequence_game_mallard_three_walk_sprite;
+extern sprite_t *sequence_game_mallard_four_walk_sprite;
 
 extern sprite_t *sequence_game_background_lakeview_terrace_sprite;
 extern sprite_t *sequence_game_start_button_sprite;

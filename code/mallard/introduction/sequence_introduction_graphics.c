@@ -172,7 +172,7 @@ void sequence_introduction_draw_paragraph(float deltatime)
 
         if (sequence_introduction_paragraph_fade_out_started == true && sequence_introduction_paragraph_fade_out_finished == false)
         {
-            xm64player_set_vol(&xm, 1.0f - (sequence_introduction_paragraph_fade_out_elapsed / PARAGRAPH_FADE_OUT_DURATION));
+            xm64player_set_vol(&sequence_introduction_xm, 1.0f - (sequence_introduction_paragraph_fade_out_elapsed / PARAGRAPH_FADE_OUT_DURATION));
             if (sequence_introduction_paragraph_fade_out_elapsed > PARAGRAPH_FADE_OUT_DURATION)
             {
                 sequence_introduction_paragraph_fade_out_finished = true;
