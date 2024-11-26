@@ -5,7 +5,7 @@
 #include "AF_Util.h"
 
 
-void AF_LoadFont(int _id, const char* _path, float _color[4]){
+void AF_LoadFont(int _id, const char* _path, uint8_t _color[4]){
     rdpq_font_t *fnt1 = rdpq_font_load(_path);
         rdpq_font_style(fnt1, 0, &(rdpq_fontstyle_t){
             .color = RGBA32(_color[0],_color[1], _color[2], 0xFF),//text->textColor[0],text->textColor[1], text->textColor[2], text->textColor[3]), //0xED, 0xAE, 0x49, 0xFF),
@@ -69,12 +69,20 @@ void AF_UI_Init(AF_ECS* _ecs){
 
 void AF_UI_Update(AF_ECS* _ecs, AF_Time* _time){
     for(int i = 0; i < _ecs->entitiesCount; ++i){
-        AF_CText* text = &_ecs->texts[i];
         AF_CSprite* sprite = &_ecs->sprites[i];
 
-        AF_UI_RendererText_Update(text);
+       // render spirte first then text
         AF_UI_RendererSprite_Update(sprite, _time);
+       
     }
+
+    for(int i = 0; i < _ecs->entitiesCount; ++i){
+        AF_CText* text = &_ecs->texts[i];
+
+       // render spirte first then text
+       AF_UI_RendererText_Update(text);
+    }
+     
 }
 
 /*
@@ -101,12 +109,15 @@ void AF_UI_RendererSprite_Update(AF_CSprite* _sprite, AF_Time* _time){
     // Find components that are text components
     // skip components that don't have the text component
     //int hasFlag = AF_Component_GetHas(_sprite->enabled);
-    int enabledFlag = AF_Component_GetEnabled(_sprite->enabled);
+    BOOL enabledFlag = AF_Component_GetEnabled(_sprite->enabled);
+    BOOL hasFlag = AF_Component_GetHas(_sprite->enabled);
     // skip components that don't have the text component
-    if(AF_Component_GetHas(enabledFlag) == 0){
+    //if(AF_Component_GetHas(enabledFlag) == 0){
+    //    return;
+    //}
+    if(enabledFlag != TRUE || hasFlag != TRUE){
         return;
     }
-
     // don't proceed if no path or null
     if(_sprite->spritePath == NULL){ 
         return;
@@ -115,7 +126,7 @@ void AF_UI_RendererSprite_Update(AF_CSprite* _sprite, AF_Time* _time){
     if(AF_STRING_IS_EMPTY(_sprite->spritePath) == TRUE){
         // draw default background
         rdpq_set_mode_fill(RGBA32(_sprite->spriteColor[0], _sprite->spriteColor[1], _sprite->spriteColor[2], 0xFF));
-        rdpq_fill_rectangle(_sprite->pos.x, _sprite->pos.y, _sprite->size.x, _sprite->size.y);
+        rdpq_fill_rectangle(_sprite->spritePos.x, _sprite->spritePos.y, _sprite->spriteSize.x, _sprite->spriteSize.y);
     }
 
     // don't progress if we don't have sprite data
@@ -149,17 +160,25 @@ void AF_UI_RendererSprite_Update(AF_CSprite* _sprite, AF_Time* _time){
         }
     }
 
-
     
     //int horizontalFrame = 0;
     //Draw knight sprite
-    rdpq_sprite_blit((sprite_t*)_sprite->spriteData, _sprite->pos.x, _sprite->pos.y, &(rdpq_blitparms_t){
-            .s0 = _sprite->currentFrame * _sprite->size.x,//frame*ANIM_FRAME_W, //Extract correct sprite from sheet
+    rdpq_sprite_blit((sprite_t*)_sprite->spriteData, _sprite->spritePos.x, _sprite->spritePos.y, &(rdpq_blitparms_t){
+            .s0 = _sprite->currentFrame * _sprite->spriteSheetSize.x,  //< Source sub-rect top-left X coordinate
+            .t0 = _sprite->currentFrame * _sprite->spriteSheetSize.y,                                        ///< Source sub-rect top-left Y coordinate
+            .width = _sprite->spriteSize.x,            ///< Source sub-rect width. If 0, the width of the surface is used
             //Set sprite center to bottom-center
-            .cx = .5f,//ANIM_FRAME_W/2,
-            .cy = .5f,//ANIM_FRAME_H,
-            .width = _sprite->size.x, //Extract correct width from sheet
-            .flip_x = false//knights[i].flip
+            .height = _sprite->spriteSize.y,           ///< Source sub-rect height. If 0, the height of the surface is used
+            .flip_x = _sprite->flipX,                       ///< Flip horizontally. If true, the source sub-rect is treated as horizontally flipped (so flipping is performed before all other transformations)
+            .flip_y = _sprite->flipY,                       ///< Flip vertically. If true, the source sub-rect is treated as vertically flipped (so flipping is performed before all other transformations)
+            .cx = 0.0f, //.5f,                                      ///< Transformation center (aka "hotspot") X coordinate, relative to (s0, t0). Used for all transformations
+            .cy = 0.0f,//.5f,                                      ///< Transformation center (aka "hotspot") X coordinate, relative to (s0, t0). Used for all transformations
+            .scale_x = _sprite->spriteScale.x,                     ///< Horizontal scale factor to apply to the surface. If 0, no scaling is performed (the same as 1.0f). If negative, horizontal flipping is applied
+            .scale_y = _sprite->spriteScale.y,                     ///< Vertical scale factor to apply to the surface. If 0, no scaling is performed (the same as 1.0f). If negative, vertical flipping is applied
+            .theta = _sprite->spriteRotation,                        ///< Rotation angle in radians
+            .filtering = _sprite->filtering,                             ///< True if texture filtering is enabled (activates workaround for filtering artifacts when splitting textures in chunks)
+            //.nx = 1,                                        ///< Texture horizontal repeat count. If 0, no repetition is performed (the same as 1)
+            //.ny = 1                                         ///< Texture vertical repeat count. If 0, no repetition is performed (the same as 1)
         });
 
 }
@@ -189,6 +208,8 @@ void AF_UI_RendererText_Update(AF_CText* _text){
     if(_text->fontPath == NULL || AF_STRING_IS_EMPTY(_text->text) == TRUE){
         return;
     }
+
+    
     // if text needs updating, rebuild, otherwise skip
     if(_text->isDirty == TRUE){
         int nbytes = strlen(_text->text);

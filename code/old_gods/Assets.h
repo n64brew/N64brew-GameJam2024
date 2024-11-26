@@ -6,33 +6,27 @@ Contains paths to the assets to be loaded
 #define ASSETS_H
 
 // ================ MODELS ==============
-#define MODEL_COUNT 8
+#define MODEL_COUNT 6
 extern const char *model_paths[MODEL_COUNT];
-#define MODEL_BOX 0      //"rom:/old_gods/box.t3dm",        
-#define MODEL_FOOD 1      //"rom:/old_gods/food.t3dm",       
-#define MODEL_MAP 2      //"rom:/old_gods/map.t3dm",       
-#define MODEL_SHADOW 3      //"rom:/old_gods/shadow.t3dm",  
-#define MODEL_SNAKE 4      //"rom:/old_gods/snake.t3dm",     
-#define MODEL_SPIDER 5      //"rom:/old_gods/spider.t3dm", 
-#define MODEL_FROG 6
-#define MODEL_RAT 7
+#define MODEL_BOX 0         //"rom:/old_gods/box.t3dm",        
+#define MODEL_FOOD 1        //"rom:/old_gods/food.t3dm",       
+#define MODEL_MAP 2         //"rom:/old_gods/map.t3dm",       
+#define MODEL_SNAKE 3       //"rom:/old_gods/snake.t3dm",     
+#define MODEL_RAT 4
+#define MODEL_SHADOW 5
 
 
 // ================ TEXTURES ==============
-#define TEXTURE_COUNT 10
+#define TEXTURE_COUNT 11
 extern const char *texture_path[TEXTURE_COUNT];
 
 // Define for texture IDs
-#define TEXTURE_ID_0 0      //"rom:/green.sprite",        // 0 player 1
-#define TEXTURE_ID_1 1      //"rom:/green.sprite",        // 0 player 1
-#define TEXTURE_ID_2 2      //"rom:/orange.sprite",       // 2 player 3
-#define TEXTURE_ID_3 3      //"rom:/purple.sprite",       // 3 player 4
-#define TEXTURE_ID_4 4      //"rom:/grey.sprite",         // 4 god
-#define TEXTURE_ID_5 5      //"rom:/diamond0.sprite",     // 5 bucket
-#define TEXTURE_ID_6 6      //"rom:/triangle0.sprite",    // 6 villages
-#define TEXTURE_ID_7 7      //"rom:/checker.sprite",       // 7 level
-#define TEXTURE_ID_8 8      //"rom:/dark.sprite",         // 8 level
-#define TEXTURE_ID_9 9      //"rom:/god.sprite"           // 9 god
+#define TEXTURE_ID_0 0      // "rom:/old_gods/panel_white_64_64.sprite"  
+#define TEXTURE_ID_1 1      // "rom:/old_gods/panel_pink_64_64.sprite"  
+#define TEXTURE_ID_2 2      // "rom:/old_gods/player1_panel_64_64.sprite"
+#define TEXTURE_ID_3 3      // "rom:/old_gods/player2_panel_64_64.sprite"
+#define TEXTURE_ID_4 4      // "rom:/old_gods/player3_panel_64_64.sprite"
+#define TEXTURE_ID_5 5      // "rom:/old_gods/player4_panel_64_64.sprite"
 
 extern const char* animatedSpritePath;
 
@@ -42,11 +36,14 @@ extern const char* laserFXPath;
 extern const char* musicFXPath;
 
 // ================ FONT ==============
-extern const char* fontPath;
 extern const char* fontPath2;
-//#define FONT1_ID 1
+extern const char* fontPath3;
+extern const char* fontPath4;
+extern const char* fontPath5;
+#define FONT2_ID 2
 #define FONT3_ID 3
 #define FONT4_ID 4
+#define FONT5_ID 5
 
 
 

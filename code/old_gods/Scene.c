@@ -80,6 +80,7 @@ PlyNum winner;
 #define AI_MOVEMENT_SPEED_MOD 0.3f
 
 AF_Color WHITE_COLOR = {255, 255, 255, 255};
+AF_Color SAND_COLOR = {255, 245, 177};
 AF_Color PLAYER1_COLOR = {255, 0,0, 255};
 AF_Color PLAYER2_COLOR = {0, 255,0, 255};
 AF_Color PLAYER3_COLOR = {0, 0,255, 255};
@@ -292,7 +293,7 @@ void Scene_SetupEntities(AppData* _appData){
     // also useful for mapping to a ui editor
     // Create God
     
-	Vec3 godPos = {0, 0, 0};
+	Vec3 godPos = {0, .1, 0};
 	Vec3 godScale = {2,2,2};
     Vec3 godBoundingScale = {1,1,1};
     godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_MESH, AABB);
@@ -404,9 +405,10 @@ void Scene_SetupEntities(AppData* _appData){
 
 	//=========ENVIRONMENT========
     Vec3 levelMapPos = {0, 0, 0};
-	Vec3 levelMapScale = {4,1,2};
+	Vec3 levelMapScale = {30,1,15};
     levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_MESH, AABB);
     levelMapEntity->mesh->meshID = MODEL_MAP;
+    levelMapEntity->mesh->material.color = WHITE_COLOR;
     // disable the map collider
     AF_Component_SetHas(levelMapEntity->collider->enabled, FALSE);
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
@@ -426,6 +428,7 @@ void Scene_SetupEntities(AppData* _appData){
 	//Vec3 bucket1Scale = {1,1,1};
     bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket1->mesh->meshID = MODEL_BOX;
+    //bucket1->mesh->material.color = WHITE_COLOR;
     bucket1->rigidbody->inverseMass = zeroInverseMass;
 
     // TODO: add details to scene_onBucketTrigger callback

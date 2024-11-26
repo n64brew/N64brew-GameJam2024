@@ -36,12 +36,14 @@ uint8_t debugCam = DEBUG_CAM_OFF;
 static T3DViewport viewport;
 
 //static T3DVec3 rotAxis;
-static uint8_t colorAmbient[4] = {80, 50, 50, 0xFF};
+static uint8_t colorAmbient[4] = {0xFF, 0xFF, 0xFF, 0xFF};//{80, 50, 50, 0xFF};
 static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static T3DVec3 lightDirVec = {{1.0f, 1.0f, 0.0f}};
+// SkyBlue 142,224,240
+const uint8_t skyColor[3] = {142,224,240};
 
 static T3DVec3 camPos = {{0, 14.0f, 10.0f}};
-static T3DVec3 camTarget = {{0, 0,1.0}};
+static T3DVec3 camTarget = {{0, 0,0.0}};
 static float fov = 45.0f; // Initial field of view
 
 // TODO: i dont like this
@@ -329,12 +331,19 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             if(hasSkeletalComponent == TRUE){
                 color_t color ={mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
                 rdpq_set_prim_color(color); //RGBA32(255, 255, 255, 255));
+                //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                 t3d_model_draw_skinned(models[mesh->meshID], &skeletons[i]);//animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
+
                 //t3d_model_draw(models[MODEL_SHADOW]);
+                //rdpq_set_depth_write(TRUE); // Do not overwrite depth
             }
             else{
-                rdpq_set_prim_color(RGBA32(0, 0, 0, 0xFF));
+                color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, 0xFF};
+                
+                rdpq_set_prim_color(color);//RGBA32(0, 0, 0, 0xFF));
+                ///t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
+                //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                 t3d_model_draw(models[mesh->meshID]);
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
@@ -464,12 +473,12 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
-    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    t3d_screen_clear_color(RGBA32(skyColor[0], skyColor[1], skyColor[2], 0xFF));
+    
     t3d_screen_clear_depth();
-
     // Tell the RSP to draw our command list
     rspq_block_run(bufferList);
-
+    
     // sync the RSP
     syncPoint = rspq_syncpoint_new();
     
@@ -650,6 +659,16 @@ void AF_Renderer_Shutdown(AF_ECS* _ecs){
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
             free_uncached(mesh->modelMatrix);
         }
+        // TODO: Free memory
+        // skeleton data
+
+        // Font
+
+        // Sound
+
+        // sprites
+
+
 
         /*
         AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
@@ -784,8 +803,9 @@ void Renderer_DebugCam(RendererDebugData* _rendererDebugData){
         camTarget.v[2] -= 1.0f;
     }
 
+    // TODO: set the rdpq font 
 
-    rdpq_text_printf(NULL, FONT3_ID, 300, 20, 
+    rdpq_text_printf(NULL, FONT2_ID, 300, 20, 
     "DEBUG_CAM\n\
     FOV: %f\n\
     CAM_POS: x: %f, y: %f, z: %f\n\
@@ -793,11 +813,11 @@ void Renderer_DebugCam(RendererDebugData* _rendererDebugData){
     fov, camPos.v[0], camPos.v[1], camPos.v[2], camTarget.v[2]);
 
     //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 20, "Entities  : %i", _rendererDebugData->entitiesCount);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 30, "Meshs  : %i", _rendererDebugData->totalMeshes);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 40, "Tris  : %i", _rendererDebugData->totalTris);
+    rdpq_text_printf(NULL, FONT2_ID, 50, 20, "Entities  : %i", _rendererDebugData->entitiesCount);
+    rdpq_text_printf(NULL, FONT2_ID, 50, 30, "Meshs  : %i", _rendererDebugData->totalMeshes);
+    rdpq_text_printf(NULL, FONT2_ID, 50, 40, "Tris  : %i", _rendererDebugData->totalTris);
     
-    rdpq_text_printf(NULL, FONT3_ID, 50, 50, "Total Render: %.2fms", _rendererDebugData->totalRenderTime);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 60, "Entity Render: %.2fms", _rendererDebugData->totalEntityRenderTime);
-    rdpq_text_printf(NULL, FONT3_ID, 50, 70, "FPS   : %.2f", display_get_fps());
+    rdpq_text_printf(NULL, FONT2_ID, 50, 50, "Total Render: %.2fms", _rendererDebugData->totalRenderTime);
+    rdpq_text_printf(NULL, FONT2_ID, 50, 60, "Entity Render: %.2fms", _rendererDebugData->totalEntityRenderTime);
+    rdpq_text_printf(NULL, FONT2_ID, 50, 70, "FPS   : %.2f", display_get_fps());
 }

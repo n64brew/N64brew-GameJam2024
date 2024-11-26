@@ -23,14 +23,15 @@ static inline AF_Entity* Entity_Factory_CreatePrimative(AF_ECS* _ecs, Vec3 _pos,
 	return entity;
 }
 
-static inline AF_Entity* Entity_Factory_CreateSprite(AF_ECS* _ecs, const char* _spritePath, Vec2 _screenPos, Vec2 _size, uint8_t _color[4], char _animationFrames, Vec2 _spriteSheetSize, void* _spriteData){
+static inline AF_Entity* Entity_Factory_CreateSprite(AF_ECS* _ecs, const char* _spritePath, Vec2 _screenPos,Vec2 _scale, Vec2 _size, uint8_t _color[4], char _animationFrames, Vec2 _spriteSheetSize){
 	AF_Entity* entity = AF_ECS_CreateEntity(_ecs);
 
 	AF_CSprite* sprite = entity->sprite;
 	*sprite = AF_CSprite_ADD();
 	sprite->spritePath = _spritePath;
-	sprite->pos = _screenPos;
-	sprite->size = _size;
+	sprite->spritePos = _screenPos;
+	sprite->spriteSheetSize = _size;
+	sprite->spriteScale = _scale;
 	// TODO: fix this
 	sprite->spriteColor[0] = _color[0];
 	sprite->spriteColor[1] = _color[1];
@@ -82,7 +83,7 @@ static inline AF_Entity* Entity_Factory_CreateAudio(AF_ECS* _ecs, AF_AudioClip _
 	return returnEntity;
 }
 
-static inline AF_Entity* Entity_Factory_CreateUILabel(AF_ECS* _ecs, char* _textBuff, int _fontID, const char* _fontPath, float _color[4], Vec2 _pos, Vec2 _size){
+static inline AF_Entity* Entity_Factory_CreateUILabel(AF_ECS* _ecs, char* _textBuff, int _fontID, const char* _fontPath, uint8_t _color[4], Vec2 _pos, Vec2 _size){
    
     AF_Entity* entity = AF_ECS_CreateEntity(_ecs);
     *entity->text = AF_CText_ADD();
@@ -92,6 +93,10 @@ static inline AF_Entity* Entity_Factory_CreateUILabel(AF_ECS* _ecs, char* _textB
     entity->text->fontID = _fontID;
     entity->text->screenPos = _pos;
 	entity->text->textBounds = _size;
+	entity->text->textColor[0] = _color[0];
+	entity->text->textColor[1] = _color[1];
+	entity->text->textColor[2] = _color[2];
+	entity->text->textColor[3] = _color[3];
     
     return entity;
 }
