@@ -34,8 +34,14 @@ BulletController::BulletController(std::shared_ptr<MapRenderer> map, std::shared
     }),
     block({nullptr, rspq_block_free}),
     map(map),
-    ui(ui) {
+    ui(ui),
+    sfxFire("rom:/paintball/fire.wav64"),
+    sfxHit("rom:/paintball/hit.wav64"),
+    sfxCapture("rom:/paintball/capture.wav64") {
         assertf(model.get(), "Bullet model is null");
+
+        mixer_ch_set_vol(FireAudioChannel, 0.3f, 0.3f);
+        mixer_ch_set_vol(CaptureAudioChannel, 0.3f, 0.3f);
 
         rspq_block_begin();
             t3d_model_draw(model.get());
@@ -165,6 +171,10 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player::Gameplay
 
                 ui->registerHit(HitMark {bullet->pos, bullet->owner});
                 map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
+                wav64_play(sfxHit.get(), FireAudioChannel);
+                if (hit) {
+                    wav64_play(sfxCapture.get(), CaptureAudioChannel);
+                }
                 bullets.remove(bullet);
 
                 // No need to check other players, we don't have the bullet anymore
@@ -178,4 +188,5 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player::Gameplay
 void BulletController::fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team) {
     // TODO: this will prevent firing once every slot is occupied
     bullets.add(Bullet {pos, velocity, owner, team});
+    wav64_play(sfxFire.get(), FireAudioChannel);
 }

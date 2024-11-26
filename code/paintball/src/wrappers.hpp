@@ -126,6 +126,22 @@ class RDPQSurface
         };
 };
 
+class Wav64
+{
+    private:
+        wav64_t wav;
+    public:
+        Wav64(const char *name) {
+            wav64_open(&wav, name);
+        };
+        ~Wav64() {
+            wav64_close(&wav);
+        };
+        wav64_t* get() {
+            return &wav;
+        };
+};
+
 namespace U {
     using RSPQBlock = std::unique_ptr<rspq_block_t, decltype(&rspq_block_free)>;
     using T3DMat4FP = std::unique_ptr<T3DMat4FP, decltype(&free_uncached)>;

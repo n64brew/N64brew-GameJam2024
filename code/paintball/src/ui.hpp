@@ -24,6 +24,9 @@ class UIRenderer
 
         List<HitMark, PlayerCount * 4> hits;
 
+        Wav64 sfxCountdown;
+        int prevCountdown;
+
         void renderHitMarks(T3DViewport &viewport, float deltaTime);
 
     public:

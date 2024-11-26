@@ -3,7 +3,9 @@
 UIRenderer::UIRenderer() :
     mediumFont("rom:/paintball/FingerPaint-Regular-Medium.font64", MediumFont),
     bigFont("rom:/paintball/FingerPaint-Regular-Big.font64", BigFont),
-    hitSprite {sprite_load("rom:/paintball/marker.ia4.sprite"), sprite_free}
+    hitSprite {sprite_load("rom:/paintball/marker.ia4.sprite"), sprite_free},
+    sfxCountdown("rom:/core/Countdown.wav64"),
+    prevCountdown(0)
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
@@ -54,6 +56,11 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
         } else {
             rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Round %d", state.currentRound + 1);
         }
+        int countdown = (int)ceilf(3.f - state.timeInState);
+        if (countdown != prevCountdown) {
+            wav64_play(sfxCountdown.get(), GeneralPurposeAudioChannel);
+            prevCountdown = countdown;
+        }
         rdpq_text_printf(&centerparms, BigFont, 0, 0, "%d", (int)ceilf(3.f - state.timeInState));
 
         rdpq_text_printf(&centerparms, SmallFont, 0, - ScreenHeight / 8, "^04Prepare to paint!");
@@ -61,7 +68,8 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
         rdpq_text_printf(&centerparms, BigFont, 0, 0, "Go!");
     } else if(state.state == STATE_LAST_ONE_STANDING){
         if(state.timeInState < 3.f) {
-            rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Run to score!");
+            rdpq_text_printf(&centerparms, MediumFont, 0, - ScreenHeight / 4, "Final stand!");
+            rdpq_text_printf(&centerparms, SmallFont, 0, - ScreenHeight / 8, "^04Don't let them escape!");
         }
 
         if(state.state == STATE_LAST_ONE_STANDING && state.timeInState < LastOneStandingTime){
@@ -76,13 +84,16 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
 
             rdpq_text_printf(&textparms3, MediumFont, ScreenWidth * 0.1, ScreenHeight * 0.1, "%d", (int)ceilf(LastOneStandingTime - state.timeInState));
         }
-    } else if (state.state == STATE_WAIT_FOR_NEW_ROUND || state.state == STATE_FINISHED) {
+    } else if (state.state == STATE_FINISHED) {
         centerparms.style_id = state.winner;
-        if (state.state == STATE_FINISHED) {
-            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Game Over!");
-        } else {
-            rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Player %d wins!", state.winner + 1);
+        rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Winner!");
+
+        for (int i = 0; i < MAXPLAYERS; i++) {
+            centerparms.style_id = i;
+            rdpq_text_printf(&centerparms, MediumFont, 0, (i-1) * 30, "Player %d: %d", i + 1, state.scores[i]);
         }
+    } else if (state.state == STATE_WAIT_FOR_NEW_ROUND) {
+        rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 3, "Player %d wins!", state.winner + 1);
 
         for (int i = 0; i < MAXPLAYERS; i++) {
             centerparms.style_id = i;

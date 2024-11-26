@@ -12,7 +12,10 @@ Game::Game() :
         .timeInState = 0.0f,
         .currentRound = 0,
         .scores = {0},
-    })
+    }),
+    sfxStart("rom:/core/Start.wav64"),
+    sfxFinish("rom:/core/Winner.wav64"),
+    sfxLastOne("rom:/core/Stop.wav64")
 {
     rdpq_fontstyle_t p1Style = { .color = PLAYERCOLOR_1 };
     rdpq_fontstyle_t p2Style = { .color = PLAYERCOLOR_2 };
@@ -133,6 +136,7 @@ void Game::processState() {
             };
         }
         state.state = STATE_FINISHED;
+        wav64_play(sfxFinish.get(), GeneralPurposeAudioChannel);
         return;
     }
 
@@ -140,6 +144,7 @@ void Game::processState() {
         state.timeInState = 0.0f;
         state.gameTime = 0.0f;
         state.state = STATE_GAME;
+        wav64_play(sfxStart.get(), GeneralPurposeAudioChannel);
         return;
     }
 
@@ -187,6 +192,7 @@ void Game::processState() {
     if (state.state == STATE_GAME && largestTeamCount == (PlayerCount - 1)) {
         state.timeInState = 0.0f;
         state.state = STATE_LAST_ONE_STANDING;
+        wav64_play(sfxLastOne.get(), GeneralPurposeAudioChannel);
         return;
     }
 

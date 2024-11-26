@@ -13,6 +13,11 @@ constexpr int ScreenWidth = 320;
 constexpr int ScreenHeight = 240;
 
 constexpr float LastOneStandingTime = 20;
-constexpr int RoundCount = 3;
+constexpr int RoundCount = 5;
+
+constexpr int FireAudioChannel = 10;
+constexpr int HitAudioChannel = 11;
+constexpr int CaptureAudioChannel = 13;
+constexpr int GeneralPurposeAudioChannel = 13;
 
 #endif // __CONSTANTS_H

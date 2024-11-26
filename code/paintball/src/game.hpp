@@ -51,6 +51,10 @@ class Game
 
         GameState state;
 
+        Wav64 sfxStart;
+        Wav64 sfxFinish;
+        Wav64 sfxLastOne;
+
         void gameOver();
         void processState();
 
