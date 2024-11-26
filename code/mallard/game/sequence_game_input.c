@@ -4,6 +4,7 @@
 #include "sequence_game.h"
 #include "sequence_game_input.h"
 #include "sequence_game_initialize.h"
+#include "sequence_game_graphics.h"
 
 void sequence_game_update(float deltatime)
 {
@@ -102,54 +103,68 @@ void sequence_game_update(float deltatime)
             }
         }
 
-        // Movement
-        switch (direction)
+        if (character->locked_for_frames == 0)
         {
-        case JOYPAD_8WAY_UP:
-            character->y -= 1;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_UP_RIGHT:
-            character->x += 1;
-            character->y -= 1;
-            character->direction = RIGHT;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_RIGHT:
-            character->x += 1;
-            character->direction = RIGHT;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_DOWN_RIGHT:
-            character->x += 1;
-            character->y += 1;
-            character->direction = RIGHT;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_DOWN:
-            character->y += 1;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_DOWN_LEFT:
-            character->x -= 1;
-            character->y += 1;
-            character->direction = LEFT;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_LEFT:
-            character->x -= 1;
-            character->direction = LEFT;
-            character->action = WALK;
-            break;
-        case JOYPAD_8WAY_UP_LEFT:
-            character->x -= 1;
-            character->y -= 1;
-            character->direction = LEFT;
-            character->action = WALK;
-            break;
-        default:
-            character->action = BASE;
-            break;
+            // Movement
+            switch (direction)
+            {
+            case JOYPAD_8WAY_UP:
+                character->y -= 1;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_UP_RIGHT:
+                character->x += 1;
+                character->y -= 1;
+                character->direction = RIGHT;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_RIGHT:
+                character->x += 1;
+                character->direction = RIGHT;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_DOWN_RIGHT:
+                character->x += 1;
+                character->y += 1;
+                character->direction = RIGHT;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_DOWN:
+                character->y += 1;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_DOWN_LEFT:
+                character->x -= 1;
+                character->y += 1;
+                character->direction = LEFT;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_LEFT:
+                character->x -= 1;
+                character->direction = LEFT;
+                character->action = WALK;
+                break;
+            case JOYPAD_8WAY_UP_LEFT:
+                character->x -= 1;
+                character->y -= 1;
+                character->direction = LEFT;
+                character->action = WALK;
+                break;
+            default:
+                character->action = BASE;
+                break;
+            }
+        }
+
+        if (pressed.a)
+        {
+            character->action = SLAP;
+            character->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
+        }
+
+        if (character->locked_for_frames > 0)
+        {
+            character->locked_for_frames--;
         }
     }
 }

@@ -14,10 +14,20 @@ sprite_t *sequence_game_mallard_two_base_sprite;
 sprite_t *sequence_game_mallard_three_base_sprite;
 sprite_t *sequence_game_mallard_four_base_sprite;
 
+// sprite_t *sequence_game_mallard_one_sleep_sprite;
+// sprite_t *sequence_game_mallard_two_sleep_sprite;
+// sprite_t *sequence_game_mallard_three_sleep_sprite;
+// sprite_t *sequence_game_mallard_four_sleep_sprite;
+
 sprite_t *sequence_game_mallard_one_walk_sprite;
 sprite_t *sequence_game_mallard_two_walk_sprite;
 sprite_t *sequence_game_mallard_three_walk_sprite;
 sprite_t *sequence_game_mallard_four_walk_sprite;
+
+sprite_t *sequence_game_mallard_one_slap_sprite;
+sprite_t *sequence_game_mallard_two_slap_sprite;
+sprite_t *sequence_game_mallard_three_slap_sprite;
+sprite_t *sequence_game_mallard_four_slap_sprite;
 
 sprite_t *sequence_game_background_lakeview_terrace_sprite;
 
@@ -56,6 +66,11 @@ void sequence_game_init()
     sequence_game_mallard_three_walk_sprite = sprite_load("rom:/mallard/three/duck_walk_1.rgba32.sprite");
     sequence_game_mallard_four_walk_sprite = sprite_load("rom:/mallard/four/duck_walk_1.rgba32.sprite");
 
+    sequence_game_mallard_one_slap_sprite = sprite_load("rom:/mallard/one/duck_slap.rgba32.sprite");
+    sequence_game_mallard_two_slap_sprite = sprite_load("rom:/mallard/two/duck_slap.rgba32.sprite");
+    sequence_game_mallard_three_slap_sprite = sprite_load("rom:/mallard/three/duck_slap.rgba32.sprite");
+    sequence_game_mallard_four_slap_sprite = sprite_load("rom:/mallard/four/duck_slap.rgba32.sprite");
+
     // Gmae - Background
     sequence_game_background_lakeview_terrace_sprite = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
 
@@ -79,14 +94,23 @@ void sequence_game_init()
 void sequence_game_cleanup()
 {
     // Free the sprites.
-
-    // Game
     sprite_free(sequence_game_mallard_one_base_sprite);
     sprite_free(sequence_game_mallard_two_base_sprite);
     sprite_free(sequence_game_mallard_three_base_sprite);
     sprite_free(sequence_game_mallard_four_base_sprite);
-    sprite_free(sequence_game_background_lakeview_terrace_sprite);
 
+    sprite_free(sequence_game_mallard_one_slap_sprite);
+    sprite_free(sequence_game_mallard_two_slap_sprite);
+    sprite_free(sequence_game_mallard_three_slap_sprite);
+    sprite_free(sequence_game_mallard_four_slap_sprite);
+
+    sprite_free(sequence_game_mallard_one_walk_sprite);
+    sprite_free(sequence_game_mallard_two_walk_sprite);
+    sprite_free(sequence_game_mallard_three_walk_sprite);
+    sprite_free(sequence_game_mallard_four_walk_sprite);
+
+    sprite_free(sequence_game_background_lakeview_terrace_sprite);
+    
     sprite_free(sequence_game_start_button_sprite);
     sprite_free(sequence_game_paused_text_sprite);
 

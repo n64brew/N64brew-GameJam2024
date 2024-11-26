@@ -6,6 +6,7 @@
 #define SEQUENCE_GAME_MALLARD_BASE_FRAMES 1
 #define SEQUENCE_GAME_MALLARD_WALK_FRAMES 8
 #define SEQUENCE_GAME_MALLARD_IDLE_FRAMES 4
+#define SEQUENCE_GAME_MALLARD_SLAP_FRAMES 3
 
 extern int sequence_game_frame;
 extern bool sequence_game_started;

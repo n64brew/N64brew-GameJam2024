@@ -38,6 +38,8 @@ sprite_t *get_sprite_from_character(struct Character *character)
         return character->base_sprite;
     case WALK:
         return character->walk_sprite;
+    case SLAP:
+        return character->slap_sprite;
     default:
         return character->base_sprite;
     }
@@ -50,9 +52,11 @@ int get_frame_from_character(struct Character *character)
     case BASE:
         return 0;
     case WALK:
-        return (sequence_game_frame >> 2) % SEQUENCE_GAME_MALLARD_WALK_FRAMES;
+        return (sequence_game_frame >> 2) % SEQUENCE_GAME_MALLARD_WALK_FRAMES; // Update every 4 frames
     case IDLE:
-        return (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
+        return (sequence_game_frame >> 2) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES; // Update every 4 frames
+    case SLAP:
+        return (sequence_game_frame >> 2) % SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Update every 4 frames
     default:
         return 0;
     }

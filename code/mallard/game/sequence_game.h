@@ -18,6 +18,7 @@ typedef enum
     BASE = 0,
     WALK = 1,
     IDLE = 2,
+    SLAP = 3,
 } Action;
 
 struct Character
@@ -28,6 +29,8 @@ struct Character
     Direction direction;
     sprite_t *base_sprite;
     sprite_t *walk_sprite;
+    sprite_t *slap_sprite;
+    int locked_for_frames;
 };
 
 struct Controller
