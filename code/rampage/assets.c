@@ -61,6 +61,9 @@ void rampage_assets_init() {
     gRampageAssets.swing_effect = t3d_model_load("rom://rampage/swing_effect.t3dm");
     rampage_model_separate_material(gRampageAssets.swing_effect, &gRampageAssets.swing_split);
 
+    gRampageAssets.spark_effect = t3d_model_load("rom://rampage/spark_effect.t3dm");
+    rampage_model_separate_material(gRampageAssets.spark_effect, &gRampageAssets.spark_split);
+
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         char filename[32];
         sprintf(filename, "rom:/rampage/%d.sprite", i);
@@ -93,6 +96,8 @@ void rampage_assets_destroy() {
     t3d_model_free(gRampageAssets.bullet);
     t3d_model_free(gRampageAssets.swing_effect);
     rampage_model_free_split(&gRampageAssets.swing_split);
+    t3d_model_free(gRampageAssets.spark_effect);
+    rampage_model_free_split(&gRampageAssets.spark_split);
 
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         sprite_free(gRampageAssets.countdown_numbers[i]);

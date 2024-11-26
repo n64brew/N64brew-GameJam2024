@@ -18,6 +18,7 @@ ASSETS_LIST += \
 	filesystem/rampage/level.t3dm \
 	filesystem/rampage/bullet.t3dm \
 	filesystem/rampage/swing_effect.t3dm \
+	filesystem/rampage/spark_effect.t3dm \
 	filesystem/rampage/blockade.t3dm \
 	filesystem/rampage/directionsign.t3dm \
 	filesystem/rampage/streetlight.t3dm \

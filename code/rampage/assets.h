@@ -22,6 +22,8 @@ struct RampageAssets {
     T3DModel* bullet;
     T3DModel* swing_effect;
     struct RampageSplitMesh swing_split;
+    T3DModel* spark_effect;
+    struct RampageSplitMesh spark_split;
 
     sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
     sprite_t* destroy_image;

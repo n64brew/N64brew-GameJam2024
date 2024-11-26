@@ -2,6 +2,7 @@
 
 #include "./math/vector2.h"
 #include "./math/mathf.h"
+#include "./assets.h"
 #include <t3d/t3d.h>
 
 #define GRAVITY_CONSTANT        -600.0f
@@ -14,7 +15,7 @@
 #define MIN_NORMAL_VEL          120.0f
 #define MAX_NORMAL_VEL          160.0f
 
-#define HALF_WIDTH              2.0f
+#define HALF_WIDTH              1.5f
 
 
 static rspq_block_t* triangles;
@@ -91,6 +92,16 @@ void spark_effect_update(struct SparkEffect* effect, float delta_time) {
     }
 }
 
+static color_t spark_effect_gradient[] = {
+    {32, 0, 0, 0},
+    {196, 64, 16, 200},
+    {220, 128, 32, 255},
+    {230, 200, 40, 255},
+    {240, 240, 40, 255},
+};
+
+#define GRADIENT_COUNT  (sizeof(spark_effect_gradient) / sizeof(spark_effect_gradient[0]))
+
 void spark_effect_render(struct SparkEffect* effect, struct frame_malloc* fm) {
     if (!effect->time_left) {
         return;
@@ -106,8 +117,32 @@ void spark_effect_render(struct SparkEffect* effect, struct frame_malloc* fm) {
 
     T3DVertPacked* curr = vertices;
 
+    float float_value = effect->time_left * (GRADIENT_COUNT - 1) * (1.0f / PARTICLE_TIME);
+
+    int int_value = (int)floorf(float_value);
+    float lerp_value = float_value - int_value;
+
+    color_t color_value;
+
+    if (int_value >= GRADIENT_COUNT - 1) {
+        color_value = spark_effect_gradient[GRADIENT_COUNT - 1];
+    } else {
+        color_t lerp_from = spark_effect_gradient[int_value];
+        color_t lerp_to = spark_effect_gradient[int_value + 1];
+
+        float inv_lerp = 1.0f - lerp_value;
+
+        color_value.r = (int)(lerp_from.r * inv_lerp + lerp_to.r * lerp_value);
+        color_value.g = (int)(lerp_from.g * inv_lerp + lerp_to.g * lerp_value);
+        color_value.b = (int)(lerp_from.b * inv_lerp + lerp_to.b * lerp_value);
+        color_value.a = (int)(lerp_from.a * inv_lerp + lerp_to.a * lerp_value);
+    }
+
+    rdpq_set_prim_color(color_value);
+
     for (int i = 0; i < MAX_PARTICLE_COUNT; i += 1) {
         for (int half = 0; half < 2; half += 1) {
+
             curr->normA = 0;
             curr->normB = 0;
             curr->rgbaA = 0xFFFFFFFF;
@@ -186,6 +221,7 @@ void spark_effects_update(float delta_time) {
 }
 
 void spark_effects_render(struct frame_malloc* fm) {
+    rspq_block_run(rampage_assets_get()->spark_split.material);
     for (int i = 0; i < MAX_ACTIVE_EFFECTS; i += 1) {
         spark_effect_render(&spark_effects[i], fm);
     }
