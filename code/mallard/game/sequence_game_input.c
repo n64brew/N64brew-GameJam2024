@@ -337,6 +337,26 @@ void sequence_game_update(float deltatime)
             break;
         }
 
+        if (character->x > MAX_X)
+        {
+            character->x = MAX_X;
+        }
+
+        if (character->x < MIN_X)
+        {
+            character->x = MIN_X;
+        }
+
+        if (character->y > MAX_Y)
+        {
+            character->y = MAX_Y;
+        }
+
+        if (character->y < MIN_Y)
+        {
+            character->y = MIN_Y;
+        }
+
         if (pressed.a)
         {
             character->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.

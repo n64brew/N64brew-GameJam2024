@@ -5,6 +5,8 @@
 #include "sequence_game.h"
 #include "sequence_game_graphics.h"
 
+#include "sequence_game_initialize.h"
+
 // These player boxes are just used for visualizing the boxes and spawn points while developing.
 #define PLAYER_1_BOX_X1 16
 #define PLAYER_1_BOX_Y1 135
@@ -159,28 +161,13 @@ void sequence_game_render(float deltatime)
         rdpq_attach(display_get(), NULL);
         rdpq_clear(BLACK);
 
+        sequence_game_draw_background_lakeview_terrace();
+
         // rdpq_set_mode_standard();
         // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
         // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         // rdpq_set_prim_color(RGBA32(0, 0, 0, 128));
-        // rdpq_fill_rectangle(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_X2, PLAYER_1_SPAWN_Y2);
-
-        // rdpq_set_mode_standard();
-        // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-        // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        // rdpq_set_prim_color(RGBA32(PLAYERCOLOR_1.r, PLAYERCOLOR_1.g, PLAYERCOLOR_1.b, 64));
-        // rdpq_fill_rectangle(PLAYER_1_BOX_X1, PLAYER_1_BOX_Y1, PLAYER_1_BOX_X2, PLAYER_1_BOX_Y2);
-
-        // rdpq_set_prim_color(RGBA32(PLAYERCOLOR_2.r, PLAYERCOLOR_2.g, PLAYERCOLOR_2.b, 64));
-        // rdpq_fill_rectangle(PLAYER_2_BOX_X1, PLAYER_2_BOX_Y1, PLAYER_2_BOX_X2, PLAYER_2_BOX_Y2);
-
-        // rdpq_set_prim_color(RGBA32(PLAYERCOLOR_3.r, PLAYERCOLOR_3.g, PLAYERCOLOR_3.b, 64));
-        // rdpq_fill_rectangle(PLAYER_3_BOX_X1, PLAYER_3_BOX_Y1, PLAYER_3_BOX_X2, PLAYER_3_BOX_Y2);
-
-        // rdpq_set_prim_color(RGBA32(PLAYERCOLOR_4.r, PLAYERCOLOR_4.g, PLAYERCOLOR_4.b, 64));
-        // rdpq_fill_rectangle(PLAYER_4_BOX_X1, PLAYER_4_BOX_Y1, PLAYER_4_BOX_X2, PLAYER_4_BOX_Y2);
-
-        sequence_game_draw_background_lakeview_terrace();
+        // rdpq_fill_rectangle(MIN_X, MIN_Y, MAX_X, MAX_Y);
 
         sequence_game_render_ducks();
 

@@ -1,6 +1,11 @@
 #ifndef SEQUENCE_GAME_INITIALIZE_H
 #define SEQUENCE_GAME_INITIALIZE_H
 
+#define MIN_X 5
+#define MAX_X 152 + 152 - 15
+#define MIN_Y 111 - 85
+#define MAX_Y 194
+
 #define PLAYER_1_SPAWN_X1 5
 #define PLAYER_1_SPAWN_Y1 111
 #define PLAYER_1_SPAWN_X2 152
