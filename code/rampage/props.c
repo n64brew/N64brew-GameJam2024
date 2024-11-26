@@ -5,6 +5,21 @@
 #include <math.h>
 #include "./collision/gjk.h"
 #include "./spark_effect.h"
+#include "./rampage.h"
+#include "./math/quaternion.h"
+#include <stdlib.h>
+
+struct Vector3 local_centers[] = {
+    {0.0f, SCALE_FIXED_POINT(0.150918f), 0.0f},
+    {0.0f, SCALE_FIXED_POINT(0.644826f), 0.0f},
+    {0.0f, SCALE_FIXED_POINT(0.644836f), SCALE_FIXED_POINT(-0.096465f)},
+    {0.0f, SCALE_FIXED_POINT(0.655209f), 0.0f},
+    {0.0f, SCALE_FIXED_POINT(0.290951f), SCALE_FIXED_POINT(-0.135703f)},
+};
+
+int props_sort(const void *a, const void *b) {
+    return (int)(((struct SingleProp*)a)->position.x - ((struct SingleProp*)b)->position.x);
+}
 
 #define QUAT_SCALE  (1.0f / 32000.0f)
 
@@ -65,7 +80,15 @@ void props_init(struct AllProps* props, const char* filename) {
 
         props->x_values[i] = pos.x;
 
-        prop->position.y += 64.0f;
+        struct Vector3 local_center;
+        quatMultVector((struct Quaternion*)&rotation, &local_centers[prop->asset_index], &local_center);
+        vector3Add(&local_center, &prop->position, &prop->position);
+    }
+
+    qsort(props->props, props->prop_count, sizeof(struct SingleProp), props_sort);
+
+    for (int i = 0; i < props->prop_count; i += 1) {
+        props->x_values[i] = props->props[i].position.x;
     }
 }
 
