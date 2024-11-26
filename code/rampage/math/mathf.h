@@ -8,6 +8,7 @@
 
 #define DEG_TO_RAD(angle)   ((angle) * (PI_F / 180.0f))
 
+void randomSeed(int seed);
 int randomInt();
 int randomInRange(int min, int maxPlusOne);
 float randomInRangef(float min, float max);

@@ -106,6 +106,12 @@ void rampage_building_damage(void* data, int amount, struct Vector3* velocity, i
     }
 }
 
+uint8_t building_health[] = {
+    0,
+    1,
+    3,
+};
+
 void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, int rotation) {
     int entity_id = entity_id_next();
 
@@ -132,7 +138,7 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, 
     building->is_destroyed = false;
     building->rotation = rotation;
 
-    building->hp = building->height * BUILDING_HEALTH;
+    building->hp = building_health[building->height];
     building->shake_timer = 0.0f;
     building->is_collapsing = false;
 

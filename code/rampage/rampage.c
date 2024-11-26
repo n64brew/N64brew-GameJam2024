@@ -83,6 +83,7 @@ struct frame_malloc frame_mallocs[2];
 int next_frame_malloc;
 
 void minigame_init() {
+    randomSeed((int)get_ticks_us());
     display_init(HIGH_RES ? RESOLUTION_640x240 : RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     t3d_init((T3DInitParams){});
 
