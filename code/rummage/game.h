@@ -16,6 +16,8 @@ int game_vault();
 void start_game();
 void stop_game();
 bool is_playing();
+bool is_paused();
+void toggle_pause();
 bool has_winner();
 PlyNum winner();
 

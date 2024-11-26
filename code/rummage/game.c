@@ -50,6 +50,7 @@
 #define PLAYER_SCALE 0.2f
 
 bool playing = false;
+bool paused = false;
 
 typedef struct actor_t {
     T3DModel* model;
@@ -728,7 +729,7 @@ void game_init()
 
 void game_logic(float deltatime)
 {
-    if (is_playing()) {
+    if (is_playing() && !is_paused()) {
         // Player controls
         for (size_t i = 0; i < MAXPLAYERS; i++) {
             if (players[i].hurt_playing_time > 0) {
@@ -1034,18 +1035,14 @@ void game_render(float deltatime)
     if (is_playing()) {
         // Player controls
         for (size_t i = 0; i < MAXPLAYERS; i++) {
-            if (players[i].is_human) {  // Human player
+            if (players[i].is_human && !is_paused()) {  // Human player
                 if (players[i].hurt_playing_time > 0 || players[i].action_playing_time > 0 || players[i].attack_playing_time > 0) {
                     continue;
                 }
                 joypad_port_t port = core_get_playercontroller(i);
-                joypad_buttons_t btn = joypad_get_buttons_pressed(port);
-                // Exit minigame by pressing start
-                if (btn.start) {
-                    minigame_end();
-                }
+                joypad_buttons_t pressed = joypad_get_buttons_pressed(port);
                 // Player actions: rummage, open vault, grab other player
-                if(btn.a) {
+                if(pressed.a) {
                     // If the player is close to a furniture, search for the key
                     for (int j=0; j<FURNITURES_COUNT; j++) {
                         rummage(i, j);
@@ -1055,7 +1052,7 @@ void game_render(float deltatime)
                             open(i, j);
                         }
                     }
-                } else if (btn.b) {
+                } else if (pressed.b) {
                     wav64_play(&players[i].sfx_attack, players[i].sfx_channel);
                     start_player_attack(i);
                 }
@@ -1078,32 +1075,36 @@ void game_render(float deltatime)
 
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
-        if (players[i].action_playing_time > 0) {
-            t3d_anim_update(&players[i].anim_act, deltatime);
-        } else if (players[i].attack_playing_time > 0) {
-            t3d_anim_update(&players[i].anim_attack, deltatime);
-        } else if (players[i].hurt_playing_time > 0) {
-            t3d_anim_update(&players[i].anim_hurt, deltatime);
-        } else if (players[i].speed > 0.0f) {
-            // TODO only set anim when switching state ?
-            t3d_anim_set_playing(&players[i].anim_walk, true);
-            t3d_anim_set_playing(&players[i].anim_idle, false);
-            t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);
-            t3d_anim_update(&players[i].anim_walk, deltatime);
-        } else {
-            // TODO only set anim when switching state ?
-            t3d_anim_set_playing(&players[i].anim_idle, true);
-            t3d_anim_set_playing(&players[i].anim_walk, false);
-            t3d_anim_update(&players[i].anim_idle, deltatime);
+        if (!is_paused()) {
+            if (players[i].action_playing_time > 0) {
+                t3d_anim_update(&players[i].anim_act, deltatime);
+            } else if (players[i].attack_playing_time > 0) {
+                t3d_anim_update(&players[i].anim_attack, deltatime);
+            } else if (players[i].hurt_playing_time > 0) {
+                t3d_anim_update(&players[i].anim_hurt, deltatime);
+            } else if (players[i].speed > 0.0f) {
+                // TODO only set anim when switching state ?
+                t3d_anim_set_playing(&players[i].anim_walk, true);
+                t3d_anim_set_playing(&players[i].anim_idle, false);
+                t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);
+                t3d_anim_update(&players[i].anim_walk, deltatime);
+            } else {
+                // TODO only set anim when switching state ?
+                t3d_anim_set_playing(&players[i].anim_idle, true);
+                t3d_anim_set_playing(&players[i].anim_walk, false);
+                t3d_anim_update(&players[i].anim_idle, deltatime);
+            }
+            t3d_skeleton_update(&players[i].skel);
+            t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
+            if (players[i].has_key && !key.hidden) {
+                // Rotate key
+                key.rotation.v[1] += deltatime * 4.0f;
+                t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, players[i].position.v);
+            }
         }
-        t3d_skeleton_update(&players[i].skel);
-        t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_run(players[i].dpl);
         // Display key
         if (players[i].has_key && !key.hidden) {
-            // Rotate key
-            key.rotation.v[1] += deltatime * 4.0f;
-            t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, players[i].position.v);
             rspq_block_run(key.dpl);
         }
     }
@@ -1301,6 +1302,14 @@ void stop_game() {
 
 bool is_playing() {
     return playing;
+}
+
+bool is_paused() {
+    return paused;
+}
+
+void toggle_pause() {
+    paused = !paused;
 }
 
 bool has_winner() {

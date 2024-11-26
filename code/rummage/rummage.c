@@ -6,7 +6,7 @@
 #include <t3d/t3dmodel.h>
 
 #define ENABLE_MUSIC 1
-#define ENABLE_TEXT 0
+#define ENABLE_TEXT 1
 #define ENABLE_WIREFRAME 1
 
 #if ENABLE_WIREFRAME
@@ -19,6 +19,7 @@
 #define GO_DELAY            1.0f
 #define WIN_DELAY           5.0f
 #define WIN_SHOW_DELAY      2.0f
+#define MENU_DELAY          0.2f
 
 #define GAME_BACKGROUND     0x666666ff
 #define FONT_DEBUG          1
@@ -55,6 +56,9 @@ wav64_t sfx_start;
 wav64_t sfx_countdown;
 wav64_t sfx_stop;
 wav64_t sfx_winner;
+
+int menu_option;
+float menu_time;
 
 #if ENABLE_WIREFRAME
 bool show_wireframe = false;
@@ -141,33 +145,35 @@ void minigame_fixedloop(float deltatime)
 {
     game_logic(deltatime);
 
-    if (countdown_timer > 0) {
-        float prev = countdown_timer;
-        countdown_timer -= deltatime;
-        if ((int)prev != (int)countdown_timer && countdown_timer >= 0) {
-            wav64_play(&sfx_countdown, 31);
+    if (!is_paused()) {
+        if (countdown_timer > 0) {
+            float prev = countdown_timer;
+            countdown_timer -= deltatime;
+            if ((int)prev != (int)countdown_timer && countdown_timer >= 0) {
+                wav64_play(&sfx_countdown, 31);
+            }
         }
-    }
-    if (!is_playing() && !is_ending && countdown_timer < 0) {
-        start_game();
-        wav64_play(&sfx_start, 31);
-    }
+        if (!is_playing() && !is_ending && countdown_timer < 0) {
+            start_game();
+            wav64_play(&sfx_start, 31);
+        }
 
-    if (!is_ending) {
-        if (has_winner()) {
-            is_ending = true;
-            stop_game();
-            wav64_play(&sfx_stop, 31);
-        }
-    } else {
-        float prev = end_timer;
-        end_timer += deltatime;
-        if ((int)prev != (int)end_timer && (int)end_timer == WIN_SHOW_DELAY) {
-            wav64_play(&sfx_winner, 31);
-        }
-        if (end_timer > WIN_DELAY) {
-            core_set_winner(winner());
-            minigame_end();
+        if (!is_ending) {
+            if (has_winner()) {
+                is_ending = true;
+                stop_game();
+                wav64_play(&sfx_stop, 31);
+            }
+        } else {
+            float prev = end_timer;
+            end_timer += deltatime;
+            if ((int)prev != (int)end_timer && (int)end_timer == WIN_SHOW_DELAY) {
+                wav64_play(&sfx_winner, 31);
+            }
+            if (end_timer > WIN_DELAY) {
+                core_set_winner(winner());
+                minigame_end();
+            }
         }
     }
 }
@@ -183,6 +189,7 @@ void minigame_loop(float deltatime)
 {
     joypad_port_t port = core_get_playercontroller(0);
     joypad_buttons_t pressed = joypad_get_buttons_pressed(port);
+    joypad_inputs_t joypad = joypad_get_inputs(port);
 #if ENABLE_WIREFRAME
     // Show/hide wireframe by pressing Z
     if (pressed.z) {
@@ -193,6 +200,42 @@ void minigame_loop(float deltatime)
     if (pressed.r) {
         show_debug_text = !show_debug_text;
     }
+
+    // Toggle pause menu
+    if (pressed.start) {
+        menu_option = 0;
+        toggle_pause();
+    }
+
+    // Handle menu
+    if (is_paused()) {
+        if (pressed.a) {
+            if (menu_option == 0) {
+                toggle_pause();
+            } else if (menu_option == 1) {
+                minigame_end();
+            }
+        }
+        if (menu_time > 0) {
+            menu_time -= deltatime;
+        } else {
+            if (pressed.d_up || joypad.stick_y < -50) {
+                menu_option--;
+                if (menu_option < 0) {
+                    menu_option = 1;
+                }
+                menu_time = MENU_DELAY;
+            }
+            if (pressed.d_down || joypad.stick_y > 50) {
+                menu_option++;
+                if (menu_option > 1) {
+                    menu_option = 0;
+                }
+                menu_time = MENU_DELAY;
+            }
+        }
+    }
+    
 
     // 3D viewport
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
@@ -242,11 +285,17 @@ void minigame_loop(float deltatime)
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
     }
 
-        // Display winner
-        if (is_ending && end_timer >= WIN_SHOW_DELAY) {
-            rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
-            rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins!", winner()+1);
-        }
+    // Display winner
+    if (is_ending && end_timer >= WIN_SHOW_DELAY) {
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
+        rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins!", winner()+1);
+    }
+
+    // Display pause menu
+    if (is_paused()) {
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
+        rdpq_text_printf(&textparms, FONT_TEXT, 0, 80, "%sResume", menu_option == 0 ? "> " : "  ");
+        rdpq_text_printf(&textparms, FONT_TEXT, 0, 120, "%sQuit", menu_option == 1 ? "> " : "  ");
     }
 #endif
 
