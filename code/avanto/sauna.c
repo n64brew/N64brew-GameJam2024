@@ -125,7 +125,6 @@ void sauna_init() {
   wav64_open(&sfx_loyly, "rom:/avanto/loyly.wav64");
 
   sauna_stage = SAUNA_INTRO;
-  sauna_stage = SAUNA_WALK_IN;
 
   for (int i = 0; i <= SAUNA_DONE; i++) {
     sauna_stage_inited[i] = false;
@@ -163,58 +162,57 @@ static void sauna_intro_fixed_loop(float delta_time) {
 
 struct script_action walk_in_actions[][12] = {
   {
-    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
-    {.type = ACTION_SET_VISIBILITY, .b = true},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
-    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
-    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
-    {.type = ACTION_START_ANIM, .i = WALK},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(-90.f), .f2 = -T3D_PI},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{300, 0, 210}}},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
-    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_WARP_TO, .pos = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .visibility = true},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .rot = 0.f, .speed = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .pos = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .anim = WALK},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(-90.f), .speed = -T3D_PI},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{300, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(180.f), .speed = -T3D_PI},
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = SIT},
     {.type = ACTION_END},
   },
   {
-    {.type = ACTION_WAIT, .f = 2.f*1.f},
-    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
-    {.type = ACTION_SET_VISIBILITY, .b = true},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
-    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
-    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
-    {.type = ACTION_START_ANIM, .i = WALK},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(-90.f), .f2 = -T3D_PI},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{210, 0, 210}}},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
-    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_WAIT, .time = 2.f*1.f},
+    {.type = ACTION_WARP_TO, .pos = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .visibility = true},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .rot = 0.f, .speed = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .pos = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .anim = WALK},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(-90.f), .speed = -T3D_PI},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{210, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(180.f), .speed = -T3D_PI},
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = SIT},
     {.type = ACTION_END},
   },
   {
-    {.type = ACTION_WAIT, .f = 2.f*3.f},
-    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
-    {.type = ACTION_SET_VISIBILITY, .b = true},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
-    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
-    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
-    {.type = ACTION_START_ANIM, .i = WALK},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{120, 0, 210}}},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = -T3D_PI},
-    {.type = ACTION_START_ANIM, .i = SIT},
-    {.type = ACTION_WAIT, .f = 2.f},
+    {.type = ACTION_WAIT, .time = 2.f*3.f},
+    {.type = ACTION_WARP_TO, .pos = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .visibility = true},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .rot = 0.f, .speed = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .pos = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .anim = WALK},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{120, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(180.f), .speed = -T3D_PI},
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = SIT},
     {.type = ACTION_END},
   },
   {
-    {.type = ACTION_WAIT, .f = 2.f*2.f},
-    {.type = ACTION_WARP_TO, .v = (T3DVec3) {{-100, 0, 110}}},
-    {.type = ACTION_SET_VISIBILITY, .b = true},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{100, 0, 110}}},
-    {.type = ACTION_ROTATE_TO, .f = 0.f, .f2 = T3D_PI},
-    {.type = ACTION_CLIMB_TO, .v = (T3DVec3) {{100, 0, 200}}},
-    {.type = ACTION_START_ANIM, .i = WALK},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(90.f), .f2 = T3D_PI},
-    {.type = ACTION_WALK_TO, .v = (T3DVec3) {{30, 0, 210}}},
-    {.type = ACTION_ROTATE_TO, .f = T3D_DEG_TO_RAD(180.f), .f2 = T3D_PI},
-    {.type = ACTION_START_ANIM, .i = SIT},
+    {.type = ACTION_WAIT, .time = 2.f*2.f},
+    {.type = ACTION_WARP_TO, .pos = (T3DVec3) {{-100, 0, 110}}},
+    {.type = ACTION_SET_VISIBILITY, .visibility = true},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{100, 0, 110}}},
+    {.type = ACTION_ROTATE_TO, .rot = 0.f, .speed = T3D_PI},
+    {.type = ACTION_CLIMB_TO, .pos = (T3DVec3) {{100, 0, 200}}},
+    {.type = ACTION_START_ANIM, .anim = WALK},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(90.f), .speed = T3D_PI},
+    {.type = ACTION_WALK_TO, .pos = (T3DVec3) {{30, 0, 210}}},
+    {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(180.f), .speed = T3D_PI},
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = SIT},
     {.type = ACTION_END},
   },
 };
@@ -234,7 +232,7 @@ static void sauna_walk_in_fixed_loop(float delta_time) {
 
   bool done = true;
   for (size_t i = 0; i < 4; i++) {
-    if (!script_update(&script_states[i], delta_time*1000.f)) {
+    if (!script_update(&script_states[i], delta_time)) {
       done = false;
     }
   }
@@ -341,6 +339,9 @@ static void sauna_game_fixed_loop(float delta_time) {
 static void sauna_walk_out_fixed_loop(float delta_time) {
 }
 
+static void sauna_done_fixed_loop(float delta_time) {
+}
+
 static void sauna_change_anim_and_play_from(struct character *character,
     size_t anim_id,
     float normal_time) {
@@ -361,7 +362,11 @@ static float sauna_get_anim_normal_time(const T3DAnim *anim) {
   return anim->time / anim->animRef->duration;
 }
 
-void sauna_fixed_loop(float delta_time) {
+bool sauna_fixed_loop(float delta_time, bool paused) {
+  if (paused) {
+    return false;;
+  }
+
   switch (sauna_stage) {
     case SAUNA_INTRO:
       sauna_intro_fixed_loop(delta_time);
@@ -378,6 +383,14 @@ void sauna_fixed_loop(float delta_time) {
     case SAUNA_GAME:
       sauna_game_fixed_loop(delta_time);
       break;
+
+    case SAUNA_WALK_OUT:
+      sauna_walk_out_fixed_loop(delta_time);
+      break;
+
+    case SAUNA_DONE:
+      sauna_done_fixed_loop(delta_time);
+      break;
   }
 
   for (size_t i = 0; i < 4; i++) {
@@ -386,10 +399,14 @@ void sauna_fixed_loop(float delta_time) {
           &sauna_scene.ground);
     }
   }
+
+  return false;
 }
 
-void sauna_loop(float delta_time) {
-  joypad_buttons_t pressed = joypad_get_buttons_pressed(0);
+void sauna_loop(float delta_time, bool paused) {
+  if (paused) {
+    delta_time = 0.f;
+  }
   joypad_buttons_t held[4];
   for (size_t i = 0; i < core_get_playercount(); i++) {
     held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
@@ -490,20 +507,11 @@ void sauna_loop(float delta_time) {
   // Banner
   if (banner_time > EPS) {
     banner_time -= delta_time;
-    rdpq_text_print(&banner_params, FONT_BANNER, 0, 0, banner_str);
+    rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
   }
 
-  // Debug
-  rdpq_text_printf(NULL,
-    FONT_NORMAL,
-    10,
-    80,
-    SW_DEBUG_S "FPS: %.2f",
-    1.f/delta_time);
 
-  rdpq_detach_show();
-
-  if (sauna_stage != SAUNA_GAME || !sauna_stage_inited[SAUNA_GAME]) {
+  if (sauna_stage != SAUNA_GAME || !sauna_stage_inited[SAUNA_GAME] || paused) {
     return;
   }
 

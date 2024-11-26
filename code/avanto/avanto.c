@@ -29,6 +29,22 @@ color_t player_colors[4];
 struct rdpq_textparms_s banner_params;
 struct rdpq_textparms_s timer_params;
 rspq_block_t *empty_hud_block;
+bool paused;
+struct subgame subgames[] = {
+  {
+    .fixed_loop = sauna_fixed_loop,
+    .dynamic_loop = sauna_loop,
+    .cleanup = sauna_cleanup,
+    .init = sauna_init,
+  },
+  {
+    .fixed_loop = NULL,
+    .dynamic_loop = NULL,
+    .cleanup = NULL,
+    .init = NULL,
+  },
+};
+struct subgame *current_subgame;
 
 xm64player_t music;
 wav64_t sfx_start;
@@ -113,7 +129,7 @@ void minigame_init() {
     rdpq_font_t *font = fonts[i];
 
     rdpq_font_style(font,
-        SW_DEBUG,
+        SW_NORMAL,
         &(rdpq_fontstyle_t) {.color = WHITE, .outline_color = BLACK});
     rdpq_font_style(font,
         SW_BANNER,
@@ -124,6 +140,12 @@ void minigame_init() {
     rdpq_font_style(font,
         SW_OUT,
         &(rdpq_fontstyle_t) {.color = LIGHT_BLUE, .outline_color = BLACK});
+    rdpq_font_style(font,
+        SW_OUT,
+        &(rdpq_fontstyle_t) {.color = LIGHT_BLUE, .outline_color = BLACK});
+    rdpq_font_style(font,
+        SW_SELECTED,
+        &(rdpq_fontstyle_t) {.color = YELLOW, .outline_color = BLACK});
     for (size_t j = 0; j < 4; j++) {
       rdpq_font_style(font,
           SW_PLAYER1 + j,
@@ -138,7 +160,6 @@ void minigame_init() {
   banner_params.align = 1;
   banner_params.valign = 1;
   banner_params.width = 320;
-  banner_params.height = 240;
 
   memset(&timer_params, 0, sizeof(timer_params));
   timer_params.style_id = SW_TIMER;
@@ -152,6 +173,7 @@ void minigame_init() {
   wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
   wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
 
+  mixer_set_vol(1.f);
   for (int i = xm64player_num_channels(&music); i < 32; i++) {
     mixer_ch_set_vol(i, 0.5f, 0.5f);
     mixer_ch_set_limits(i, 0, 48000, 0);
@@ -159,21 +181,111 @@ void minigame_init() {
 
   empty_hud_block = build_empty_hud_block();
 
-  sauna_init();
+  paused = false;
+
+  current_subgame = &subgames[0];
+  current_subgame->init();
 }
 
 void minigame_fixedloop(float delta_time) {
-  sauna_fixed_loop(delta_time);
+  if (current_subgame->fixed_loop(delta_time, paused)) {
+    current_subgame->cleanup();
+    current_subgame++;
+    if (current_subgame->init) {
+      current_subgame->init();
+    }
+  }
 }
 
 void minigame_loop(float delta_time) {
-  sauna_loop(delta_time);
+  static int paused_controller = 0;
+  static int paused_selection = 0;
+
+  if (!paused) {
+    for (size_t i = 0; i < core_get_playercount(); i++) {
+      joypad_buttons_t pressed = joypad_get_buttons_pressed(
+          core_get_playercontroller(i));
+      if (pressed.start) {
+        paused_controller = core_get_playercontroller(i);
+        paused_selection = 0;
+        paused = true;
+        mixer_set_vol(.2f);
+        break;
+      }
+    }
+  }
+  else {
+    joypad_buttons_t pressed = joypad_get_buttons_pressed(paused_controller);
+    int axis = joypad_get_axis_pressed(paused_controller, JOYPAD_AXIS_STICK_X);
+    if (pressed.start || pressed.b || (pressed.a && !paused_selection)) {
+      paused = false;
+      mixer_set_vol(1.f);
+    } else if (pressed.a) {
+      minigame_end();
+    } else if (pressed.d_left || axis || pressed.d_right) {
+      paused_selection ^= 1;
+    }
+  }
+
+  current_subgame->dynamic_loop(delta_time, paused);
+
+  if (paused) {
+    rdpq_mode_push();
+    rdpq_set_fog_color(RGBA32(0xff, 0xff, 0xff, 0xc0));
+    rdpq_set_prim_color(RGBA32(0x00, 0x00, 0x00, 0xff));
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
+    rdpq_fill_rectangle(0, 0, 320, 240);
+    rdpq_mode_pop();
+
+    rdpq_text_print(&banner_params, FONT_BANNER, 0, 60, "PAUSED");
+
+    rdpq_textparms_t params = {
+      .width = 300,
+      .height = 130,
+      .wrap = WRAP_WORD,
+    };
+
+    rdpq_text_printf(&params,
+        FONT_NORMAL,
+        10,
+        85,
+        "%s by %s\n\n%s\n\n%s",
+        minigame_def.gamename,
+        minigame_def.developername,
+        minigame_def.description,
+        minigame_def.instructions);
+
+    rdpq_text_printf(NULL,
+        FONT_NORMAL,
+        40,
+        215,
+        "%sRESUME",
+        paused_selection? SW_NORMAL_S : SW_SELECTED_S);
+    rdpq_text_printf(NULL,
+        FONT_NORMAL,
+        40+160,
+        215,
+        "%sQUIT",
+        !paused_selection? SW_NORMAL_S : SW_SELECTED_S);
+  }
+
+  rdpq_text_printf(NULL,
+    FONT_NORMAL,
+    10,
+    235,
+    SW_NORMAL_S "FPS: %.2f",
+    1.f/delta_time);
+
+  rdpq_detach_show();
 }
 
 void minigame_cleanup() {
   rspq_block_free(empty_hud_block);
 
-  sauna_cleanup();
+  if (current_subgame->cleanup) {
+    current_subgame->cleanup();
+  }
   wav64_close(&sfx_start);
   wav64_close(&sfx_countdown);
   wav64_close(&sfx_stop);

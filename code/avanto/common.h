@@ -2,7 +2,6 @@
 #define NUM_SFX_CHANNELS 4
 #define FIRST_SFX_CHANNEL (31-NUM_SFX_CHANNELS)
 #define WALK_SPEED 100.f
-#define CLIMB_TIME .5f
 #define EPS 1e-6
 #define TIMER_Y 220
 #define HUD_HORIZONTAL_BORDER 26
@@ -67,17 +66,13 @@ struct script_action {
   int type;
   union {
     struct {
-      float f;
-      float f2;
-      float f3;
+      float rot;
+      float speed;
     };
-    T3DVec3 v;
-    struct {
-      int i;
-      int i2;
-      int i3;
-    };
-    bool b;
+    T3DVec3 pos;
+    size_t anim;
+    bool visibility;
+    float time;
   };
 };
 
@@ -85,6 +80,13 @@ struct script_state {
   struct character *character;
   const struct script_action *action;
   float time;
+};
+
+struct subgame {
+  void (*dynamic_loop)(float, bool);
+  bool (*fixed_loop)(float, bool);
+  void (*cleanup)();
+  void (*init)();
 };
 
 enum script_actions {
@@ -95,6 +97,7 @@ enum script_actions {
   ACTION_ROTATE_TO,
   ACTION_START_ANIM,
   ACTION_SET_VISIBILITY,
+  ACTION_DO_WHOLE_ANIM,
   ACTION_END,
 };
 
@@ -105,7 +108,7 @@ enum fonts {
 };
 
 enum sw_styles {
-  SW_DEBUG,
+  SW_NORMAL,
   SW_BANNER,
   SW_TIMER,
   SW_PLAYER1,
@@ -113,8 +116,10 @@ enum sw_styles {
   SW_PLAYER3,
   SW_PLAYER4,
   SW_OUT,
+  SW_SELECTED,
 };
-#define SW_DEBUG_S "^00"
+
+#define SW_NORMAL_S "^00"
 #define SW_BANNER_S "^01"
 #define SW_TIMER_S "^02"
 #define SW_PLAYER1_S "^03"
@@ -122,6 +127,7 @@ enum sw_styles {
 #define SW_PLAYER3_S "^05"
 #define SW_PLAYER4_S "^06"
 #define SW_OUT_S "^07"
+#define SW_SELECTED_S "^08"
 
 enum player_anims {
   WALK,

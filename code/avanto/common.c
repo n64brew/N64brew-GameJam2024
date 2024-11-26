@@ -86,23 +86,40 @@ bool script_update(struct script_state *state, float delta_time) {
       return true;
     }
     else if (state->action->type == ACTION_WARP_TO) {
-      state->character->pos = state->action->v;
+      state->character->pos = state->action->pos;
     }
     else if (state->action->type == ACTION_WAIT) {
-      if (state->time + delta_time >= state->action->f) {
-        delta_time -= state->action->f - state->time;
-      } else {
+      if (state->time + delta_time >= state->action->time) {
+        delta_time -= state->action->time - state->time;
+      }
+      else {
         state->time += delta_time;
         break;
       }
     }
     else if (state->action->type == ACTION_SET_VISIBILITY) {
-      state->character->visible = state->action->b;
+      state->character->visible = state->action->visibility;
     }
-    else if (state->action->type == ACTION_START_ANIM) {
+    else if (state->action->type == ACTION_START_ANIM
+        || state->action->type == ACTION_DO_WHOLE_ANIM) {
       struct character *c = state->character;
-      c->current_anim = state->action->i;
-      t3d_anim_attach(&c->s.anims[state->action->i], &c->s.skeleton);
+      T3DAnim *anim = &c->s.anims[state->action->anim];
+      if (!state->time) {
+        c->current_anim = state->action->anim;
+        t3d_anim_attach(anim, &c->s.skeleton);
+        t3d_anim_set_playing(anim, true);
+      }
+
+      if (state->action->type == ACTION_DO_WHOLE_ANIM) {
+        // Anim not over
+        if (state->time - anim->animRef->duration < EPS) {
+          state->time += delta_time;
+          break;
+        }
+        else {
+          delta_time -= anim->animRef->duration - state->time;
+        }
+      }
     }
     else if (state->action->type == ACTION_WALK_TO
         || state->action->type == ACTION_CLIMB_TO) {
@@ -111,23 +128,24 @@ bool script_update(struct script_state *state, float delta_time) {
         size_t anim = state->action->type == ACTION_WALK_TO? WALK : CLIMB;
         c->current_anim = anim;
         t3d_anim_attach(&c->s.anims[anim], &c->s.skeleton);
-        float dz = state->action->v.v[2] - c->pos.v[2];
-        float dx = state->action->v.v[0] - c->pos.v[0];
+        float dz = state->action->pos.v[2] - c->pos.v[2];
+        float dx = state->action->pos.v[0] - c->pos.v[0];
         c->rotation = -fm_atan2f(dx, dz);
       }
 
       T3DVec3 diff;
       t3d_vec3_diff(&diff,
-          &(T3DVec3) {{state->action->v.v[0], 0.f, state->action->v.v[2]}},
+          &(T3DVec3) {{state->action->pos.v[0], 0.f, state->action->pos.v[2]}},
           &(T3DVec3) {{c->pos.v[0], 0.f, c->pos.v[2]}});
 
       float time_to_end = state->action->type == ACTION_WALK_TO?
-        t3d_vec3_len(&diff) / WALK_SPEED : CLIMB_TIME - state->time;
+        t3d_vec3_len(&diff) / WALK_SPEED :
+        c->s.anims[CLIMB].animRef->duration - state->time;
 
       if (time_to_end - delta_time < EPS) {
         delta_time -= time_to_end;
-        c->pos.v[0] = state->action->v.v[0];
-        c->pos.v[2] = state->action->v.v[2];
+        c->pos.v[0] = state->action->pos.v[0];
+        c->pos.v[2] = state->action->pos.v[2];
       }
       else {
         float ratio = delta_time / time_to_end;
@@ -139,24 +157,23 @@ bool script_update(struct script_state *state, float delta_time) {
     }
     else if (state->action->type == ACTION_ROTATE_TO) {
       struct character *c = state->character;
-      float target = state->action->f;
-      float speed = state->action->f2;
+      float target = state->action->rot;
 
-      if (speed > 0 && target < c->rotation) {
+      if (state->action->speed > 0 && target < c->rotation) {
         target += T3D_PI*2.f;
       }
-      else if (speed < 0 && target > c->rotation) {
+      else if (state->action->speed < 0 && target > c->rotation) {
         target -= T3D_PI*2.f;
       }
 
-      float time_to_end = (target - c->rotation) / speed;
+      float time_to_end = (target - c->rotation) / state->action->speed;
       if (time_to_end - delta_time < EPS) {
         delta_time -= time_to_end;
         // Original, unchanged target
-        c->rotation = state->action->f;
+        c->rotation = state->action->rot;
       }
       else {
-        c->rotation += speed * delta_time;
+        c->rotation += state->action->speed * delta_time;
         break;
       }
     }
