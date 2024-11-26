@@ -1,13 +1,9 @@
 #include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
-
+#include "mallard.h"
 #include "introduction/sequence_introduction.h"
 #include "game/sequence_game.h"
-#include "mallard.h"
-
-#include <stdio.h>
-#include <unistd.h>
 
 const MinigameDef minigame_def = {
     .gamename = "Mallard",

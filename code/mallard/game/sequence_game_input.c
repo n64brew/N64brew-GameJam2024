@@ -1,31 +1,12 @@
 #include <libdragon.h>
-#include "sequence_game.h"
-#include "sequence_game_input.h"
 #include "../../../core.h"
 #include "../../../minigame.h"
+#include "sequence_game.h"
+#include "sequence_game_input.h"
+#include "sequence_game_initialize.h"
 
-struct Controller
+void sequence_game_update(float deltatime)
 {
-    unsigned int start_down;
-    unsigned int start_up;
-    float start_held_elapsed;
-};
-
-struct Controller *controllers;
-
-void sequence_game_process_controller(float deltatime)
-{
-    if (controllers == NULL)
-    {
-        controllers = malloc(core_get_playercount() * sizeof(struct Controller));
-        for (size_t i = 0; i < core_get_playercount(); i++)
-        {
-            controllers[i].start_down = 0;
-            controllers[i].start_up = 0;
-            controllers[i].start_held_elapsed = 0.0f;
-        }
-    }
-
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
         joypad_port_t controllerPort = core_get_playercontroller(i);

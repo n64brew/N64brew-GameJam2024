@@ -1,9 +1,10 @@
 #include <libdragon.h>
+#include "../../../minigame.h"
 #include "../mallard.h"
 #include "sequence_game.h"
 #include "sequence_game_input.h"
 #include "sequence_game_graphics.h"
-#include "../../../minigame.h"
+#include "sequence_game_initialize.h"
 
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
@@ -17,6 +18,9 @@ sprite_t *sequence_game_paused_text_sprite;
 int sequence_game_frame = 0;
 bool sequence_game_initialized = false;
 bool sequence_game_paused = false;
+
+struct Character *characters;
+struct Controller *controllers;
 
 void sequence_game_init()
 {
@@ -41,6 +45,9 @@ void sequence_game_init()
     sequence_game_paused_text_sprite = sprite_load("rom:/mallard/mallard_game_paused_text.rgba32.sprite");
 
     sequence_game_initialized = true;
+
+    initialize_characters();
+    initialize_controllers();
 }
 
 void sequence_game_cleanup()
@@ -53,6 +60,9 @@ void sequence_game_cleanup()
 
     sprite_free(sequence_game_start_button_sprite);
     sprite_free(sequence_game_paused_text_sprite);
+
+    free_characters();
+    free_controllers();
 
     // Close the display and free the allocated memory.
     rspq_wait();
@@ -69,8 +79,6 @@ void sequence_game_cleanup()
 
 void sequence_game(float deltatime)
 {
-    sequence_game_process_controller(deltatime);
-
     if (!sequence_game_initialized)
     {
         sequence_game_init();
@@ -82,10 +90,7 @@ void sequence_game(float deltatime)
         return;
     }
 
-    rdpq_attach(display_get(), NULL);
-    rdpq_clear(BLACK);
+    sequence_game_update(deltatime);
 
     sequence_game_render(deltatime);
-
-    rdpq_detach_show();
 }

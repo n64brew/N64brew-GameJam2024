@@ -1,10 +1,9 @@
 #include <libdragon.h>
-#include <stdlib.h>
+#include "../../../core.h"
+#include "../../../minigame.h"
 #include "../mallard.h"
 #include "sequence_game.h"
 #include "sequence_game_graphics.h"
-#include "../../../core.h"
-#include "../../../minigame.h"
 
 // These player boxes are just used for visualizing the boxes and spawn points while developing.
 #define PLAYER_1_BOX_X1 16
@@ -27,108 +26,34 @@
 #define PLAYER_4_BOX_X2 320
 #define PLAYER_4_BOX_Y2 135
 
-// These boxesa are the actual spawn points for the characters.
-#define PLAYER_1_SPAWN_X1 5   // Confirmed
-#define PLAYER_1_SPAWN_Y1 111 // Confirmed
-#define PLAYER_1_SPAWN_X2 152 // Confirmed
-#define PLAYER_1_SPAWN_Y2 194 // Confirmed
-
-#define PLAYER_2_SPAWN_X1 5 + 152        // Confirmed
-#define PLAYER_2_SPAWN_Y1 111            // Confirmed
-#define PLAYER_2_SPAWN_X2 152 + 152 - 15 // Confirmed
-#define PLAYER_2_SPAWN_Y2 194            // Confirmed
-
-#define PLAYER_3_SPAWN_X1 5            // Confirmed
-#define PLAYER_3_SPAWN_Y1 111 - 85     // Confirmed
-#define PLAYER_3_SPAWN_X2 152          // Confirmed
-#define PLAYER_3_SPAWN_Y2 194 - 85 - 1 // Confirmed
-
-#define PLAYER_4_SPAWN_X1 5 + 152        // Confirmed
-#define PLAYER_4_SPAWN_Y1 111 - 85       // Confirmed
-#define PLAYER_4_SPAWN_X2 152 + 152 - 15 // Confirmed
-#define PLAYER_4_SPAWN_Y2 194 - 85 - 1   // Confirmed
-
 float sequence_game_fade_in_elapsed = 0.0f;
 float sequence_game_start_held_elapsed = 0.0f;
 int sequence_game_player_holding_start = -1;
 
-struct Character
-{
-    unsigned int x;
-    unsigned int y;
-};
-
-struct Character *characters;
-
-int random_between(int min, int max)
-{
-    return rand() % (max - min + 1) + min;
-}
-
-void sequence_game_free_players()
+void sequence_game_render_players()
 {
     if (characters != NULL)
     {
-        free(characters);
-        characters = NULL;
-    }
-}
-
-void sequence_game_render_players()
-{
-    if (characters == NULL)
-    {
-        int player_count = core_get_playercount();
-        if (player_count <= 0)
+        for (size_t i = 0; i < core_get_playercount(); i++)
         {
-            return; // Avoid division by zero
+            int sequence_game_mallard_idle_frame = (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
+            rdpq_blitparms_t blitparms = {
+                .s0 = sequence_game_mallard_idle_frame * 32,
+                .t0 = 0,
+                .width = 32,
+                .height = 32,
+                .flip_x = true,
+            };
+            rdpq_mode_push();
+            rdpq_set_mode_standard();
+            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+
+            rdpq_sprite_blit(sequence_game_mallard_idle_sprite,
+                             characters->x,
+                             characters->y,
+                             &blitparms);
+            rdpq_mode_pop();
         }
-
-        characters = malloc(player_count * sizeof(struct Character));
-
-        for (size_t i = 0; i < player_count; i++)
-        {
-            switch (i)
-            {
-            case 0:
-                characters[i].x = random_between(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_Y2);
-                break;
-            case 1:
-                characters[i].x = random_between(PLAYER_2_SPAWN_X1, PLAYER_2_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_2_SPAWN_Y1, PLAYER_2_SPAWN_Y2);
-                break;
-            case 2:
-                characters[i].x = random_between(PLAYER_3_SPAWN_X1, PLAYER_3_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_3_SPAWN_Y1, PLAYER_3_SPAWN_Y2);
-                break;
-            default:
-                characters[i].x = random_between(PLAYER_4_SPAWN_X1, PLAYER_4_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_4_SPAWN_Y1, PLAYER_4_SPAWN_Y2);
-                break;
-            }
-        }
-    }
-
-    for (size_t i = 0; i < core_get_playercount(); i++)
-    {
-        int sequence_game_mallard_idle_frame = (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
-        rdpq_blitparms_t blitparms = {
-            .s0 = sequence_game_mallard_idle_frame * 32,
-            .t0 = 0,
-            .width = 32,
-            .height = 32,
-            .flip_x = true,
-        };
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-
-        rdpq_sprite_blit(sequence_game_mallard_idle_sprite,
-                         characters[i].x,
-                         characters[i].y,
-                         &blitparms);
-        rdpq_mode_pop();
     }
 }
 
@@ -185,7 +110,7 @@ void sequence_game_draw_paused()
     rdpq_set_scissor(0, 0, 70 + x + (180.0f * percentage), 240);
     rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, utf8_text);
 
-    // // WHITE
+    // WHITE
     rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 320, 240);
     rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$02^00PAUSED");
 }
@@ -194,7 +119,8 @@ void sequence_game_render(float deltatime)
 {
     if (sequence_game_started == true && sequence_game_finished == false)
     {
-        sequence_game_draw_background_lakeview_terrace();
+        rdpq_attach(display_get(), NULL);
+        rdpq_clear(BLACK);
 
         // rdpq_set_mode_standard();
         // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
@@ -216,6 +142,8 @@ void sequence_game_render(float deltatime)
 
         // rdpq_set_prim_color(RGBA32(PLAYERCOLOR_4.r, PLAYERCOLOR_4.g, PLAYERCOLOR_4.b, 64));
         // rdpq_fill_rectangle(PLAYER_4_BOX_X1, PLAYER_4_BOX_Y1, PLAYER_4_BOX_X2, PLAYER_4_BOX_Y2);
+
+        sequence_game_draw_background_lakeview_terrace();
 
         sequence_game_render_players();
 
@@ -239,10 +167,8 @@ void sequence_game_render(float deltatime)
             rdpq_mode_pop();
         }
 
+        rdpq_detach_show();
+
         sequence_game_fade_in_elapsed += deltatime;
-    }
-    else
-    {
-        sequence_game_free_players(); // Free memory when the game ends.
     }
 }
