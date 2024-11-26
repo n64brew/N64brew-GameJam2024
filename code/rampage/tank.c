@@ -15,8 +15,8 @@ struct Vector2 tank_rotate_speed;
 #define TANK_SLOW_SPEED     SCALE_FIXED_POINT(0.01f)
 #define TANK_ACCEL          SCALE_FIXED_POINT(0.5f)
 
-#define MIN_FIRE_TIME   3.0f
-#define MAX_FIRE_TIME   5.0f
+#define MIN_FIRE_TIME   2.0f
+#define MAX_FIRE_TIME   3.0f
 
 struct dynamic_object_type tank_collider = {
     .minkowsi_sum = box_minkowski_sum,
@@ -111,9 +111,9 @@ void rampage_tank_fire(struct RampageTank* tank) {
     struct Vector3 fire_from = tank->dynamic_object.position;
     struct Vector2* rotation = &tank->dynamic_object.rotation;
 
-    fire_from.x += fire_offset.x * rotation->x - fire_offset.z * rotation->y;
+    fire_from.x += fire_offset.x * rotation->x + fire_offset.z * rotation->y;
     fire_from.y = fire_offset.y;
-    fire_from.z += fire_offset.x * rotation->y + fire_offset.z * rotation->x;
+    fire_from.z += fire_offset.z * rotation->x - fire_offset.x * rotation->y ;
 
     bullet_fire(&tank->bullet, &fire_from, rotation);
 }

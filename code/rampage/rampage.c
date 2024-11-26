@@ -8,6 +8,7 @@
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
 #include <t3d/t3ddebug.h>
+#include <math.h>
 
 #include "./rampage.h"
 #include "./collision/collision_scene.h"
@@ -297,6 +298,8 @@ int get_winner_index(int index) {
 
     return 0;
 }
+
+#define DISTANCE_SCALE  6.0f
 
 void minigame_loop(float deltatime) {   
     uint8_t colorAmbient[4] = {0x60, 0x60, 0x60, 0xFF};
