@@ -30,31 +30,56 @@ float sequence_game_fade_in_elapsed = 0.0f;
 float sequence_game_start_held_elapsed = 0.0f;
 int sequence_game_player_holding_start = -1;
 
-void sequence_game_render_players()
+void sequence_game_render_ducks()
 {
-    if (characters != NULL)
-    {
-        for (size_t i = 0; i < core_get_playercount(); i++)
-        {
-            int sequence_game_mallard_idle_frame = (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
-            rdpq_blitparms_t blitparms = {
-                .s0 = sequence_game_mallard_idle_frame * 32,
-                .t0 = 0,
-                .width = 32,
-                .height = 32,
-                .flip_x = true,
-            };
-            rdpq_mode_push();
-            rdpq_set_mode_standard();
-            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    int sequence_game_mallard_idle_frame = (sequence_game_frame >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES;
 
-            rdpq_sprite_blit(sequence_game_mallard_idle_sprite,
-                             characters->x,
-                             characters->y,
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    for (size_t i = 0; i < 4; i++)
+    {
+        struct Character *character = &characters[i];
+
+        rdpq_blitparms_t blitparms = {
+            .s0 = sequence_game_mallard_idle_frame * 32,
+            .t0 = 0,
+            .width = 32,
+            .height = 32,
+            .flip_x = true,
+        };
+
+        switch (i)
+        {
+        case 0:
+            rdpq_sprite_blit(sequence_game_mallard_one_idle_sprite,
+                             character->x,
+                             character->y,
                              &blitparms);
-            rdpq_mode_pop();
+            break;
+        case 1:
+            rdpq_sprite_blit(sequence_game_mallard_two_idle_sprite,
+                             character->x,
+                             character->y,
+                             &blitparms);
+            break;
+        case 2:
+            rdpq_sprite_blit(sequence_game_mallard_three_idle_sprite,
+                             character->x,
+                             character->y,
+                             &blitparms);
+            break;
+        case 3:
+            rdpq_sprite_blit(sequence_game_mallard_four_idle_sprite,
+                             character->x,
+                             character->y,
+                             &blitparms);
+            break;
+        default:
+            break;
         }
     }
+    rdpq_mode_pop();
 }
 
 void sequence_game_draw_background_lakeview_terrace()
@@ -145,7 +170,7 @@ void sequence_game_render(float deltatime)
 
         sequence_game_draw_background_lakeview_terrace();
 
-        sequence_game_render_players();
+        sequence_game_render_ducks();
 
         if (sequence_game_paused == false)
             sequence_game_draw_press_start_to_pause();

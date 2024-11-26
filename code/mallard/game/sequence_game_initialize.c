@@ -13,29 +13,14 @@ void initialize_characters()
     if (characters == NULL)
     {
         characters = malloc(4 * sizeof(struct Character));
-
-        for (size_t i = 0; i < 4; i++)
-        {
-            switch (i)
-            {
-            case 0:
-                characters[i].x = random_between(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_Y2);
-                break;
-            case 1:
-                characters[i].x = random_between(PLAYER_2_SPAWN_X1, PLAYER_2_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_2_SPAWN_Y1, PLAYER_2_SPAWN_Y2);
-                break;
-            case 2:
-                characters[i].x = random_between(PLAYER_3_SPAWN_X1, PLAYER_3_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_3_SPAWN_Y1, PLAYER_3_SPAWN_Y2);
-                break;
-            default:
-                characters[i].x = random_between(PLAYER_4_SPAWN_X1, PLAYER_4_SPAWN_X2);
-                characters[i].y = random_between(PLAYER_4_SPAWN_Y1, PLAYER_4_SPAWN_Y2);
-                break;
-            }
-        }
+        characters[0].x = random_between(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_X2);
+        characters[0].y = random_between(PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_Y2);
+        characters[1].x = random_between(PLAYER_2_SPAWN_X1, PLAYER_2_SPAWN_X2);
+        characters[1].y = random_between(PLAYER_2_SPAWN_Y1, PLAYER_2_SPAWN_Y2);
+        characters[2].x = random_between(PLAYER_3_SPAWN_X1, PLAYER_3_SPAWN_X2);
+        characters[2].y = random_between(PLAYER_3_SPAWN_Y1, PLAYER_3_SPAWN_Y2);
+        characters[3].x = random_between(PLAYER_4_SPAWN_X1, PLAYER_4_SPAWN_X2);
+        characters[3].y = random_between(PLAYER_4_SPAWN_Y1, PLAYER_4_SPAWN_Y2);
     }
 }
 

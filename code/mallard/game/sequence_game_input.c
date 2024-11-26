@@ -13,6 +13,7 @@ void sequence_game_update(float deltatime)
         joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
         joypad_buttons_t held = joypad_get_buttons_held(controllerPort);
         joypad_buttons_t released = joypad_get_buttons_released(controllerPort);
+        joypad_8way_t direction = joypad_get_direction(controllerPort, JOYPAD_2D_ANY);
 
         if (!joypad_is_connected(controllerPort))
         {
@@ -20,6 +21,7 @@ void sequence_game_update(float deltatime)
         }
 
         struct Controller *controller = &controllers[i];
+        struct Character *character = &characters[i];
 
         // Pause
         if (sequence_game_paused == false && pressed.start)
@@ -36,9 +38,9 @@ void sequence_game_update(float deltatime)
 
             for (size_t i = 0; i < core_get_playercount(); i++)
             {
-                controllers[i].start_down = 0;
-                controllers[i].start_up = 0;
-                controllers[i].start_held_elapsed = 0.0f;
+                controllers->start_down = 0;
+                controllers->start_up = 0;
+                controllers->start_held_elapsed = 0.0f;
             }
         }
 
@@ -60,9 +62,9 @@ void sequence_game_update(float deltatime)
 
             for (size_t i = 0; i < core_get_playercount(); i++)
             {
-                controllers[i].start_down = 0;
-                controllers[i].start_up = 0;
-                controllers[i].start_held_elapsed = 0.0f;
+                controllers->start_down = 0;
+                controllers->start_up = 0;
+                controllers->start_held_elapsed = 0.0f;
             }
         }
 
@@ -98,6 +100,41 @@ void sequence_game_update(float deltatime)
                     sequence_game_start_held_elapsed = 0.0f;
                 }
             }
+        }
+
+        // Movement
+        switch (direction)
+        {
+        case JOYPAD_8WAY_UP:
+            character->y -= 1;
+            break;
+        case JOYPAD_8WAY_UP_RIGHT:
+            character->x += 1;
+            character->y -= 1;
+            break;
+        case JOYPAD_8WAY_RIGHT:
+            character->x += 1;
+            break;
+        case JOYPAD_8WAY_DOWN_RIGHT:
+            character->x += 1;
+            character->y += 1;
+            break;
+        case JOYPAD_8WAY_DOWN:
+            character->y += 1;
+            break;
+        case JOYPAD_8WAY_DOWN_LEFT:
+            character->x -= 1;
+            character->y += 1;
+            break;
+        case JOYPAD_8WAY_LEFT:
+            character->x -= 1;
+            break;
+        case JOYPAD_8WAY_UP_LEFT:
+            character->x -= 1;
+            character->y -= 1;
+            break;
+        default:
+            break;
         }
     }
 }

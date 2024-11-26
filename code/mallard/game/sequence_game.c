@@ -9,7 +9,10 @@
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
 ///////////////////////////////////////////////////////////
-sprite_t *sequence_game_mallard_idle_sprite;
+sprite_t *sequence_game_mallard_one_idle_sprite;
+sprite_t *sequence_game_mallard_two_idle_sprite;
+sprite_t *sequence_game_mallard_three_idle_sprite;
+sprite_t *sequence_game_mallard_four_idle_sprite;
 sprite_t *sequence_game_background_lakeview_terrace_sprite;
 
 sprite_t *sequence_game_start_button_sprite;
@@ -35,7 +38,10 @@ void sequence_game_init()
     ///////////////////////////////////////////////////////////
 
     // Game - Mallard
-    sequence_game_mallard_idle_sprite = sprite_load("rom:/mallard/mallard_idle.rgba32.sprite");
+    sequence_game_mallard_one_idle_sprite = sprite_load("rom:/mallard/mallard_one_idle.rgba32.sprite");
+    sequence_game_mallard_two_idle_sprite = sprite_load("rom:/mallard/mallard_two_idle.rgba32.sprite");
+    sequence_game_mallard_three_idle_sprite = sprite_load("rom:/mallard/mallard_three_idle.rgba32.sprite");
+    sequence_game_mallard_four_idle_sprite = sprite_load("rom:/mallard/mallard_four_idle.rgba32.sprite");
 
     // Gmae - Background
     sequence_game_background_lakeview_terrace_sprite = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
@@ -55,7 +61,10 @@ void sequence_game_cleanup()
     // Free the sprites.
 
     // Game
-    sprite_free(sequence_game_mallard_idle_sprite);
+    sprite_free(sequence_game_mallard_one_idle_sprite);
+    sprite_free(sequence_game_mallard_two_idle_sprite);
+    sprite_free(sequence_game_mallard_three_idle_sprite);
+    sprite_free(sequence_game_mallard_four_idle_sprite);
     sprite_free(sequence_game_background_lakeview_terrace_sprite);
 
     sprite_free(sequence_game_start_button_sprite);
@@ -93,4 +102,6 @@ void sequence_game(float deltatime)
     sequence_game_update(deltatime);
 
     sequence_game_render(deltatime);
+
+    sequence_game_frame++;
 }

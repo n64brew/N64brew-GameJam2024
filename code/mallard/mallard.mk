@@ -6,7 +6,10 @@ ASSETS_LIST += \
 	filesystem/mallard/libdragon.rgba32.sprite \
 	filesystem/mallard/mallard_logo_white.rgba32.sprite \
 	filesystem/mallard/mallard_logo_black.rgba32.sprite \
-	filesystem/mallard/mallard_idle.rgba32.sprite \
+	filesystem/mallard/mallard_one_idle.rgba32.sprite \
+	filesystem/mallard/mallard_two_idle.rgba32.sprite \
+	filesystem/mallard/mallard_three_idle.rgba32.sprite \
+	filesystem/mallard/mallard_four_idle.rgba32.sprite \
 	filesystem/mallard/mallard_game_paused_text.rgba32.sprite \
 	filesystem/mallard/mallard_background_park.rgba32.sprite
 
