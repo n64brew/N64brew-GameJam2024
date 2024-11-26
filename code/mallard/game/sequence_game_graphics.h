@@ -7,6 +7,7 @@
 #define SEQUENCE_GAME_MALLARD_WALK_FRAMES 8
 #define SEQUENCE_GAME_MALLARD_IDLE_FRAMES 4
 #define SEQUENCE_GAME_MALLARD_SLAP_FRAMES 3
+#define SEQUENCE_GAME_MALLARD_RUN_FRAMES 8
 
 extern bool sequence_game_started;
 extern bool sequence_game_paused;

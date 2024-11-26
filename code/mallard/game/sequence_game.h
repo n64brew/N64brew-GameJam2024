@@ -19,17 +19,19 @@ typedef enum
     WALK = 1,
     IDLE = 2,
     SLAP = 3,
+    RUN = 4,
 } Action;
 
 struct Character
 {
-    unsigned int x;
-    unsigned int y;
+    float x;
+    float y;
     Action action;
     Direction direction;
     sprite_t *base_sprite;
     sprite_t *walk_sprite;
     sprite_t *slap_sprite;
+    sprite_t *run_sprite;
     int frames;
     int locked_for_frames;
 };

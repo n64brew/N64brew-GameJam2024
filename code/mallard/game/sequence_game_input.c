@@ -6,6 +6,9 @@
 #include "sequence_game_initialize.h"
 #include "sequence_game_graphics.h"
 
+#define BOOST 2.0
+#define SQRT_ONE_HALF 0.70710678118
+
 void sequence_game_update(float deltatime)
 {
     for (size_t i = 0; i < core_get_playercount(); i++)
@@ -14,7 +17,7 @@ void sequence_game_update(float deltatime)
         struct Character *character = &characters[i];
 
         character->frames++;
-        
+
         joypad_port_t controllerPort = core_get_playercontroller(i);
         joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
         joypad_buttons_t held = joypad_get_buttons_held(controllerPort);
@@ -105,67 +108,234 @@ void sequence_game_update(float deltatime)
             }
         }
 
-        // if (character->locked_for_frames == 0)
-        // {
         // Movement
         switch (direction)
         {
         case JOYPAD_8WAY_UP:
-            character->y -= 1;
+
+            // Position
+            if (held.b)
+            {
+                character->y -= 1 * BOOST;
+            }
+            else
+            {
+                character->y -= 1;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
             break;
+
         case JOYPAD_8WAY_UP_RIGHT:
-            character->x += 1;
-            character->y -= 1;
-            character->direction = RIGHT;
+
+            // Position
+            if (held.b)
+            {
+                character->x += (SQRT_ONE_HALF * BOOST);
+                character->y -= (SQRT_ONE_HALF * BOOST);
+            }
+            else
+            {
+                character->x += SQRT_ONE_HALF;
+                character->y -= SQRT_ONE_HALF;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
+            // Direction
+            character->direction = RIGHT;
             break;
+
         case JOYPAD_8WAY_RIGHT:
-            character->x += 1;
-            character->direction = RIGHT;
+
+            // Position
+            if (held.b)
+            {
+                character->x += 1 * BOOST;
+            }
+            else
+            {
+                character->x += 1;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
+            // Direction
+            character->direction = RIGHT;
             break;
+
         case JOYPAD_8WAY_DOWN_RIGHT:
-            character->x += 1;
-            character->y += 1;
+
+            // Position
+            if (held.b)
+            {
+                character->x += (SQRT_ONE_HALF * BOOST);
+                character->y += (SQRT_ONE_HALF * BOOST);
+            }
+            else
+            {
+                character->x += SQRT_ONE_HALF;
+                character->y += SQRT_ONE_HALF;
+            }
+            // Action
+            if (character->locked_for_frames == 0)
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
+            // Direction
             character->direction = RIGHT;
-            if (character->locked_for_frames == 0)
-                character->action = WALK;
             break;
+
         case JOYPAD_8WAY_DOWN:
-            character->y += 1;
+
+            // Position
+            if (held.b)
+            {
+                character->y += 1 * BOOST;
+            }
+            else
+            {
+                character->y += 1;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
             break;
+
         case JOYPAD_8WAY_DOWN_LEFT:
-            character->x -= 1;
-            character->y += 1;
-            character->direction = LEFT;
+
+            // Position
+            if (held.b)
+            {
+                character->x -= (SQRT_ONE_HALF * BOOST);
+                character->y += (SQRT_ONE_HALF * BOOST);
+            }
+            else
+            {
+                character->x -= SQRT_ONE_HALF;
+                character->y += SQRT_ONE_HALF;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
+            // Direction
+            character->direction = LEFT;
             break;
+
         case JOYPAD_8WAY_LEFT:
-            character->x -= 1;
-            character->direction = LEFT;
+
+            // Position
+            if (held.b)
+            {
+                character->x -= 1 * BOOST;
+            }
+            else
+            {
+                character->x -= 1;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
+            // Direction
+            character->direction = LEFT;
             break;
+
         case JOYPAD_8WAY_UP_LEFT:
-            character->x -= 1;
-            character->y -= 1;
-            character->direction = LEFT;
+
+            // Position
+            if (held.b)
+            {
+                character->x -= (SQRT_ONE_HALF * BOOST);
+                character->y -= (SQRT_ONE_HALF * BOOST);
+            }
+            else
+            {
+                character->x -= SQRT_ONE_HALF;
+                character->y -= SQRT_ONE_HALF;
+            }
+            // Action
             if (character->locked_for_frames == 0)
-                character->action = WALK;
+            {
+                if (held.b)
+                {
+                    character->action = RUN;
+                }
+                else
+                {
+                    character->action = WALK;
+                }
+            }
+            // Direction
+            character->direction = LEFT;
             break;
+
         default:
             if (character->locked_for_frames == 0)
                 character->action = BASE;
             break;
         }
-        // }
 
         if (pressed.a)
         {

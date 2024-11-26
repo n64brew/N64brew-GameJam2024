@@ -40,6 +40,8 @@ sprite_t *get_sprite_from_character(struct Character *character)
         return character->slap_sprite;
     case WALK:
         return character->walk_sprite;
+    case RUN:
+        return character->run_sprite;
     default:
         return character->base_sprite;
     }
@@ -56,8 +58,9 @@ int get_frame_from_character(struct Character *character)
     case IDLE:
         return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES; // Update every 4 frames
     case SLAP:
-        fprintf(stderr, "Real Frame is %d. Animation Frame is %d.\n", character->frames, (character->frames >> 2) % SEQUENCE_GAME_MALLARD_SLAP_FRAMES);
         return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Update every 4 frames
+    case RUN:
+        return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_RUN_FRAMES; // Update every 4 frames
     default:
         return 0;
     }
@@ -79,6 +82,10 @@ void sequence_game_render_ducks()
             .height = 32,
             .flip_x = character->direction == RIGHT ? true : false,
         };
+
+        if (i == 0)
+            fprintf(stderr, "Character %d: %f, %f\n", i, character->x, character->y);
+
         rdpq_sprite_blit(get_sprite_from_character(character),
                          character->x,
                          character->y,

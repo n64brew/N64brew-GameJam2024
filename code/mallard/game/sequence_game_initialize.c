@@ -23,6 +23,7 @@ void initialize_characters()
         characters[0].base_sprite = sequence_game_mallard_one_base_sprite;
         characters[0].walk_sprite = sequence_game_mallard_one_walk_sprite;
         characters[0].slap_sprite = sequence_game_mallard_one_slap_sprite;
+        characters[0].run_sprite = sequence_game_mallard_one_run_sprite;
 
         characters[1].action = BASE;
         characters[1].frames = 0;
@@ -33,6 +34,7 @@ void initialize_characters()
         characters[1].base_sprite = sequence_game_mallard_two_base_sprite;
         characters[1].walk_sprite = sequence_game_mallard_two_walk_sprite;
         characters[1].slap_sprite = sequence_game_mallard_two_slap_sprite;
+        characters[1].run_sprite = sequence_game_mallard_two_run_sprite;
 
         characters[2].action = BASE;
         characters[2].frames = 0;
@@ -43,6 +45,7 @@ void initialize_characters()
         characters[2].base_sprite = sequence_game_mallard_three_base_sprite;
         characters[2].walk_sprite = sequence_game_mallard_three_walk_sprite;
         characters[2].slap_sprite = sequence_game_mallard_three_slap_sprite;
+        characters[2].run_sprite = sequence_game_mallard_three_run_sprite;
 
         characters[3].action = BASE;
         characters[3].frames = 0;
@@ -53,6 +56,7 @@ void initialize_characters()
         characters[3].base_sprite = sequence_game_mallard_four_base_sprite;
         characters[3].walk_sprite = sequence_game_mallard_four_walk_sprite;
         characters[3].slap_sprite = sequence_game_mallard_four_slap_sprite;
+        characters[3].run_sprite = sequence_game_mallard_four_run_sprite;
     }
 }
 
