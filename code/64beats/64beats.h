@@ -1,7 +1,8 @@
 
 #define UI_SCALE 1.0
 #define SCREEN_MARGIN_TOP 24
-#define MAX_ARROWS 50
+#define MAX_ARROWS 174 * 4 / 2
+#define SPEED_MULTI 1.0
 uint32_t songTime;
 typedef struct
 {
@@ -29,7 +30,7 @@ typedef struct {
 } track;
 
 track myTrack;
-
+int currentTargetArrow;
 
 #ifndef GAMEJAM2024_MINIGAME_H
 #define GAMEJAM2024_MINIGAME_H 
@@ -49,7 +50,8 @@ void drawUI();
 void drawUIForPlayer(uint8_t playerNum, uint8_t dir);
 int countValidEntries();
 void updateArrowList();
+void loadSong();
 
 void drawArrows();
-void drawArrowForPlayer(uint8_t playerNum, int time, uint8_t dir);
+void drawArrowForPlayer(uint8_t playerNum, int yPos, uint8_t dir);
 
