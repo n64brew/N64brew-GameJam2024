@@ -11,7 +11,6 @@ ASSETS_LIST += \
 	filesystem/paintball/FingerPaint-Regular-Medium.font64 \
 	filesystem/paintball/FingerPaint-Regular-Big.font64 \
 	filesystem/paintball/fire.wav64 \
-	filesystem/paintball/capture.wav64 \
 	filesystem/paintball/hit.wav64
 
 filesystem/paintball/FingerPaint-Regular.font64: MKFONT_FLAGS += --outline 1 --size 12

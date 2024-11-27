@@ -17,7 +17,6 @@ constexpr int RoundCount = 5;
 
 constexpr int FireAudioChannel = 10;
 constexpr int HitAudioChannel = 11;
-constexpr int CaptureAudioChannel = 13;
-constexpr int GeneralPurposeAudioChannel = 13;
+constexpr int GeneralPurposeAudioChannel = 12;
 
 #endif // __CONSTANTS_H

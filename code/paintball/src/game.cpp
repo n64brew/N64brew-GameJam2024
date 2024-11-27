@@ -46,6 +46,8 @@ Game::~Game() {
 void Game::render(float deltaTime) {
     assertf(mapRenderer.get(), "Map renderer is null");
 
+    mixer_ch_set_vol(GeneralPurposeAudioChannel, 0.5f, 0.5f);
+    
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0x55, 0x55, 0x55, 0xFF};
     uint8_t colorPoint[4]   = {0xFF, 0xFF, 0xFF, 0xFF};

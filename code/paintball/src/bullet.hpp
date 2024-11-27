@@ -63,7 +63,6 @@ class BulletController
 
         Wav64 sfxFire;
         Wav64 sfxHit;
-        Wav64 sfxCapture;
 
         bool simulatePhysics(float deltaTime, Bullet &bullet);
         void killBullet(Bullet &bullet);

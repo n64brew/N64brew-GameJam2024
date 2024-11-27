@@ -29,7 +29,7 @@ constexpr float SpeedLimit = 80.f;
 constexpr float BulletOffset = 15.f;
 constexpr float CooldownPerSecond = 1.f;
 constexpr float TempPerBullet = 0.3f;
-constexpr float OverheatPenalty = 1.0f;
+constexpr float OverheatPenalty = 1.2f;
 
 class GameplayController
 {

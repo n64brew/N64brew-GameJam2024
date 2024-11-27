@@ -36,12 +36,11 @@ BulletController::BulletController(std::shared_ptr<MapRenderer> map, std::shared
     map(map),
     ui(ui),
     sfxFire("rom:/paintball/fire.wav64"),
-    sfxHit("rom:/paintball/hit.wav64"),
-    sfxCapture("rom:/paintball/capture.wav64") {
+    sfxHit("rom:/paintball/hit.wav64") {
         assertf(model.get(), "Bullet model is null");
 
         mixer_ch_set_vol(FireAudioChannel, 0.3f, 0.3f);
-        mixer_ch_set_vol(CaptureAudioChannel, 0.3f, 0.3f);
+        mixer_ch_set_vol(HitAudioChannel, 0.5f, 0.5f);
 
         rspq_block_begin();
             t3d_model_draw(model.get());
@@ -170,10 +169,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player::Gameplay
 
                 ui->registerHit(HitMark {bullet->pos, bullet->owner});
                 map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
-                wav64_play(sfxHit.get(), FireAudioChannel);
-                if (hit) {
-                    wav64_play(sfxCapture.get(), CaptureAudioChannel);
-                }
+                wav64_play(sfxHit.get(), HitAudioChannel);
                 bullets.remove(bullet);
 
                 // No need to check other players, we don't have the bullet anymore
