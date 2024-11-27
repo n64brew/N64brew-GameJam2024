@@ -12,7 +12,7 @@ constexpr int PlayerCount = 4;
 constexpr int ScreenWidth = 320;
 constexpr int ScreenHeight = 240;
 
-constexpr float LastOneStandingTime = 20;
+constexpr float LastOneStandingTime = 15;
 constexpr int RoundCount = 5;
 
 constexpr int FireAudioChannel = 10;
