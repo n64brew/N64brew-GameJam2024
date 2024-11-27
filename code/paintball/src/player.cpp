@@ -130,7 +130,7 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
 
 void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite)
 {
-    constexpr int margin = ScreenWidth / 8;
+    constexpr int margin = ScreenWidth / 10;
     int x = floorf(playerOther.screenPos.v[0]);
     int y = floorf(playerOther.screenPos.v[1]);
     float theta = 0.f;
