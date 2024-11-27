@@ -47,9 +47,9 @@ bool sequence_game_paused = false;
 
 xm64player_t sequence_game_xm;
 
-struct Duck *ducks;
-struct Snowman *snowmen;
-struct Controller *controllers;
+Snowman *snowmen = NULL;
+Duck *ducks;
+Controller *controllers;
 
 void sequence_game_init()
 {
@@ -97,6 +97,7 @@ void sequence_game_init()
     sequence_game_initialized = true;
 
     initialize_ducks();
+    // initialize_snowmen();
     initialize_controllers();
 
     ///////////////////////////////////////////////////////////

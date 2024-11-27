@@ -92,3 +92,23 @@ void free_controllers()
         controllers = NULL;
     }
 }
+
+// Function to add a new object to the linked list
+Snowman *add_snowman(Snowman *snowmen)
+{
+    Snowman *snowman = (Snowman *)malloc(sizeof(Snowman));
+    if (snowman == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory\n");
+    }
+
+    snowman->action = SNOWMAN_IDLE;
+    snowman->frames = 0;
+    snowman->locked_for_frames = 0;
+    snowman->x = random_between(MIN_X, MAX_X);
+    snowman->y = random_between(MIN_Y, MAX_Y);
+    snowman->idle_sprite = sequence_game_snowman_idle_sprite;
+    snowman->jump_sprite = sequence_game_snowman_jump_sprite;
+    snowman->next = snowmen;
+    return snowman;
+}

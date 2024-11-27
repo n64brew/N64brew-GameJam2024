@@ -51,6 +51,7 @@ typedef struct Snowman
     sprite_t *jump_sprite;
     int frames;
     int locked_for_frames;
+    struct Snowman* next;
 } Snowman;
 
 typedef struct Controller

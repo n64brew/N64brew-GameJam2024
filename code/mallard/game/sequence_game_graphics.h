@@ -26,7 +26,7 @@ extern sprite_t *sequence_game_background_lakeview_terrace_sprite;
 extern sprite_t *sequence_game_start_button_sprite;
 extern sprite_t *sequence_game_paused_text_sprite;
 
-extern struct Duck *characters;
+extern struct Duck *ducks;
 
 void sequence_game_render_ducks();
 void sequence_game_draw_background_lakeview_terrace();
