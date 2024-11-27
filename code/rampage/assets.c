@@ -108,6 +108,9 @@ void rampage_assets_destroy() {
         sprite_free(gRampageAssets.countdown_numbers[i]);
     }
 
+    sprite_free(gRampageAssets.destroy_image);
+    sprite_free(gRampageAssets.finish_image);
+
     wav64_close(&gRampageAssets.music);
 
     wav64_close(&gRampageAssets.collapseSound);
