@@ -2,6 +2,7 @@
 # loyly.wav64 https://freesound.org/people/Nakhas/sounds/522882/
 # sj-polkka.xm64 https://musescore.com/user/179734/scores/5907389
 #                samples from https://freewavesamples.com/
+# door.wav64 https://opengameart.org/content/creaky-door-hinge-spooky
 ASSETS_LIST += \
 	filesystem/avanto/sauna.sprite \
 	filesystem/avanto/sauna-depth.sprite \
@@ -12,7 +13,8 @@ ASSETS_LIST += \
 	filesystem/avanto/loyly.wav64 \
 	filesystem/avanto/sj-polkka.xm64 \
 	filesystem/avanto/banner.font64 \
-	filesystem/avanto/timer.font64
+	filesystem/avanto/timer.font64 \
+	filesystem/avanto/door.wav64
 
 AVANTO_AUDIOCONV_FLAGS += --wav-mono --wav-resample 22050 --wav-compress 3
 $(FILESYSTEM_DIR)/avanto/%.wav64: $(ASSETS_DIR)/avanto/%.mp3

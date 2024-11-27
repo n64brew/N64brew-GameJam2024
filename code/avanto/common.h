@@ -10,6 +10,7 @@
 #define HUD_BAR_HEIGHT 16
 #define HUD_BAR_Y_OFFSET 4
 #define HUD_BAR_X_OFFSET 1
+#define GRAVITY 200.f
 
 struct entity {
   const T3DModel *model;
@@ -73,6 +74,11 @@ struct script_action {
     size_t anim;
     bool visibility;
     float time;
+    wav64_t *sfx;
+    struct {
+      xm64player_t *xm64;
+      size_t first_channel;
+    };
   };
 };
 
@@ -83,7 +89,9 @@ struct script_state {
 };
 
 struct subgame {
-  void (*dynamic_loop)(float, bool);
+  void (*dynamic_loop_pre)(float, bool);
+  void (*dynamic_loop_render)(float, bool);
+  void (*dynamic_loop_post)(float, bool);
   bool (*fixed_loop)(float, bool);
   void (*cleanup)();
   void (*init)();
@@ -98,6 +106,8 @@ enum script_actions {
   ACTION_START_ANIM,
   ACTION_SET_VISIBILITY,
   ACTION_DO_WHOLE_ANIM,
+  ACTION_PLAY_SFX,
+  ACTION_START_XM64,
   ACTION_END,
 };
 
@@ -135,6 +145,8 @@ enum player_anims {
   SIT,
   BEND,
   UNBEND,
+  STAND_UP,
+  NUM_PLAYER_ANIMS,
 };
 
 float get_ground_height(float z, struct ground *ground);

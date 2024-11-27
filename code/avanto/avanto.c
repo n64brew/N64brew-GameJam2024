@@ -33,13 +33,17 @@ bool paused;
 struct subgame subgames[] = {
   {
     .fixed_loop = sauna_fixed_loop,
-    .dynamic_loop = sauna_loop,
+    .dynamic_loop_pre = sauna_dynamic_loop_pre,
+    .dynamic_loop_render = sauna_dynamic_loop_render,
+    .dynamic_loop_post = sauna_dynamic_loop_post,
     .cleanup = sauna_cleanup,
     .init = sauna_init,
   },
   {
     .fixed_loop = NULL,
-    .dynamic_loop = NULL,
+    .dynamic_loop_pre = NULL,
+    .dynamic_loop_render = NULL,
+    .dynamic_loop_post = NULL,
     .cleanup = NULL,
     .init = NULL,
   },
@@ -87,7 +91,7 @@ void minigame_init() {
   };
   for (size_t i = 0; i < 4; i++) {
     players[i].rotation = 0;
-    skeleton_init(&players[i].s, player_model, 5);
+    skeleton_init(&players[i].s, player_model, NUM_PLAYER_ANIMS);
     players[i].s.anims[WALK] = t3d_anim_create(player_model, "walking");
     players[i].s.anims[CLIMB] = t3d_anim_create(player_model, "climbing");
     t3d_anim_set_looping(&players[i].s.anims[CLIMB], false);
@@ -97,6 +101,9 @@ void minigame_init() {
     t3d_anim_set_looping(&players[i].s.anims[BEND], false);
     players[i].s.anims[UNBEND] = t3d_anim_create(player_model, "unbending");
     t3d_anim_set_looping(&players[i].s.anims[UNBEND], false);
+    players[i].s.anims[STAND_UP] =
+      t3d_anim_create(player_model, "standing_up");
+    t3d_anim_set_looping(&players[i].s.anims[STAND_UP], false);
     players[i].pos = (T3DVec3) {{0, 0, 0}};
     players[i].scale = 2.5f;
     players[i].current_anim = -1;
@@ -188,11 +195,18 @@ void minigame_init() {
 }
 
 void minigame_fixedloop(float delta_time) {
+  if (!current_subgame->fixed_loop) {
+    return;
+  }
+
   if (current_subgame->fixed_loop(delta_time, paused)) {
     current_subgame->cleanup();
     current_subgame++;
     if (current_subgame->init) {
       current_subgame->init();
+    }
+    else {
+      minigame_end();
     }
   }
 }
@@ -227,7 +241,17 @@ void minigame_loop(float delta_time) {
     }
   }
 
-  current_subgame->dynamic_loop(delta_time, paused);
+  if (current_subgame->dynamic_loop_pre) {
+    current_subgame->dynamic_loop_pre(delta_time, paused);
+  }
+
+  rdpq_attach(display_get(), z_buffer);
+  t3d_frame_start();
+  t3d_viewport_attach(&viewport);
+
+  if (current_subgame->dynamic_loop_render) {
+    current_subgame->dynamic_loop_render(delta_time, paused);
+  }
 
   if (paused) {
     rdpq_mode_push();
@@ -278,9 +302,16 @@ void minigame_loop(float delta_time) {
     1.f/delta_time);
 
   rdpq_detach_show();
+
+  if (current_subgame->dynamic_loop_post) {
+    current_subgame->dynamic_loop_post(delta_time, paused);
+  }
+
 }
 
 void minigame_cleanup() {
+  rspq_wait();
+
   rspq_block_free(empty_hud_block);
 
   if (current_subgame->cleanup) {

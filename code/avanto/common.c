@@ -177,6 +177,12 @@ bool script_update(struct script_state *state, float delta_time) {
         break;
       }
     }
+    else if (state->action->type == ACTION_PLAY_SFX) {
+      wav64_play(state->action->sfx, get_next_sfx_channel());
+    }
+    else if (state->action->type == ACTION_START_XM64) {
+      xm64player_play(state->action->xm64, state->action->first_channel);
+    }
 
     state->action++;
     state->time = 0.f;
