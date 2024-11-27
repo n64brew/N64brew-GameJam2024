@@ -1,6 +1,8 @@
 #ifndef SEQUENCE_GAME_INITIALIZE_H
 #define SEQUENCE_GAME_INITIALIZE_H
 
+#include "sequence_game.h"
+
 #define MIN_X 5
 #define MAX_X 152 + 152 - 15
 #define MIN_Y 111 - 85
@@ -23,7 +25,8 @@
 #define PLAYER_4_SPAWN_X2 152 + 152 - 15
 #define PLAYER_4_SPAWN_Y2 194 - 85 - 1
 
-extern struct Character *characters;
+extern struct Duck *ducks;
+extern struct Snowman *snowmen;
 extern struct Controller *controllers;
 
 extern sprite_t *sequence_game_mallard_one_base_sprite;
@@ -46,9 +49,14 @@ extern sprite_t *sequence_game_mallard_two_run_sprite;
 extern sprite_t *sequence_game_mallard_three_run_sprite;
 extern sprite_t *sequence_game_mallard_four_run_sprite;
 
-void initialize_characters();
-void free_characters();
+extern sprite_t *sequence_game_snowman_idle_sprite;
+extern sprite_t *sequence_game_snowman_jump_sprite;
+
+void initialize_ducks();
+void free_ducks();
 void initialize_controllers();
 void free_controllers();
+
+Snowman *add_snowman(Snowman *snowmen);
 
 #endif // SEQUENCE_GAME_INITIALIZE_H

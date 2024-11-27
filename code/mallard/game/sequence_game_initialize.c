@@ -8,64 +8,64 @@ int random_between(int min, int max)
     return rand() % (max - min + 1) + min;
 }
 
-void initialize_characters()
+void initialize_ducks()
 {
-    if (characters == NULL)
+    if (ducks == NULL)
     {
-        characters = malloc(4 * sizeof(struct Character));
+        ducks = malloc(4 * sizeof(struct Duck));
 
-        characters[0].action = BASE;
-        characters[0].frames = 0;
-        characters[0].locked_for_frames = 0;
-        characters[0].x = random_between(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_X2);
-        characters[0].y = random_between(PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_Y2);
-        characters[0].direction = RIGHT;
-        characters[0].base_sprite = sequence_game_mallard_one_base_sprite;
-        characters[0].walk_sprite = sequence_game_mallard_one_walk_sprite;
-        characters[0].slap_sprite = sequence_game_mallard_one_slap_sprite;
-        characters[0].run_sprite = sequence_game_mallard_one_run_sprite;
+        ducks[0].action = DUCK_BASE;
+        ducks[0].frames = 0;
+        ducks[0].locked_for_frames = 0;
+        ducks[0].x = random_between(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_X2);
+        ducks[0].y = random_between(PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_Y2);
+        ducks[0].direction = RIGHT;
+        ducks[0].base_sprite = sequence_game_mallard_one_base_sprite;
+        ducks[0].walk_sprite = sequence_game_mallard_one_walk_sprite;
+        ducks[0].slap_sprite = sequence_game_mallard_one_slap_sprite;
+        ducks[0].run_sprite = sequence_game_mallard_one_run_sprite;
 
-        characters[1].action = BASE;
-        characters[1].frames = 0;
-        characters[1].locked_for_frames = 0;
-        characters[1].x = random_between(PLAYER_2_SPAWN_X1, PLAYER_2_SPAWN_X2);
-        characters[1].y = random_between(PLAYER_2_SPAWN_Y1, PLAYER_2_SPAWN_Y2);
-        characters[1].direction = LEFT;
-        characters[1].base_sprite = sequence_game_mallard_two_base_sprite;
-        characters[1].walk_sprite = sequence_game_mallard_two_walk_sprite;
-        characters[1].slap_sprite = sequence_game_mallard_two_slap_sprite;
-        characters[1].run_sprite = sequence_game_mallard_two_run_sprite;
+        ducks[1].action = DUCK_BASE;
+        ducks[1].frames = 0;
+        ducks[1].locked_for_frames = 0;
+        ducks[1].x = random_between(PLAYER_2_SPAWN_X1, PLAYER_2_SPAWN_X2);
+        ducks[1].y = random_between(PLAYER_2_SPAWN_Y1, PLAYER_2_SPAWN_Y2);
+        ducks[1].direction = LEFT;
+        ducks[1].base_sprite = sequence_game_mallard_two_base_sprite;
+        ducks[1].walk_sprite = sequence_game_mallard_two_walk_sprite;
+        ducks[1].slap_sprite = sequence_game_mallard_two_slap_sprite;
+        ducks[1].run_sprite = sequence_game_mallard_two_run_sprite;
 
-        characters[2].action = BASE;
-        characters[2].frames = 0;
-        characters[2].locked_for_frames = 0;
-        characters[2].x = random_between(PLAYER_3_SPAWN_X1, PLAYER_3_SPAWN_X2);
-        characters[2].y = random_between(PLAYER_3_SPAWN_Y1, PLAYER_3_SPAWN_Y2);
-        characters[2].direction = RIGHT;
-        characters[2].base_sprite = sequence_game_mallard_three_base_sprite;
-        characters[2].walk_sprite = sequence_game_mallard_three_walk_sprite;
-        characters[2].slap_sprite = sequence_game_mallard_three_slap_sprite;
-        characters[2].run_sprite = sequence_game_mallard_three_run_sprite;
+        ducks[2].action = DUCK_BASE;
+        ducks[2].frames = 0;
+        ducks[2].locked_for_frames = 0;
+        ducks[2].x = random_between(PLAYER_3_SPAWN_X1, PLAYER_3_SPAWN_X2);
+        ducks[2].y = random_between(PLAYER_3_SPAWN_Y1, PLAYER_3_SPAWN_Y2);
+        ducks[2].direction = RIGHT;
+        ducks[2].base_sprite = sequence_game_mallard_three_base_sprite;
+        ducks[2].walk_sprite = sequence_game_mallard_three_walk_sprite;
+        ducks[2].slap_sprite = sequence_game_mallard_three_slap_sprite;
+        ducks[2].run_sprite = sequence_game_mallard_three_run_sprite;
 
-        characters[3].action = BASE;
-        characters[3].frames = 0;
-        characters[3].locked_for_frames = 0;
-        characters[3].x = random_between(PLAYER_4_SPAWN_X1, PLAYER_4_SPAWN_X2);
-        characters[3].y = random_between(PLAYER_4_SPAWN_Y1, PLAYER_4_SPAWN_Y2);
-        characters[3].direction = LEFT;
-        characters[3].base_sprite = sequence_game_mallard_four_base_sprite;
-        characters[3].walk_sprite = sequence_game_mallard_four_walk_sprite;
-        characters[3].slap_sprite = sequence_game_mallard_four_slap_sprite;
-        characters[3].run_sprite = sequence_game_mallard_four_run_sprite;
+        ducks[3].action = DUCK_BASE;
+        ducks[3].frames = 0;
+        ducks[3].locked_for_frames = 0;
+        ducks[3].x = random_between(PLAYER_4_SPAWN_X1, PLAYER_4_SPAWN_X2);
+        ducks[3].y = random_between(PLAYER_4_SPAWN_Y1, PLAYER_4_SPAWN_Y2);
+        ducks[3].direction = LEFT;
+        ducks[3].base_sprite = sequence_game_mallard_four_base_sprite;
+        ducks[3].walk_sprite = sequence_game_mallard_four_walk_sprite;
+        ducks[3].slap_sprite = sequence_game_mallard_four_slap_sprite;
+        ducks[3].run_sprite = sequence_game_mallard_four_run_sprite;
     }
 }
 
-void free_characters()
+void free_ducks()
 {
-    if (characters != NULL)
+    if (ducks != NULL)
     {
-        free(characters);
-        characters = NULL;
+        free(ducks);
+        ducks = NULL;
     }
 }
 
@@ -91,4 +91,24 @@ void free_controllers()
         free(controllers);
         controllers = NULL;
     }
+}
+
+// Function to add a new object to the linked list
+Snowman *add_snowman(Snowman *snowmen)
+{
+    Snowman *snowman = (Snowman *)malloc(sizeof(Snowman));
+    if (snowman == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory\n");
+    }
+
+    snowman->action = SNOWMAN_IDLE;
+    snowman->frames = 0;
+    snowman->locked_for_frames = 0;
+    snowman->x = random_between(MIN_X, MAX_X);
+    snowman->y = random_between(MIN_Y, MAX_Y);
+    snowman->idle_sprite = sequence_game_snowman_idle_sprite;
+    snowman->jump_sprite = sequence_game_snowman_jump_sprite;
+    snowman->next = snowmen;
+    return snowman;
 }

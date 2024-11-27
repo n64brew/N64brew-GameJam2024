@@ -9,14 +9,37 @@
 #define BOOST 2.0
 #define SQRT_ONE_HALF 0.70710678118
 
+#define SNOWMAN_SPAWN_FREQUENCY 3.0f
+float time_since_last_snowman_spawn = 0.0f;
+
 void sequence_game_update(float deltatime)
 {
+    if (time_since_last_snowman_spawn >= SNOWMAN_SPAWN_FREQUENCY)
+    {
+        time_since_last_snowman_spawn = 0.0f;
+        snowmen = add_snowman(snowmen);
+
+        int count = 0;
+        struct Snowman *curr = snowmen;
+        while (curr != NULL)
+        {
+            // Increment count by 1
+            count++;
+
+            // Move pointer to next node
+            curr = curr->next;
+        }
+        fprintf(stderr, "Snowmen spawned: %i\n", count);
+    }
+
+    time_since_last_snowman_spawn += deltatime;
+
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
         struct Controller *controller = &controllers[i];
-        struct Character *character = &characters[i];
+        struct Duck *duck = &ducks[i];
 
-        character->frames++;
+        duck->frames++;
 
         joypad_port_t controllerPort = core_get_playercontroller(i);
         joypad_buttons_t pressed = joypad_get_buttons_pressed(controllerPort);
@@ -116,22 +139,22 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->y -= 1 * BOOST;
+                duck->y -= 1 * BOOST;
             }
             else
             {
-                character->y -= 1;
+                duck->y -= 1;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             break;
@@ -141,28 +164,28 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->x += (SQRT_ONE_HALF * BOOST);
-                character->y -= (SQRT_ONE_HALF * BOOST);
+                duck->x += (SQRT_ONE_HALF * BOOST);
+                duck->y -= (SQRT_ONE_HALF * BOOST);
             }
             else
             {
-                character->x += SQRT_ONE_HALF;
-                character->y -= SQRT_ONE_HALF;
+                duck->x += SQRT_ONE_HALF;
+                duck->y -= SQRT_ONE_HALF;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             // Direction
-            character->direction = RIGHT;
+            duck->direction = RIGHT;
             break;
 
         case JOYPAD_8WAY_RIGHT:
@@ -170,26 +193,26 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->x += 1 * BOOST;
+                duck->x += 1 * BOOST;
             }
             else
             {
-                character->x += 1;
+                duck->x += 1;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             // Direction
-            character->direction = RIGHT;
+            duck->direction = RIGHT;
             break;
 
         case JOYPAD_8WAY_DOWN_RIGHT:
@@ -197,28 +220,28 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->x += (SQRT_ONE_HALF * BOOST);
-                character->y += (SQRT_ONE_HALF * BOOST);
+                duck->x += (SQRT_ONE_HALF * BOOST);
+                duck->y += (SQRT_ONE_HALF * BOOST);
             }
             else
             {
-                character->x += SQRT_ONE_HALF;
-                character->y += SQRT_ONE_HALF;
+                duck->x += SQRT_ONE_HALF;
+                duck->y += SQRT_ONE_HALF;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             // Direction
-            character->direction = RIGHT;
+            duck->direction = RIGHT;
             break;
 
         case JOYPAD_8WAY_DOWN:
@@ -226,22 +249,22 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->y += 1 * BOOST;
+                duck->y += 1 * BOOST;
             }
             else
             {
-                character->y += 1;
+                duck->y += 1;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             break;
@@ -251,28 +274,28 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->x -= (SQRT_ONE_HALF * BOOST);
-                character->y += (SQRT_ONE_HALF * BOOST);
+                duck->x -= (SQRT_ONE_HALF * BOOST);
+                duck->y += (SQRT_ONE_HALF * BOOST);
             }
             else
             {
-                character->x -= SQRT_ONE_HALF;
-                character->y += SQRT_ONE_HALF;
+                duck->x -= SQRT_ONE_HALF;
+                duck->y += SQRT_ONE_HALF;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             // Direction
-            character->direction = LEFT;
+            duck->direction = LEFT;
             break;
 
         case JOYPAD_8WAY_LEFT:
@@ -280,26 +303,26 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->x -= 1 * BOOST;
+                duck->x -= 1 * BOOST;
             }
             else
             {
-                character->x -= 1;
+                duck->x -= 1;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             // Direction
-            character->direction = LEFT;
+            duck->direction = LEFT;
             break;
 
         case JOYPAD_8WAY_UP_LEFT:
@@ -307,66 +330,66 @@ void sequence_game_update(float deltatime)
             // Position
             if (held.b)
             {
-                character->x -= (SQRT_ONE_HALF * BOOST);
-                character->y -= (SQRT_ONE_HALF * BOOST);
+                duck->x -= (SQRT_ONE_HALF * BOOST);
+                duck->y -= (SQRT_ONE_HALF * BOOST);
             }
             else
             {
-                character->x -= SQRT_ONE_HALF;
-                character->y -= SQRT_ONE_HALF;
+                duck->x -= SQRT_ONE_HALF;
+                duck->y -= SQRT_ONE_HALF;
             }
             // Action
-            if (character->locked_for_frames == 0)
+            if (duck->locked_for_frames == 0)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    duck->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    duck->action = DUCK_WALK;
                 }
             }
             // Direction
-            character->direction = LEFT;
+            duck->direction = LEFT;
             break;
 
         default:
-            if (character->locked_for_frames == 0)
-                character->action = BASE;
+            if (duck->locked_for_frames == 0)
+                duck->action = DUCK_BASE;
             break;
         }
 
-        if (character->x > MAX_X)
+        if (duck->x > MAX_X)
         {
-            character->x = MAX_X;
+            duck->x = MAX_X;
         }
 
-        if (character->x < MIN_X)
+        if (duck->x < MIN_X)
         {
-            character->x = MIN_X;
+            duck->x = MIN_X;
         }
 
-        if (character->y > MAX_Y)
+        if (duck->y > MAX_Y)
         {
-            character->y = MAX_Y;
+            duck->y = MAX_Y;
         }
 
-        if (character->y < MIN_Y)
+        if (duck->y < MIN_Y)
         {
-            character->y = MIN_Y;
+            duck->y = MIN_Y;
         }
 
         if (pressed.a)
         {
-            character->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
-            character->action = SLAP;
-            character->frames = 0;
+            duck->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
+            duck->action = DUCK_SLAP;
+            duck->frames = 0;
         }
 
-        if (character->locked_for_frames > 0)
+        if (duck->locked_for_frames > 0)
         {
-            character->locked_for_frames--;
+            duck->locked_for_frames--;
         }
     }
 }

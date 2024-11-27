@@ -32,37 +32,37 @@ float sequence_game_fade_in_elapsed = 0.0f;
 float sequence_game_start_held_elapsed = 0.0f;
 int sequence_game_player_holding_start = -1;
 
-sprite_t *get_sprite_from_character(struct Character *character)
+sprite_t *get_sprite_from_duck(struct Duck *duck)
 {
-    switch (character->action)
+    switch (duck->action)
     {
-    case BASE:
-        return character->base_sprite;
-    case SLAP:
-        return character->slap_sprite;
-    case WALK:
-        return character->walk_sprite;
-    case RUN:
-        return character->run_sprite;
+    case DUCK_BASE:
+        return duck->base_sprite;
+    case DUCK_SLAP:
+        return duck->slap_sprite;
+    case DUCK_WALK:
+        return duck->walk_sprite;
+    case DUCK_RUN:
+        return duck->run_sprite;
     default:
-        return character->base_sprite;
+        return duck->base_sprite;
     }
 }
 
-int get_frame_from_character(struct Character *character)
+int get_frame_from_duck(struct Duck *duck)
 {
-    switch (character->action)
+    switch (duck->action)
     {
-    case BASE:
+    case DUCK_BASE:
         return 0;
-    case WALK:
-        return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_WALK_FRAMES; // Update every 4 frames
-    case IDLE:
-        return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES; // Update every 4 frames
-    case SLAP:
-        return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Update every 4 frames
-    case RUN:
-        return (character->frames >> 2) % SEQUENCE_GAME_MALLARD_RUN_FRAMES; // Update every 4 frames
+    case DUCK_WALK:
+        return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_WALK_FRAMES; // Update every 4 frames
+    case DUCK_IDLE:
+        return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES; // Update every 4 frames
+    case DUCK_SLAP:
+        return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Update every 4 frames
+    case DUCK_RUN:
+        return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_RUN_FRAMES; // Update every 4 frames
     default:
         return 0;
     }
@@ -75,22 +75,19 @@ void sequence_game_render_ducks()
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     for (size_t i = 0; i < 4; i++)
     {
-        struct Character *character = &characters[i];
+        struct Duck *duck = &ducks[i];
 
         rdpq_blitparms_t blitparms = {
-            .s0 = get_frame_from_character(character) * 32,
+            .s0 = get_frame_from_duck(duck) * 32,
             .t0 = 0,
             .width = 32,
             .height = 32,
-            .flip_x = character->direction == RIGHT ? true : false,
+            .flip_x = duck->direction == RIGHT ? true : false,
         };
 
-        if (i == 0)
-            fprintf(stderr, "Character %d: %f, %f\n", i, character->x, character->y);
-
-        rdpq_sprite_blit(get_sprite_from_character(character),
-                         character->x,
-                         character->y,
+        rdpq_sprite_blit(get_sprite_from_duck(duck),
+                         duck->x,
+                         duck->y,
                          &blitparms);
     }
     rdpq_mode_pop();
@@ -154,6 +151,17 @@ void sequence_game_draw_paused()
     rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$02^00PAUSED");
 }
 
+void sequence_game_render_snowmen()
+{
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    
+    // TODO: Iterate through all the snowmen we have and render them.
+
+    rdpq_mode_pop();
+}
+
 void sequence_game_render(float deltatime)
 {
     if (sequence_game_started == true && sequence_game_finished == false)
@@ -170,6 +178,8 @@ void sequence_game_render(float deltatime)
         // rdpq_fill_rectangle(MIN_X, MIN_Y, MAX_X, MAX_Y);
 
         sequence_game_render_ducks();
+
+        sequence_game_render_snowmen();
 
         if (sequence_game_paused == false)
             sequence_game_draw_press_start_to_pause();

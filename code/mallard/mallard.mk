@@ -23,6 +23,8 @@ ASSETS_LIST += \
 	filesystem/mallard/two/duck_run.rgba32.sprite \
 	filesystem/mallard/three/duck_run.rgba32.sprite \
 	filesystem/mallard/four/duck_run.rgba32.sprite \
+	filesystem/mallard/snowman/snowman_idle.rgba32.sprite \
+	filesystem/mallard/snowman/snowman_jump.rgba32.sprite \
 	filesystem/mallard/mallard_game_paused_text.rgba32.sprite \
 	filesystem/mallard/mallard_background_park.rgba32.sprite
 
