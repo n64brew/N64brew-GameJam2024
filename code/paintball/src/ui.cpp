@@ -100,9 +100,24 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
             rdpq_text_printf(&centerparms, MediumFont, 0, (i-1) * 30, "Player %d: %d", i + 1, state.scores[i]);
         }
     }
+
+    if(state.state != STATE_WAIT_FOR_NEW_ROUND){
+        for (int i = 0; i < MAXPLAYERS; i++) {
+            centerparms.style_id = i;
+            rdpq_text_printf(&centerparms, SmallFont, ((i-1) * 2 - 1) * ScreenWidth/16, 3 * ScreenHeight / 8, "P%d: %d", i + 1, state.scores[i]);
+        }
+    }
 }
 
 void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
+    // TODO: shouldn't need colors here
+    const color_t colors[] = {
+        PLAYERCOLOR_1,
+        PLAYERCOLOR_2,
+        PLAYERCOLOR_3,
+        PLAYERCOLOR_4,
+    };
+
     for (auto hit = hits.begin(); hit != hits.end(); ++hit) {
         if (hit->lifetime <= 0.) {
             hits.remove(hit);
@@ -117,13 +132,6 @@ void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
         rdpq_sync_pipe();
         rdpq_sync_tile();
         rdpq_set_mode_standard();
-
-        const color_t colors[] = {
-            PLAYERCOLOR_1,
-            PLAYERCOLOR_2,
-            PLAYERCOLOR_3,
-            PLAYERCOLOR_4,
-        };
 
         rdpq_mode_zbuf(false, false);
         rdpq_mode_alphacompare(1);
