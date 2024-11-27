@@ -474,6 +474,7 @@ void minigame_cleanup() {
     health_destroy();
     rdpq_text_unregister_font(FONT_TEXT);
     rdpq_font_free(font);
+    display_close();
 }
 
 static struct Vector3 gStartingPositions[] = {

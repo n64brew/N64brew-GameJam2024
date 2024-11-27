@@ -90,6 +90,8 @@ void props_init(struct AllProps* props, const char* filename) {
     for (int i = 0; i < props->prop_count; i += 1) {
         props->x_values[i] = props->props[i].position.x;
     }
+
+    fclose(file);
 }
 
 void props_render(struct AllProps* props) {

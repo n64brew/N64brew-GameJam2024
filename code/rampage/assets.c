@@ -89,13 +89,18 @@ void rampage_assets_destroy() {
         t3d_model_free(gRampageAssets.building[i]);
     }
 
-    rampage_model_free_split(&gRampageAssets.tankSplit);
     t3d_model_free(gRampageAssets.player);
+
     t3d_model_free(gRampageAssets.ground);
+
+    rampage_model_free_split(&gRampageAssets.tankSplit);
     t3d_model_free(gRampageAssets.tank);
+
     t3d_model_free(gRampageAssets.bullet);
+
     t3d_model_free(gRampageAssets.swing_effect);
     rampage_model_free_split(&gRampageAssets.swing_split);
+    
     t3d_model_free(gRampageAssets.spark_effect);
     rampage_model_free_split(&gRampageAssets.spark_split);
 
