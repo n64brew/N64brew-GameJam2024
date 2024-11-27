@@ -102,7 +102,7 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
         if (colors[playerGameplay.team].b == 0) colors[playerGameplay.team].b = 200;
     };
 
-    float factor = temp > 0.5 ? temp * temp * temp * 0.015f : 0.f;
+    float factor = temp > 0.5 ? temp * temp * temp * 0.02f : 0.f;
 
     playerOther.displayTemperature = t3d_lerp(playerOther.displayTemperature, factor, 0.2);
 
