@@ -16,10 +16,14 @@ class List : public std::array<T, S> {
             count++;
         }
 
-        void remove(typename std::array<T,S>::iterator it) {
+        void remove(typename std::array<T,S>::iterator &it) {
             if (count == 0) return;
             count--;
             *it = (std::array<T,S>::operator[](count));
+            // Honestly, I couldn't find a better api for this
+            // Actually the iterator is invalid once you remove it
+            // and it should behave accordingly
+            it--;
         }
 
         void clear() {

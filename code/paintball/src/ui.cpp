@@ -103,7 +103,7 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
 }
 
 void UIRenderer::renderHitMarks(T3DViewport &viewport, float deltaTime) {
-    for (auto hit = hits.begin(); hit < hits.end(); ++hit) {
+    for (auto hit = hits.begin(); hit != hits.end(); ++hit) {
         if (hit->lifetime <= 0.) {
             hits.remove(hit);
             continue;

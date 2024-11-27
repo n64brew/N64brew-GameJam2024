@@ -140,8 +140,7 @@ bool BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
 
 void BulletController::fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData) {
     assertf(map.get(), "Map renderer is null");
-    // TODO: Couldn't find a better way to convert the comparison to != here
-    for (auto bullet = bullets.begin(); bullet < bullets.end(); ++bullet) {
+    for (auto bullet = bullets.begin(); bullet != bullets.end(); ++bullet) {
         bool isDead = simulatePhysics(deltaTime, *bullet);
         if (isDead) {
             map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
