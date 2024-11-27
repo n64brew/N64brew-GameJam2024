@@ -34,6 +34,9 @@ sprite_t *sequence_game_mallard_two_run_sprite;
 sprite_t *sequence_game_mallard_three_run_sprite;
 sprite_t *sequence_game_mallard_four_run_sprite;
 
+sprite_t *sequence_game_snowman_idle_sprite;
+sprite_t *sequence_game_snowman_jump_sprite;
+
 sprite_t *sequence_game_background_lakeview_terrace_sprite;
 
 sprite_t *sequence_game_start_button_sprite;
@@ -44,7 +47,8 @@ bool sequence_game_paused = false;
 
 xm64player_t sequence_game_xm;
 
-struct Character *characters;
+struct Duck *ducks;
+struct Snowman *snowmen;
 struct Controller *controllers;
 
 void sequence_game_init()
@@ -58,6 +62,9 @@ void sequence_game_init()
     ///////////////////////////////////////////////////////////
     //                  Set up Graphics                      //
     ///////////////////////////////////////////////////////////
+
+    sequence_game_snowman_idle_sprite = sprite_load("rom:/mallard/snowman/snowman_idle.rgba32.sprite");
+    sequence_game_snowman_jump_sprite = sprite_load("rom:/mallard/snowman/snowman_jump.rgba32.sprite");
 
     // Game - Mallard
     sequence_game_mallard_one_base_sprite = sprite_load("rom:/mallard/one/duck_base.rgba32.sprite");
@@ -89,7 +96,7 @@ void sequence_game_init()
 
     sequence_game_initialized = true;
 
-    initialize_characters();
+    initialize_ducks();
     initialize_controllers();
 
     ///////////////////////////////////////////////////////////
@@ -123,12 +130,15 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_mallard_three_run_sprite);
     sprite_free(sequence_game_mallard_four_run_sprite);
 
+    sprite_free(sequence_game_snowman_idle_sprite);
+    sprite_free(sequence_game_snowman_jump_sprite);
+
     sprite_free(sequence_game_background_lakeview_terrace_sprite);
 
     sprite_free(sequence_game_start_button_sprite);
     sprite_free(sequence_game_paused_text_sprite);
 
-    free_characters();
+    free_ducks();
     free_controllers();
 
     // Close the display and free the allocated memory.

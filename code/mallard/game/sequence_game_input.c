@@ -14,7 +14,7 @@ void sequence_game_update(float deltatime)
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
         struct Controller *controller = &controllers[i];
-        struct Character *character = &characters[i];
+        struct Duck *character = &characters[i];
 
         character->frames++;
 
@@ -127,11 +127,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             break;
@@ -154,11 +154,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             // Direction
@@ -181,11 +181,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             // Direction
@@ -210,11 +210,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             // Direction
@@ -237,11 +237,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             break;
@@ -264,11 +264,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             // Direction
@@ -291,11 +291,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             // Direction
@@ -320,11 +320,11 @@ void sequence_game_update(float deltatime)
             {
                 if (held.b)
                 {
-                    character->action = RUN;
+                    character->action = DUCK_RUN;
                 }
                 else
                 {
-                    character->action = WALK;
+                    character->action = DUCK_WALK;
                 }
             }
             // Direction
@@ -333,7 +333,7 @@ void sequence_game_update(float deltatime)
 
         default:
             if (character->locked_for_frames == 0)
-                character->action = BASE;
+                character->action = DUCK_BASE;
             break;
         }
 
@@ -360,7 +360,7 @@ void sequence_game_update(float deltatime)
         if (pressed.a)
         {
             character->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
-            character->action = SLAP;
+            character->action = DUCK_SLAP;
             character->frames = 0;
         }
 

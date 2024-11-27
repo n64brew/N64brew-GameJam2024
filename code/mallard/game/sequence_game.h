@@ -11,37 +11,54 @@ typedef enum
 {
     LEFT = 0,
     RIGHT = 1,
-} Direction;
+} Directions;
 
-typedef enum
+typedef enum DuckActions
 {
-    BASE = 0,
-    WALK = 1,
-    IDLE = 2,
-    SLAP = 3,
-    RUN = 4,
-} Action;
+    DUCK_BASE = 0,
+    DUCK_WALK = 1,
+    DUCK_IDLE = 2,
+    DUCK_SLAP = 3,
+    DUCK_RUN = 4,
+} DuckActions;
 
-struct Character
+typedef struct Duck
 {
     float x;
     float y;
-    Action action;
-    Direction direction;
+    DuckActions action;
+    Directions direction;
     sprite_t *base_sprite;
     sprite_t *walk_sprite;
     sprite_t *slap_sprite;
     sprite_t *run_sprite;
     int frames;
     int locked_for_frames;
-};
+} Duck;
 
-struct Controller
+typedef enum SnowmanActions
+{
+    SNOWMAN_IDLE = 0,
+    SNOWMAN_JUMP = 1,
+} SnowmanActions;
+
+typedef struct Snowman
+{
+    float x;
+    float y;
+    SnowmanActions action;
+    sprite_t *idle_sprite;
+    sprite_t *jump_sprite;
+    int frames;
+    int locked_for_frames;
+} Snowman;
+
+typedef struct Controller
 {
     unsigned int start_down;
     unsigned int start_up;
     float start_held_elapsed;
-};
+} Controller;
 
 void sequence_game(float deltatime);
 

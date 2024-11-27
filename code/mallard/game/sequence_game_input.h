@@ -9,7 +9,7 @@ extern int sequence_game_player_holding_start;
 
 extern float sequence_game_start_held_elapsed;
 
-extern struct Character *characters;
+extern struct Duck *characters;
 
 void sequence_game_update(float deltatime);
 

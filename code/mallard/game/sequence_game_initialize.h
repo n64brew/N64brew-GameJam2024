@@ -23,7 +23,7 @@
 #define PLAYER_4_SPAWN_X2 152 + 152 - 15
 #define PLAYER_4_SPAWN_Y2 194 - 85 - 1
 
-extern struct Character *characters;
+extern struct Duck *ducks;
 extern struct Controller *controllers;
 
 extern sprite_t *sequence_game_mallard_one_base_sprite;
@@ -46,8 +46,8 @@ extern sprite_t *sequence_game_mallard_two_run_sprite;
 extern sprite_t *sequence_game_mallard_three_run_sprite;
 extern sprite_t *sequence_game_mallard_four_run_sprite;
 
-void initialize_characters();
-void free_characters();
+void initialize_ducks();
+void free_ducks();
 void initialize_controllers();
 void free_controllers();
 
