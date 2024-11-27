@@ -155,9 +155,9 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
         theta = T3D_PI;
     }
 
+    rdpq_sync_pipe();
+    rdpq_sync_tile();
     if (theta != 0.f) {
-        rdpq_sync_pipe();
-        rdpq_sync_tile();
         rdpq_set_mode_standard();
 
         const color_t colors[] = {
@@ -170,10 +170,10 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
         rdpq_mode_zbuf(false, false);
         rdpq_mode_alphacompare(1);
         rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
-        rdpq_set_fog_color(RGBA32(0, 0, 0, 160));
+        rdpq_set_fog_color(RGBA32(0, 0, 0, 200));
         rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
 
-        rdpq_set_prim_color(colors[playerGameplay.team]);
+        rdpq_set_prim_color(colors[id]);
 
         rdpq_blitparms_t params {
             .width = 32,
@@ -183,6 +183,25 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
             .theta = theta,
         };
         rdpq_sprite_blit(arrowSprite, x, y, &params);
+    } else {
+        constexpr int textHalfWidth = 10;
+        constexpr int textHalfHeight = 6;
+        int x = floorf(playerOther.screenPos.v[0]) - textHalfWidth;
+        int y = floorf(playerOther.screenPos.v[1]) - textHalfHeight;
+        rdpq_textparms_t fontParams {
+            .style_id = (int16_t)id,
+            .width = 20,
+            .align = ALIGN_CENTER,
+            .disable_aa_fix = true
+        };
+        rdpq_text_printf(
+            &fontParams,
+            SmallFont,
+            x,
+            y,
+            "P%lu",
+            id + 1
+        );
     }
 
     // if (playerGameplay.temperature > 0.5f) {
