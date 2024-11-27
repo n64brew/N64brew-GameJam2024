@@ -34,8 +34,8 @@
 const MinigameDef minigame_def = {
     .gamename = "Rummage",
     .developername = "tfmoe__",
-    .description = "Find the key and be the first to open the safe!",
-    .instructions = "Press A to rummage through the furniture or to steal the key."
+    .description = "Find the key and be the first to open the correct safe!",
+    .instructions = "Press A to rummage through the furniture or B to steal the key."
 };
 
 float countdown_timer;
@@ -50,7 +50,6 @@ T3DVec3 camUp;
 T3DVec3 lightDirVec;
 rdpq_font_t* fontdbg;
 rdpq_font_t *fonttext;
-rdpq_font_t *font_t3ddbg;
 wav64_t music;
 wav64_t sfx_start;
 wav64_t sfx_countdown;
@@ -106,11 +105,6 @@ void minigame_init()
     fonttext = rdpq_font_load("rom:/rummage/thickhead.font64");
     rdpq_text_register_font(FONT_TEXT, fonttext);
     rdpq_font_style(fonttext, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
-#else
-    // Init T3D debug font
-    t3d_debug_print_init();
-    font_t3ddbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);
-    rdpq_text_register_font(FONT_BUILTIN_DEBUG_MONO, font_t3ddbg);
 #endif
 
 #if ENABLE_MUSIC
@@ -254,7 +248,7 @@ void minigame_loop(float deltatime)
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
-    game_render(deltatime);
+    game_render(deltatime, viewport);
 
 #if ENABLE_WIREFRAME
     if (show_wireframe) {
@@ -273,8 +267,8 @@ void minigame_loop(float deltatime)
 #endif
 
 #if ENABLE_TEXT
-        rdpq_sync_tile();
-        rdpq_sync_pipe(); // Hardware crashes otherwise
+    rdpq_sync_tile();
+    rdpq_sync_pipe();
 
     if (show_debug_text) {
         // Display FPS

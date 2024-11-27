@@ -8,7 +8,7 @@
 
 void game_init();
 void game_logic(float deltatime);
-void game_render(float deltatime);
+void game_render(float deltatime, T3DViewport viewport);
 void game_render_gl(float deltatime);
 void game_cleanup();
 int game_key();

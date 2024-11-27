@@ -7,6 +7,7 @@
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
 
+#define ENABLE_TEXT 1
 #define ENABLE_WIREFRAME 1
 
 #if ENABLE_WIREFRAME
@@ -48,6 +49,8 @@
 #define FURNITURE_SCALE 0.75f
 #define VAULTS_COUNT (2*(FURNITURES_ROWS-1) + (FURNITURES_COLS-1))
 #define PLAYER_SCALE 0.2f
+#define FONT_BILLBOARD 3
+#define BILLBOARD_YOFFSET 15.0f
 
 bool playing = false;
 bool paused = false;
@@ -158,6 +161,8 @@ actor_t key;
 
 // Sound FX
 wav64_t sfx_key;
+
+rdpq_font_t *fontbill;
 
 
 c2AABB usable_actor_bounding_box(usable_actor_t* actor) {
@@ -718,6 +723,15 @@ void game_init()
     // Sound FX
     wav64_open(&sfx_key, "rom:/rummage/key.wav64");
 
+#if ENABLE_TEXT
+    // Init fonts
+    fontbill = rdpq_font_load("rom:/squarewave.font64");
+    rdpq_text_register_font(FONT_BILLBOARD, fontbill);
+    for (size_t i = 0; i < MAXPLAYERS; i++) {
+        rdpq_font_style(fontbill, i, &(rdpq_fontstyle_t){ .color = colors[i] });
+    }
+#endif
+
     // Init pathfinder
     map_width = room.w/MAP_REDUCTION_FACTOR;
     map_height = room.h/MAP_REDUCTION_FACTOR;
@@ -1030,7 +1044,7 @@ void game_logic(float deltatime)
     }
 }
 
-void game_render(float deltatime)
+void game_render(float deltatime, T3DViewport viewport)
 {
     if (is_playing()) {
         // Player controls
@@ -1106,6 +1120,27 @@ void game_render(float deltatime)
         // Display key
         if (players[i].has_key && !key.hidden) {
             rspq_block_run(key.dpl);
+        }
+    }
+
+    // Billboards
+    for (int i=0; i<MAXPLAYERS; i++) {
+        // Display billboard
+        T3DVec3 billboardPos = (T3DVec3){{
+            players[i].position.v[0],
+            players[i].position.v[1] + BILLBOARD_YOFFSET,
+            players[i].position.v[2]
+        }};
+        T3DVec3 billboardScreenPos;
+        t3d_viewport_calc_viewspace_pos(&viewport, &billboardScreenPos, &billboardPos);
+        int x = floorf(billboardScreenPos.v[0]);
+        int y = floorf(billboardScreenPos.v[1]);
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        if (players[i].is_human) {
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = i }, FONT_BILLBOARD, x-5, y-16, "P%d", i+1);
+        } else {
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = i }, FONT_BILLBOARD, x-5, y-16, "CPU");
         }
     }
 }
@@ -1231,6 +1266,11 @@ void game_render_gl(float deltatime)
 void game_cleanup()
 {
     free(map);
+
+#if ENABLE_TEXT
+    rdpq_text_unregister_font(FONT_BILLBOARD);
+    rdpq_font_free(fontbill);
+#endif
 
     wav64_close(&sfx_key);
     
