@@ -247,7 +247,7 @@ void minigame_fixedloop(float deltatime) {
     }
 }
 
-#define ORTHO_SCALE     6.0f
+#define ORTHO_SCALE     5.5f
 
 uint8_t colorWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -300,7 +300,20 @@ int get_winner_index(int index) {
     return 0;
 }
 
-#define DISTANCE_SCALE  6.0f
+#define PROJECTION_RATIO    1.2f
+#define NEAR_PLANE          SCALE_FIXED_POINT(-1.0f)
+#define FAR_PLANE           SCALE_FIXED_POINT(20.0f)
+
+/**
+ * Modify an ortho matrix to apply some perspective
+ */
+void minigame_add_some_perspective(T3DMat4* mat, float near, float far) {
+    float scale = (PROJECTION_RATIO - 1.0f/PROJECTION_RATIO) / (near - far);
+    float offset = PROJECTION_RATIO - scale * near;
+
+    mat->m[2][3] = scale;
+    mat->m[3][3] = offset;
+}
 
 void minigame_loop(float deltatime) {   
     uint8_t colorAmbient[4] = {0x60, 0x60, 0x60, 0xFF};
@@ -314,8 +327,10 @@ void minigame_loop(float deltatime) {
         &viewport, 
         SCALE_FIXED_POINT(-ORTHO_SCALE * 1.5f), SCALE_FIXED_POINT(ORTHO_SCALE * 1.5f),
         SCALE_FIXED_POINT(-ORTHO_SCALE), SCALE_FIXED_POINT(ORTHO_SCALE),
-        SCALE_FIXED_POINT(-1.0f), SCALE_FIXED_POINT(20.0f)
+        NEAR_PLANE, FAR_PLANE
     );
+    minigame_add_some_perspective(&viewport.matProj, NEAR_PLANE, FAR_PLANE);
+
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     rdpq_attach(display_get(), depthBuffer);
