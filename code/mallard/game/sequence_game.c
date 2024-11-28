@@ -5,6 +5,7 @@
 #include "sequence_game_input.h"
 #include "sequence_game_graphics.h"
 #include "sequence_game_initialize.h"
+#include "sequence_game_snowman.h"
 
 ///////////////////////////////////////////////////////////
 //                  Globals                              //
@@ -47,8 +48,8 @@ bool sequence_game_paused = false;
 
 xm64player_t sequence_game_xm;
 
-Snowman *snowmen = NULL;
 Duck *ducks;
+Snowman *snowmen;
 Controller *controllers;
 
 void sequence_game_init()
@@ -97,7 +98,6 @@ void sequence_game_init()
     sequence_game_initialized = true;
 
     initialize_ducks();
-    // initialize_snowmen();
     initialize_controllers();
 
     ///////////////////////////////////////////////////////////
@@ -140,6 +140,7 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_paused_text_sprite);
 
     free_ducks();
+    free_snowmen(snowmen);
     free_controllers();
 
     // Close the display and free the allocated memory.

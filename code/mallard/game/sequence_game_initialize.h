@@ -49,14 +49,11 @@ extern sprite_t *sequence_game_mallard_two_run_sprite;
 extern sprite_t *sequence_game_mallard_three_run_sprite;
 extern sprite_t *sequence_game_mallard_four_run_sprite;
 
-extern sprite_t *sequence_game_snowman_idle_sprite;
-extern sprite_t *sequence_game_snowman_jump_sprite;
-
 void initialize_ducks();
 void free_ducks();
 void initialize_controllers();
 void free_controllers();
 
-Snowman *add_snowman(Snowman *snowmen);
+int random_between(int min, int max);
 
 #endif // SEQUENCE_GAME_INITIALIZE_H

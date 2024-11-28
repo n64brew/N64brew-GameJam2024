@@ -46,6 +46,7 @@ typedef struct Snowman
 {
     float x;
     float y;
+    float time;
     SnowmanActions action;
     sprite_t *idle_sprite;
     sprite_t *jump_sprite;

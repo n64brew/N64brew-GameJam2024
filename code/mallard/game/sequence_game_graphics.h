@@ -9,6 +9,9 @@
 #define SEQUENCE_GAME_MALLARD_SLAP_FRAMES 3
 #define SEQUENCE_GAME_MALLARD_RUN_FRAMES 8
 
+#define SEQUENCE_GAME_SNOWMAN_IDLE_FRAMES 4
+#define SEQUENCE_GAME_SNOWMAN_JUMP_FRAMES 7
+
 extern bool sequence_game_started;
 extern bool sequence_game_paused;
 
@@ -26,9 +29,11 @@ extern sprite_t *sequence_game_background_lakeview_terrace_sprite;
 extern sprite_t *sequence_game_start_button_sprite;
 extern sprite_t *sequence_game_paused_text_sprite;
 
-extern struct Duck *ducks;
+extern Duck *ducks;
+extern Snowman *snowmen;
 
 void sequence_game_render_ducks();
+void sequence_game_render_snowmen();
 void sequence_game_draw_background_lakeview_terrace();
 void sequence_game_draw_paused();
 void sequence_game_render(float deltatime);

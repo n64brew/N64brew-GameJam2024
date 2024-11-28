@@ -46,7 +46,8 @@
         "sequence_game_graphics.h": "c",
         "sequence_game_input.h": "c",
         "sequence_game_initialize.h": "c",
-        "controller.h": "c"
+        "controller.h": "c",
+        "sequence_game_snowman.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -5,34 +5,49 @@
 #include "sequence_game_input.h"
 #include "sequence_game_initialize.h"
 #include "sequence_game_graphics.h"
+#include "sequence_game_snowman.h"
 
 #define BOOST 2.0
 #define SQRT_ONE_HALF 0.70710678118
+#define SNOWMAN_SPAWN_FREQUENCY_ONE 3.0f
+#define SNOWMAN_SPAWN_FREQUENCY_TWO 2.0f
+#define SNOWMAN_SPAWN_FREQUENCY_THREE 1.0f
+#define SNOWMAN_SPAWN_FREQUENCY_FOUR 0.5f
 
-#define SNOWMAN_SPAWN_FREQUENCY 3.0f
-float time_since_last_snowman_spawn = 0.0f;
+float time_elapsed_since_last_snowman_spawn = 0.0f;
+float time_elapsed = 0.0f;
+float SNOWMAN_SPAWN_FREQUENCY;
 
 void sequence_game_update(float deltatime)
 {
-    if (time_since_last_snowman_spawn >= SNOWMAN_SPAWN_FREQUENCY)
+    if (time_elapsed >= 0.0f && time_elapsed < 15.0f)
     {
-        time_since_last_snowman_spawn = 0.0f;
-        snowmen = add_snowman(snowmen);
-
-        int count = 0;
-        struct Snowman *curr = snowmen;
-        while (curr != NULL)
-        {
-            // Increment count by 1
-            count++;
-
-            // Move pointer to next node
-            curr = curr->next;
-        }
-        fprintf(stderr, "Snowmen spawned: %i\n", count);
+        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_ONE;
+    }
+    else if (time_elapsed >= 15.0f && time_elapsed < 30.0f)
+    {
+        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_TWO;
+    }
+    else if (time_elapsed >= 30.0f && time_elapsed < 45.0f)
+    {
+        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_THREE;
+    }
+    else if (time_elapsed >= 45.0f && time_elapsed < 60.0f)
+    {
+        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_FOUR;
     }
 
-    time_since_last_snowman_spawn += deltatime;
+    if (time_elapsed_since_last_snowman_spawn >= SNOWMAN_SPAWN_FREQUENCY)
+    {
+        snowmen = add_snowman(snowmen);
+        time_elapsed_since_last_snowman_spawn = 0.0f;
+        list_snowmen(snowmen);
+        fprintf(stderr, "Snowmen: %d\n", count_snowmen(snowmen));
+    }
+
+    increase_snowmen_time_and_frames(snowmen, deltatime);
+    time_elapsed += deltatime;
+    time_elapsed_since_last_snowman_spawn += deltatime;
 
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
