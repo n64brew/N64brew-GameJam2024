@@ -41,8 +41,6 @@ void swing_effect_update(struct swing_effect* effect, T3DVec3* a, T3DVec3* b) {
     vertex->posB[0] = (int16_t)b->v[0];
     vertex->posB[1] = (int16_t)b->v[1];
     vertex->posB[2] = (int16_t)b->v[2];
-    
-    data_cache_hit_writeback(vertex, sizeof(T3DVertPacked));
 
     if (effect->current_tail_length < MAX_TAIL_LENGTH) {
         effect->current_tail_length += 1;
@@ -53,6 +51,18 @@ void swing_effect_update(struct swing_effect* effect, T3DVec3* a, T3DVec3* b) {
             effect->first_vertex = 0;
         }
     }
+
+    for (int i = 0; i < effect->current_tail_length; i += 1) {
+        T3DVertPacked* vertex = &effect->vertices[next];
+
+        vertex->rgbaA = 
+        vertex->rgbaB =
+            0xFFFFFF00 | (255 - i * 31);
+
+        next = (next - 1) & (MAX_TAIL_LENGTH - 1);
+    }
+
+    data_cache_hit_writeback(effect->vertices, sizeof(T3DVertPacked) * MAX_TAIL_LENGTH);
 }
 
 void swing_effect_end(struct swing_effect* effect) {

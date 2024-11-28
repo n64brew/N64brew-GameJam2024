@@ -32,8 +32,8 @@
 #define PLAYER_STUN_IMPULSE     200
 #define PLAYER_ATTACK_VELOCITY  100
 
-#define MIN_ATTACK_TIME         0.16f
-#define MAX_ATTACK_TIME         0.708f
+#define MIN_ATTACK_TIME         0.28f
+#define MAX_ATTACK_TIME         0.54f
 
 struct dynamic_object_type player_collider = {
     .minkowsi_sum = capsule_minkowski_sum,

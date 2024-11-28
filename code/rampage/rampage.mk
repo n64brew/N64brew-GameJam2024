@@ -8,6 +8,7 @@ ASSETS_LIST += \
 	filesystem/rampage/5.sprite \
 	filesystem/rampage/destroy.sprite \
 	filesystem/rampage/finish.sprite \
+	filesystem/rampage/spark_blob.i8.sprite \
 	filesystem/rampage/building.t3dm \
 	filesystem/rampage/player.t3dm \
 	filesystem/rampage/ground.t3dm \

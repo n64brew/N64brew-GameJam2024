@@ -15,7 +15,7 @@
 #define MIN_NORMAL_VEL          120.0f
 #define MAX_NORMAL_VEL          160.0f
 
-#define HALF_WIDTH              1.5f
+#define HALF_WIDTH              3.0f
 
 
 static rspq_block_t* triangles;
@@ -158,6 +158,12 @@ void spark_effect_render(struct SparkEffect* effect, struct frame_malloc* fm) {
             curr->posB[0] = (short)pos.x;
             curr->posB[1] = (short)pos.y;
             curr->posB[2] = (short)pos.z;
+
+            curr->stA[0] = 0;
+            curr->stA[1] = half ? 16 << 5 : 0;
+
+            curr->stB[0] = 16 << 5;
+            curr->stB[1] = half ? 16 << 5 : 0;
 
             ++curr;
         }
