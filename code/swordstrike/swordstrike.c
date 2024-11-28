@@ -122,10 +122,23 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 
 void minigame_init(){
-    // load font
+    // load font for text drawing
     font = rdpq_font_load("rom:/squarewave.font64");
     rdpq_text_register_font(FONT_TEXT, font);
     rdpq_font_style(font, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
+
+    //player label colors
+    const color_t colors[] = {
+        PLAYERCOLOR_1,
+        PLAYERCOLOR_2,
+        PLAYERCOLOR_3,
+        PLAYERCOLOR_4,
+    };
+
+    for (size_t i = 0; i < MAXPLAYERS; i++)
+    {
+        rdpq_font_style(font, i+1, &(rdpq_fontstyle_t){ .color = colors[i] });
+    }
 
     // load sprites from rom
     char fn1[64];
@@ -586,6 +599,17 @@ void minigame_loop(float deltatime){
 
     // set rdpq for drawing text
     rdpq_set_mode_standard();
+
+    // DRAW PLAYER LABELS
+    for (size_t i = 0; i < MAXPLAYERS; i++) {
+        if(players[i]->isAlive){
+            if(players[i]->direction == 0){
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (i+1) }, FONT_TEXT, players[i]->xPos+8, players[i]->yPos-5, "P%d", i+1);
+            } else {
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (i+1) }, FONT_TEXT, players[i]->xPos+4, players[i]->yPos-5, "P%d", i+1);
+            }
+        }
+    }
 
     // COUNT DOWN
     if(game_state == 0){
