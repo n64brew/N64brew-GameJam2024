@@ -5,6 +5,7 @@
 #include <t3d/t3dmodel.h>
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
+#include <t3d/tpx.h>
 
 #include "common.h"
 #include "sauna.h"
@@ -14,7 +15,7 @@
 #define LOYLY_LENGTH 4.f
 #define LOYLY_SCREEN_MAX_ALPHA 200.f
 #define LOYLY_SCREEN_MIN_ALPHA 16.f
-#define SAUNA_LEN 2.f
+#define SAUNA_LEN 60.f
 #define BASE_HEAT (.2f / 60.f)
 #define LOYLY_CHANNEL 10
 
@@ -56,6 +57,7 @@ static wav64_t sfx_door;
 static int sauna_stage;
 static bool sauna_stage_inited[NUM_SAUNA_STAGES];
 static float upness[4];
+static struct particle_source *kiuas_particle_source;
 
 char banner_str[16];
 float banner_time;
@@ -131,6 +133,20 @@ void sauna_init() {
 
   wav64_open(&sfx_loyly, "rom:/avanto/loyly.wav64");
   wav64_open(&sfx_door, "rom:/avanto/door.wav64");
+
+  kiuas_particle_source = particle_source_get_unused(128);
+  particle_source_init_steam(kiuas_particle_source);
+  kiuas_particle_source->pos = (T3DVec3) {{100.f, 100.f+128.f, 0.f}};
+  kiuas_particle_source->scale = 1.f;
+  kiuas_particle_source->render = false;
+  kiuas_particle_source->x_range = 25;
+  kiuas_particle_source->z_range = 30;
+  kiuas_particle_source->height = 100;
+  kiuas_particle_source->particle_size = 4;
+  kiuas_particle_source->time_to_rise = 1.f;
+  kiuas_particle_source->movement_amplitude = 5.f;
+  kiuas_particle_source->max_particles = 128;
+  kiuas_particle_source->paused = true;
 
   sauna_stage = SAUNA_INTRO;
 
@@ -513,6 +529,8 @@ void sauna_dynamic_loop_pre(float delta_time, bool paused) {
     loyly_strength -= delta_time/LOYLY_LENGTH;
     if (loyly_strength < EPS) {
       loyly_strength = 0.f;
+      kiuas_particle_source->render = false;
+      kiuas_particle_source->paused = true;
     }
   }
   if (loyly_sound_queued
@@ -522,7 +540,28 @@ void sauna_dynamic_loop_pre(float delta_time, bool paused) {
   }
   if (loyly_queued && ukko.s.anims[THROW].time + delta_time >= LOYLY_DELAY) {
     loyly_strength = 1.f;
+    kiuas_particle_source->render = true;
+    kiuas_particle_source->paused = false;
+    particle_source_reset_steam(kiuas_particle_source);
     loyly_queued = false;
+  }
+  kiuas_particle_source->max_particles = 128.f*loyly_strength;
+  kiuas_particle_source->time_to_rise = 2.f-loyly_strength;
+
+  for (size_t i = 0; i < 4; i++) {
+    if (!players[i].out) {
+      continue;
+    }
+
+    if (players[i].current_anim == BEND) {
+      sauna_change_anim_and_play_from(&players[i],
+          UNBEND,
+          1.f - sauna_get_anim_normal_time(&players[i].s.anims[BEND]));
+    }
+    else if (players[i].current_anim == UNBEND
+        && !players[i].s.anims[UNBEND].isPlaying) {
+      sauna_change_anim_and_play_from(&players[i], PASS_OUT, 0.f);
+    }
   }
 
   // Reset Z buffer to match BG
@@ -573,7 +612,7 @@ void sauna_dynamic_loop_render(float delta_time, bool paused) {
   rdpq_sync_pipe();
   rdpq_sync_tile();
 
-  if (!paused && loyly_strength >= EPS) {
+  if (loyly_strength >= EPS) {
     rdpq_mode_push();
     int screen_alpha =
       (int) ((LOYLY_SCREEN_MAX_ALPHA-LOYLY_SCREEN_MIN_ALPHA)*loyly_strength)
@@ -582,9 +621,12 @@ void sauna_dynamic_loop_render(float delta_time, bool paused) {
     rdpq_set_prim_color(RGBA32(0xff, 0xff, 0xff, 0xff));
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
+    rdpq_mode_zbuf(false, false);
     rdpq_fill_rectangle(0, 0, 320, 240);
     rdpq_mode_pop();
   }
+
+  particle_source_draw_all();
 
   // HUD
   if (sauna_stage >= SAUNA_COUNTDOWN) {
@@ -672,6 +714,8 @@ void sauna_dynamic_loop_post(float delta_time, bool paused) {
 
 void sauna_cleanup() {
   rspq_wait();
+
+  particle_source_free(kiuas_particle_source);
 
   sprite_free(sauna_scene.bg);
   sprite_free(sauna_scene.z);

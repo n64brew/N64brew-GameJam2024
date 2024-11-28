@@ -5,6 +5,7 @@
 #include <t3d/t3dmodel.h>
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
+#include <t3d/tpx.h>
 
 #include "common.h"
 #include "sauna.h"
@@ -56,6 +57,8 @@ wav64_t sfx_countdown;
 wav64_t sfx_stop;
 wav64_t sfx_winner;
 
+struct particle_source particle_sources[MAX_PARTICLE_SOURCES];
+
 static bool filter_player_hair_color(void *user_data, const T3DObject *obj) {
   color_t *color = (color_t *) user_data;
   if (!strcmp(obj->name, "hair")) {
@@ -64,6 +67,13 @@ static bool filter_player_hair_color(void *user_data, const T3DObject *obj) {
 
   return true;
 }
+
+static void update_all_particles(float delta_time) {
+  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
+    particle_source_iterate(&particle_sources[i], delta_time);
+  }
+}
+
 
 void minigame_init() {
   player_colors[0] = PLAYERCOLOR_1;
@@ -79,6 +89,7 @@ void minigame_init() {
   z_buffer = display_get_zbuf();
 
   t3d_init((T3DInitParams){});
+  tpx_init((TPXInitParams){});
   viewport = t3d_viewport_create();
 
   player_model = t3d_model_load("rom:/avanto/guy.t3dm");
@@ -104,6 +115,9 @@ void minigame_init() {
     players[i].s.anims[STAND_UP] =
       t3d_anim_create(player_model, "standing_up");
     t3d_anim_set_looping(&players[i].s.anims[STAND_UP], false);
+    players[i].s.anims[PASS_OUT] =
+      t3d_anim_create(player_model, "passing_out");
+    t3d_anim_set_looping(&players[i].s.anims[PASS_OUT], false);
     players[i].pos = (T3DVec3) {{0, 0, 0}};
     players[i].scale = 2.5f;
     players[i].current_anim = -1;
@@ -190,25 +204,29 @@ void minigame_init() {
 
   paused = false;
 
+  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
+    particle_source_pre_init(&particle_sources[i]);
+  }
+
   current_subgame = &subgames[0];
   current_subgame->init();
 }
 
 void minigame_fixedloop(float delta_time) {
-  if (!current_subgame->fixed_loop) {
-    return;
+  if (current_subgame->fixed_loop) {
+    if (current_subgame->fixed_loop(delta_time, paused)) {
+      current_subgame->cleanup();
+      current_subgame++;
+      if (current_subgame->init) {
+        current_subgame->init();
+      }
+      else {
+        minigame_end();
+      }
+    }
   }
 
-  if (current_subgame->fixed_loop(delta_time, paused)) {
-    current_subgame->cleanup();
-    current_subgame++;
-    if (current_subgame->init) {
-      current_subgame->init();
-    }
-    else {
-      minigame_end();
-    }
-  }
+  update_all_particles(delta_time);
 }
 
 void minigame_loop(float delta_time) {
@@ -219,6 +237,8 @@ void minigame_loop(float delta_time) {
     for (size_t i = 0; i < core_get_playercount(); i++) {
       joypad_buttons_t pressed = joypad_get_buttons_pressed(
           core_get_playercontroller(i));
+      {
+      }
       if (pressed.start) {
         paused_controller = core_get_playercontroller(i);
         paused_selection = 0;
@@ -253,7 +273,14 @@ void minigame_loop(float delta_time) {
     current_subgame->dynamic_loop_render(delta_time, paused);
   }
 
+  rdpq_sync_pipe();
+  rdpq_sync_tile();
+  rdpq_mode_push();
+  rdpq_mode_zbuf(false, false);
+
   if (paused) {
+
+
     rdpq_mode_push();
     rdpq_set_fog_color(RGBA32(0xff, 0xff, 0xff, 0xc0));
     rdpq_set_prim_color(RGBA32(0x00, 0x00, 0x00, 0xff));
@@ -299,14 +326,14 @@ void minigame_loop(float delta_time) {
     10,
     235,
     SW_NORMAL_S "FPS: %.2f",
-    1.f/delta_time);
+    display_get_fps());
+  rdpq_mode_pop();
 
   rdpq_detach_show();
 
   if (current_subgame->dynamic_loop_post) {
     current_subgame->dynamic_loop_post(delta_time, paused);
   }
-
 }
 
 void minigame_cleanup() {
@@ -338,6 +365,11 @@ void minigame_cleanup() {
   }
   t3d_model_free(player_model);
 
+  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
+    particle_source_free(&particle_sources[i]);
+  }
+
+  tpx_destroy();
   t3d_destroy();
   display_close();
 }

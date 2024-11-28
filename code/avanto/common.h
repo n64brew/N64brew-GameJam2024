@@ -11,6 +11,7 @@
 #define HUD_BAR_Y_OFFSET 4
 #define HUD_BAR_X_OFFSET 1
 #define GRAVITY 200.f
+#define MAX_PARTICLE_SOURCES 4
 
 struct entity {
   const T3DModel *model;
@@ -146,7 +147,50 @@ enum player_anims {
   BEND,
   UNBEND,
   STAND_UP,
+  PASS_OUT,
   NUM_PLAYER_ANIMS,
+};
+
+enum particle_type {
+  UNDEFINED,
+  STEAM,
+};
+
+struct particle_meta {
+  union {
+    struct {
+      int8_t cx;
+      int8_t cz;
+    };
+  };
+};
+
+struct particle_source {
+  T3DVec3 pos;
+  int8_t particle_size;
+  float scale;
+  bool render;
+  bool paused;
+
+  union {
+    struct {
+      int8_t x_range;
+      int8_t z_range;
+      int height;
+      float time_to_rise;
+      float movement_amplitude;
+      float _y_move_error;
+      size_t max_particles;
+      float _to_spawn;
+    };
+  };
+
+  struct particle_meta *_meta;
+  T3DMat4FP *_transform;
+  TPXParticle *_particles;
+  size_t _num_allocated_particles;
+  bool _in_use;
+  size_t _type;
 };
 
 float get_ground_height(float z, struct ground *ground);
@@ -167,3 +211,12 @@ void entity_free(struct entity *e);
 bool script_update(struct script_state *state, float delta_time);
 void draw_hud();
 rspq_block_t *build_empty_hud_block();
+void particle_source_pre_init(struct particle_source *source);
+void particle_source_free(struct particle_source *source);
+struct particle_source *particle_source_get_unused(size_t num_particles);
+void particle_source_iterate(struct particle_source *source,
+    float delta_time);
+void particle_source_draw(const struct particle_source *source);
+void particle_source_reset_steam(struct particle_source *source);
+void particle_source_init_steam(struct particle_source *source);
+void particle_source_draw_all();

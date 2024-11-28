@@ -5,12 +5,14 @@
 #include <t3d/t3dmodel.h>
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
+#include <t3d/tpx.h>
 
 #include "common.h"
 
 extern T3DViewport viewport;
 extern struct character players[];
 extern rspq_block_t *empty_hud_block;
+extern struct particle_source particle_sources[];
 
 static int next_sfx_channel = FIRST_SFX_CHANNEL;
 
@@ -203,6 +205,7 @@ rspq_block_t *build_empty_hud_block() {
 
   rspq_block_begin();
   rdpq_mode_push();
+  rdpq_mode_zbuf(false, false);
   for (size_t i = 0; i < 4; i++) {
     int y = HUD_VERTICAL_BORDER;
     int x = HUD_HORIZONTAL_BORDER + i*HUD_INDIVIDUAL_H_SPACE;
@@ -228,12 +231,12 @@ rspq_block_t *build_empty_hud_block() {
 }
 
 void draw_hud() {
-  //const color_t BAR_COLOR = RGBA32(0x00, 0xff, 0xa5, 0xff);
   const color_t BAR_COLOR = RGBA32(0xff, 0x45, 0x00, 0xff);
 
   rspq_block_run(empty_hud_block);
 
   rdpq_mode_push();
+  rdpq_mode_zbuf(false, false);
   for (size_t i = 0; i < 4; i++) {
     int y = HUD_VERTICAL_BORDER;
     int x = HUD_HORIZONTAL_BORDER + i*HUD_INDIVIDUAL_H_SPACE;
@@ -253,6 +256,190 @@ void draw_hud() {
     if (players[i].out) {
       rdpq_text_print(NULL, FONT_NORMAL, mid_x-8, y+10, SW_OUT_S "OUT");
     }
+  }
+  rdpq_mode_pop();
+}
+
+void particle_source_pre_init(struct particle_source *source) {
+  source->_particles = NULL;
+  source->_transform = NULL;
+  source->_in_use = false;
+  source->_meta = NULL;
+  source->_type = UNDEFINED;
+}
+
+struct particle_source *particle_source_get_unused(size_t num_particles) {
+  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
+    if (!particle_sources[i]._in_use) {
+      particle_sources[i]._in_use = true;
+      particle_sources[i]._num_allocated_particles = num_particles;
+      particle_sources[i]._particles = malloc_uncached(
+          sizeof(TPXParticle) * num_particles/2);
+      particle_sources[i]._meta = malloc(
+          sizeof(struct particle_meta) * num_particles);
+      particle_sources[i]._transform = malloc_uncached(sizeof(T3DMat4FP));
+      return &particle_sources[i];
+    }
+  }
+
+  return NULL;
+}
+
+void particle_source_reset_steam(struct particle_source *source) {
+  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
+      source->_particles[i].sizeA = 0;
+      source->_particles[i].sizeB = 0;
+  }
+  source->_y_move_error = 0.f;
+  source->_to_spawn = 0;
+}
+
+void particle_source_init_steam(struct particle_source *source) {
+  particle_source_reset_steam(source);
+  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
+      source->_particles[i].colorA[0] = 0xff;
+      source->_particles[i].colorA[1] = 0xff;
+      source->_particles[i].colorA[2] = 0xff;
+      source->_particles[i].colorA[3] = 0xff;
+
+      source->_particles[i].colorB[0] = 0xff;
+      source->_particles[i].colorB[1] = 0xff;
+      source->_particles[i].colorB[2] = 0xff;
+      source->_particles[i].colorB[3] = 0xff;
+  }
+  source->max_particles = source->_num_allocated_particles;
+  source->_type = STEAM;
+}
+
+void particle_source_free(struct particle_source *source) {
+  source->_in_use = false;
+  source->_num_allocated_particles = 0;
+  source->_type = UNDEFINED;
+  if (source->_particles) {
+    free_uncached(source->_particles);
+    source->_particles = NULL;
+  }
+  if (source->_transform) {
+    free_uncached(source->_transform);
+    source->_transform = NULL;
+  }
+  if (source->_meta) {
+    free(source->_meta);
+    source->_meta = NULL;
+  }
+}
+
+static void particle_source_spawn_steam(struct particle_source *source,
+    int8_t *pos, int8_t *size, struct particle_meta *meta) {
+  int8_t cx = (rand() % (source->x_range*2+1)) - source->x_range;
+  int8_t cz = (rand() % (source->z_range*2+1)) - source->z_range;
+  meta->cx = cx;
+  meta->cz = cz;
+
+  float v = -128.f / T3D_PI;
+  *size = source->particle_size;
+  pos[0] = cx+sinf(v);
+  pos[1] = -128;
+  pos[2] = cz+cosf(v);
+}
+
+static void particle_source_iterate_steam(struct particle_source *source,
+    float delta_time) {
+  source->_y_move_error += ((float) source->height / source->time_to_rise)
+    * delta_time;
+  int y_move = (int) source->_y_move_error;
+  source->_y_move_error -= (float) y_move;
+
+  source->_to_spawn += ((float) source->max_particles / source->time_to_rise)
+    * delta_time;
+  int actual_to_spawn = (int) source->_to_spawn;
+  int spawned = 0;
+
+  TPXParticle *p = source->_particles;
+  struct particle_meta *m = source->_meta;
+  for (int i = 0; i < source->_num_allocated_particles/2; i++, p++, m++) {
+    if (p->sizeA) {
+      p->posA[1] += y_move;
+      if ((int) p->posA[1] >= source->height - 128) {
+        p->sizeA = 0;
+      }
+      else {
+        p->posA[0] = m->cx
+          + sinf((float) p->posA[1] / T3D_PI)
+          * source->movement_amplitude;
+        p->posA[2] = m->cz
+          + cosf((float) p->posA[1] / T3D_PI)
+          * source->movement_amplitude;
+      }
+    }
+    if (!p->sizeA && actual_to_spawn) {
+      actual_to_spawn--;
+      spawned++;
+      particle_source_spawn_steam(source, p->posA, &p->sizeA, m);
+    }
+
+    m++;
+    if (p->sizeB) {
+      p->posB[1] += y_move;
+      if ((int) p->posB[1] >= source->height - 128) {
+        p->sizeB = 0;
+      }
+      else {
+        p->posB[0] = (float) m->cx
+          + sinf((float) p->posB[1] / T3D_PI)
+          * (float) source->movement_amplitude;
+        p->posB[2] = (float) m->cz
+          + cosf((float) p->posB[1] / T3D_PI)
+          * (float) source->movement_amplitude;
+      }
+    }
+    if (!p->sizeB && actual_to_spawn) {
+      actual_to_spawn--;
+      spawned++;
+      particle_source_spawn_steam(source, p->posB, &p->sizeB, m);
+    }
+  }
+  source->_to_spawn -= (float) spawned;
+
+  t3d_mat4fp_from_srt_euler(source->_transform,
+      (float[]) {source->scale, source->scale, source->scale},
+      (float[]) {0.f, 0.f, 0.f},
+      source->pos.v);
+}
+
+void particle_source_iterate(struct particle_source *source,
+    float delta_time) {
+  if (!source->_in_use || source->paused) {
+    return;
+  }
+  switch (source->_type) {
+    case STEAM:
+      particle_source_iterate_steam(source, delta_time);
+      break;
+  }
+}
+
+void particle_source_draw(const struct particle_source *source) {
+  if (source->_in_use && source->render) {
+    tpx_matrix_push(source->_transform);
+    tpx_particle_draw(source->_particles, source->_num_allocated_particles);
+    tpx_matrix_pop(1);
+  }
+}
+
+void particle_source_draw_all() {
+  rdpq_sync_pipe();
+  rdpq_sync_tile();
+
+  rdpq_mode_push();
+  rdpq_set_mode_standard();
+  rdpq_mode_zbuf(true, true);
+  rdpq_mode_zoverride(true, 0, 0);
+  rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+  tpx_state_from_t3d();
+
+  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
+    particle_source_draw(&particle_sources[i]);
   }
   rdpq_mode_pop();
 }
