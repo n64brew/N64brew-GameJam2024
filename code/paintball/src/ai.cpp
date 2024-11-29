@@ -14,12 +14,11 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
         T3DVec3 diff = {0};
         t3d_vec3_diff(diff, player.pos, other.pos);
 
-        // Should still be able to hit
         if (other.velocity.v[0] != 0.f) {
-            float enemyXTime = std::abs(diff.v[0]/other.velocity.v[0]);
+            float enemyXTime = (diff.v[0]/other.velocity.v[0]);
             float bulletYTime = std::abs(diff.v[2] / BulletVelocity);
 
-            if (std::abs(enemyXTime - bulletYTime) < PlayerRadius/BulletVelocity) {
+            if (enemyXTime >= 0 && (enemyXTime - bulletYTime) < PlayerRadius/BulletVelocity) {
                 if (diff.v[2] > 0) {
                     return Direction::UP;
                 } else {
@@ -29,10 +28,10 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
         }
 
         if (other.velocity.v[2] != 0.f) {
-            float enemyYTime = std::abs(diff.v[2]/other.velocity.v[2]);
+            float enemyYTime = (diff.v[2]/other.velocity.v[2]);
             float bulletXTime = std::abs(diff.v[0] / BulletVelocity);
 
-            if (std::abs(enemyYTime - bulletXTime) < PlayerRadius/BulletVelocity) {
+            if (enemyYTime >= 0 && (enemyYTime - bulletXTime) < PlayerRadius/BulletVelocity) {
                 if (diff.v[0] > 0) {
                     return Direction::LEFT;
                 } else {
@@ -41,7 +40,7 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
             }
         }
 
-        if (std::abs(diff.v[0]) < PlayerRadius && t3d_vec3_len2(diff) < AIBulletRange) {
+        if (std::abs(diff.v[0]) < PlayerRadius && t3d_vec3_len(diff) < AIBulletRange*2) {
             if (diff.v[2] > 0) {
                 return Direction::UP;
             } else {
@@ -49,7 +48,7 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
             }
         }
 
-        if (std::abs(diff.v[2]) < PlayerRadius && t3d_vec3_len2(diff) < AIBulletRange) {
+        if (std::abs(diff.v[2]) < PlayerRadius && t3d_vec3_len(diff) < AIBulletRange*2) {
             if (diff.v[0] > 0) {
                 return Direction::LEFT;
             } else {
