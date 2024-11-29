@@ -40,7 +40,7 @@ BulletController::BulletController(std::shared_ptr<MapRenderer> map, std::shared
         assertf(model.get(), "Bullet model is null");
 
         mixer_ch_set_vol(FireAudioChannel, 0.3f, 0.3f);
-        mixer_ch_set_vol(HitAudioChannel, 0.5f, 0.5f);
+        mixer_ch_set_vol(HitAudioChannel, 0.8f, 0.8f);
 
         rspq_block_begin();
             t3d_model_draw(model.get());

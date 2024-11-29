@@ -31,28 +31,31 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map, std::sh
         newRound();
     }
 
-void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player::OtherData &otherData, uint32_t id, float deltaTime)
+void GameplayController::simulatePhysics(
+    Player::GameplayData &gameplay,
+    Player::OtherData &otherData,
+    uint32_t id,
+    float deltaTime,
+    T3DVec3 &inputDirection
+)
 {
     gameplay.prevPos = gameplay.pos;
 
     if (id < MAXPLAYERS && id < core_get_playercount()) {
+        // Temperature
         gameplay.temperature -= deltaTime * CooldownPerSecond;
         if (gameplay.temperature < 0) gameplay.temperature = 0;
 
-        joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
-        T3DVec3 direction = {0};
-        direction.v[0] = (float)joypad.stick_x;
-        direction.v[2] = -(float)joypad.stick_y;
 
-        float strength = sqrtf(t3d_vec3_len2(direction));
+        float strength = sqrtf(t3d_vec3_len2(inputDirection));
         if (strength > ForceLimit) {
             strength = ForceLimit;
         }
 
-        t3d_vec3_norm(direction);
+        t3d_vec3_norm(inputDirection);
 
         T3DVec3 force = {0};
-        t3d_vec3_scale(force, direction, strength);
+        t3d_vec3_scale(force, inputDirection, strength);
 
         // TODO: move into player.cpp?
         // Deadzone
@@ -83,7 +86,7 @@ void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player:
             t3d_anim_set_playing(otherData.animWalk.get(), false);
         } else  {
             // Physics
-            otherData.direction = t3d_lerp_angle(otherData.direction, -atan2f(direction.v[0], direction.v[2]), 0.5f);
+            otherData.direction = t3d_lerp_angle(otherData.direction, -atan2f(inputDirection.v[0], inputDirection.v[2]), 0.5f);
 
             T3DVec3 newAccel = {0};
             // a = F/m
@@ -129,60 +132,76 @@ void GameplayController::simulatePhysics(Player::GameplayData &gameplay, Player:
     }
 }
 
-void GameplayController::handleActions(Player::GameplayData &player, uint32_t id, bool enabled) {
-    if (id < core_get_playercount()) {
-        joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
+void GameplayController::handleFire(Player::GameplayData &player, uint32_t id, Direction direction) {
+    if (player.temperature > 1.f) return;
 
-        if (pressed.start) minigame_end();
+    auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
 
-        if (!enabled || player.temperature > 1.f) return;
+    bool fired = false;
+    if (direction == UP) {
+        t3d_vec3_add(position, position, T3DVec3 {0, 0, -BulletOffset});
+        bulletController.fireBullet(position, T3DVec3{0, 0, -BulletVelocity}, (PlyNum)id, player.team);
+        fired = true;
+    } else if (direction == DOWN) {
+        t3d_vec3_add(position, position, T3DVec3 {0, 0, BulletOffset});
+        bulletController.fireBullet(position, T3DVec3 {0, 0, BulletVelocity}, (PlyNum)id, player.team);
+        fired = true;
+    } else if (direction == LEFT) {
+        t3d_vec3_add(position, position, T3DVec3 {-BulletOffset, 0, 0});
+        bulletController.fireBullet(position, T3DVec3 {-BulletVelocity, 0, 0}, (PlyNum)id, player.team);
+        fired = true;
+    } else if (direction == RIGHT) {
+        t3d_vec3_add(position, position, T3DVec3 {BulletOffset, 0, 0});
+        bulletController.fireBullet(position, T3DVec3 {BulletVelocity, 0, 0}, (PlyNum)id, player.team);
+        fired = true;
+    }
 
-        auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
-
-        bool fired = false;
-        // Fire button
-        if (pressed.c_up || pressed.d_up) {
-            t3d_vec3_add(position, position, T3DVec3 {0, 0, -BulletOffset});
-            bulletController.fireBullet(position, T3DVec3{0, 0, -BulletVelocity}, (PlyNum)id, player.team);
-            fired = true;
-        } else if (pressed.c_down || pressed.d_down) {
-            t3d_vec3_add(position, position, T3DVec3 {0, 0, BulletOffset});
-            bulletController.fireBullet(position, T3DVec3 {0, 0, BulletVelocity}, (PlyNum)id, player.team);
-            fired = true;
-        } else if (pressed.c_left || pressed.d_left) {
-            t3d_vec3_add(position, position, T3DVec3 {-BulletOffset, 0, 0});
-            bulletController.fireBullet(position, T3DVec3 {-BulletVelocity, 0, 0}, (PlyNum)id, player.team);
-            fired = true;
-        } else if (pressed.c_right || pressed.d_right) {
-            t3d_vec3_add(position, position, T3DVec3 {BulletOffset, 0, 0});
-            bulletController.fireBullet(position, T3DVec3 {BulletVelocity, 0, 0}, (PlyNum)id, player.team);
-            fired = true;
-        }
-
-        if (fired) {
-            player.temperature += TempPerBullet;
-            // Penalize if player is overheating
-            if (player.temperature > 1.f) player.temperature = 1.f + OverheatPenalty;
-        }
+    if (fired) {
+        player.temperature += TempPerBullet;
+        // Penalize if player is overheating
+        if (player.temperature > 1.f) player.temperature = 1.f + OverheatPenalty;
     }
 }
+
 
 // TODO: stop passing state around
 // TODO: remove viewport from here, move to UI
 void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
     state.avPos = {0};
-    int i = 0;
+    int id = 0;
     for (auto& playerOther : playerOtherData)
     {
-        auto& playerGameplay = playerGameplayData[i];
+        auto& playerGameplay = playerGameplayData[id];
 
-        handleActions(playerGameplay, i, state.state != STATE_COUNTDOWN);
-        Player::render(playerGameplay, playerOther, i, viewport, deltaTime);
+        Direction dir = NONE;
+        if (id < (int)core_get_playercount()) {
+            joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
+
+            // TODO: implement basic pause menu
+            if (pressed.start) minigame_end();
+
+            if (state.state != STATE_COUNTDOWN) {
+                if (pressed.c_up || pressed.d_up) {
+                    dir = UP;
+                } else if (pressed.c_down || pressed.d_down) {
+                    dir = DOWN;
+                } else if (pressed.c_left || pressed.d_left) {
+                    dir = LEFT;
+                } else if (pressed.c_right || pressed.d_right) {
+                    dir = RIGHT;
+                }
+            }
+        } else {
+            dir = ai.calculateFireDirection(playerGameplay, playerOther, deltaTime);
+        }
+
+        handleFire(playerGameplay, id, dir);
+        Player::render(playerGameplay, playerOther, id, viewport, deltaTime);
 
         t3d_vec3_add(state.avPos, state.avPos, playerGameplay.pos);
 
-        i++;
+        id++;
     }
     t3d_vec3_scale(state.avPos, state.avPos, 0.25);
     bulletController.render(deltaTime);
@@ -201,12 +220,22 @@ void GameplayController::renderUI()
 
 void GameplayController::fixedUpdate(float deltaTime, GameState &state)
 {
-    uint32_t i = 0;
+    uint32_t id = 0;
     for (auto& player : playerOtherData)
     {
-        auto& gameplayData = playerGameplayData[i];
-        simulatePhysics(gameplayData, player, i, deltaTime);
-        i++;
+        auto& gameplayData = playerGameplayData[id];
+
+        T3DVec3 direction = {0};
+        if (id < core_get_playercount()) {
+            joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
+            direction.v[0] = (float)joypad.stick_x;
+            direction.v[2] = -(float)joypad.stick_y;
+        } else {
+            ai.calculateMovement(gameplayData, player, deltaTime, direction);
+        }
+
+        simulatePhysics(gameplayData, player, id, deltaTime, direction);
+        id++;
     }
 
     bulletController.fixedUpdate(deltaTime, playerGameplayData);
