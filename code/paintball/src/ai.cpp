@@ -119,8 +119,10 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
 
         T3DVec3 diff = {0};
         t3d_vec3_diff(diff, player.pos, bullet->pos);
+        diff.v[1] = 0.f;
 
         T3DVec3 bulletVelocityDir = bullet->velocity;
+        bulletVelocityDir.v[1] = 0.f;
         t3d_vec3_norm(bulletVelocityDir);
 
         float diffProjLen = t3d_vec3_dot(bulletVelocityDir, diff);
