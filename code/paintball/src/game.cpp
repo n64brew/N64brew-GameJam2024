@@ -158,12 +158,12 @@ void Game::processState() {
         return;
     }
 
-    auto&& playerGameplayData = gameplayController.getPlayerGameplayData();
+    auto&& playerData = gameplayController.getPlayerData();
     std::array<int, PlayerCount> counts = {0};
 
     int largestTeamCount = 0;
     PlyNum largestTeam = PLAYER_1;
-    for (auto it = playerGameplayData.begin(); it != playerGameplayData.end(); ++it) {
+    for (auto it = playerData.begin(); it != playerData.end(); ++it) {
         counts[it->team]++;
         if (counts[it->team] >= largestTeamCount) {
             largestTeamCount = counts[it->team];
@@ -183,7 +183,7 @@ void Game::processState() {
 
         // First MAXPLAYERS players are eligible for kill points
         for (int i = 0; i < MAXPLAYERS; i++) {
-            state.scores[i] += playerGameplayData[i].fragCount;
+            state.scores[i] += playerData[i].fragCount;
         }
 
         state.timeInState = 0.0f;
@@ -207,7 +207,7 @@ void Game::processState() {
     if (state.state == STATE_LAST_ONE_STANDING && state.timeInState > LastOneStandingTime) {
         int i = 0;
         PlyNum lastPlayerTeam = PLAYER_1;
-        for (auto it = playerGameplayData.begin(); it != playerGameplayData.end(); ++it) {
+        for (auto it = playerData.begin(); it != playerData.end(); ++it) {
             if (it->team != largestTeam) {
                 lastPlayerTeam = (PlyNum)i;
             }
@@ -216,7 +216,7 @@ void Game::processState() {
 
         // First MAXPLAYERS players are eligible for kill points
         for (int i = 0; i < MAXPLAYERS; i++) {
-            state.scores[i] += playerGameplayData[i].fragCount;
+            state.scores[i] += playerData[i].fragCount;
         }
 
         state.currentRound++;

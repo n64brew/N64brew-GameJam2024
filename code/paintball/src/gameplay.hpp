@@ -43,8 +43,7 @@ class GameplayController
         U::Sprite arrowSprite {sprite_load("rom:/paintball/arrow.ia4.sprite"), sprite_free};
 
         // Player data
-        std::vector<Player::OtherData> playerOtherData;
-        std::vector<Player::GameplayData> playerGameplayData;
+        std::vector<Player> playerData;
 
         // Controllers
         std::shared_ptr<MapRenderer> map;
@@ -52,18 +51,17 @@ class GameplayController
 
         // Player calculations
         void simulatePhysics(
-            Player::GameplayData &gameplayData,
-            Player::OtherData &other,
+            Player &player,
             uint32_t id,
             float deltaTime,
             T3DVec3 &inputDirection
         );
-        void handleFire(Player::GameplayData &player, uint32_t id, Direction direction);
+        void handleFire(Player &player, uint32_t id, Direction direction);
 
     public:
         GameplayController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui);
         void newRound();
-        const std::vector<Player::GameplayData> &getPlayerGameplayData() const;
+        const std::vector<Player> &getPlayerData() const;
 
         void render(float deltaTime, T3DViewport &viewport, GameState &state);
         void renderUI();

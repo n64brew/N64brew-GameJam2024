@@ -73,7 +73,7 @@ void BulletController::render(float deltaTime) {
 /**
  * Returns true if the player changed team
  */
-bool BulletController::processHit(Player::GameplayData &gameplayData, PlyNum team) {
+bool BulletController::processHit(Player &gameplayData, PlyNum team) {
     // Already on same team, heal
     if (gameplayData.team == team) {
         gameplayData.firstHit = team;
@@ -111,7 +111,7 @@ bool BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
     return false;
 }
 
-void BulletController::fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData) {
+void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gameplayData) {
     assertf(map.get(), "Map renderer is null");
     for (auto bullet = bullets.begin(); bullet != bullets.end(); ++bullet) {
         bool isDead = simulatePhysics(deltaTime, *bullet);

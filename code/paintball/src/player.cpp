@@ -1,9 +1,12 @@
 #include "player.hpp"
 
-Player::GameplayData::GameplayData(T3DVec3 pos, PlyNum team) :
-    pos(pos), prevPos(pos), team(team), firstHit(team), temperature(0), fragCount(0) {}
-
-Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
+Player::Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel) :
+    pos(pos),
+    prevPos(pos),
+    team(team),
+    firstHit(team),
+    temperature(0),
+    fragCount(0),
     accel({0}),
     velocity({0}),
     direction(0),
@@ -60,12 +63,11 @@ Player::OtherData::OtherData(T3DModel *model, T3DModel *shadowModel) :
         t3d_anim_attach(animWalk.get(), skel.get());
     }
 
-
-void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime)
+void Player::render(uint32_t id, T3DViewport &viewport, float deltaTime)
 {
     double interpolate = core_get_subtick();
     T3DVec3 currentPos {0};
-    t3d_vec3_lerp(currentPos, playerGameplay.prevPos, playerGameplay.pos, interpolate);
+    t3d_vec3_lerp(currentPos, prevPos, pos, interpolate);
     t3d_vec3_add(currentPos, currentPos, (T3DVec3){0, 2.f, 0});
 
     color_t colors[] = {
@@ -75,49 +77,49 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
         PLAYERCOLOR_4,
     };
 
-    assertf(playerOther.matFP.get(), "Player %lu matrix is null", id);
-    assertf(playerOther.block.get(), "Player %lu block is null", id);
-    assertf(playerOther.animWalk.get(), "Player %lu animWalk is null", id);
-    assertf(playerOther.skel.get(), "Player %lu skel is null", id);
+    assertf(matFP.get(), "Player %lu matrix is null", id);
+    assertf(block.get(), "Player %lu block is null", id);
+    assertf(animWalk.get(), "Player %lu animWalk is null", id);
+    assertf(skel.get(), "Player %lu skel is null", id);
 
-    t3d_anim_update(playerOther.animWalk.get(), deltaTime);
-    t3d_skeleton_update(playerOther.skel.get());
+    t3d_anim_update(animWalk.get(), deltaTime);
+    t3d_skeleton_update(skel.get());
 
     bool hidden = false;
-    float temp = playerGameplay.temperature;
+    float temp = temperature;
     if (temp > 1.f) {
         temp = 1.f;
-        playerOther.timer += deltaTime;
-        if (playerOther.timer >= 0.1) {
+        timer += deltaTime;
+        if (timer >= 0.1) {
             hidden = true;
         }
-        if (playerOther.timer >= 0.2) {
-            playerOther.timer -= 0.2;
+        if (timer >= 0.2) {
+            timer -= 0.2;
         }
     };
 
     if (hidden) {
-        if (colors[playerGameplay.team].r == 0) colors[playerGameplay.team].r = 200;
-        if (colors[playerGameplay.team].g == 0) colors[playerGameplay.team].g = 200;
-        if (colors[playerGameplay.team].b == 0) colors[playerGameplay.team].b = 200;
+        if (colors[team].r == 0) colors[team].r = 200;
+        if (colors[team].g == 0) colors[team].g = 200;
+        if (colors[team].b == 0) colors[team].b = 200;
     };
 
     float factor = temp > 0.5 ? temp * temp * temp * 0.02f : 0.f;
 
-    playerOther.displayTemperature = t3d_lerp(playerOther.displayTemperature, factor, 0.2);
+    displayTemperature = t3d_lerp(displayTemperature, factor, 0.2);
 
     t3d_mat4fp_from_srt_euler(
-        playerOther.matFP.get(),
-        (float[3]){0.12f+playerOther.displayTemperature, 0.12f+playerOther.displayTemperature, 0.12f+playerOther.displayTemperature},
-        (float[3]){0.0f, playerOther.direction, 0},
+        matFP.get(),
+        (float[3]){0.12f+displayTemperature, 0.12f+displayTemperature, 0.12f+displayTemperature},
+        (float[3]){0.0f, direction, 0},
         currentPos.v
     );
 
     rdpq_sync_pipe();
-    rdpq_set_prim_color(colors[playerGameplay.team]);
+    rdpq_set_prim_color(colors[team]);
 
-    rdpq_set_env_color(colors[playerGameplay.firstHit]);
-    rspq_block_run(playerOther.block.get());
+    rdpq_set_env_color(colors[firstHit]);
+    rspq_block_run(block.get());
 
     T3DVec3 billboardPos = (T3DVec3){{
         currentPos.v[0],
@@ -125,14 +127,14 @@ void Player::render(Player::GameplayData &playerGameplay, Player::OtherData &pla
         currentPos.v[2]
     }};
 
-    t3d_viewport_calc_viewspace_pos(viewport, playerOther.screenPos, billboardPos);
+    t3d_viewport_calc_viewspace_pos(viewport, screenPos, billboardPos);
 }
 
-void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite)
+void Player::renderUI(uint32_t id, sprite_t *arrowSprite)
 {
     constexpr int margin = ScreenWidth / 10;
-    int x = floorf(playerOther.screenPos.v[0]);
-    int y = floorf(playerOther.screenPos.v[1]);
+    int x = floorf(screenPos.v[0]);
+    int y = floorf(screenPos.v[1]);
     float theta = 0.f;
 
     if (x < margin) {
@@ -186,8 +188,8 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
     } else {
         constexpr int textHalfWidth = 10;
         constexpr int textHalfHeight = 6;
-        int x = floorf(playerOther.screenPos.v[0]) - textHalfWidth;
-        int y = floorf(playerOther.screenPos.v[1]) - textHalfHeight;
+        int x = floorf(screenPos.v[0]) - textHalfWidth;
+        int y = floorf(screenPos.v[1]) - textHalfHeight;
         rdpq_textparms_t fontParams {
             .style_id = (int16_t)id,
             .width = 20,
@@ -204,12 +206,12 @@ void Player::renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint
         );
     }
 
-    // if (playerGameplay.temperature > 0.5f) {
+    // if (temperature > 0.5f) {
     //     constexpr int barHalfWidth = 8;
     //     constexpr int barHeight = 3;
     //     constexpr int barYOffset = 10;
 
-    //     int finalWidth = 2 * barHalfWidth * std::min({playerGameplay.temperature, 1.f});
+    //     int finalWidth = 2 * barHalfWidth * std::min({temperature, 1.f});
 
     //     rdpq_sync_tile();
     //     rdpq_sync_pipe();

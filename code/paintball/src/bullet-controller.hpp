@@ -45,12 +45,12 @@ class BulletController
 
         bool simulatePhysics(float deltaTime, Bullet &bullet);
         void killBullet(Bullet &bullet);
-        bool processHit(Player::GameplayData &gameplayData, PlyNum team);
+        bool processHit(Player &player, PlyNum team);
 
     public:
         BulletController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui);
         void render(float deltaTime);
-        void fixedUpdate(float deltaTime, std::vector<Player::GameplayData> &gameplayData);
+        void fixedUpdate(float deltaTime, std::vector<Player> &);
         void fireBullet(const T3DVec3 &pos, const T3DVec3 &velocity, PlyNum owner, PlyNum team);
 };
 

@@ -15,36 +15,28 @@ GameplayController::GameplayController(std::shared_ptr<MapRenderer> map, std::sh
     {
         assertf(model.get(), "Player model is null");
 
-        playerOtherData.reserve(PlayerCount);
-
-        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
-        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
-        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
-        playerOtherData.emplace_back(Player::OtherData {model.get(), shadowModel.get()});
-
-        playerGameplayData.reserve(PlayerCount);
-        playerGameplayData.emplace_back(Player::GameplayData {{-100,0,0}, PLAYER_1});
-        playerGameplayData.emplace_back(Player::GameplayData {{0,0,-100}, PLAYER_2});
-        playerGameplayData.emplace_back(Player::GameplayData {{100,0,0}, PLAYER_3});
-        playerGameplayData.emplace_back(Player::GameplayData {{0,0,100}, PLAYER_4});
+        playerData.reserve(PlayerCount);
+        playerData.emplace_back(Player {{-100,0,0}, PLAYER_1, model.get(), shadowModel.get()});
+        playerData.emplace_back(Player {{0,0,-100}, PLAYER_2, model.get(), shadowModel.get()});
+        playerData.emplace_back(Player {{100,0,0}, PLAYER_3, model.get(), shadowModel.get()});
+        playerData.emplace_back(Player {{0,0,100}, PLAYER_4, model.get(), shadowModel.get()});
 
         newRound();
     }
 
 void GameplayController::simulatePhysics(
-    Player::GameplayData &gameplay,
-    Player::OtherData &otherData,
+    Player &player,
     uint32_t id,
     float deltaTime,
     T3DVec3 &inputDirection
 )
 {
-    gameplay.prevPos = gameplay.pos;
+    player.prevPos = player.pos;
 
     if (id < MAXPLAYERS && id < core_get_playercount()) {
         // Temperature
-        gameplay.temperature -= deltaTime * CooldownPerSecond;
-        if (gameplay.temperature < 0) gameplay.temperature = 0;
+        player.temperature -= deltaTime * CooldownPerSecond;
+        if (player.temperature < 0) player.temperature = 0;
 
 
         float strength = sqrtf(t3d_vec3_len2(inputDirection));
@@ -61,78 +53,78 @@ void GameplayController::simulatePhysics(
         // Deadzone
         if (strength < 10.0f) {
             // Physics
-            T3DVec3 force = otherData.velocity;
+            T3DVec3 force = player.velocity;
             t3d_vec3_norm(force);
             t3d_vec3_scale(force, force, -ForceLimit);
 
             T3DVec3 newAccel = {0};
             // a = F/m
             t3d_vec3_scale(newAccel, force, PlayerInvMass);
-            t3d_vec3_add(newAccel, otherData.accel, newAccel);
+            t3d_vec3_add(newAccel, player.accel, newAccel);
 
             T3DVec3 velocityTarget = {0};
             t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
-            t3d_vec3_add(velocityTarget, otherData.velocity, velocityTarget);
+            t3d_vec3_add(velocityTarget, player.velocity, velocityTarget);
 
-            if (t3d_vec3_dot(velocityTarget, otherData.velocity) < 0) {
-                otherData.velocity = {0};
-                otherData.accel = {0};
+            if (t3d_vec3_dot(velocityTarget, player.velocity) < 0) {
+                player.velocity = {0};
+                player.accel = {0};
             } else {
-                otherData.accel = newAccel;
-                otherData.velocity = velocityTarget;
+                player.accel = newAccel;
+                player.velocity = velocityTarget;
             }
 
             // Animation
-            t3d_anim_set_playing(otherData.animWalk.get(), false);
+            t3d_anim_set_playing(player.animWalk.get(), false);
         } else  {
             // Physics
-            otherData.direction = t3d_lerp_angle(otherData.direction, -atan2f(inputDirection.v[0], inputDirection.v[2]), 0.5f);
+            player.direction = t3d_lerp_angle(player.direction, -atan2f(inputDirection.v[0], inputDirection.v[2]), 0.5f);
 
             T3DVec3 newAccel = {0};
             // a = F/m
             t3d_vec3_scale(newAccel, force, PlayerInvMass);
-            t3d_vec3_add(newAccel, otherData.accel, newAccel);
+            t3d_vec3_add(newAccel, player.accel, newAccel);
 
             T3DVec3 velocityTarget = {0};
             t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
-            t3d_vec3_add(velocityTarget, otherData.velocity, velocityTarget);
+            t3d_vec3_add(velocityTarget, player.velocity, velocityTarget);
 
             float speedLimit = strength * SpeedLimit / ForceLimit;
             if (t3d_vec3_len(velocityTarget) > speedLimit) {
                 T3DVec3 accelDiff = {0};
-                t3d_vec3_diff(accelDiff, velocityTarget, otherData.velocity);
+                t3d_vec3_diff(accelDiff, velocityTarget, player.velocity);
                 t3d_vec3_scale(accelDiff, accelDiff, 1.0f/deltaTime);
-                t3d_vec3_add(newAccel, otherData.accel, accelDiff);
+                t3d_vec3_add(newAccel, player.accel, accelDiff);
 
                 t3d_vec3_norm(velocityTarget);
                 t3d_vec3_scale(velocityTarget, velocityTarget, speedLimit);
             }
-            otherData.accel = newAccel;
-            otherData.velocity = velocityTarget;
+            player.accel = newAccel;
+            player.velocity = velocityTarget;
 
             // Animation
-            t3d_anim_set_playing(otherData.animWalk.get(), true);
-            t3d_anim_set_speed(otherData.animWalk.get(), 2.f * t3d_vec3_len(velocityTarget) / SpeedLimit);
+            t3d_anim_set_playing(player.animWalk.get(), true);
+            t3d_anim_set_speed(player.animWalk.get(), 2.f * t3d_vec3_len(velocityTarget) / SpeedLimit);
         }
 
         T3DVec3 posDiff = {0};
-        t3d_vec3_scale(posDiff, otherData.velocity, deltaTime);
+        t3d_vec3_scale(posDiff, player.velocity, deltaTime);
 
-        t3d_vec3_add(gameplay.pos, gameplay.pos, posDiff);
+        t3d_vec3_add(player.pos, player.pos, posDiff);
 
-        if (gameplay.pos.v[0] > map->getHalfSize()) gameplay.pos.v[0] = map->getHalfSize();
-        if (gameplay.pos.v[0] < -map->getHalfSize()) gameplay.pos.v[0] = -map->getHalfSize();
-        if (gameplay.pos.v[2] > map->getHalfSize()) gameplay.pos.v[2] = map->getHalfSize();
-        if (gameplay.pos.v[2] < -map->getHalfSize()) gameplay.pos.v[2] = -map->getHalfSize();
+        if (player.pos.v[0] > map->getHalfSize()) player.pos.v[0] = map->getHalfSize();
+        if (player.pos.v[0] < -map->getHalfSize()) player.pos.v[0] = -map->getHalfSize();
+        if (player.pos.v[2] > map->getHalfSize()) player.pos.v[2] = map->getHalfSize();
+        if (player.pos.v[2] < -map->getHalfSize()) player.pos.v[2] = -map->getHalfSize();
 
-        otherData.accel = {0};
+        player.accel = {0};
     } else {
         // AI
-        t3d_anim_set_playing(otherData.animWalk.get(), false);
+        t3d_anim_set_playing(player.animWalk.get(), false);
     }
 }
 
-void GameplayController::handleFire(Player::GameplayData &player, uint32_t id, Direction direction) {
+void GameplayController::handleFire(Player &player, uint32_t id, Direction direction) {
     if (player.temperature > 1.f) return;
 
     auto position = T3DVec3{player.pos.v[0], BulletHeight, player.pos.v[2]};
@@ -170,10 +162,8 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
 {
     state.avPos = {0};
     int id = 0;
-    for (auto& playerOther : playerOtherData)
+    for (auto& player : playerData)
     {
-        auto& playerGameplay = playerGameplayData[id];
-
         Direction dir = NONE;
         if (id < (int)core_get_playercount()) {
             joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
@@ -193,13 +183,13 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
                 }
             }
         } else {
-            dir = ai.calculateFireDirection(playerGameplay, playerOther, deltaTime);
+            dir = ai.calculateFireDirection(player, deltaTime);
         }
 
-        handleFire(playerGameplay, id, dir);
-        Player::render(playerGameplay, playerOther, id, viewport, deltaTime);
+        handleFire(player, id, dir);
+        player.render(id, viewport, deltaTime);
 
-        t3d_vec3_add(state.avPos, state.avPos, playerGameplay.pos);
+        t3d_vec3_add(state.avPos, state.avPos, player.pos);
 
         id++;
     }
@@ -210,10 +200,9 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
 void GameplayController::renderUI()
 {
     int i = 0;
-    for (auto& playerOther : playerOtherData)
+    for (auto& player : playerData)
     {
-        auto& playerGameplay = playerGameplayData[i];
-        Player::renderUI(playerGameplay, playerOther, i, arrowSprite.get());
+        player.renderUI(i, arrowSprite.get());
         i++;
     }
 }
@@ -221,38 +210,34 @@ void GameplayController::renderUI()
 void GameplayController::fixedUpdate(float deltaTime, GameState &state)
 {
     uint32_t id = 0;
-    for (auto& player : playerOtherData)
+    for (auto& player : playerData)
     {
-        auto& gameplayData = playerGameplayData[id];
-
         T3DVec3 direction = {0};
         if (id < core_get_playercount()) {
             joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller((PlyNum)id));
             direction.v[0] = (float)joypad.stick_x;
             direction.v[2] = -(float)joypad.stick_y;
         } else {
-            ai.calculateMovement(gameplayData, player, deltaTime, direction);
+            ai.calculateMovement(player, deltaTime, direction);
         }
 
-        simulatePhysics(gameplayData, player, id, deltaTime, direction);
+        simulatePhysics(player, id, deltaTime, direction);
         id++;
     }
 
-    bulletController.fixedUpdate(deltaTime, playerGameplayData);
+    bulletController.fixedUpdate(deltaTime, playerData);
 }
 
 void GameplayController::newRound()
 {
     PlyNum ply = PLAYER_1;
-    for (Player::GameplayData &player : playerGameplayData)
+    for (Player &player : playerData)
     {
-        auto& playerOther = playerOtherData[ply];
-
         // TODO: fix this
-        playerOther.direction = 0;
-        playerOther.velocity = {0};
-        playerOther.accel = {0};
-        playerOther.displayTemperature = 0;
+        player.direction = 0;
+        player.velocity = {0};
+        player.accel = {0};
+        player.displayTemperature = 0;
 
         player.team = ply;
         player.firstHit = ply;
@@ -262,19 +247,20 @@ void GameplayController::newRound()
         ply = (PlyNum)(ply + 1);
     }
 
-    playerGameplayData[0].pos = {-100, 0, 0};
-    playerGameplayData[0].prevPos = {-100, 0, 0};
+    // TODO: access a 4 lentgh array in a loop instead
+    playerData[0].pos = {-100, 0, 0};
+    playerData[0].prevPos = {-100, 0, 0};
 
-    playerGameplayData[1].pos = {0, 0, -100};
-    playerGameplayData[1].prevPos = {0, 0, -100};
+    playerData[1].pos = {0, 0, -100};
+    playerData[1].prevPos = {0, 0, -100};
 
-    playerGameplayData[2].pos = {100, 0, 0};
-    playerGameplayData[2].prevPos = {100, 0, 0};
+    playerData[2].pos = {100, 0, 0};
+    playerData[2].prevPos = {100, 0, 0};
 
-    playerGameplayData[3].pos = {0, 0, 100};
-    playerGameplayData[3].prevPos = {0, 0, 100};
+    playerData[3].pos = {0, 0, 100};
+    playerData[3].prevPos = {0, 0, 100};
 }
 
-const std::vector<Player::GameplayData> &GameplayController::getPlayerGameplayData() const {
-    return playerGameplayData;
+const std::vector<Player> &GameplayController::getPlayerData() const {
+    return playerData;
 }

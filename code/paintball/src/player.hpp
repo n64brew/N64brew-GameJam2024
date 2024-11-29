@@ -23,67 +23,53 @@
 class GameplayController;
 class BulletController;
 class Game;
+class Player
+{
+    friend class ::GameplayController;
+    friend class ::BulletController;
+    friend class ::Game;
 
-namespace Player {
-    class OtherData;
+    private:
+        // GAMEPLAY DATA
 
-    class GameplayData
-    {
-        friend class ::GameplayController;
-        friend class ::BulletController;
-        friend class ::Game;
-        friend void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
-        friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite);
+        T3DVec3 pos;
+        T3DVec3 prevPos;
+        // A player can be in any team at any given time
+        PlyNum team;
+        // When hit by a team, this is set to that color, upon another hit,
+        // the player moves to that team
+        PlyNum firstHit;
+        float temperature;
+        int fragCount;
 
-        private:
-            T3DVec3 pos;
-            T3DVec3 prevPos;
-            // A player can be in any team at any given time
-            PlyNum team;
-            // When hit by a team, this is set to that color, upon another hit,
-            // the player moves to that team
-            PlyNum firstHit;
-            float temperature;
-            int fragCount;
+        // OTHER DATA
 
-        public:
-            GameplayData(T3DVec3 pos, PlyNum team);
-    };
+        // Physics
+        T3DVec3 accel;
+        T3DVec3 velocity;
 
-    class OtherData
-    {
-        friend class ::GameplayController;
-        friend void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
-        friend void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite);
+        // Renderer
+        float direction;
+        U::RSPQBlock block;
+        U::T3DMat4FP matFP;
 
-        private:
-            // Physics
-            T3DVec3 accel;
-            T3DVec3 velocity;
+        T3D::Skeleton skel;
 
-            // Renderer
-            float direction;
-            U::RSPQBlock block;
-            U::T3DMat4FP matFP;
+        T3D::Anim animWalk;
 
-            T3D::Skeleton skel;
+        T3DVec3 screenPos;
 
-            T3D::Anim animWalk;
+        float displayTemperature;
+        float timer;
 
-            T3DVec3 screenPos;
+        // List<::Bullet, 4> incomingBullets;
 
-            float displayTemperature;
-            float timer;
+    public:
+        Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel);
+        void render(uint32_t id, T3DViewport &viewport, float deltaTime);
+        void renderUI(uint32_t id, sprite_t *arrowSprite);
+};
 
-            // List<Bullet, 4> incomintBullets;
-
-        public:
-            OtherData(T3DModel *model, T3DModel *shadowModel);
-    };
-
-    void render(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, T3DViewport &viewport, float deltaTime);
-    void renderUI(GameplayData &playerGameplay, OtherData &playerOther, uint32_t id, sprite_t *arrowSprite);
-}
 
 #endif // __PLAYER_H
 
