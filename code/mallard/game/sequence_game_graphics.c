@@ -70,12 +70,9 @@ int get_frame_from_duck(Duck *duck)
 
 void sequence_game_render_ducks()
 {
-    rdpq_mode_push();
-    rdpq_set_mode_standard();
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     for (size_t i = 0; i < 4; i++)
     {
-        struct Duck *duck = &ducks[i];
+        Duck *duck = &ducks[i];
 
         rdpq_blitparms_t blitparms = {
             .s0 = get_frame_from_duck(duck) * 32,
@@ -85,12 +82,23 @@ void sequence_game_render_ducks()
             .flip_x = duck->direction == RIGHT ? true : false,
         };
 
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         rdpq_sprite_blit(get_sprite_from_duck(duck),
                          duck->x,
                          duck->y,
                          &blitparms);
+        rdpq_mode_pop();
+
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
+        rdpq_fill_rectangle(duck->collision_box_x1, duck->collision_box_y1, duck->collision_box_x2, duck->collision_box_y2);
+        rdpq_mode_pop();
     }
-    rdpq_mode_pop();
 }
 
 void sequence_game_draw_background_lakeview_terrace()
@@ -179,9 +187,9 @@ sprite_t *get_sprite_from_snowman(Snowman *snowman)
 
 void sequence_game_render_snowmen()
 {
-    rdpq_mode_push();
-    rdpq_set_mode_standard();
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    // rdpq_mode_push();
+    // rdpq_set_mode_standard();
+    // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
     Snowman *temporary = snowmen;
     while (temporary != NULL)
@@ -191,19 +199,29 @@ void sequence_game_render_snowmen()
             .t0 = 0,
             .width = 13,
             .height = 17,
-            .scale_x = 1.5f,
-            .scale_y = 1.5f,
         };
 
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         rdpq_sprite_blit(get_sprite_from_snowman(temporary),
                          temporary->x,
                          temporary->y,
                          &blitparms);
+        rdpq_mode_pop();
+
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
+        rdpq_fill_rectangle(temporary->collision_box_x1, temporary->collision_box_y1, temporary->collision_box_x2, temporary->collision_box_y2);
+        rdpq_mode_pop();
 
         temporary = temporary->next;
     }
 
-    rdpq_mode_pop();
+    // rdpq_mode_pop();
 }
 
 void sequence_game_render(float deltatime)

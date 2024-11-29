@@ -12,7 +12,7 @@ void initialize_ducks()
 {
     if (ducks == NULL)
     {
-        ducks = malloc(4 * sizeof(struct Duck));
+        ducks = malloc(4 * sizeof(Duck));
 
         ducks[0].action = DUCK_BASE;
         ducks[0].frames = 0;

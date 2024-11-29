@@ -43,7 +43,11 @@ sprite_t *sequence_game_background_lakeview_terrace_sprite;
 sprite_t *sequence_game_start_button_sprite;
 sprite_t *sequence_game_paused_text_sprite;
 
-bool sequence_game_initialized = false;
+bool sequence_game_should_initialize = true;
+bool sequence_game_did_initialize = false;
+bool sequence_game_should_cleanup = false;
+bool sequence_game_did_cleanup = false;
+
 bool sequence_game_paused = false;
 
 xm64player_t sequence_game_xm;
@@ -95,7 +99,8 @@ void sequence_game_init()
 
     sequence_game_paused_text_sprite = sprite_load("rom:/mallard/mallard_game_paused_text.rgba32.sprite");
 
-    sequence_game_initialized = true;
+    sequence_game_should_initialize = false;
+    sequence_game_did_initialize = true;
 
     initialize_ducks();
     initialize_controllers();
@@ -106,6 +111,7 @@ void sequence_game_init()
 
     xm64player_open(&sequence_game_xm, "rom:/mallard/mallard_game_music.xm64");
     xm64player_play(&sequence_game_xm, 0);
+    fprintf(stderr, "Mallard GAME audio init DONE\n");
 }
 
 void sequence_game_cleanup()
@@ -143,14 +149,14 @@ void sequence_game_cleanup()
     free_snowmen(snowmen);
     free_controllers();
 
+    // Stop the music and free the allocated memory.
+    xm64player_stop(&sequence_game_xm);
+    xm64player_close(&sequence_game_xm);
+    fprintf(stderr, "Mallard GAME audio cleanup DONE\n");
+
     // Close the display and free the allocated memory.
     rspq_wait();
     display_close();
-
-    // Reset the state.
-    sequence_game_initialized = false;
-
-    // TODO: Check to make sure that we're resetting the state of a lot of things...
 
     // End the sequence.
     sequence_game_finished = true;
@@ -158,18 +164,17 @@ void sequence_game_cleanup()
 
 void sequence_game(float deltatime)
 {
-    if (!sequence_game_initialized)
+    if (sequence_game_should_initialize && !sequence_game_did_initialize)
     {
         sequence_game_init();
-    }
-
-    if (sequence_game_finished)
-    {
-        sequence_game_cleanup();
-        return;
     }
 
     sequence_game_update(deltatime);
 
     sequence_game_render(deltatime);
+
+    if (sequence_game_should_cleanup && !sequence_game_did_cleanup)
+    {
+        sequence_game_cleanup();
+    }
 }

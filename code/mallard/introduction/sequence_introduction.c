@@ -19,7 +19,10 @@ xm64player_t sequence_introduction_xm;
 int sequence_introduction_currentXMPattern = 0;
 
 int sequence_introduction_frame = 0;
-bool sequence_introduction_initialized = false;
+bool sequence_introduction_should_initialize = true;
+bool sequence_introduction_did_initialize = false;
+bool sequence_introduction_should_cleanup = false;
+bool sequence_introduction_did_cleanup = false;
 
 // Libdragon Logo
 bool sequence_introduction_libdragon_logo_started = false;
@@ -71,11 +74,17 @@ void sequence_introduction_init()
     //                  Set up Audio                         //
     ///////////////////////////////////////////////////////////
 
+    fprintf(stderr, "Mallard Intro audio init\n");
+
     xm64player_open(&sequence_introduction_xm, "rom:/mallard/mallard_intro_music.xm64");
     xm64player_play(&sequence_introduction_xm, 0);
     xm64player_seek(&sequence_introduction_xm, sequence_introduction_currentXMPattern, 0, 0);
 
-    sequence_introduction_initialized = true;
+    fprintf(stderr, "Mallard Intro audio DONE\n");
+
+    sequence_introduction_should_initialize = false;
+    sequence_introduction_did_initialize = true;
+
     sequence_introduction_libdragon_logo_started = true;
 }
 
@@ -97,18 +106,16 @@ void sequence_introduction_cleanup()
     // Stop the music and free the allocated memory.
     xm64player_stop(&sequence_introduction_xm);
     xm64player_close(&sequence_introduction_xm);
+    fprintf(stderr, "Mallard Intro audio cleanup DONE\n");
 
     // Close the display and free the allocated memory.
     rspq_wait();
     display_close();
 
-    // Reset the state.
-    sequence_introduction_initialized = false;
-    sequence_introduction_finished = false;
-    // TODO: Check to make sure that we're resetting the state of a lot of things...
-
     // End the sequence.
     sequence_introduction_finished = true;
+
+    // Start the next sequence.
     sequence_game_started = true;
 }
 
@@ -116,12 +123,12 @@ void sequence_introduction(float deltatime)
 {
     sequence_introduction_process_controller(deltatime);
 
-    if (!sequence_introduction_initialized)
+    if (sequence_introduction_should_initialize && !sequence_introduction_did_initialize)
     {
         sequence_introduction_init();
     }
 
-    if (sequence_introduction_finished)
+    if (sequence_introduction_should_cleanup && !sequence_introduction_did_cleanup)
     {
         sequence_introduction_cleanup();
         return;

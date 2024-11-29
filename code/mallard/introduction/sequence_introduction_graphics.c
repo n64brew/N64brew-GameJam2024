@@ -177,6 +177,7 @@ void sequence_introduction_draw_paragraph(float deltatime)
             {
                 sequence_introduction_paragraph_fade_out_finished = true;
                 sequence_introduction_paragraphs_finished = true;
+                sequence_introduction_should_cleanup = true;
             }
 
             rdpq_mode_push();

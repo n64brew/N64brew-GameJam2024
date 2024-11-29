@@ -25,7 +25,7 @@ extern int sequence_introduction_current_paragraph_drawn_characters;
 extern int sequence_introduction_current_paragraph_speed;
 extern char *sequence_introduction_current_paragraph_string;
 
-extern bool sequence_introduction_finished;
+extern bool sequence_introduction_should_cleanup;
 
 // Music
 extern int sequence_introduction_currentXMPattern;

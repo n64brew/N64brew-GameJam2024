@@ -10,6 +10,10 @@ Snowman *add_snowman(Snowman *snowmen)
     snowman->locked_for_frames = 0;
     snowman->x = random_between(MIN_X, MAX_X);
     snowman->y = random_between(MIN_Y, MAX_Y);
+    snowman->collision_box_x1 = snowman->x + 1;
+    snowman->collision_box_y1 = snowman->y + 1;
+    snowman->collision_box_x2 = snowman->x + 12;
+    snowman->collision_box_y2 = snowman->y + 16;
     snowman->time = 0.0f;
     snowman->idle_sprite = sequence_game_snowman_idle_sprite;
     snowman->jump_sprite = sequence_game_snowman_jump_sprite;
@@ -23,16 +27,6 @@ void free_snowmen(Snowman *snowmen)
         return;
     free_snowmen(snowmen->next);
     free(snowmen);
-}
-
-void increase_snowmen_time_and_frames(Snowman *snowmen, float deltatime)
-{
-    while (snowmen != NULL)
-    {
-        snowmen->frames++;
-        snowmen->time += deltatime;
-        snowmen = snowmen->next;
-    }
 }
 
 void list_snowmen(Snowman *snowmen)

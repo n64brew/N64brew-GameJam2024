@@ -1,0 +1,5 @@
+#ifndef SEQUENCE_GAME_DUCK_H
+#define SEQUENCE_GAME_DUCK_H
+
+
+#endif // SEQUENCE_GAME_DUCK_H

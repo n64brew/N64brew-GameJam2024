@@ -19,7 +19,7 @@ void sequence_introduction_process_controller(float deltatime)
         // Skip.
         if (pressed.start)
         {
-            sequence_introduction_finished = true;
+            sequence_introduction_should_cleanup = true;
         }
 
         // Intro - Libdragon Logo.

@@ -6,12 +6,17 @@
 extern Snowman *snowmen;
 extern Duck *ducks;
 
-extern bool sequence_game_finished;
+extern bool sequence_game_should_cleanup;
 extern bool sequence_game_paused;
 extern int sequence_game_player_holding_start;
 
 extern float sequence_game_start_held_elapsed;
 
+typedef struct Vector2
+{
+    float x;
+    float y;
+} Vector2;
 
 void sequence_game_update(float deltatime);
 

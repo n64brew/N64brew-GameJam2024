@@ -38,4 +38,7 @@ void sequence_game_draw_background_lakeview_terrace();
 void sequence_game_draw_paused();
 void sequence_game_render(float deltatime);
 
+int get_frame_from_snowman(Snowman *snowman);
+int get_frame_from_duck(Duck *duck);
+
 #endif // SEQUENCE_GAME_GRAPHICS_H

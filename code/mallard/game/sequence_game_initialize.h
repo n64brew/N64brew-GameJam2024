@@ -25,7 +25,7 @@
 #define PLAYER_4_SPAWN_X2 152 + 152 - 15
 #define PLAYER_4_SPAWN_Y2 194 - 85 - 1
 
-extern struct Duck *ducks;
+extern Duck *ducks;
 extern struct Snowman *snowmen;
 extern struct Controller *controllers;
 

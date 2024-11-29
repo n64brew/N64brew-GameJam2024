@@ -3,6 +3,8 @@
 
 #include <libdragon.h>
 
+extern bool sequence_introduction_should_cleanup;
+
 extern bool sequence_introduction_libdragon_logo_started;
 extern bool sequence_introduction_libdragon_logo_finished;
 extern float sequence_introduction_libdragon_logo_elapsed;

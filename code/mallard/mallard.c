@@ -101,13 +101,13 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
-    if (sequence_introduction_started == true && sequence_introduction_finished == false)
+    if (sequence_introduction_started && !sequence_introduction_finished)
     {
         sequence_introduction(deltatime);
         return;
     }
 
-    if (sequence_game_started == true && sequence_game_finished == false)
+    if (sequence_game_started && !sequence_game_finished)
     {
         sequence_game(deltatime);
         return;

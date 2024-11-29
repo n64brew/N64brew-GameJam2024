@@ -34,6 +34,14 @@ typedef struct Duck
     sprite_t *run_sprite;
     int frames;
     int locked_for_frames;
+    float collision_box_x1;
+    float collision_box_y1;
+    float collision_box_x2;
+    float collision_box_y2;
+    float slap_collision_box_x1;
+    float slap_collision_box_y1;
+    float slap_collision_box_x2;
+    float slap_collision_box_y2;
 } Duck;
 
 typedef enum SnowmanActions
@@ -52,7 +60,11 @@ typedef struct Snowman
     sprite_t *jump_sprite;
     int frames;
     int locked_for_frames;
-    struct Snowman* next;
+    float collision_box_x1;
+    float collision_box_y1;
+    float collision_box_x2;
+    float collision_box_y2;
+    struct Snowman *next;
 } Snowman;
 
 typedef struct Controller
