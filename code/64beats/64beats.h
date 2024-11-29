@@ -3,7 +3,7 @@
 #define SCREEN_MARGIN_TOP 24
 #define MAX_ARROWS 174 * 4 / 2
 #define SPEED_MULTI 1.0
-uint32_t songTime;
+int32_t songTime = -3000;
 typedef struct
 {
     float x;
@@ -23,13 +23,16 @@ typedef struct {
     int time;
     ArrowDirection direction;
     uint8_t difficulty;
+    bool hit[4];
 } arrowOnTrack;
 
 typedef struct {
     arrowOnTrack arrows[MAX_ARROWS];
+    
 } track;
 
 track myTrack;
+
 int currentTargetArrow;
 
 #ifndef GAMEJAM2024_MINIGAME_H
@@ -43,6 +46,7 @@ int currentTargetArrow;
 #endif
 int calculateXForArrow(uint8_t playerNum, uint8_t dir);
 int calculateYForArrow(int time);
+int calculateDeltaTime(int arrowIndex);
 long currentTime;
 void updateArrows();
 void checkInputs();

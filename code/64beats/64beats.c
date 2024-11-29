@@ -24,7 +24,6 @@ the game jam.
 #define POWERBAR_BACKGROUND 0x333333FF
 #define POWERBAR_FOREGROUND 0xEEEEEEFF
 
-
 static arrow up;
 static arrow ui;
 static sprite_t *arrow_sprite;
@@ -35,8 +34,6 @@ static sprite_t *arrow_left_sprite;
 static sprite_t *arrow_right_sprite;
 
 static sprite_t *arrow_sprites[4];
-
-
 
 /*********************************
              Globals
@@ -125,7 +122,6 @@ void minigame_init()
     ui.scale_factor_x = UI_SCALE;
     ui.scale_factor_y = UI_SCALE;
     loadSong();
-    
 }
 
 /*==============================
@@ -213,16 +209,16 @@ void minigame_loop(float deltatime)
         {
             // For human players, check if the physical A button on the controller was pressed
             joypad_buttons_t btn = joypad_get_buttons_pressed(core_get_playercontroller(i));
-            
+
             if (btn.a)
                 player_points[i] += POINTS_PER_PRESS;
         }
     }
     // Render the UI
     rdpq_attach(display_get(), NULL);
-    rdpq_clear(color_from_packed32(GAME_BACKGROUND));
-
+    //rdpq_clear(color_from_packed32(GAME_BACKGROUND));
     
+
     // if (is_countdown())
     // {
     //     // Draw countdown
@@ -245,154 +241,194 @@ void minigame_loop(float deltatime)
     //     }
     // }
 
-    
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     updateArrows(); // TODO
-    checkInputs();// TODO
-    
+    checkInputs();  // TODO
+
     drawUI();
     drawArrows();
 
     updateArrowList();
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 10, "FPS: %f", 1.0 / deltatime);
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 230, "TIME: %ld", songTime);
-
+    
+    
+    rdpq_set_mode_standard();
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(color_from_packed32(0x22222222));
+    rdpq_fill_rectangle(0, 0, 320, 240);
     rdpq_detach_show();
 }
-void updateArrows() {
-    
+void updateArrows()
+{
 }
-void checkInputs() {
-
+void checkInputs()
+{
 
     uint32_t playercount = core_get_playercount();
-    for (size_t i = 0; i < playercount; i++) {
+    int buttonSum = 0;
+    for (size_t i = 0; i < playercount; i++)
+    {
+
         joypad_buttons_t btn = joypad_get_buttons_pressed(core_get_playercontroller(i));
-        //debugf("Loading minigame: %s\n", name);
-        if (btn.c_up) {
-            if (myTrack.arrows[currentTargetArrow].direction == ARR_UP) {
-                wav64_play(&sfx_countdown, 31);
-            }
+        buttonSum += btn.c_left + btn.c_up + btn.c_down + btn.c_right;
+        if (btn.r) {
+            songTime = -1000;
         }
-        if (btn.c_left) {
-            if (myTrack.arrows[currentTargetArrow].direction == ARR_LEFT) {
-                wav64_play(&sfx_countdown, 31);
-            }
+        if (buttonSum == 0)
+        {
+            continue;
         }
-        if (btn.c_right) {
-            if (myTrack.arrows[currentTargetArrow].direction == ARR_RIGHT) {
-                wav64_play(&sfx_countdown, 31);
+        const bool directionsPressed[4] = {btn.c_left, btn.c_up, btn.c_down, btn.c_right};
+
+        for (int currentArrow = currentTargetArrow; currentArrow < currentTargetArrow + 16; currentArrow++)
+        {
+            if (!directionsPressed[myTrack.arrows[currentArrow].direction])
+            {
+                continue;
             }
-        }
-        if (btn.c_down) {
-            if (myTrack.arrows[currentTargetArrow].direction == ARR_LEFT) {
-                wav64_play(&sfx_countdown, 31);
+            int deltaTime = abs(calculateDeltaTime(currentArrow));
+            if (deltaTime > 100) {
+                continue;
             }
+            debugf("Delta: %d\n", deltaTime);
+            myTrack.arrows[currentArrow].hit[i] = true;
         }
     }
-    
-            
+
+    // iteration über alle aktuellen pfeile (currentTargetArrow + 30)
+    // einmal pro spieler
+    // wenn pfeilrichtung auf aktuell gedrückten controller passt:
+    // abstand zum ziel berechnen
+    // punkte geben + pfeil ausblenden oder nicht
 }
-int countValidEntries() {
+int countValidEntries()
+{
     int count = 0;
-    for (int i = 0; i < MAX_ARROWS; i++) {
-        if (myTrack.arrows[i].time != -1) {
+    for (int i = 0; i < MAX_ARROWS; i++)
+    {
+        if (myTrack.arrows[i].time != -1)
+        {
             count++;
         }
     }
     return count;
 }
-void loadSong() {
- // Fill the array with data
-    
-    for (int i = 0; i < MAX_ARROWS; i++) {
+void loadSong()
+{
+    // Fill the array with data
+
+    for (int i = 0; i < MAX_ARROWS; i++)
+    {
         float random = (float)rand() / (RAND_MAX / 4.0);
         myTrack.arrows[i].time = i * (60000 / 174);
-        myTrack.arrows[i].direction = (uint8_t) random;
+        myTrack.arrows[i].direction = (uint8_t)random;
         myTrack.arrows[i].difficulty = 1;
     }
+    for (int i = 0; i < 10; i++)
+    {
+        debugf("Arrow %d: %d\n", i, myTrack.arrows[i].direction);
+    }
 }
-void updateArrowList() {
-
-
+void updateArrowList()
+{
 }
-int calculateXForArrow(uint8_t playerNum, uint8_t dir) {
+int calculateXForArrow(uint8_t playerNum, uint8_t dir)
+{
     int paddingArrow = 10;
-    #define SCREEN_WIDTH 320
-    #define SCREEN_MIDDLE SCREEN_WIDTH/2
-    #define WIDTH_PER_PLAYER SCREEN_WIDTH/4
+#define SCREEN_WIDTH 320
+#define SCREEN_MIDDLE SCREEN_WIDTH / 2
+#define WIDTH_PER_PLAYER SCREEN_WIDTH / 4
     const uint8_t arrowWidthScaled = arrow_sprite->width * UI_SCALE;
     const uint16_t playerSlotStart = WIDTH_PER_PLAYER * playerNum;
     const uint16_t playerSlotMiddle = playerSlotStart + (WIDTH_PER_PLAYER / 2);
-    const uint16_t arrowPosInSlot = playerSlotMiddle + (-1.5 + dir) * arrowWidthScaled ;
+    const uint16_t arrowPosInSlot = playerSlotMiddle + (-1.5 + dir) * arrowWidthScaled;
     return (int)arrowPosInSlot;
 }
-int calculateYForArrow(int time) {
+int calculateYForArrow(int time)
+{
     return 0;
 }
-void drawArrowForPlayer(uint8_t playerNum, int yPos, uint8_t dir) {
+void drawArrowForPlayer(uint8_t playerNum, int yPos, uint8_t dir)
+{
 
     rdpq_sprite_blit(arrow_sprites[dir],
-                            (int32_t)(calculateXForArrow(playerNum, dir)),
-                            (int32_t)(yPos),
-                            &(rdpq_blitparms_t){
-                                .cx = (arrow_sprite->width / 2),
-                                .cy = (arrow_sprite->height / 2),
-                                .scale_x = ui.scale_factor_x,
-                                .scale_y = ui.scale_factor_y,
-                            });
-    //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO,(int32_t)(calculateXForArrow(playerNum, dir)), (int32_t)(yPos), "TIME: %d", timeDelta);
+                     (int32_t)(calculateXForArrow(playerNum, dir)),
+                     (int32_t)(yPos),
+                     &(rdpq_blitparms_t){
+                         .cx = (arrow_sprite->width / 2),
+                         .cy = (arrow_sprite->height / 2),
+                         .scale_x = ui.scale_factor_x,
+                         .scale_y = ui.scale_factor_y,
+                     });
+    // rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, (int32_t)(calculateXForArrow(playerNum, dir)), (int32_t)(yPos), "TIME: %d", currentTargetArrow);
 }
-void drawArrows() {
+int calculateDeltaTime(int arrowIndex)
+{
+    return songTime - myTrack.arrows[arrowIndex].time;
+}
+void drawArrows()
+{
     static int arrowsStart = 0;
+
+    joypad_inputs_t joypad = joypad_get_inputs(0);
+    float xModifier = (joypad.stick_x / 90.0 + 2) / 2;
+
     int arrowsEnd = (arrowsStart + 50 > MAX_ARROWS) ? MAX_ARROWS : arrowsStart + 50;
     currentTargetArrow = arrowsStart;
-    for (int i = arrowsStart; i < arrowsEnd; i++) {
-        int timeDelta = songTime - myTrack.arrows[i].time;
+    for (int i = arrowsStart; i < arrowsEnd; i++)
+    {
+        int timeDelta = calculateDeltaTime(i);
 
-        int yPos = 240 - timeDelta / 5;
-        if (yPos > 240 + arrow_sprite->height) {
+        int yPos = (((-timeDelta)) / 20 * xModifier);
+
+        yPos += SCREEN_MARGIN_TOP;
+        if (yPos > 240 + arrow_sprite->height)
+        {
             continue;
         }
-        if (yPos < 0 - arrow_sprite->height) {
+        if (yPos < 0 - arrow_sprite->height)
+        {
             arrowsStart = i;
             continue;
-
         }
-        
-        for (uint8_t thisPlayer=0; thisPlayer<4; thisPlayer++) {
+        for (uint8_t thisPlayer = 0; thisPlayer < 4; thisPlayer++)
+        {
             // TODO: check myTrack.arrows[i].difficulty
-            
-            drawArrowForPlayer(thisPlayer,yPos , myTrack.arrows[i].direction);
-            
+            if (myTrack.arrows[i].hit[thisPlayer])
+            {
+                continue;
+            }
+            drawArrowForPlayer(thisPlayer, yPos, myTrack.arrows[i].direction);
         }
-            
-        
     }
-    
-    
 }
-void drawUI() {
-    for (uint8_t thisPlayer=0; thisPlayer<4; thisPlayer++) {
-        for (uint8_t thisDirection = 0; thisDirection < 4; thisDirection++) {
+void drawUI()
+{
+    for (uint8_t thisPlayer = 0; thisPlayer < 4; thisPlayer++)
+    {
+        for (uint8_t thisDirection = 0; thisDirection < 4; thisDirection++)
+        {
             drawUIForPlayer(thisPlayer, thisDirection);
         }
     }
 }
 
-void drawUIForPlayer(uint8_t playerNum, uint8_t dir) {
+void drawUIForPlayer(uint8_t playerNum, uint8_t dir)
+{
     const uint8_t rotationLookup[4] = {1, 0, 2, 3};
     rdpq_sprite_blit(arrow_sprite,
-                            (int32_t)(calculateXForArrow(playerNum, dir)),
-                            (int32_t)(SCREEN_MARGIN_TOP),
-                            &(rdpq_blitparms_t){
-                                .cx = (arrow_sprite->width / 2),
-                                .cy = (arrow_sprite->height / 2),
-                                .theta = degreesToRadians( 90 * rotationLookup[dir] ),
-                                .scale_x = ui.scale_factor_x,
-                                .scale_y = ui.scale_factor_y,
-                            });
+                     (int32_t)(calculateXForArrow(playerNum, dir)),
+                     (int32_t)(SCREEN_MARGIN_TOP),
+                     &(rdpq_blitparms_t){
+                         .cx = (arrow_sprite->width / 2),
+                         .cy = (arrow_sprite->height / 2),
+                         .theta = degreesToRadians(90 * rotationLookup[dir]),
+                         .scale_x = ui.scale_factor_x,
+                         .scale_y = ui.scale_factor_y,
+                     });
 }
 /*==============================
     minigame_cleanup
