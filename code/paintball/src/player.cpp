@@ -204,9 +204,9 @@ void Player::renderUI(uint32_t id, sprite_t *arrowSprite)
             SmallFont,
             x,
             y,
-            "P%lu %d",
-            id + 1,
-            aiState
+            "P%lu", //%d
+            id + 1//,
+            // aiState
         );
     }
 

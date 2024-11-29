@@ -98,6 +98,7 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
     float alignment = 0.f;
 
     if (random < AITemperature) {
+        // TODO: different probabilities
         int r = randomRange(1, 3);
         player.aiState = (AIState)r;
     }

@@ -25,7 +25,8 @@ enum AIState {
     AI_DEFEND,
     AI_ATTACK,
     AI_RUN,
-    AI_CHASE
+    AI_CHASE,
+    AI_ESCAPE
 };
 
 class GameplayController;

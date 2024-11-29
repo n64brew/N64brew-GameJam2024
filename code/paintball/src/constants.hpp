@@ -21,9 +21,9 @@ constexpr float PlayerRadius = 13;
 constexpr float BulletVelocity = 300;
 
 // AI
-constexpr float AICloseRange = 80;
+constexpr float AICloseRange = 100;
 constexpr float AIAttractRange = 200;
-constexpr float AIBulletDefendRange = 100;
+constexpr float AIBulletDetectRange = 100;
 constexpr float AIRandomRange = 0.5;
 
 // AUDIO
