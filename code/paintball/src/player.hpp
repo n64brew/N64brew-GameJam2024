@@ -39,6 +39,8 @@ class Player
     friend class ::Game;
     friend class ::AI;
 
+    friend void tryChangeState(Player& player, AIState newState);
+
     private:
         // GAMEPLAY DATA
 
@@ -75,6 +77,8 @@ class Player
         // AI
         List<::Bullet, 4> incomingBullets;
         AIState aiState;
+        float multiplier;
+        float multiplier2;
 
     public:
         Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel);

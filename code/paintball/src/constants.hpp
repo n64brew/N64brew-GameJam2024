@@ -18,9 +18,13 @@ constexpr float LastOneStandingTime = 15;
 constexpr int RoundCount = 5;
 
 constexpr float PlayerRadius = 13;
-constexpr float AIBulletRange = 64 * PlayerRadius * PlayerRadius;
-
 constexpr float BulletVelocity = 300;
+
+// AI
+constexpr float AICloseRange = 80;
+constexpr float AIAttractRange = 200;
+constexpr float AIBulletDefendRange = 100;
+constexpr float AIRandomRange = 0.5;
 
 // AUDIO
 constexpr int FireAudioChannel = 10;

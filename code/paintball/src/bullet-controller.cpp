@@ -136,7 +136,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gamepla
                 (player.pos.v[0] - bullet->pos.v[0]) * (player.pos.v[0] - bullet->pos.v[0]) +
                 (player.pos.v[2] - bullet->pos.v[2]) * (player.pos.v[2] - bullet->pos.v[2]);
 
-            if (dist2 < AIBulletRange) {
+            if (dist2 < AIBulletDefendRange * AIBulletDefendRange) {
                 player.incomingBullets.add(*bullet);
             }
 

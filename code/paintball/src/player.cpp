@@ -17,7 +17,9 @@ Player::Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel)
     screenPos({0}),
     displayTemperature(0),
     timer(0),
-    aiState(AIState::AI_IDLE)
+    aiState(AIState::AI_DEFEND),
+    multiplier(1),
+    multiplier2(1)
     {
         debugf("Creating player\n");
         assertf(skel.get(), "Player skel is null");
