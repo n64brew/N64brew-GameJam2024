@@ -136,6 +136,10 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gamepla
                 (player.pos.v[0] - bullet->pos.v[0]) * (player.pos.v[0] - bullet->pos.v[0]) +
                 (player.pos.v[2] - bullet->pos.v[2]) * (player.pos.v[2] - bullet->pos.v[2]);
 
+            if (dist2 < 64 * PlayerRadius * PlayerRadius) {
+                player.incomingBullets.add(*bullet);
+            }
+
             if (dist2 < PlayerRadius * PlayerRadius) {
                 // TODO: delegate to Player
                 bool hit = processHit(player, bullet->team);

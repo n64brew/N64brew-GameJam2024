@@ -33,95 +33,90 @@ void GameplayController::simulatePhysics(
 {
     player.prevPos = player.pos;
 
-    if (id < MAXPLAYERS && id < core_get_playercount()) {
-        // Temperature
-        player.temperature -= deltaTime * CooldownPerSecond;
-        if (player.temperature < 0) player.temperature = 0;
+    // Temperature
+    player.temperature -= deltaTime * CooldownPerSecond;
+    if (player.temperature < 0) player.temperature = 0;
 
 
-        float strength = sqrtf(t3d_vec3_len2(inputDirection));
-        if (strength > ForceLimit) {
-            strength = ForceLimit;
-        }
+    float strength = t3d_vec3_len(inputDirection);
+    if (strength > ForceLimit) {
+        strength = ForceLimit;
+    }
 
-        t3d_vec3_norm(inputDirection);
+    t3d_vec3_norm(inputDirection);
 
-        T3DVec3 force = {0};
-        t3d_vec3_scale(force, inputDirection, strength);
+    T3DVec3 force = {0};
+    t3d_vec3_scale(force, inputDirection, strength);
 
-        // TODO: move into player.cpp?
-        // Deadzone
-        if (strength < 10.0f) {
-            // Physics
-            T3DVec3 force = player.velocity;
-            t3d_vec3_norm(force);
-            t3d_vec3_scale(force, force, -ForceLimit);
+    // TODO: move into player.cpp?
+    // Deadzone
+    if (strength < 10.0f) {
+        // Physics
+        T3DVec3 force = player.velocity;
+        t3d_vec3_norm(force);
+        t3d_vec3_scale(force, force, -ForceLimit);
 
-            T3DVec3 newAccel = {0};
-            // a = F/m
-            t3d_vec3_scale(newAccel, force, PlayerInvMass);
-            t3d_vec3_add(newAccel, player.accel, newAccel);
+        T3DVec3 newAccel = {0};
+        // a = F/m
+        t3d_vec3_scale(newAccel, force, PlayerInvMass);
+        t3d_vec3_add(newAccel, player.accel, newAccel);
 
-            T3DVec3 velocityTarget = {0};
-            t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
-            t3d_vec3_add(velocityTarget, player.velocity, velocityTarget);
+        T3DVec3 velocityTarget = {0};
+        t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
+        t3d_vec3_add(velocityTarget, player.velocity, velocityTarget);
 
-            if (t3d_vec3_dot(velocityTarget, player.velocity) < 0) {
-                player.velocity = {0};
-                player.accel = {0};
-            } else {
-                player.accel = newAccel;
-                player.velocity = velocityTarget;
-            }
-
-            // Animation
-            t3d_anim_set_playing(player.animWalk.get(), false);
-        } else  {
-            // Physics
-            player.direction = t3d_lerp_angle(player.direction, -atan2f(inputDirection.v[0], inputDirection.v[2]), 0.5f);
-
-            T3DVec3 newAccel = {0};
-            // a = F/m
-            t3d_vec3_scale(newAccel, force, PlayerInvMass);
-            t3d_vec3_add(newAccel, player.accel, newAccel);
-
-            T3DVec3 velocityTarget = {0};
-            t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
-            t3d_vec3_add(velocityTarget, player.velocity, velocityTarget);
-
-            float speedLimit = strength * SpeedLimit / ForceLimit;
-            if (t3d_vec3_len(velocityTarget) > speedLimit) {
-                T3DVec3 accelDiff = {0};
-                t3d_vec3_diff(accelDiff, velocityTarget, player.velocity);
-                t3d_vec3_scale(accelDiff, accelDiff, 1.0f/deltaTime);
-                t3d_vec3_add(newAccel, player.accel, accelDiff);
-
-                t3d_vec3_norm(velocityTarget);
-                t3d_vec3_scale(velocityTarget, velocityTarget, speedLimit);
-            }
+        if (t3d_vec3_dot(velocityTarget, player.velocity) < 0) {
+            player.velocity = {0};
+            player.accel = {0};
+        } else {
             player.accel = newAccel;
             player.velocity = velocityTarget;
-
-            // Animation
-            t3d_anim_set_playing(player.animWalk.get(), true);
-            t3d_anim_set_speed(player.animWalk.get(), 2.f * t3d_vec3_len(velocityTarget) / SpeedLimit);
         }
 
-        T3DVec3 posDiff = {0};
-        t3d_vec3_scale(posDiff, player.velocity, deltaTime);
-
-        t3d_vec3_add(player.pos, player.pos, posDiff);
-
-        if (player.pos.v[0] > map->getHalfSize()) player.pos.v[0] = map->getHalfSize();
-        if (player.pos.v[0] < -map->getHalfSize()) player.pos.v[0] = -map->getHalfSize();
-        if (player.pos.v[2] > map->getHalfSize()) player.pos.v[2] = map->getHalfSize();
-        if (player.pos.v[2] < -map->getHalfSize()) player.pos.v[2] = -map->getHalfSize();
-
-        player.accel = {0};
-    } else {
-        // AI
+        // Animation
         t3d_anim_set_playing(player.animWalk.get(), false);
+    } else  {
+        // Physics
+        player.direction = t3d_lerp_angle(player.direction, -atan2f(inputDirection.v[0], inputDirection.v[2]), 0.5f);
+
+        T3DVec3 newAccel = {0};
+        // a = F/m
+        t3d_vec3_scale(newAccel, force, PlayerInvMass);
+        t3d_vec3_add(newAccel, player.accel, newAccel);
+
+        T3DVec3 velocityTarget = {0};
+        t3d_vec3_scale(velocityTarget, newAccel, deltaTime);
+        t3d_vec3_add(velocityTarget, player.velocity, velocityTarget);
+
+        float speedLimit = strength * SpeedLimit / ForceLimit;
+        if (t3d_vec3_len(velocityTarget) > speedLimit) {
+            T3DVec3 accelDiff = {0};
+            t3d_vec3_diff(accelDiff, velocityTarget, player.velocity);
+            t3d_vec3_scale(accelDiff, accelDiff, 1.0f/deltaTime);
+            t3d_vec3_add(newAccel, player.accel, accelDiff);
+
+            t3d_vec3_norm(velocityTarget);
+            t3d_vec3_scale(velocityTarget, velocityTarget, speedLimit);
+        }
+        player.accel = newAccel;
+        player.velocity = velocityTarget;
+
+        // Animation
+        t3d_anim_set_playing(player.animWalk.get(), true);
+        t3d_anim_set_speed(player.animWalk.get(), 2.f * t3d_vec3_len(velocityTarget) / SpeedLimit);
     }
+
+    T3DVec3 posDiff = {0};
+    t3d_vec3_scale(posDiff, player.velocity, deltaTime);
+
+    t3d_vec3_add(player.pos, player.pos, posDiff);
+
+    if (player.pos.v[0] > map->getHalfSize()) player.pos.v[0] = map->getHalfSize();
+    if (player.pos.v[0] < -map->getHalfSize()) player.pos.v[0] = -map->getHalfSize();
+    if (player.pos.v[2] > map->getHalfSize()) player.pos.v[2] = map->getHalfSize();
+    if (player.pos.v[2] < -map->getHalfSize()) player.pos.v[2] = -map->getHalfSize();
+
+    player.accel = {0};
 }
 
 void GameplayController::handleFire(Player &player, uint32_t id, Direction direction) {
@@ -220,7 +215,6 @@ void GameplayController::fixedUpdate(float deltaTime, GameState &state)
         } else {
             ai.calculateMovement(player, deltaTime, direction);
         }
-
         simulatePhysics(player, id, deltaTime, direction);
         id++;
     }

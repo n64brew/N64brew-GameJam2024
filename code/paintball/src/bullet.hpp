@@ -19,15 +19,17 @@
 #include "./constants.hpp"
 
 class BulletController;
+class AI;
 
 class Bullet
 {
     friend class ::BulletController;
+    friend class ::AI;
 
     public:
         Bullet();
         Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team);
-        Bullet(Bullet&& other) = delete;
+        Bullet(Bullet&& other);
         Bullet& operator=(Bullet&& rhs) = delete;
         Bullet& operator=(Bullet& rhs);
 

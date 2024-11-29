@@ -23,11 +23,13 @@
 class GameplayController;
 class BulletController;
 class Game;
+class AI;
 class Player
 {
     friend class ::GameplayController;
     friend class ::BulletController;
     friend class ::Game;
+    friend class ::AI;
 
     private:
         // GAMEPLAY DATA
@@ -62,7 +64,8 @@ class Player
         float displayTemperature;
         float timer;
 
-        // List<::Bullet, 4> incomingBullets;
+        // AI
+        List<::Bullet, 4> incomingBullets;
 
     public:
         Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel);

@@ -8,6 +8,14 @@ class List : public std::array<T, S> {
     private:
         std::size_t count = 0;
     public:
+
+        void add(T &item) {
+            if (count >= this->size()) return;
+            auto &&newItem = std::array<T,S>::operator[](count);
+            newItem = item;
+            count++;
+        }
+
         // TODO: return success/failure
         void add(T &&item) {
             if (count >= this->size()) return;

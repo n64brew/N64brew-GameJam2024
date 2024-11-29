@@ -16,6 +16,14 @@ Bullet::Bullet(T3DVec3 pos, T3DVec3 velocity, PlyNum owner, PlyNum team) :
     owner {owner},
     matFP({nullptr, free_uncached}) { }
 
+Bullet::Bullet(Bullet&& other) :
+    pos {other.pos},
+    prevPos {other.pos},
+    velocity {other.velocity},
+    team {other.team},
+    owner {other.owner},
+    matFP({nullptr, free_uncached}) { }
+
 Bullet& Bullet::operator=(Bullet& rhs) {
     if (this == &rhs) return *this;
     pos = rhs.pos;
