@@ -15,8 +15,10 @@
 #include "../../../core.h"
 #include "../../../minigame.h"
 
-#include "./wrappers.hpp"
-#include "./constants.hpp"
+#include "wrappers.hpp"
+#include "constants.hpp"
+#include "list.hpp"
+#include "bullet.hpp"
 
 class GameplayController;
 class BulletController;
@@ -72,6 +74,8 @@ namespace Player {
 
             float displayTemperature;
             float timer;
+
+            // List<Bullet, 4> incomintBullets;
 
         public:
             OtherData(T3DModel *model, T3DModel *shadowModel);

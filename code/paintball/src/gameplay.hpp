@@ -16,7 +16,7 @@
 
 #include "constants.hpp"
 #include "wrappers.hpp"
-#include "bullet.hpp"
+#include "bullet-controller.hpp"
 #include "player.hpp"
 #include "map.hpp"
 #include "ui.hpp"
