@@ -22,7 +22,6 @@
 #include "./ui.hpp"
 #include "./bullet.hpp"
 
-constexpr float BulletVelocity = 300;
 constexpr float BulletHeight = 35.f;
 constexpr int BulletLimit = 100;
 constexpr float Gravity = -200;

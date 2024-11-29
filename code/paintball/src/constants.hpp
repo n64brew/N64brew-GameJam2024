@@ -20,6 +20,8 @@ constexpr int RoundCount = 5;
 constexpr float PlayerRadius = 13;
 constexpr float AIBulletRange = 64 * PlayerRadius * PlayerRadius;
 
+constexpr float BulletVelocity = 300;
+
 // AUDIO
 constexpr int FireAudioChannel = 10;
 constexpr int HitAudioChannel = 11;

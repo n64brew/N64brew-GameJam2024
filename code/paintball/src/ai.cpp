@@ -2,27 +2,115 @@
 
 Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vector<Player> &players) {
     for (auto& other : players) {
-        if (&other == &player) {
-            continue;
-        }
-        T3DVec3 diff = {0};
-        t3d_vec3_diff(diff, player.pos, other.pos);
-        if (t3d_vec3_len2(diff) > AIBulletRange) {
+        // TODO: difficulty parameter
+        if (&other == &player || player.temperature > 0.1f) {
             continue;
         }
 
+        if (other.team == player.team && other.firstHit == player.team) {
+            continue;
+        }
+
+        T3DVec3 diff = {0};
+        t3d_vec3_diff(diff, player.pos, other.pos);
+
+        // Should still be able to hit
+        if (other.velocity.v[0] != 0.f) {
+            float enemyXTime = std::abs(diff.v[0]/other.velocity.v[0]);
+            float bulletYTime = std::abs(diff.v[2] / BulletVelocity);
+
+            if (std::abs(enemyXTime - bulletYTime) < PlayerRadius/BulletVelocity) {
+                if (diff.v[2] > 0) {
+                    return Direction::UP;
+                } else {
+                    return Direction::DOWN;
+                }
+            }
+        }
+
+        if (other.velocity.v[2] != 0.f) {
+            float enemyYTime = std::abs(diff.v[2]/other.velocity.v[2]);
+            float bulletXTime = std::abs(diff.v[0] / BulletVelocity);
+
+            if (std::abs(enemyYTime - bulletXTime) < PlayerRadius/BulletVelocity) {
+                if (diff.v[0] > 0) {
+                    return Direction::LEFT;
+                } else {
+                    return Direction::RIGHT;
+                }
+            }
+        }
+
+        if (std::abs(diff.v[0]) < PlayerRadius && t3d_vec3_len2(diff) < AIBulletRange) {
+            if (diff.v[2] > 0) {
+                return Direction::UP;
+            } else {
+                return Direction::DOWN;
+            }
+        }
+
+        if (std::abs(diff.v[2]) < PlayerRadius && t3d_vec3_len2(diff) < AIBulletRange) {
+            if (diff.v[0] > 0) {
+                return Direction::LEFT;
+            } else {
+                return Direction::RIGHT;
+            }
+        }
     }
 
     return Direction::NONE;
 }
 
 void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> &players, T3DVec3 &inputDirection) {
+    // Idle defaults
     float escapeWeight = 1.f;
 
-    float centerAttraction = 0.01f;
-    float playerAttraction = 0.5f;
-    float teamPlayerAttraction = 0.7f;
-    float alignment = 0.01f;
+    float centerAttraction = 0.2f;
+
+    // TODO: add bias based on player teams
+    float playerAttraction = -0.2f;
+    float teamPlayerAttraction = 0.4f;
+
+    float playerRepulsion = 0.5f;
+    float teamPlayerRepulsion = 0.2f;
+
+    float alignment = 0.f;
+
+    if (player.aiState == AIState::AI_ATTACK) {
+        if (player.temperature > 1.f || player.firstHit != player.team) {
+            player.aiState = AIState::AI_DEFEND;
+        }
+        escapeWeight = 0.2f;
+
+        centerAttraction = 0.f;
+        playerAttraction = 0.2f;
+        teamPlayerAttraction = 0.5f;
+
+        playerRepulsion = 1.f;
+        teamPlayerRepulsion = 0.3f;
+
+        alignment = 0.7f;
+    } else if (player.aiState == AIState::AI_DEFEND) {
+        if (player.temperature < 1.f && player.firstHit == player.team) {
+            player.aiState = AIState::AI_ATTACK;
+        }
+        escapeWeight = 0.8f;
+
+        centerAttraction = 0.2f;
+        playerAttraction = 0.2f;
+        teamPlayerAttraction = 0.8f;
+
+        playerRepulsion = 0.1f;
+        teamPlayerRepulsion = 0.1f;
+
+        alignment = 0.2f;
+    } else {
+        if (player.firstHit == player.team) {
+            player.aiState = AIState::AI_ATTACK;
+        } else {
+            player.aiState = AIState::AI_DEFEND;
+        }
+    }
 
     // Bullet escape
     for (auto bullet = player.incomingBullets.begin(); bullet != player.incomingBullets.end(); ++bullet) {
@@ -73,13 +161,27 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
         t3d_vec3_diff(diff, player.pos, other.pos);
 
         // Player attraction
-        if (t3d_vec3_len2(diff) > AIBulletRange * 2.f) {
+        // TODO: adjust with distance
+        if (t3d_vec3_len2(diff) > AIBulletRange) {
             T3DVec3 myDiff = diff;
             t3d_vec3_norm(myDiff);
             if (player.team == other.team) {
                 t3d_vec3_scale(myDiff, myDiff, -teamPlayerAttraction);
             } else {
                 t3d_vec3_scale(myDiff, myDiff, -playerAttraction);
+            }
+            t3d_vec3_add(inputDirection, inputDirection, myDiff);
+        }
+
+        // Player repulsion
+        // TODO: adjust with distance
+        if (t3d_vec3_len2(diff) < AIBulletRange) {
+            T3DVec3 myDiff = diff;
+            t3d_vec3_norm(myDiff);
+            if (player.team == other.team) {
+                t3d_vec3_scale(myDiff, myDiff, teamPlayerRepulsion);
+            } else {
+                t3d_vec3_scale(myDiff, myDiff, playerRepulsion);
             }
             t3d_vec3_add(inputDirection, inputDirection, myDiff);
         }

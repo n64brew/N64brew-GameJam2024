@@ -166,22 +166,20 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
             // TODO: implement basic pause menu
             if (pressed.start) minigame_end();
 
-            if (state.state != STATE_COUNTDOWN) {
-                if (pressed.c_up || pressed.d_up) {
-                    dir = UP;
-                } else if (pressed.c_down || pressed.d_down) {
-                    dir = DOWN;
-                } else if (pressed.c_left || pressed.d_left) {
-                    dir = LEFT;
-                } else if (pressed.c_right || pressed.d_right) {
-                    dir = RIGHT;
-                }
+            if (pressed.c_up || pressed.d_up) {
+                dir = UP;
+            } else if (pressed.c_down || pressed.d_down) {
+                dir = DOWN;
+            } else if (pressed.c_left || pressed.d_left) {
+                dir = LEFT;
+            } else if (pressed.c_right || pressed.d_right) {
+                dir = RIGHT;
             }
         } else {
             dir = ai.calculateFireDirection(player, deltaTime, playerData);
         }
 
-        handleFire(player, id, dir);
+        if (state.state != STATE_COUNTDOWN) handleFire(player, id, dir);
         player.render(id, viewport, deltaTime);
 
         t3d_vec3_add(state.avPos, state.avPos, player.pos);

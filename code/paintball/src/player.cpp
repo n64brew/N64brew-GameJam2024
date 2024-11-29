@@ -16,7 +16,8 @@ Player::Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel)
     animWalk(model, "Walk"),
     screenPos({0}),
     displayTemperature(0),
-    timer(0)
+    timer(0),
+    aiState(AIState::AI_IDLE)
     {
         debugf("Creating player\n");
         assertf(skel.get(), "Player skel is null");
@@ -201,8 +202,9 @@ void Player::renderUI(uint32_t id, sprite_t *arrowSprite)
             SmallFont,
             x,
             y,
-            "P%lu",
-            id + 1
+            "P%lu %d",
+            id + 1,
+            aiState
         );
     }
 
