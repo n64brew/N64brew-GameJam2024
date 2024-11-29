@@ -20,6 +20,14 @@
 #include "list.hpp"
 #include "bullet.hpp"
 
+enum AIState {
+    AI_IDLE,
+    AI_DEFEND,
+    AI_ATTACK,
+    AI_RUN,
+    AI_CHASE
+};
+
 class GameplayController;
 class BulletController;
 class Game;
@@ -66,6 +74,7 @@ class Player
 
         // AI
         List<::Bullet, 4> incomingBullets;
+        AIState aiState;
 
     public:
         Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel);

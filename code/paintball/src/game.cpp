@@ -92,7 +92,7 @@ void Game::render(float deltaTime) {
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
-    debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
+    // debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
 }
 
 void Game::fixedUpdate(float deltaTime) {

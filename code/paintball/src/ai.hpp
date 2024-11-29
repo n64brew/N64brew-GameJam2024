@@ -12,8 +12,8 @@ class AI
     private:
 
     public:
-        Direction calculateFireDirection(Player&, float deltaTime);
-        void calculateMovement(Player&, float deltaTime, T3DVec3 &inputDirection);
+        Direction calculateFireDirection(Player&, float deltaTime, std::vector<Player> &players);
+        void calculateMovement(Player&, float deltaTime, std::vector<Player> &players, T3DVec3 &inputDirection);
 };
 
 #endif // __AI_H
