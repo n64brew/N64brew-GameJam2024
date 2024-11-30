@@ -10,8 +10,14 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
     float actionRate = AIActionRateSecond;
     float tempControl = 1.f;
     if (difficulty == AiDiff::DIFF_EASY) {
+        if (player.aiState != AIState::AI_ATTACK) {
+            return Direction::NONE;
+        }
         actionRate = AIActionRateSecond * 3.f;
     } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+        if (player.aiState == AIState::AI_RUN) {
+            return Direction::NONE;
+        }
         actionRate = AIActionRateSecond * 2.5f;
     } else if (difficulty == AiDiff::DIFF_HARD) {
         actionRate = AIActionRateSecond;
