@@ -168,6 +168,7 @@ void Game::processState() {
         if (counts[it->team] >= largestTeamCount) {
             largestTeamCount = counts[it->team];
             largestTeam = it->team;
+            state.winner = largestTeam;
         }
     }
 

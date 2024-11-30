@@ -8,7 +8,7 @@ AI::AI() : aiActionTimer(0) {
     difficulty = core_get_aidifficulty();
 }
 
-Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vector<Player> &players) {
+Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vector<Player> &players, GameState &state) {
     aiActionTimer += deltaTime;
 
     float actionRate = AIActionRateSecond;
@@ -49,12 +49,12 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
         bool shouldMiss = false;
         if (difficulty == AiDiff::DIFF_EASY) {
             missFactorSeconds = random * 0.5f;
-            if (random < 0.7f && !other.team == player.team) {
+            if (random < 0.7f && other.team != player.team) {
                 shouldMiss = true;
             }
         } else if (difficulty == AiDiff::DIFF_MEDIUM) {
             missFactorSeconds = random * 0.2f;
-            if (random < 0.3f && !other.team == player.team) {
+            if (random < 0.3f && other.team != player.team) {
                 shouldMiss = true;
             }
         }
@@ -133,7 +133,7 @@ void AI::tryChangeState(Player& player, AIState newState) {
     player.multiplier2 = 1.f + AIRandomRange * (static_cast<float>(rand()) / RAND_MAX);
 }
 
-void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> &players, T3DVec3 &inputDirection) {
+void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> &players, GameState &state, T3DVec3 &inputDirection) {
     float random = static_cast<float>(rand()) / RAND_MAX;
 
     // Defaults
@@ -161,10 +161,18 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
         player.aiState = (AIState)r;
     }
 
-    if (player.temperature > 1.f || player.firstHit != player.team) {
-        tryChangeState(player, AIState::AI_DEFEND);
+    if (state.state == State::STATE_LAST_ONE_STANDING) {
+        if (state.winner == player.team) {
+            tryChangeState(player, AIState::AI_ATTACK);
+        } else {
+            tryChangeState(player, AIState::AI_DEFEND);
+        }
     } else {
-        tryChangeState(player, AIState::AI_ATTACK);
+        if (player.temperature > 1.f || player.firstHit != player.team) {
+            tryChangeState(player, AIState::AI_DEFEND);
+        } else {
+            tryChangeState(player, AIState::AI_ATTACK);
+        }
     }
 
     if (player.aiState == AIState::AI_ATTACK) {

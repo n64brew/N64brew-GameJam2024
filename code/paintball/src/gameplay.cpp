@@ -176,7 +176,7 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
                 dir = RIGHT;
             }
         } else {
-            dir = ai.calculateFireDirection(player, deltaTime, playerData);
+            dir = ai.calculateFireDirection(player, deltaTime, playerData, state);
         }
 
         if (state.state != STATE_COUNTDOWN) handleFire(player, id, dir);
@@ -211,7 +211,7 @@ void GameplayController::fixedUpdate(float deltaTime, GameState &state)
             direction.v[0] = (float)joypad.stick_x;
             direction.v[2] = -(float)joypad.stick_y;
         } else {
-            ai.calculateMovement(player, deltaTime, playerData, direction);
+            ai.calculateMovement(player, deltaTime, playerData, state, direction);
         }
         simulatePhysics(player, id, deltaTime, direction);
         id++;

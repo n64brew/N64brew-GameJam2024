@@ -6,6 +6,7 @@
 #include "../../../core.h"
 #include "common.hpp"
 #include "player.hpp"
+#include "gamestate.hpp"
 
 constexpr float AITemperature = 0.06f;
 constexpr float AIUnstable = 0.02f;
@@ -20,8 +21,8 @@ class AI
         void tryChangeState(Player& player, AIState newState);
     public:
         AI();
-        Direction calculateFireDirection(Player&, float deltaTime, std::vector<Player> &players);
-        void calculateMovement(Player&, float deltaTime, std::vector<Player> &players, T3DVec3 &inputDirection);
+        Direction calculateFireDirection(Player&, float deltaTime, std::vector<Player> &players, GameState &state);
+        void calculateMovement(Player&, float deltaTime, std::vector<Player> &players, GameState &state, T3DVec3 &inputDirection);
 };
 
 #endif // __AI_H
