@@ -26,6 +26,8 @@ struct RampageAssets {
     struct RampageSplitMesh spark_split;
 
     sprite_t* countdown_numbers[COUNTDOWN_NUMBER_COUNT];
+    sprite_t* score_digits[4];
+    sprite_t* winner_screen[4];
     sprite_t* destroy_image;
     sprite_t* finish_image;
 

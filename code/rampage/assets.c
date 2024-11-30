@@ -70,6 +70,15 @@ void rampage_assets_init() {
         gRampageAssets.countdown_numbers[i] = sprite_load(filename);
     }
 
+    for (int i = 0; i < 4; i += 1) {
+        char filename[32];
+        sprintf(filename, "rom:/rampage/score-p%d.sprite", i);
+        gRampageAssets.score_digits[i] = sprite_load(filename);
+
+        sprintf(filename, "rom:/rampage/winner-%d.sprite", i);
+        gRampageAssets.winner_screen[i] = sprite_load(filename);
+    }
+
     gRampageAssets.destroy_image = sprite_load("rom:/rampage/destroy.sprite");
     gRampageAssets.finish_image = sprite_load("rom:/rampage/finish.sprite");
 
@@ -106,6 +115,11 @@ void rampage_assets_destroy() {
 
     for (int i = 0; i < COUNTDOWN_NUMBER_COUNT; i += 1) {
         sprite_free(gRampageAssets.countdown_numbers[i]);
+    }
+
+    for (int i = 0; i < 4; i += 1) {
+        sprite_free(gRampageAssets.score_digits[i]);
+        sprite_free(gRampageAssets.winner_screen[i]);
     }
 
     sprite_free(gRampageAssets.destroy_image);

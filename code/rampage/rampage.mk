@@ -6,6 +6,14 @@ ASSETS_LIST += \
 	filesystem/rampage/3.sprite \
 	filesystem/rampage/4.sprite \
 	filesystem/rampage/5.sprite \
+	filesystem/rampage/score-p0.sprite \
+	filesystem/rampage/score-p1.sprite \
+	filesystem/rampage/score-p2.sprite \
+	filesystem/rampage/score-p3.sprite \
+	filesystem/rampage/winner-0.sprite \
+	filesystem/rampage/winner-1.sprite \
+	filesystem/rampage/winner-2.sprite \
+	filesystem/rampage/winner-3.sprite \
 	filesystem/rampage/destroy.sprite \
 	filesystem/rampage/finish.sprite \
 	filesystem/rampage/spark_blob.i8.sprite \

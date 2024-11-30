@@ -30,8 +30,7 @@ T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 rdpq_font_t* font;
 #define FONT_TEXT 1
 
-#define START_DELAY 0.5f
-// #define START_DELAY 4.5f
+#define START_DELAY 4.5f
 #define FINISH_DELAY 3.0f
 #define END_SCREEN_DELAY    4.0f
 #define DESTROY_TITLE_TIME  2.0f
@@ -275,15 +274,21 @@ float pointLightDistance[] = {
     0.2f,
 };
 
+#define HEIGHT_SCALE    2
+
 #define SCREEN_WIDTH    (HIGH_RES ? 640 : 320)
 // #define SCREEN_HEIGHT   (HIGH_RES ? 480 : 240)
-#define SCREEN_HEIGHT   240
+#define SCREEN_HEIGHT   (480 / HEIGHT_SCALE)
+
+#define NUMBER_WIDTH    21
+#define NUMBER_HEIGHT   33
+#define MARGIN          40
 
 struct Vector2 scorePosition[] = {
-    {30.0f, 52.0f},
-    {SCREEN_WIDTH - 90, 52.0f},
-    {SCREEN_WIDTH - 90, SCREEN_HEIGHT - 20},
-    {30.0f, SCREEN_HEIGHT - 20},
+    {MARGIN, MARGIN / HEIGHT_SCALE},
+    {SCREEN_WIDTH - (MARGIN + NUMBER_WIDTH * 2), MARGIN / HEIGHT_SCALE},
+    {SCREEN_WIDTH - (MARGIN + NUMBER_WIDTH * 2), SCREEN_HEIGHT - (MARGIN + NUMBER_HEIGHT) / HEIGHT_SCALE},
+    {MARGIN, SCREEN_HEIGHT - (MARGIN + NUMBER_HEIGHT) / HEIGHT_SCALE},
 };
 
 int get_winner_index(int index) {
@@ -376,29 +381,36 @@ void minigame_loop(float deltatime) {
 
     props_render(&gRampage.props);
 
-    for (int i = 0; i < PLAYER_COUNT; i += 1) {
-        rdpq_sync_pipe();
-        rdpq_sync_tile();
-
-        rdpq_text_printf(
-            &(rdpq_textparms_t){
-                .width = 60, 
-                .align = scorePosition[i].x < 160.0f ? ALIGN_LEFT : ALIGN_RIGHT,
-                .style_id = i + 1,
-            }, FONT_TEXT, 
-            scorePosition[i].x, scorePosition[i].y, 
-            "%d",
-            gRampage.players[i].score
-        );
-    }
-
-    rdpq_sync_pipe();
-    rdpq_sync_tile(); 
-
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,TEX0), (0,0,0,TEX0)));
     
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        int tens = gRampage.players[i].score / 10;
+        int ones = gRampage.players[i].score % 10;
+
+        rdpq_sprite_blit(
+            rampage_assets_get()->score_digits[i],
+            scorePosition[i].x,
+            scorePosition[i].y,
+            &(rdpq_blitparms_t) {
+                .s0 = tens * 21,
+                .width = 20,
+                .scale_y = 1.0f / HEIGHT_SCALE,
+            }
+        );
+
+        rdpq_sprite_blit(
+            rampage_assets_get()->score_digits[i],
+            scorePosition[i].x + 20.0f,
+            scorePosition[i].y,
+            &(rdpq_blitparms_t) {
+                .s0 = ones * 21,
+                .width = 20,
+                .scale_y = 1.0f / HEIGHT_SCALE,
+            }
+        );
+    }
     if (gRampage.state == RAMPAGE_STATE_START) {
         int countdown_number = (int)ceilf(gRampage.delay_timer);
         if (countdown_number <= 3) {
@@ -406,7 +418,9 @@ void minigame_loop(float deltatime) {
                 rampage_assets_get()->countdown_numbers[countdown_number],
                 SCREEN_WIDTH / 2 - 9,
                 SCREEN_HEIGHT / 2 - 16,
-                NULL
+                &(rdpq_blitparms_t) {
+                    .scale_y = 1.0f / HEIGHT_SCALE,
+                }
             );
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
@@ -414,68 +428,45 @@ void minigame_loop(float deltatime) {
             rampage_assets_get()->destroy_image,
             (SCREEN_WIDTH - 137) / 2,
             SCREEN_HEIGHT / 2 - 16,
-            NULL
+            &(rdpq_blitparms_t) {
+                .scale_y = 1.0f / HEIGHT_SCALE,
+            }
         );
     } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
         rdpq_sprite_blit(
             rampage_assets_get()->finish_image,
             (SCREEN_WIDTH - 118) / 2,
             SCREEN_HEIGHT / 2 - 16,
-            NULL
+            &(rdpq_blitparms_t) {
+                .scale_y = 1.0f / HEIGHT_SCALE,
+            }
         );
     } else if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
-        switch (gRampage.winner_count) {
-            case 1:
-                rdpq_text_printf(
-                    &(rdpq_textparms_t){
-                        .width = SCREEN_WIDTH, 
-                        .align = ALIGN_CENTER,
-                        .style_id = get_winner_index(0),
-                    }, FONT_TEXT, 
-                    0.0f, SCREEN_HEIGHT / 2, 
-                    "Player %d wins!",
-                    get_winner_index(0)
-                );
-                break;
-            case 2:
-                rdpq_text_printf(
-                    &(rdpq_textparms_t){
-                        .width = SCREEN_WIDTH, 
-                        .align = ALIGN_CENTER,
-                        .style_id = 0,
-                    }, FONT_TEXT, 
-                    0.0f, SCREEN_HEIGHT / 2, 
-                    "Players %d and %d wins!",
-                    get_winner_index(0),
-                    get_winner_index(1)
-                );
-                break;
-            case 3:
-                rdpq_text_printf(
-                    &(rdpq_textparms_t){
-                        .width = SCREEN_WIDTH, 
-                        .align = ALIGN_CENTER,
-                        .style_id = 0,
-                    }, FONT_TEXT, 
-                    0.0f, SCREEN_HEIGHT / 2, 
-                    "Player %d, %d and %d wins!",
-                    get_winner_index(0),
-                    get_winner_index(1),
-                    get_winner_index(2)
-                );
-                break;
-            case 0:
-            case 4:
-                rdpq_text_printf(
-                    &(rdpq_textparms_t){
-                        .width = SCREEN_WIDTH, 
-                        .align = ALIGN_CENTER,
-                        .style_id = 0,
-                    }, FONT_TEXT, 
-                    0.0f, SCREEN_HEIGHT / 2, 
-                    "Draw"
-                );
-                break;
+        for (int i = 0; i < gRampage.winner_count; i += 1) {
+            int x = SCREEN_WIDTH / 2 - 60;
+            int y = SCREEN_HEIGHT / 2 - gRampage.winner_count * 16 +
+                i * 32;
+
+            rdpq_sprite_blit(
+                rampage_assets_get()->winner_screen[get_winner_index(i)],
+                x,
+                y,
+                &(rdpq_blitparms_t) {
+                    .scale_y = 1.0f / HEIGHT_SCALE,
+                }
+            );
+        }
+
+        if (gRampage.winner_count == 0) {
+            rdpq_text_printf(
+                &(rdpq_textparms_t){
+                    .width = SCREEN_WIDTH, 
+                    .align = ALIGN_CENTER,
+                    .style_id = 0,
+                }, FONT_TEXT, 
+                0.0f, SCREEN_HEIGHT / 2, 
+                "Draw"
+            );
         }
     }
 
