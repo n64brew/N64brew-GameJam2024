@@ -8,7 +8,7 @@
 #include "player.hpp"
 
 constexpr float AITemperature = 0.06f;
-constexpr float AIStability = 0.98f;
+constexpr float AIUnstable = 0.02f;
 constexpr float AIActionRateSecond = 0.1;
 
 class AI

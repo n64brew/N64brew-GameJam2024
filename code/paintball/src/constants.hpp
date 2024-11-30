@@ -17,12 +17,13 @@ constexpr int PlayerCount = MAXPLAYERS;
 constexpr float LastOneStandingTime = 15;
 constexpr int RoundCount = 5;
 
+constexpr float SpeedLimit = 80.f;
 constexpr float PlayerRadius = 13;
 constexpr float BulletVelocity = 300;
 
 // AI
 constexpr float AICloseRange = 100;
-constexpr float AIAttractRange = 200;
+constexpr float AIFarRange = 200;
 constexpr float AIBulletDetectRange = 100;
 constexpr float AIRandomRange = 0.5;
 

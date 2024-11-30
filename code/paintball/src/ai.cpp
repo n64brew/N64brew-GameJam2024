@@ -14,36 +14,18 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
     float actionRate = AIActionRateSecond;
     float tempControl = 1.f;
     if (difficulty == AiDiff::DIFF_EASY) {
-        actionRate = AIActionRateSecond * 6;
+        actionRate = AIActionRateSecond * 2.5f;
     } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-        actionRate = AIActionRateSecond * 3;
+        actionRate = AIActionRateSecond * 1.5f;
     } else if (difficulty == AiDiff::DIFF_HARD) {
         actionRate = AIActionRateSecond;
-        tempControl = (player.aiState == AIState::AI_ATTACK) ? 0.8f : 0.2f;
+        tempControl = (player.aiState == AIState::AI_ATTACK) ? 0.8f : 0.4f;
     }
 
     if (aiActionTimer < actionRate) {
         return Direction::NONE;
     }
     aiActionTimer = 0;
-
-    // Random fire & skip fire
-    float random = static_cast<float>(rand()) / RAND_MAX;
-    if (difficulty == AiDiff::DIFF_EASY) {
-        if (random < 0.6f) {
-            return Direction::NONE;
-        }
-        if (random < 0.7) {
-            return (Direction)randomRange(0, 3);
-        }
-    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-        if (random < 0.25f) {
-            return Direction::NONE;
-        }
-        if (random < 0.3f) {
-            return (Direction)randomRange(0, 3);
-        }
-    }
 
     for (auto& other : players) {
         if (&other == &player) {
@@ -62,14 +44,31 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
         T3DVec3 diff = {0};
         t3d_vec3_diff(diff, player.pos, other.pos);
 
+        float random = static_cast<float>(rand()) / RAND_MAX;
+        float missFactorSeconds = 0.f;
+        bool shouldMiss = false;
+        if (difficulty == AiDiff::DIFF_EASY) {
+            missFactorSeconds = random * 0.5f;
+            if (random < 0.4) {
+                shouldMiss = true;
+            }
+        } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+            missFactorSeconds = random * 0.2f;
+            if (random < 0.1) {
+                shouldMiss = true;
+            }
+        }
+
         if (other.velocity.v[0] != 0.f) {
             float enemyXTime = (diff.v[0]/other.velocity.v[0]);
             float bulletYTime = std::abs(diff.v[2] / BulletVelocity);
 
-            if (enemyXTime >= 0 && (enemyXTime - bulletYTime) < PlayerRadius/BulletVelocity) {
+            if (enemyXTime >= 0 && (enemyXTime - bulletYTime) < (PlayerRadius/BulletVelocity + missFactorSeconds)) {
                 if (diff.v[2] > 0) {
+                    if (shouldMiss) return Direction::LEFT;
                     return Direction::UP;
                 } else {
+                    if (shouldMiss) return Direction::RIGHT;
                     return Direction::DOWN;
                 }
             }
@@ -79,27 +78,33 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
             float enemyYTime = (diff.v[2]/other.velocity.v[2]);
             float bulletXTime = std::abs(diff.v[0] / BulletVelocity);
 
-            if (enemyYTime >= 0 && (enemyYTime - bulletXTime) < PlayerRadius/BulletVelocity) {
+            if (enemyYTime >= 0 && (enemyYTime - bulletXTime) < (PlayerRadius/BulletVelocity + missFactorSeconds)) {
                 if (diff.v[0] > 0) {
+                    if (shouldMiss) return Direction::UP;
                     return Direction::LEFT;
                 } else {
+                    if (shouldMiss) return Direction::DOWN;
                     return Direction::RIGHT;
                 }
             }
         }
 
-        if (std::abs(diff.v[0]) < PlayerRadius && t3d_vec3_len(diff) < AICloseRange) {
+        if (std::abs(diff.v[0]) < (PlayerRadius + missFactorSeconds*SpeedLimit) && t3d_vec3_len(diff) < AIFarRange) {
             if (diff.v[2] > 0) {
+                if (shouldMiss) return Direction::LEFT;
                 return Direction::UP;
             } else {
+                if (shouldMiss) return Direction::RIGHT;
                 return Direction::DOWN;
             }
         }
 
-        if (std::abs(diff.v[2]) < PlayerRadius && t3d_vec3_len(diff) < AICloseRange) {
+        if (std::abs(diff.v[2]) < (PlayerRadius + missFactorSeconds*SpeedLimit) && t3d_vec3_len(diff) < AIFarRange) {
             if (diff.v[0] > 0) {
+                if (shouldMiss) return Direction::UP;
                 return Direction::LEFT;
             } else {
+                if (shouldMiss) return Direction::DOWN;
                 return Direction::RIGHT;
             }
         }
@@ -111,7 +116,15 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
 void AI::tryChangeState(Player& player, AIState newState) {
     float random = static_cast<float>(rand()) / RAND_MAX;
 
-    if (random < AIStability) {
+    float unstability = AIUnstable;
+    if (difficulty == AiDiff::DIFF_EASY) {
+        // More difficult to change state to converge on the "better" strat
+        unstability *= 0.5f;
+    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+        unstability *= 0.7f;
+    }
+
+    if (random > unstability) {
         return;
     }
 
@@ -133,47 +146,41 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
     float playerAttraction = 0.f;
     float playerRepulsion = 0.f;
 
-    float alignment = 0.f;
+    float alignment = 0.1f;
 
     if (difficulty == AiDiff::DIFF_EASY) {
-        escapeWeight *= 0.05f;
+        escapeWeight *= 1.f;
+        alignment *= 0.f;
     } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-        escapeWeight *= 0.2f;
+        escapeWeight *= 6.f;
+        alignment *= 0.5f;
     }
 
-    float temperature = AITemperature;
-    // Easy mode is more random
-    if (difficulty == AiDiff::DIFF_EASY) {
-        temperature = AITemperature * 3.f;
-    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-        temperature = AITemperature * 1.5f;
-    }
-    if (random < temperature) {
-        // TODO: different probabilities
+    if (random < AITemperature) {
         int r = randomRange(1, 3);
         player.aiState = (AIState)r;
     }
 
-    if (player.aiState == AIState::AI_ATTACK) {
-        if (player.temperature > 1.f || player.firstHit != player.team) {
-            tryChangeState(player, AIState::AI_DEFEND);
-        }
-        centerAttraction = 0.5f;
+    if (player.temperature > 1.f || player.firstHit != player.team) {
+        tryChangeState(player, AIState::AI_DEFEND);
+    } else {
+        tryChangeState(player, AIState::AI_ATTACK);
+    }
 
-        playerAttraction = 0.4f * player.multiplier;
+    if (player.aiState == AIState::AI_ATTACK) {
+        centerAttraction = 0.1f;
+
+        playerAttraction = 0.5f * player.multiplier;
         playerRepulsion = 0.3f * player.multiplier2;
 
-        alignment = 0.1f * player.multiplier;
+        alignment *= player.multiplier;
     } else if (player.aiState == AIState::AI_DEFEND) {
-        if (player.temperature < 1.f && player.firstHit == player.team) {
-            tryChangeState(player, AIState::AI_ATTACK);
-        }
-        centerAttraction = 0.8f;
+        centerAttraction = 0.4f;
 
         playerAttraction = 0.2f * player.multiplier2;
         playerRepulsion = 0.5f * player.multiplier;
 
-        alignment = -0.1f * player.multiplier;
+        alignment *= -player.multiplier;
     } else if (player.aiState == AIState::AI_RUN) {
         centerAttraction = 0.2f;
         randomWeight = 1.f;
@@ -243,9 +250,9 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
         t3d_vec3_diff(diff, player.pos, other.pos);
 
         // Player attraction
-        if (t3d_vec3_len(diff) > AIAttractRange) {
+        if (t3d_vec3_len(diff) > AICloseRange) {
             T3DVec3 myDiff = diff;
-            float scale = t3d_vec3_len(diff) / AIAttractRange;
+            float scale = t3d_vec3_len(diff) / AICloseRange;
             scale = std::min(1.2f, scale);
             t3d_vec3_scale(myDiff, myDiff, scale);
             if (player.team == other.team) {
@@ -257,7 +264,7 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
         }
 
         // Player repulsion
-        if (t3d_vec3_len(diff) < AICloseRange) {
+        if (t3d_vec3_len(diff) < AIFarRange) {
             T3DVec3 myDiff = diff;
             float scale = AICloseRange / t3d_vec3_len(diff);
             scale = std::min(1.2f, scale);

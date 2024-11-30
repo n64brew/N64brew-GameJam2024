@@ -25,7 +25,6 @@
 #include "common.hpp"
 
 constexpr float PlayerInvMass = 10;
-constexpr float SpeedLimit = 80.f;
 constexpr float BulletOffset = 15.f;
 constexpr float CooldownPerSecond = 1.f;
 constexpr float TempPerBullet = 0.32f;
