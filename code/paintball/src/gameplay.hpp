@@ -26,9 +26,6 @@
 
 constexpr float PlayerInvMass = 10;
 constexpr float BulletOffset = 15.f;
-constexpr float CooldownPerSecond = 1.f;
-constexpr float TempPerBullet = 0.32f;
-constexpr float OverheatPenalty = 1.2f;
 
 class GameplayController
 {

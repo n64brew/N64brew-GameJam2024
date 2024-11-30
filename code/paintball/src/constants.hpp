@@ -21,6 +21,10 @@ constexpr float SpeedLimit = 80.f;
 constexpr float PlayerRadius = 13;
 constexpr float BulletVelocity = 300;
 
+constexpr float CooldownPerSecond = 1.f;
+constexpr float TempPerBullet = 0.35f;
+constexpr float OverheatPenalty = 1.5f;
+
 // AI
 constexpr float AICloseRange = 100;
 constexpr float AIFarRange = 200;

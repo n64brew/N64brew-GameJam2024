@@ -14,12 +14,12 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
     float actionRate = AIActionRateSecond;
     float tempControl = 1.f;
     if (difficulty == AiDiff::DIFF_EASY) {
-        actionRate = AIActionRateSecond * 2.5f;
+        actionRate = AIActionRateSecond * 2.8f;
     } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-        actionRate = AIActionRateSecond * 1.5f;
+        actionRate = AIActionRateSecond * 2.f;
     } else if (difficulty == AiDiff::DIFF_HARD) {
         actionRate = AIActionRateSecond;
-        tempControl = (player.aiState == AIState::AI_ATTACK) ? 0.8f : 0.4f;
+        tempControl = (player.aiState == AIState::AI_ATTACK) ? (TempPerBullet*2) : 0.4f;
     }
 
     if (aiActionTimer < actionRate) {
@@ -49,12 +49,12 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
         bool shouldMiss = false;
         if (difficulty == AiDiff::DIFF_EASY) {
             missFactorSeconds = random * 0.5f;
-            if (random < 0.4) {
+            if (random < 0.7f && !other.team == player.team) {
                 shouldMiss = true;
             }
         } else if (difficulty == AiDiff::DIFF_MEDIUM) {
             missFactorSeconds = random * 0.2f;
-            if (random < 0.1) {
+            if (random < 0.3f && !other.team == player.team) {
                 shouldMiss = true;
             }
         }
@@ -65,10 +65,10 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
 
             if (enemyXTime >= 0 && (enemyXTime - bulletYTime) < (PlayerRadius/BulletVelocity + missFactorSeconds)) {
                 if (diff.v[2] > 0) {
-                    if (shouldMiss) return Direction::LEFT;
+                    if (shouldMiss) return Direction::DOWN;
                     return Direction::UP;
                 } else {
-                    if (shouldMiss) return Direction::RIGHT;
+                    if (shouldMiss) return Direction::UP;
                     return Direction::DOWN;
                 }
             }
@@ -80,10 +80,10 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
 
             if (enemyYTime >= 0 && (enemyYTime - bulletXTime) < (PlayerRadius/BulletVelocity + missFactorSeconds)) {
                 if (diff.v[0] > 0) {
-                    if (shouldMiss) return Direction::UP;
+                    if (shouldMiss) return Direction::RIGHT;
                     return Direction::LEFT;
                 } else {
-                    if (shouldMiss) return Direction::DOWN;
+                    if (shouldMiss) return Direction::LEFT;
                     return Direction::RIGHT;
                 }
             }
@@ -91,20 +91,20 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
 
         if (std::abs(diff.v[0]) < (PlayerRadius + missFactorSeconds*SpeedLimit) && t3d_vec3_len(diff) < AIFarRange) {
             if (diff.v[2] > 0) {
-                if (shouldMiss) return Direction::LEFT;
+                if (shouldMiss) return Direction::DOWN;
                 return Direction::UP;
             } else {
-                if (shouldMiss) return Direction::RIGHT;
+                if (shouldMiss) return Direction::UP;
                 return Direction::DOWN;
             }
         }
 
         if (std::abs(diff.v[2]) < (PlayerRadius + missFactorSeconds*SpeedLimit) && t3d_vec3_len(diff) < AIFarRange) {
             if (diff.v[0] > 0) {
-                if (shouldMiss) return Direction::UP;
+                if (shouldMiss) return Direction::RIGHT;
                 return Direction::LEFT;
             } else {
-                if (shouldMiss) return Direction::DOWN;
+                if (shouldMiss) return Direction::LEFT;
                 return Direction::RIGHT;
             }
         }
