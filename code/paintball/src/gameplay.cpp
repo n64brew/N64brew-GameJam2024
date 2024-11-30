@@ -250,6 +250,8 @@ void GameplayController::newRound()
         player.pos = playerPositions[ply];
         player.prevPos = playerPositions[ply];
 
+        player.fragHistory = {0};
+
         ply = (PlyNum)(ply + 1);
     }
 }

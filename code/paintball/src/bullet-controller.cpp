@@ -83,6 +83,7 @@ bool BulletController::processHit(Player &gameplayData, PlyNum team) {
     if (gameplayData.firstHit == team) {
         gameplayData.team = team;
         gameplayData.fragCount = 0;
+        gameplayData.fragHistory = {0};
         return true;
     }
 
@@ -143,7 +144,12 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gamepla
             if (dist2 < PlayerRadius * PlayerRadius) {
                 // TODO: delegate to Player
                 bool hit = processHit(player, bullet->team);
-                gameplayData[bullet->owner].fragCount += hit ? 1 : 0;
+
+                // This player has already been hit, don't count it again
+                if (!gameplayData[bullet->owner].fragHistory[i]) {
+                    gameplayData[bullet->owner].fragCount += hit ? 1 : 0;
+                }
+                gameplayData[bullet->owner].fragHistory[i] |= hit;
 
                 ui->registerHit(HitMark {bullet->pos, bullet->owner});
                 map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);

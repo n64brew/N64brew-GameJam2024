@@ -54,6 +54,7 @@ class Player
         PlyNum firstHit;
         float temperature;
         int fragCount;
+        std::array<bool, PlayerCount> fragHistory;
 
         // OTHER DATA
 
