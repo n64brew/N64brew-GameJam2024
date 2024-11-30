@@ -12,7 +12,7 @@
 #define HYDRA_HEAD_HEIGHT 64
 #define HYDRA_ROW_HEIGHT 32
 
-#define PADDING_TOP 10
+#define PADDING_TOP 25
 #define PADDING_LEFT 10
 
 #define FONT_DEFAULT 1

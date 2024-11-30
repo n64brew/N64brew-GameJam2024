@@ -18,6 +18,7 @@ typedef enum {
 extern winner_t* winners;
 
 int16_t scores_get(uint8_t hydra);
+bool score_is_winner (PlyNum p);
 PlyNum scores_get_extreme (scores_extreme_t type);
 void scores_get_winner (void);
 void scores_clear (void);

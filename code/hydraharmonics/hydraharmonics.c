@@ -8,12 +8,13 @@
 #include "intro.h"
 #include "outro.h"
 #include "ui.h"
+#include "effects.h"
 
 const MinigameDef minigame_def = {
 	.gamename = "A Hydra Harmonics",
 	.developername = "Catch-64",
-	.description = "Who is the best singer?",
-	.instructions = "Grab the most notes to win."
+	.description = "Taste the music! Eat the most notes to win!",
+	.instructions = "Use A to eat, Z to duck, and up or down to move."
 };
 
 #define TIMER_GAME (NOTES_PER_PLAYER * PLAYER_MAX) + (NOTES_PER_PLAYER_SPECIAL * NOTES_SPECIAL_TYPES) + (13 / NOTES_SPEED)
@@ -50,6 +51,7 @@ void minigame_init()
 	ui_init ();
 	intro_init();
 	outro_init();
+	effects_init();
 }
 
 /*==============================
@@ -72,18 +74,18 @@ void minigame_fixedloop(float deltatime)
 			notes_check_and_add();
 		}
 		// Skip to the end if there are no notes left
-		if (!notes_get_remaining(NOTES_GET_REMAINING_ALL)) {
+		if (!notes_get_remaining(NOTES_GET_REMAINING_ALL) && hydra_get_all_animation_states (HYDRA_ANIMATION_NONE)) {
 			notes_destroy_all();
+			effects_destroy_all();
 			scores_get_winner();
 			stage = STAGE_END;
-			for (uint8_t i=0; i<PLAYER_MAX; i++) {
-				hydra_animate (i, HYDRA_ANIMATION_SLEEP);
-			}
 		}
 		// Do all the frame-by-frame tasks
 		notes_move();
 		note_hit_detection();
 		hydra_shell_bounce();
+		ui_animate();
+		effects_animate();
 	} else if (stage == STAGE_END) {
 		outro_interact();
 	} else if (stage == STAGE_RETURN_TO_MENU) {
@@ -107,9 +109,11 @@ void minigame_loop(float deltatime)
 	rdpq_set_mode_standard();
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	hydra_draw();
+	ui_signs_draw();
 	rdpq_set_mode_standard();
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	notes_draw();
+	effects_draw();
 
 	// Things that should only be drawn at particular stages
 	if (stage == STAGE_GAME) {
@@ -123,7 +127,7 @@ void minigame_loop(float deltatime)
 		outro_sign_draw();
 	}
 
-	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 180, "Timer: %f\nRemaining:%i\nStage:%i\nOutro timer: %li", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL), stage, outro_timer);
+	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 180, "Timer: %f\nRemaining:%i\nStage:%i\n", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL), stage);
 
 	rdpq_detach_show();
 	hydra_adjust_hats();
@@ -142,6 +146,7 @@ void minigame_cleanup()
 	intro_clear();
 	outro_clear();
 	ui_clear();
+	effects_clear();
 
 	// Free the fonts
 	rdpq_text_unregister_font(FONT_DEFAULT);
