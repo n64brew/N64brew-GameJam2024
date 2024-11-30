@@ -264,7 +264,7 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
         }
 
         // Player repulsion
-        if (t3d_vec3_len(diff) < AIFarRange) {
+        if (t3d_vec3_len(diff) > 0.f && t3d_vec3_len(diff) < AIFarRange) {
             T3DVec3 myDiff = diff;
             float scale = AICloseRange / t3d_vec3_len(diff);
             scale = std::min(1.2f, scale);
