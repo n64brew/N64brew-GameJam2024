@@ -222,21 +222,16 @@ void GameplayController::fixedUpdate(float deltaTime, GameState &state)
 
 void GameplayController::newRound()
 {
-    T3DVec3 playerPositions[PlayerCount] = {
-        {-100, 0, 0},
-        {0, 0, -100},
-        {100, 0, 0},
-        {0, 0, 100}
+    std::array<T3DVec3, PlayerCount> playerPositions {
+        T3DVec3{-100, 0, 0},
+        T3DVec3{0, 0, -100},
+        T3DVec3{100, 0, 0},
+        T3DVec3{0, 0, 100}
     };
 
-    // mix player positions
-    for (int i = 0; i < PlayerCount; i++)
-    {
-        int j = randomRange(0, PlayerCount - 1);
-        T3DVec3 temp = playerPositions[i];
-        playerPositions[i] = playerPositions[j];
-        playerPositions[j] = temp;
-    }
+    auto rd = std::random_device {}; 
+    auto rng = std::default_random_engine { rd() };
+    std::shuffle(std::begin(playerPositions), std::end(playerPositions), rng);
 
     PlyNum ply = PLAYER_1;
     for (Player &player : playerData)

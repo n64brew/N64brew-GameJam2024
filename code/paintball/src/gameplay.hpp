@@ -10,6 +10,8 @@
 
 #include <memory>
 #include <vector>
+#include <algorithm>
+#include <random>
 
 #include "../../../core.h"
 #include "../../../minigame.h"
