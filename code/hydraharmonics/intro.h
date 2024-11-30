@@ -9,7 +9,8 @@
 typedef enum {
 	INTRO_INSTRUCTIONS,
 	INTRO_INSTRUCTIONS_OUT,
-	INTRO_CURTAINS_OUT,
+	INTRO_CURTAINS_UP,
+	INTRO_CURTAINS_DOWN,
 } intro_stage_t;
 
 void intro_init (void);

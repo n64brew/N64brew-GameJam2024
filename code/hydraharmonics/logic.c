@@ -1,6 +1,7 @@
 #include "hydra.h"
 #include "notes.h"
 #include "logic.h"
+#include "effects.h"
 
 #define HYDRA_AI_RANDOM_INTERVAL 60
 #define HYDRA_AI_SMART_X_OFFSET (HYDRA_EATING_FRAMES + 4)
@@ -52,8 +53,24 @@ void scores_get_winner (void) {
 	}
 }
 
+bool score_is_winner (PlyNum p) {
+	for (uint8_t i=0; i<winners->length; i++){
+		if (winners->winners[i] == p) {
+			return true;
+		}
+	}
+	return false;
+}
+
 PlyNum scores_get_extreme (scores_extreme_t type) {
 	PlyNum extreme = PLAYER_1;
+	if (
+		scores[PLAYER_1] == scores[PLAYER_2] &&
+		scores[PLAYER_2] == scores[PLAYER_3] &&
+		scores[PLAYER_3] == scores[PLAYER_4]
+	) {
+		return -1;
+	}
 	for (uint8_t i=PLAYER_2; i<PLAYER_MAX; i++){
 		if (type == SCORES_GET_FIRST && scores[i] > scores[extreme]) {
 			extreme = i;
@@ -102,6 +119,7 @@ void note_hit_detection(void) {
 					// Check if the animation is correct
 					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
 						// Note is eaten
+						hydras[i].last_eaten = current->type;
 						if (current->type == NOTES_TYPE_STANDARD) {
 							// No swap, just eat
 							hydras[i].animation += HYDRA_ANIMATION_SUCCESS_DIFF;
@@ -125,7 +143,7 @@ void note_hit_detection(void) {
 						) {
 							// Just ate a sweet note
 							add_score = -1;
-							hydras[i].animation += HYDRA_ANIMATION_TO_STUN_DIFF;
+							hydras[i].animation += HYDRA_ANIMATION_TO_DIZZY_DIFF;
 						}
 						scores[i] += add_score;
 						notes_destroy (current);
@@ -137,6 +155,14 @@ void note_hit_detection(void) {
 					hydras[i].animation != HYDRA_ANIMATION_CHEW_TO_SWAP
 				) {
 					// It's someone else's note. Stun them.
+					if (hydras[i].animation != HYDRA_ANIMATION_STUN) {
+						effects_add(
+							i,
+							EFFECT_SHOCK,
+							hydras[i].x + HYDRA_CHEW_EFFECT_OFFSET_X,
+							hydras[i].y + hydra_get_hat_offset(i) - HYDRA_STUN_EFFECT_OFFSET_Y
+						);
+					}
 					hydra_animate (i, HYDRA_ANIMATION_STUN);
 				}
 			} else if (current->x < -current->sprite->width) {

@@ -1,5 +1,6 @@
 #include "notes.h"
 #include "logic.h"
+#include "effects.h"
 
 #define NOTE_Y_OFFSET_PERIOD 32
 #define NOTE_Y_OFFSET_AMPLITUDE 4
@@ -14,6 +15,8 @@
 #define NOTE_HEIGHT 32
 #define NOTE_ANIMATION_SPEED 8
 #define NOTE_ANIMATION_OFFSET_Y NOTE_Y_OFFSET_AMPLITUDE * 0.35
+#define NOTE_SPARKLE_CHANCE 16
+#define NOTE_SPARKLE_MIN 8
 
 #define NOTE_PLAYER_MAX_RETRIES 4
 #define NOTE_CHANCE_DOUBLE 4
@@ -24,6 +27,7 @@
 // Global vars
 static note_ll_t notes;
 static sprite_t* note_sprites[NOTES_TOTAL_COUNT];
+static uint8_t sparkle_timer = 0;
 
 void notes_init(void) {
 	char temptext[64];
@@ -81,7 +85,6 @@ PlyNum note_get_free(void) {
 	if (last_player == PLAYER_MAX) {
 		last_player = rand() % PLAYER_MAX;
 	}
-
 
 	// Get the sum of weights
 	notes_left_total = notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED);
@@ -194,13 +197,30 @@ note_t* notes_get_first(void) {
 
 void notes_move (void) {
 	note_t* current = notes.start;
+	sparkle_timer++;
 	while (current != NULL) {
+		// Move and animate the note
 		current->x -= NOTES_SPEED;
 		current->y_offset = sin(current->x / NOTE_Y_OFFSET_PERIOD) * NOTE_Y_OFFSET_AMPLITUDE;
 		current->blitparms.theta = sin((current->x - current->anim_offset) / NOTE_THETA_PERIOD) * NOTE_THETA_AMPLITUDE;
 		current->blitparms.scale_x = 1 + sin((current->x + current->anim_offset) / NOTE_SCALE_PERIOD) * NOTE_SCALE_AMPLITUDE;
 		current->blitparms.scale_y = 1 + sin((current->x + current->anim_offset) / NOTE_SCALE_PERIOD) * NOTE_SCALE_AMPLITUDE;
 		current->blitparms.s0 = (current->y_offset < -NOTE_ANIMATION_OFFSET_Y ? 2 : (current->y_offset > NOTE_ANIMATION_OFFSET_Y ? 0 : 1)) * NOTE_WIDTH;
+		// Randomly generate a sparkle
+		if (
+			(current->type == NOTES_TYPE_SWEET ||
+			sparkle_timer >= NOTE_SPARKLE_MIN )
+			&& current->type != NOTES_TYPE_SOUR
+			&& !(rand() % NOTE_SPARKLE_CHANCE)
+		) {
+			effects_add(
+				current->player,
+				EFFECT_SPARKLE,
+				current->x - NOTE_WIDTH/4 + (rand()%NOTE_WIDTH/2),
+				current->y - NOTE_HEIGHT/4 + (rand()%NOTE_HEIGHT/2)
+			);
+			sparkle_timer = 0;
+		}
 		current = current->next;
 	}
 }
@@ -215,11 +235,6 @@ void notes_draw (void) {
 			&current->blitparms
 		);
 		current = current->next;
-	}
-	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
-		rdpq_text_printf(NULL, FONT_DEFAULT, 20, 20+i*20,
-			"%i", notes.notes_left[i]
-		);
 	}
 }
 
@@ -272,8 +287,7 @@ void notes_destroy_all (void) {
 }
 
 void notes_clear (void) {
-	uint8_t i;
-	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
+	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
 		sprite_free(note_sprites[i]);
 	}
 	notes_destroy_all();

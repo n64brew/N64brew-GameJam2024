@@ -1,5 +1,6 @@
 #include "hydra.h"
 #include "logic.h"
+#include "effects.h"
 
 #define HYDRA_HEAD_OFFSET_FIRST 10
 #define HYDRA_HEAD_OFFSET_EACH 2
@@ -8,60 +9,56 @@
 #define HYDRA_HAT_X_OFFSET 5
 #define HYDRA_HAT_SPEED 4
 #define HYDRA_HAT_WIDTH 14
-#define HYDRA_LEG_HEIGHT 16
-#define HYDRA_LEG_X_OFFSET 5
+#define HYDRA_HAT_HEIGHT 8
 #define HYDRA_SHELL_Y PADDING_TOP+4*HYDRA_ROW_HEIGHT
 #define HYDRA_BOUNCE_PERIOD 20
 #define HYDRA_BOUNCE_AMPLITUDE 4
 #define HYDRA_SHELL_WIDTH HYDRA_HEAD_WIDTH
 
+#define HYDRA_LEG_WIDTH 56
+#define HYDRA_LEG_HEIGHT 22
+#define HYDRA_LEG_X_OFFSET -15
+#define HYDRA_LEG_STANDING_FRAME 8
+#define UPDATE_LEG_OFFSET(i) \
+    (hydras[i].leg_offset_y = (hydras[i].leg_offset_y >= HYDRA_LEG_HEIGHT) ? hydras[i].leg_offset_y : hydras[i].leg_offset_y + 1)
+
+#define HYDRA_TOPBACK_WIDTH 12
+#define HYDRA_TOPBACK_HEIGHT 8
+
+#define HYDRA_FACE_WIDTH 28
+#define HYDRA_FACE_HEIGHT 64
+#define HYDRA_FACE_COLS 11
+#define HYDRA_FACE_ROWS 4
+
+#define HYDRA_EYE_WIDTH 14
+#define HYDRA_EYE_HEIGHT 16
+#define HYDRA_EYE_OFFSET_X -3
+#define HYDRA_EYE_OFFSET_Y 3
+#define HYDRA_EYE_COLS 5
+#define HYDRA_EYE_ROWS 5
+
+#define HYDRA_EYELID_WIDTH 9
+#define HYDRA_EYELID_HEIGHT 8
+
 #define HYDRA_STICK_THRESHOLD 50
-#define SCALE 1
 
 // Global vars
 hydra_t hydras[PLAYER_MAX];
 static const uint8_t collar_offsets[PLAYER_MAX] = {17, 13, 11, 7};
 static sprite_t* hat_sprite;
 static sprite_t* eye_sprite;
-static sprite_t* leg_sprite;
 static uint32_t shell_bounce = 0;
+static uint32_t shell_frame = 0;
 
-// DB of head animations
-typedef enum {
-	ANIMATION_DB_X,
-	ANIMATION_DB_Y,
-	ANIMATION_DB_LENGTH,
-	ANIMATION_DB_FRAME_DURATION,
-	ANIMATION_DB_X_OFFSET,
-	ANIMATION_DB_NEXT,
-	ANIMATION_DB_COUNT,
-} animation_offsets_t;
-static const int8_t animation_offsets[HYDRA_ANIMATION_COUNT][ANIMATION_DB_COUNT] = {
-		{0,	0,	1,	1,	0,	HYDRA_ANIMATION_NONE},			// Idle
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE},			// Open
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_NONE},			// Close
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_SUCCESS},	// Open success
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW},			// Close success
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_TO_SWAP},	// Open to swap
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW_TO_SWAP},	// Close to swap
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_TO_STUN},	// Open to stun
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW_TO_STUN},	// Close to stun
-		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_NONE},			// Chew
-		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_SWAP_DOWN},		// Chew to swap
-		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_STUN},			// Chew to swap
-		{4,	2,	3,	40,	0,	HYDRA_ANIMATION_SLEEP_2},		// Sleep
-		{5,	2,	1,	40,	0,	HYDRA_ANIMATION_SLEEP},			// Sleep 2 (single frame)
-		{7,	2,	1,	65,	0,	HYDRA_ANIMATION_NONE},			// Stun
-		{8,	2,	1,	1,	0,	HYDRA_ANIMATION_SWAP_DOWN},		// Swap downwards
-		{9,	2,	1,	1,	0,	HYDRA_ANIMATION_SWAP_UP},		// Swap downwards
-		{10,2,	1,	1,	0,	HYDRA_ANIMATION_SWAP_WAIT},		// Swap downwards
-	};
+
+#include "hydra_animation.h"
 
 // Array of hat offsets to determine the hight of the hat at each frame of animation
-static const int8_t hat_offsets[3][11] = {
+static const int8_t hat_offsets[HYDRA_FACE_ROWS][HYDRA_FACE_COLS] = {
 	{24, 20, 14,  2, -4, -8, -6, -4, -4, -4, -4},
 	{ 2, 14, 20, 26, 26, 24, 24, 24, 24, 24, 24},
-	{24, 24, 22, 22, 24, 22, 20,  8, 48, 48, 56},
+	{24, 24, 24, 24, 24, 24, 24, 24,  8, 24, 48},
+	{56, 22, 24, 24, 24, 24, 24, 24, 24, 24, 24},
 };
 
 void hydra_calculate_x (void) {
@@ -84,13 +81,29 @@ void hydra_init (void) {
 	uint8_t i, random, temp;
 	for (i=0; i<PLAYER_MAX; i++) {
 		// Load the sprites
-		sprintf(temptext, "rom:/hydraharmonics/head-%i.ci4.sprite", i);
-		hydras[i].head_sprite = sprite_load(temptext);
+		sprintf(temptext, "rom:/hydraharmonics/face-%i.ci4.sprite", i);
+		hydras[i].face_sprite = sprite_load(temptext);
+		sprintf(temptext, "rom:/hydraharmonics/eyes-%i.ci4.sprite", i);
+		hydras[i].eyes_sprite = sprite_load(temptext);
+		sprintf(temptext, "rom:/hydraharmonics/topback-%i.ci4.sprite", i);
+		hydras[i].topback_sprite = sprite_load(temptext);
 		sprintf(temptext, "rom:/hydraharmonics/shell-%i.ci4.sprite", i);
 		hydras[i].shell_sprite = sprite_load(temptext);
 		sprintf(temptext, "rom:/hydraharmonics/neck-%i.ci4.sprite", i);
 		hydras[i].neck_sprite = sprite_load(temptext);
 		hydras[i].neck_surf = sprite_get_pixels(hydras[i].neck_sprite);
+		sprintf(temptext, "rom:/hydraharmonics/legs-%i.ci4.sprite", i);
+		hydras[i].leg_sprite = sprite_load(temptext);
+		// Flairs
+		hydras[i].flair_sprite[FLAIR_NONE] = NULL;
+		sprintf(temptext, "rom:/hydraharmonics/cheek-%i.ci4.sprite", i);
+		hydras[i].flair_sprite[FLAIR_CHEEK] = sprite_load(temptext);
+		sprintf(temptext, "rom:/hydraharmonics/grin-%i.ci4.sprite", i);
+		hydras[i].flair_sprite[FLAIR_GRIN] = sprite_load(temptext);
+		sprintf(temptext, "rom:/hydraharmonics/eyelid-%i.ci4.sprite", i);
+		hydras[i].flair_sprite[FLAIR_EYELID_0] = sprite_load(temptext);
+		hydras[i].flair_sprite[FLAIR_EYELID_1] = hydras[i].flair_sprite[FLAIR_EYELID_0];
+		hydras[i].flair_sprite[FLAIR_EYELID_2] = hydras[i].flair_sprite[FLAIR_EYELID_0];
 
 		// Set the variables
 		hydras[i].state = STATE_MID;
@@ -100,12 +113,12 @@ void hydra_init (void) {
 		hydras[i].leg_offset_y = 0;
 		hydras[i].ai = i < core_get_playercount() ? 0 : HYDRA_AI_SMART;//(rand()%(HYDRA_AI_COUNT-1) + 1);
 		hydras[i].animation = HYDRA_ANIMATION_NONE;
-		hydras[i].frame = 0;
+		hydras[i].last_eaten = NOTES_TYPE_STANDARD;
+		hydras[i].frame = hydras[i].face_frame = 0;
 	}
 	// Common sprites
 	hat_sprite = sprite_load("rom:/hydraharmonics/hats.ci4.sprite");
 	eye_sprite = sprite_load("rom:/hydraharmonics/eyes.ci4.sprite");
-	leg_sprite = sprite_load("rom:/hydraharmonics/legs.ci4.sprite");
 
 	// Shuffle starting positions
 	for (i=0; i<PLAYER_MAX; i++) {
@@ -125,30 +138,42 @@ void hydra_init (void) {
 	hydra_calculate_x();
 }
 
+int8_t hydra_get_hat_offset (PlyNum i) {
+	return hat_offsets [
+		(animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].face_sprite / HYDRA_FACE_COLS)
+	] [
+		(animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].face_sprite % HYDRA_FACE_COLS)
+	];
+}
+
 void hydra_adjust_hats (void) {
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
-		float min_y =
-			hydras[i].y +
-			hat_offsets [
-				animation_offsets[hydras[i].animation][ANIMATION_DB_Y]
-			] [
-				(hydras[i].frame/animation_offsets[hydras[i].animation][ANIMATION_DB_FRAME_DURATION] +
-				animation_offsets[hydras[i].animation][ANIMATION_DB_X])
-			];
-
+		float min_y = hydras[i].y + hydra_get_hat_offset (i);
 		hydras[i].hat_y = min_y < hydras[i].hat_y + HYDRA_HAT_SPEED ? min_y : hydras[i].hat_y + HYDRA_HAT_SPEED;
 	}
 }
 
+bool hydra_get_all_animation_states (hydraharmonics_animations_t a) {
+	bool all_correct = true;
+	for (uint8_t i=0; i<PLAYER_MAX; i++) {
+		if (hydras[i].animation != a) {
+			all_correct = false;
+			break;
+		}
+	}
+	return all_correct;
+}
+
 void hydra_swap_animation (hydraharmonics_animations_t stage, PlyNum i) {
 	if (stage == HYDRA_ANIMATION_SWAP_DOWN) {
-		hydras[i].leg_offset_y = hydras[i].leg_offset_y >= leg_sprite->height/PLAYER_MAX ? hydras[i].leg_offset_y : hydras[i].leg_offset_y + 1;
+		UPDATE_LEG_OFFSET(i);
 		if (hydras[i].y + HYDRA_HEAD_HEIGHT >= HYDRA_SHELL_Y) {
 			hydra_animate (i, HYDRA_ANIMATION_SWAP_WAIT);
 		} else {
 			hydras[i].y += HYDRA_SWAP_SPEED;
 		}
 	} else if (stage == HYDRA_ANIMATION_SWAP_WAIT) {
+		UPDATE_LEG_OFFSET(i);
 		// Find another hydra in this state
 		for (uint8_t j=0; j<PLAYER_MAX; j++) {
 			if (hydras[j].animation == HYDRA_ANIMATION_SWAP_WAIT && j != i) {
@@ -274,29 +299,65 @@ void hydra_swap_start (PlyNum swap_player, notes_types_t note_type) {
 
 void hydra_animate (PlyNum p, hydraharmonics_animations_t a) {
 	hydras[p].animation = a;
+	hydras[p].face_frame = 0;
 	hydras[p].frame = 0;
 }
 
 void hydra_shell_bounce (void) {
-	static uint8_t shell_timer = HYDRA_BOUNCE_PERIOD;
+	static uint8_t shell_timer = 0;
 	// Create a pattern with abs() that causes both an upward and downward movement for the bounce
-	shell_bounce =
-		shell_timer % HYDRA_BOUNCE_PERIOD <= HYDRA_BOUNCE_AMPLITUDE ?
-		abs(HYDRA_BOUNCE_AMPLITUDE/2- (shell_timer % HYDRA_BOUNCE_PERIOD)-HYDRA_BOUNCE_AMPLITUDE/2) : 0;
+	shell_bounce = abs((shell_timer % 32) / 4 - 4);
+	shell_frame = (shell_timer % 32) / 4;
 	shell_timer++;
+}
+
+void hydra_handle_animation (PlyNum p) {
+	hydras[p].frame++;
+	uint8_t frame_cum = 0;
+	uint8_t skip = 0;
+
+	// Check if we need to add an effect
+	if (hydras[p].animation == HYDRA_ANIMATION_CHEW && hydras[p].frame == 1) {
+		effects_add(
+			p,
+			hydras[p].last_eaten == NOTES_TYPE_SWEET ? EFFECT_FLOWER :
+				(shell_frame%2 ? EFFECT_NOTE_BIG : EFFECT_NOTE_SMALL),
+			hydras[p].x + HYDRA_CHEW_EFFECT_OFFSET_X,
+			hydras[p].y + hydra_get_hat_offset(p) + HYDRA_CHEW_EFFECT_OFFSET_Y
+		);
+	}
+
+	// Count to see if we've reached the end of the animation cycle
+	for (uint8_t i = 0; i<animation_db[hydras[p].animation].animation_length; i++) {
+		frame_cum += animation_db[hydras[p].animation].frame_array[i].frame_duration;
+		if (hydras[p].frame < frame_cum && !skip) {
+			hydras[p].face_frame = i;
+			// Don't update the face_frame anumore because we want to get the total numer of frames for this animation
+			skip = 1;
+		}
+	}
+
+	assertf(hydras[p].face_frame < animation_db[hydras[p].animation].animation_length, "Face frame fail\n%i/%i (%i)", hydras[p].face_frame, animation_db[hydras[p].animation].animation_length, hydras[p].animation);
+	if (hydras[p].frame == frame_cum) {
+		hydras[p].animation = animation_db[hydras[p].animation].next;
+		hydras[p].frame = hydras[p].face_frame = 0;
+	}
 }
 
 void hydra_draw (void) {
 	// Draw bottom layer
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		// Draw the legs
+		// Make sure we draw them in the right order, from left to right
+		PlyNum p = hydra_get_from_pos(i);
 		rdpq_sprite_blit (
-			leg_sprite,
-			hydras[i].x + collar_offsets[hydras[i].pos] - HYDRA_LEG_X_OFFSET,
-			HYDRA_SHELL_Y + hydras[i].shell_sprite->height - hydras[i].leg_offset_y,
+			hydras[p].leg_sprite,
+			hydras[p].x + collar_offsets[hydras[p].pos] + HYDRA_LEG_X_OFFSET,
+			HYDRA_SHELL_Y + hydras[p].shell_sprite->height - hydras[p].leg_offset_y,
 			&(rdpq_blitparms_t){
-				.height = HYDRA_LEG_HEIGHT,
-				.t0 = HYDRA_LEG_HEIGHT * i,
+				.width = HYDRA_LEG_WIDTH,
+				.s0 = stage == STAGE_GAME && hydras[p].leg_offset_y < HYDRA_LEG_HEIGHT/2 ?
+					shell_frame * HYDRA_LEG_WIDTH : HYDRA_LEG_STANDING_FRAME * HYDRA_LEG_WIDTH,
 			}
 		);
 	}
@@ -329,26 +390,19 @@ void hydra_draw (void) {
 		);
 
 		if (hydras[i].state != STATE_HIDE && hydras[i].animation != HYDRA_ANIMATION_SWAP_WAIT) {
-			// Draw the heads
+
+			// Draw the face
 			rdpq_sprite_blit (
-				hydras[i].head_sprite,
-				hydras[i].x + collar_offsets[hydras[i].pos] + animation_offsets[hydras[i].animation][ANIMATION_DB_X_OFFSET],
+				hydras[i].face_sprite,
+				hydras[i].x + collar_offsets[hydras[i].pos] + HYDRA_TOPBACK_WIDTH,
 				hydras[i].y,
 				&(rdpq_blitparms_t){
-					.width = HYDRA_HEAD_WIDTH,
-					.height = HYDRA_HEAD_HEIGHT,
-					.s0 = HYDRA_HEAD_WIDTH
-						* (hydras[i].frame/animation_offsets[hydras[i].animation][ANIMATION_DB_FRAME_DURATION]
-							+ animation_offsets[hydras[i].animation][ANIMATION_DB_X]),
-					.t0 = HYDRA_HEAD_HEIGHT * animation_offsets[hydras[i].animation][ANIMATION_DB_Y],
+					.width = HYDRA_FACE_WIDTH,
+					.height = HYDRA_FACE_HEIGHT,
+					.s0 = HYDRA_FACE_WIDTH * (animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].face_sprite % HYDRA_FACE_COLS),
+					.t0 = HYDRA_FACE_HEIGHT * (animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].face_sprite / HYDRA_FACE_COLS),
 				}
 			);
-
-			// Handle the animation frame
-			if (++hydras[i].frame == animation_offsets[hydras[i].animation][ANIMATION_DB_LENGTH] * animation_offsets[hydras[i].animation][ANIMATION_DB_FRAME_DURATION]) {
-				hydras[i].animation = animation_offsets[hydras[i].animation][ANIMATION_DB_NEXT];
-				hydras[i].frame = 0;
-			}
 
 			// Draw the collar
 			rdpq_sprite_blit (
@@ -363,11 +417,12 @@ void hydra_draw (void) {
 				TILE0,
 				&hydras[i].neck_surf,
 				&(rdpq_texparms_t){
-					.t.repeats = (2-hydras[i].state) * HYDRA_ROW_HEIGHT/2,
+					.t.repeats = 128,
 				},
 				0, 0,
 				hydras[i].neck_sprite->width, 2
 			);
+			// Full neck
 			rdpq_texture_rectangle(
 				TILE0,
 				hydras[i].x + collar_offsets[hydras[i].pos],
@@ -375,6 +430,65 @@ void hydra_draw (void) {
 				hydras[i].x + collar_offsets[hydras[i].pos] + hydras[i].neck_sprite->width,
 				HYDRA_SHELL_Y + shell_bounce,
 				0, 0);
+			// Back of the head
+			rdpq_texture_rectangle(
+				TILE0,
+				hydras[i].x + collar_offsets[hydras[i].pos],
+				hydras[i].y + hydra_get_hat_offset (i) + HYDRA_HAT_HEIGHT + HYDRA_TOPBACK_HEIGHT,
+				hydras[i].x + collar_offsets[hydras[i].pos] + hydras[i].neck_sprite->width/2,
+				hydras[i].y + HYDRA_HEAD_HEIGHT,
+				0, 0);
+
+			// Topback of the head
+			rdpq_sprite_blit (
+				hydras[i].topback_sprite,
+				hydras[i].x + collar_offsets[hydras[i].pos],
+				hydras[i].y + hydra_get_hat_offset (i) + HYDRA_HAT_HEIGHT,
+				NULL
+			);
+
+			assertf(animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].eyes_sprite<25,
+				"Eye draw %i, %i, %i",
+				hydras[i].animation,
+				hydras[i].face_frame,
+				animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].eyes_sprite
+			);
+			// Draw the eye
+			rdpq_sprite_blit (
+				hydras[i].eyes_sprite,
+				hydras[i].x + collar_offsets[hydras[i].pos] + HYDRA_TOPBACK_WIDTH + HYDRA_EYE_OFFSET_X,
+				hydras[i].y + hydra_get_hat_offset (i) + HYDRA_HAT_HEIGHT + HYDRA_EYE_OFFSET_Y,
+				&(rdpq_blitparms_t){
+					.width = HYDRA_EYE_WIDTH,
+					.height = HYDRA_EYE_HEIGHT,
+					.s0 = HYDRA_EYE_WIDTH * (animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].eyes_sprite % HYDRA_EYE_COLS),
+					.t0 = HYDRA_EYE_HEIGHT * (animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].eyes_sprite / HYDRA_EYE_COLS),
+				}
+			);
+
+			// Draw the flair
+			hydra_flair_frames_t flair = animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].flair_sprite;
+			if (flair) {
+				rdpq_blitparms_t flair_parms =
+					flair == FLAIR_EYELID_0 ||
+					flair == FLAIR_EYELID_1 ||
+					flair == FLAIR_EYELID_2
+				?
+					(rdpq_blitparms_t){
+						.width = HYDRA_EYELID_WIDTH,
+						.s0 = HYDRA_EYELID_WIDTH * (flair - FLAIR_EYELID),
+				} : (rdpq_blitparms_t){0};
+				rdpq_sprite_blit (
+					hydras[i].flair_sprite[flair],
+					hydras[i].x + collar_offsets[hydras[i].pos] + animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].flair_x,
+					hydras[i].y + hydra_get_hat_offset (i) + HYDRA_HAT_HEIGHT + animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].flair_y,
+					&flair_parms
+				);
+			}
+
+			// Handle the animation frame
+			hydra_handle_animation(i);
+
 		} else if (hydras[i].state == STATE_HIDE) {
 			// Hydra is hiding
 			// Draw the eyes
@@ -389,7 +503,7 @@ void hydra_draw (void) {
 /*
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		rdpq_text_printf(NULL, FONT_DEFAULT, hydras[i].x, HYDRA_SHELL_Y,
-			"%i", hydras[i].leg_offset_y
+			"%i\n%i\n%i", hydras[i].animation, hydras[i].face_frame, hydras[i].frame
 		);
 	}
 */
@@ -397,12 +511,18 @@ void hydra_draw (void) {
 
 void hydra_clear (void) {
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
-		sprite_free(hydras[i].head_sprite);
+		sprite_free(hydras[i].face_sprite);
+		sprite_free(hydras[i].eyes_sprite);
+		sprite_free(hydras[i].topback_sprite);
 		sprite_free(hydras[i].shell_sprite);
 		sprite_free(hydras[i].neck_sprite);
+		sprite_free(hydras[i].leg_sprite);
 		surface_free(&hydras[i].neck_surf);
+		sprite_free(hydras[i].flair_sprite[FLAIR_CHEEK]);
+		sprite_free(hydras[i].flair_sprite[FLAIR_GRIN]);
+		sprite_free(hydras[i].flair_sprite[FLAIR_EYELID]);
+
 	}
 	sprite_free(eye_sprite);
 	sprite_free(hat_sprite);
-	sprite_free(leg_sprite);
 }

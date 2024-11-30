@@ -1,8 +1,10 @@
 #include "outro.h"
+#include "hydra.h"
 
 #define HYDRA_OUTRO_SHUFFLE_TIME 100
 #define HYDRA_OUTRO_WINNER_DROP_TIME 25
 #define HYDRA_OUTRO_ANNOUNCE_TIME 80
+#define HYDRA_OUTRO_CHOMP_ANIMATION_TIME 50
 
 #define SIGN_SPEED_X 2
 #define SIGN_SPEED_Y 2
@@ -25,9 +27,11 @@ void outro_init (void) {
 
 void outro_interact (void) {
 	outro_timer++;
+	// Move the signs left
 	if (sign_x_offset <= sign_big_sprite->width) {
 		sign_x_offset += SIGN_SPEED_X;
 	}
+	// Move the winners sign down
 	if (outro_timer >= HYDRA_OUTRO_SHUFFLE_TIME) {
 		for (uint8_t i=0; i<winners->length; i++) {
 			if (winners->y_offset[i] < sign_small_sprite->height * (i+1)) {
@@ -38,9 +42,28 @@ void outro_interact (void) {
 
 		}
 	}
-
+	// And the game
 	if (outro_timer >= HYDRA_OUTRO_SHUFFLE_TIME + HYDRA_OUTRO_ANNOUNCE_TIME + HYDRA_OUTRO_WINNER_DROP_TIME * (winners->length+1)) {
 		stage = STAGE_RETURN_TO_MENU;
+	}
+	// Animate the hydras
+	if (outro_timer < HYDRA_OUTRO_SHUFFLE_TIME) {
+		for (uint8_t i=0; i<PLAYER_MAX; i++) {
+			hydra_animate (i, HYDRA_ANIMATION_STUN_LOOP);
+		}
+	} else {
+		for (uint8_t i=0; i<PLAYER_MAX; i++) {
+			if (score_is_winner(i)) {
+				if (outro_timer < HYDRA_OUTRO_SHUFFLE_TIME + HYDRA_OUTRO_CHOMP_ANIMATION_TIME && hydras[i].animation != HYDRA_ANIMATION_OPEN) {
+					hydra_animate (i, HYDRA_ANIMATION_OPEN);
+				} else if (hydras[i].animation == HYDRA_ANIMATION_NONE) {
+					hydra_animate (i, HYDRA_ANIMATION_GRIN);
+				}
+
+			} else if (!score_is_winner(i) && hydras[i].animation != HYDRA_ANIMATION_LOSER) {
+				hydra_animate (i, HYDRA_ANIMATION_LOSER);
+			}
+		}
 	}
 }
 
@@ -60,10 +83,9 @@ void outro_results_draw (scores_results_draw_t type) {
 		FONT_CLARENDON,
 		display_get_width() - sign_x_offset + SIGN_PADDING_BIG_X,
 		SIGN_PADDING_BIG_Y,
-		"And the winner is...\n%s", scores_buffer
+		"Hats off to...\n%s", scores_buffer
 	);
 }
-
 
 void outro_sign_draw (void) {
 	// Draw the little signs
@@ -81,7 +103,7 @@ void outro_sign_draw (void) {
 			FONT_CLARENDON,
 			display_get_width() - sign_x_offset + SIGN_PADDING_SMALL_X,
 			sign_big_sprite->height - sign_small_sprite->height + winners->y_offset[i] + SIGN_PADDING_SMALL_Y,
-			"Player %i wins!", winners->winners[i]+1
+			"Player %i!", winners->winners[i]+1
 		);
 	}
 
