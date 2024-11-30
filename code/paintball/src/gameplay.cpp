@@ -222,6 +222,22 @@ void GameplayController::fixedUpdate(float deltaTime, GameState &state)
 
 void GameplayController::newRound()
 {
+    T3DVec3 playerPositions[PlayerCount] = {
+        {-100, 0, 0},
+        {0, 0, -100},
+        {100, 0, 0},
+        {0, 0, 100}
+    };
+
+    // mix player positions
+    for (int i = 0; i < PlayerCount; i++)
+    {
+        int j = randomRange(0, PlayerCount - 1);
+        T3DVec3 temp = playerPositions[i];
+        playerPositions[i] = playerPositions[j];
+        playerPositions[j] = temp;
+    }
+
     PlyNum ply = PLAYER_1;
     for (Player &player : playerData)
     {
@@ -236,21 +252,11 @@ void GameplayController::newRound()
         player.fragCount = 0;
         player.temperature = 0;
 
+        player.pos = playerPositions[ply];
+        player.prevPos = playerPositions[ply];
+
         ply = (PlyNum)(ply + 1);
     }
-
-    // TODO: access a 4 lentgh array in a loop instead
-    playerData[0].pos = {-100, 0, 0};
-    playerData[0].prevPos = {-100, 0, 0};
-
-    playerData[1].pos = {0, 0, -100};
-    playerData[1].prevPos = {0, 0, -100};
-
-    playerData[2].pos = {100, 0, 0};
-    playerData[2].prevPos = {100, 0, 0};
-
-    playerData[3].pos = {0, 0, 100};
-    playerData[3].prevPos = {0, 0, 100};
 }
 
 const std::vector<Player> &GameplayController::getPlayerData() const {

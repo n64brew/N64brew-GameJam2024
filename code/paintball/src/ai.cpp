@@ -1,9 +1,5 @@
 #include "ai.hpp"
 
-int randomRange(int min, int max){
-   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
-}
-
 AI::AI() : aiActionTimer(0) {
     difficulty = core_get_aidifficulty();
 }
@@ -167,6 +163,8 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
         } else {
             tryChangeState(player, AIState::AI_DEFEND);
         }
+    } else if (state.state == State::STATE_WAIT_FOR_NEW_ROUND || state.state == State::STATE_FINISHED) {
+        tryChangeState(player, AIState::AI_RUN);
     } else {
         if (player.temperature > 1.f || player.firstHit != player.team) {
             tryChangeState(player, AIState::AI_DEFEND);
