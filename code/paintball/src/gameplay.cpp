@@ -180,7 +180,7 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
         }
 
         if (state.state != STATE_COUNTDOWN) handleFire(player, id, dir);
-        player.render(id, viewport, deltaTime);
+        player.render(id, viewport, deltaTime, *map);
 
         t3d_vec3_add(state.avPos, state.avPos, player.pos);
 

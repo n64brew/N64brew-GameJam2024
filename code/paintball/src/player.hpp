@@ -19,6 +19,7 @@
 #include "constants.hpp"
 #include "list.hpp"
 #include "bullet.hpp"
+#include "map.hpp"
 
 enum AIState {
     AI_IDLE,
@@ -76,6 +77,8 @@ class Player
         float displayTemperature;
         float timer;
 
+        bool firstStep;
+
         // AI
         List<::Bullet, 4> incomingBullets;
         AIState aiState;
@@ -84,7 +87,7 @@ class Player
 
     public:
         Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel);
-        void render(uint32_t id, T3DViewport &viewport, float deltaTime);
+        void render(uint32_t id, T3DViewport &viewport, float deltaTime, MapRenderer&);
         void renderUI(uint32_t id, sprite_t *arrowSprite);
 };
 

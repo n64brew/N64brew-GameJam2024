@@ -26,6 +26,9 @@ struct Splash {
     float x;
     float y;
     PlyNum team;
+    float direction;
+    // specific to footstep
+    bool isFirst;
 };
 
 class MapRenderer
@@ -36,12 +39,14 @@ class MapRenderer
         U::RSPQBlock paintBlock;
         // U::RSPQBlock drawBlock;
         U::Sprite sprite;
+        U::Sprite footstep;
 
         U::TLUT tlut;
 
         // Assume all players firing in all possible directions
         // in reality, they can pop in subticks but should be fine
         List<Splash, PlayerCount * 4> newSplashes;
+        List<Splash, PlayerCount> newFootsteps;
 
         T3DVertPacked* vertices;
 
@@ -49,11 +54,13 @@ class MapRenderer
         float mapSize;
 
         void __splash(int x, int y, PlyNum player);
+        void __step(Splash &);
     public:
         MapRenderer();
         ~MapRenderer();
         void render(float deltaTime, const T3DFrustum &frustum);
         void splash(float x, float y, PlyNum team);
+        void step(float x, float y, PlyNum team, float direction, bool firstStep);
         float getHalfSize();
         void setSize(float size);
 };

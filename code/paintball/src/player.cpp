@@ -17,6 +17,7 @@ Player::Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel)
     screenPos({0}),
     displayTemperature(0),
     timer(0),
+    firstStep(true),
     aiState(AIState::AI_DEFEND),
     multiplier(1),
     multiplier2(1)
@@ -66,7 +67,7 @@ Player::Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel)
         t3d_anim_attach(animWalk.get(), skel.get());
     }
 
-void Player::render(uint32_t id, T3DViewport &viewport, float deltaTime)
+void Player::render(uint32_t id, T3DViewport &viewport, float deltaTime, MapRenderer &map)
 {
     double interpolate = core_get_subtick();
     T3DVec3 currentPos {0};
@@ -85,7 +86,18 @@ void Player::render(uint32_t id, T3DViewport &viewport, float deltaTime)
     assertf(animWalk.get(), "Player %lu animWalk is null", id);
     assertf(skel.get(), "Player %lu skel is null", id);
 
-    t3d_anim_update(animWalk.get(), deltaTime);
+    auto anim = animWalk.get();
+    t3d_anim_update(anim, deltaTime);
+
+    float currentAnimTime = fmod(anim->time, anim->animRef->duration);
+    if((currentAnimTime > 0.f && currentAnimTime <= (anim->animRef->duration/2.f)) && firstStep) {
+        map.step(currentPos.v[0], currentPos.v[2], team, -direction + T3D_DEG_TO_RAD(180), firstStep);
+        firstStep = false;
+    } else if((currentAnimTime > (anim->animRef->duration/2.f)) && !firstStep) {
+        map.step(currentPos.v[0], currentPos.v[2], team, -direction, firstStep);
+        firstStep = true;
+    } 
+
     t3d_skeleton_update(skel.get());
 
     bool hidden = false;

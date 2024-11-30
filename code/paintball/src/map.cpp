@@ -6,6 +6,7 @@ MapRenderer::MapRenderer() :
     paintBlock {nullptr, rspq_block_free},
     // drawBlock {nullptr, rspq_block_free},
     sprite {sprite_load("rom:/paintball/splash.ia4.sprite"), sprite_free},
+    footstep {sprite_load("rom:/paintball/step.ia4.sprite"), sprite_free},
     tlut {
         (uint16_t*)malloc_uncached(sizeof(uint16_t[256])),
         free_uncached
@@ -128,6 +129,11 @@ void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
     }
     newSplashes.clear();
 
+    for (auto step = newFootsteps.begin(); step < newFootsteps.end(); ++step) {
+        __step(*step);
+    }
+    newFootsteps.clear();
+
     rspq_block_run(renderModeBlock.get());
 
     for (int iy = 0; iy < MapWidth/TileSize; iy++) {
@@ -206,8 +212,58 @@ void MapRenderer::__splash(int x, int y, PlyNum player) {
     rdpq_detach();
 }
 
+void MapRenderer::__step(Splash &step) {
+    if (step.x > MapWidth - 16) return;
+    if (step.x < 16) return;
+    if (step.y > MapWidth - 16) return;
+    if (step.y < 16) return;
+
+    surface_t s = sprite_get_pixels(footstep.get());
+
+    rdpq_attach(surface.get(), nullptr);
+        rspq_block_run(paintBlock.get());
+
+        rdpq_set_scissor(step.x - 16, step.y - 16, step.x + 16, step.y + 16);
+        rdpq_blitparms_t params {
+            .width = 8,
+            .height = 8,
+            .flip_x = !step.isFirst,
+            .flip_y = true,
+            .cx = 0,
+            .cy = 4,
+            .theta = step.direction,
+
+        };
+        // Set all channels to the same value b/c for an I8 target, RDP will
+        // interleave R&G channels
+        rdpq_set_prim_color(
+            RGBA32(
+                (uint8_t)(step.team + 1),
+                (uint8_t)(step.team + 1),
+                (uint8_t)(step.team + 1),
+                255
+            )
+        );
+        rdpq_tex_blit(&s, step.x, step.y, &params);
+    rdpq_detach();
+}
+
 void MapRenderer::splash(float x, float y, PlyNum team) {
-    newSplashes.add(Splash {x, y, team});
+    // TODO: use the firing direction + some randomness
+    newSplashes.add(Splash {x, y, team, 2 * T3D_PI * static_cast<float>(rand()) / RAND_MAX, false});
+}
+
+void MapRenderer::step(float x, float y, PlyNum team, float direction, bool firstStep) {
+    float distancePerSegment = SegmentSize * (MapWidth/TileSize);
+    float finalX = (x/distancePerSegment) * MapWidth + MapWidth/2.f;
+    float finalY = (y/distancePerSegment) * MapWidth + MapWidth/2.f;
+    newFootsteps.add(Splash {
+        finalX,
+        finalY,
+        team,
+        direction,
+        firstStep
+    });
 }
 
 float MapRenderer::getHalfSize() {
