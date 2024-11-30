@@ -1,18 +1,60 @@
 #include "ai.hpp"
 
+int randomRange(int min, int max){
+   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+}
+
+AI::AI() : aiActionTimer(0) {
+    difficulty = core_get_aidifficulty();
+}
+
 Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vector<Player> &players) {
     aiActionTimer += deltaTime;
-    // TODO: difficulty parameter
-    if (aiActionTimer < AIActionRateSecond) {
+
+    float actionRate = AIActionRateSecond;
+    float tempControl = 1.f;
+    if (difficulty == AiDiff::DIFF_EASY) {
+        actionRate = AIActionRateSecond * 6;
+    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+        actionRate = AIActionRateSecond * 3;
+    } else if (difficulty == AiDiff::DIFF_HARD) {
+        actionRate = AIActionRateSecond;
+        tempControl = (player.aiState == AIState::AI_ATTACK) ? 0.8f : 0.2f;
+    }
+
+    if (aiActionTimer < actionRate) {
         return Direction::NONE;
     }
     aiActionTimer = 0;
+
+    // Random fire & skip fire
+    float random = static_cast<float>(rand()) / RAND_MAX;
+    if (difficulty == AiDiff::DIFF_EASY) {
+        if (random < 0.6f) {
+            return Direction::NONE;
+        }
+        if (random < 0.7) {
+            return (Direction)randomRange(0, 3);
+        }
+    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+        if (random < 0.25f) {
+            return Direction::NONE;
+        }
+        if (random < 0.3f) {
+            return (Direction)randomRange(0, 3);
+        }
+    }
+
     for (auto& other : players) {
-        // TODO: difficulty parameter
-        if (&other == &player || player.temperature > ((player.aiState == AIState::AI_ATTACK) ? 0.8f : 0.1f)) {
+        if (&other == &player) {
             continue;
         }
 
+        if (player.temperature > tempControl) {
+            continue;
+        }
+
+        // Already at full health
         if (other.team == player.team && other.firstHit == player.team) {
             continue;
         }
@@ -66,18 +108,14 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
     return Direction::NONE;
 }
 
-int randomRange(int min, int max){
-   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
-}
-
-void tryChangeState(Player& player, AIState newState) {
+void AI::tryChangeState(Player& player, AIState newState) {
     float random = static_cast<float>(rand()) / RAND_MAX;
+
     if (random < AIStability) {
         return;
     }
 
     player.aiState = newState;
-    // TODO: difficulty here?
     player.multiplier = 1.f + AIRandomRange * (static_cast<float>(rand()) / RAND_MAX);
     player.multiplier2 = 1.f + AIRandomRange * (static_cast<float>(rand()) / RAND_MAX);
 }
@@ -97,7 +135,20 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
 
     float alignment = 0.f;
 
-    if (random < AITemperature) {
+    if (difficulty == AiDiff::DIFF_EASY) {
+        escapeWeight *= 0.05f;
+    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+        escapeWeight *= 0.2f;
+    }
+
+    float temperature = AITemperature;
+    // Easy mode is more random
+    if (difficulty == AiDiff::DIFF_EASY) {
+        temperature = AITemperature * 3.f;
+    } else if (difficulty == AiDiff::DIFF_MEDIUM) {
+        temperature = AITemperature * 1.5f;
+    }
+    if (random < temperature) {
         // TODO: different probabilities
         int r = randomRange(1, 3);
         player.aiState = (AIState)r;

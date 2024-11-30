@@ -14,9 +14,12 @@ constexpr float AIActionRateSecond = 0.1;
 class AI
 {
     private:
-        float aiActionTimer = 0;
+        float aiActionTimer;
+        AiDiff difficulty;
 
+        void tryChangeState(Player& player, AIState newState);
     public:
+        AI();
         Direction calculateFireDirection(Player&, float deltaTime, std::vector<Player> &players);
         void calculateMovement(Player&, float deltaTime, std::vector<Player> &players, T3DVec3 &inputDirection);
 };
