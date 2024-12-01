@@ -6,7 +6,6 @@ Player::Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel)
     team(team),
     firstHit(team),
     temperature(0),
-    fragCount(0),
     accel({0}),
     velocity({0}),
     direction(0),
@@ -235,4 +234,20 @@ void Player::renderUI(uint32_t id, sprite_t *arrowSprite)
 
     //     rdpq_fill_rectangle(x-barHalfWidth, y-barYOffset, x-barHalfWidth+finalWidth, y-barYOffset+barHeight);
     // }
+}
+
+void Player::acceptHit(const Bullet &bullet) {
+    // Already on same team, heal
+    if ((*this).team == bullet.team) {
+        (*this).firstHit = bullet.team;
+        return;
+    }
+
+    if ((*this).firstHit == bullet.team) {
+        (*this).capturer = bullet.owner;
+        (*this).team = bullet.team;
+        return;
+    }
+
+    (*this).firstHit = bullet.team;
 }

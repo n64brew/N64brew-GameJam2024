@@ -179,7 +179,7 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
             dir = ai.calculateFireDirection(player, deltaTime, playerData, state);
         }
 
-        if (state.state != STATE_COUNTDOWN) handleFire(player, id, dir);
+        if (state.state == STATE_GAME || state.state == STATE_LAST_ONE_STANDING) handleFire(player, id, dir);
         player.render(id, viewport, deltaTime, *map);
 
         t3d_vec3_add(state.avPos, state.avPos, player.pos);
@@ -187,7 +187,10 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
         id++;
     }
     t3d_vec3_scale(state.avPos, state.avPos, 0.25);
-    bulletController.render(deltaTime);
+
+    if (state.state == STATE_GAME || state.state == STATE_LAST_ONE_STANDING) {
+        bulletController.render(deltaTime);
+    }
 }
 
 void GameplayController::renderUI()
@@ -217,7 +220,9 @@ void GameplayController::fixedUpdate(float deltaTime, GameState &state)
         id++;
     }
 
-    bulletController.fixedUpdate(deltaTime, playerData);
+    if (state.state == STATE_GAME || state.state == STATE_LAST_ONE_STANDING) {
+        bulletController.fixedUpdate(deltaTime, playerData);
+    }
 }
 
 void GameplayController::newRound()
@@ -244,13 +249,12 @@ void GameplayController::newRound()
 
         player.team = ply;
         player.firstHit = ply;
-        player.fragCount = 0;
         player.temperature = 0;
 
         player.pos = playerPositions[ply];
         player.prevPos = playerPositions[ply];
 
-        player.fragHistory = {0};
+        player.capturer = -1;
 
         ply = (PlyNum)(ply + 1);
     }

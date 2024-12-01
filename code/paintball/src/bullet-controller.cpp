@@ -71,28 +71,6 @@ void BulletController::render(float deltaTime) {
 }
 
 /**
- * Returns true if the player changed team
- */
-bool BulletController::processHit(Player &gameplayData, PlyNum team) {
-    // Already on same team, heal
-    if (gameplayData.team == team) {
-        gameplayData.firstHit = team;
-        return false;
-    }
-
-    if (gameplayData.firstHit == team) {
-        gameplayData.team = team;
-        gameplayData.fragCount = 0;
-        gameplayData.fragHistory = {0};
-        return true;
-    }
-
-    gameplayData.firstHit = team;
-
-    return false;
-}
-
-/**
  * Returns true if bullet is dead
  */
 bool BulletController::simulatePhysics(float deltaTime, Bullet &bullet) {
@@ -142,14 +120,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gamepla
             }
 
             if (dist2 < PlayerRadius * PlayerRadius) {
-                // TODO: delegate to Player
-                bool hit = processHit(player, bullet->team);
-
-                // This player has already been hit, don't count it again
-                if (!gameplayData[bullet->owner].fragHistory[i]) {
-                    gameplayData[bullet->owner].fragCount += hit ? 1 : 0;
-                }
-                gameplayData[bullet->owner].fragHistory[i] |= hit;
+                player.acceptHit(*bullet);
 
                 ui->registerHit(HitMark {bullet->pos, bullet->owner});
                 map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);

@@ -55,7 +55,12 @@ class Player
         PlyNum firstHit;
         float temperature;
         int fragCount;
-        std::array<bool, PlayerCount> fragHistory;
+
+        // Which player (key) brought this player to which team (value)
+        // std::array<PlyNum, PlayerCount> fragList;
+        // Who captured this player?
+        int capturer;
+
 
         // OTHER DATA
 
@@ -89,6 +94,7 @@ class Player
         Player(T3DVec3 pos, PlyNum team, T3DModel *model, T3DModel *shadowModel);
         void render(uint32_t id, T3DViewport &viewport, float deltaTime, MapRenderer&);
         void renderUI(uint32_t id, sprite_t *arrowSprite);
+        void acceptHit(const Bullet &bullet);
 };
 
 

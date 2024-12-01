@@ -57,6 +57,7 @@ class Game
 
         void gameOver();
         void processState();
+        void addScores(const std::vector<Player>&);
 
     public:
         Game();

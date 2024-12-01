@@ -43,7 +43,6 @@ class BulletController
 
         bool simulatePhysics(float deltaTime, Bullet &bullet);
         void killBullet(Bullet &bullet);
-        bool processHit(Player &player, PlyNum team);
 
     public:
         BulletController(std::shared_ptr<MapRenderer> map, std::shared_ptr<UIRenderer> ui);

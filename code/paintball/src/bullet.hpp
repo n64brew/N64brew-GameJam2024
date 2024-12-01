@@ -20,11 +20,13 @@
 
 class BulletController;
 class AI;
+class Player;
 
 class Bullet
 {
     friend class ::BulletController;
     friend class ::AI;
+    friend class ::Player;
 
     public:
         Bullet();

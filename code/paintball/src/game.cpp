@@ -111,6 +111,14 @@ void Game::fixedUpdate(float deltaTime) {
     processState();
 }
 
+void Game::addScores(const std::vector<Player> &playerData) {
+    for (int i = 0; i < PlayerCount; i++) {
+        for (int j = 0; j < PlayerCount; j++) {
+            state.scores[i] += (playerData[j].capturer == i) ? 1 : 0;
+        }
+    }
+}
+
 void Game::processState() {
     if (state.state == STATE_FINISHED) {
         state.state = STATE_FINISHED;
@@ -182,10 +190,7 @@ void Game::processState() {
         state.scores[largestTeam]++;
         state.winner = largestTeam;
 
-        // First MAXPLAYERS players are eligible for kill points
-        for (int i = 0; i < MAXPLAYERS; i++) {
-            state.scores[i] += playerData[i].fragCount;
-        }
+        addScores(playerData);
 
         state.timeInState = 0.0f;
         state.state = STATE_WAIT_FOR_NEW_ROUND;
@@ -215,10 +220,7 @@ void Game::processState() {
             i++;
         }
 
-        // First MAXPLAYERS players are eligible for kill points
-        for (int i = 0; i < MAXPLAYERS; i++) {
-            state.scores[i] += playerData[i].fragCount;
-        }
+        addScores(playerData);
 
         state.currentRound++;
         // Two points if can escape
