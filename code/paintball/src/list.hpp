@@ -11,23 +11,18 @@ class List : public std::array<T, S> {
 
         void add(T &item) {
             if (count >= this->size()) return;
-            auto &&newItem = std::array<T,S>::operator[](count);
-            newItem = item;
-            count++;
+            (*this)[count++] = item;
         }
 
         // TODO: return success/failure
         void add(T &&item) {
             if (count >= this->size()) return;
-            auto &&newItem = std::array<T,S>::operator[](count);
-            newItem = item;
-            count++;
+            (*this)[count++] = item;
         }
 
         void remove(typename std::array<T,S>::iterator &it) {
             if (count == 0) return;
-            count--;
-            *it = (std::array<T,S>::operator[](count));
+            *it = (*this)[--count];
             // Honestly, I couldn't find a better api for this
             // Actually the iterator is invalid once you remove it
             // and it should behave accordingly
@@ -38,7 +33,7 @@ class List : public std::array<T, S> {
             count = 0;
         }
 
-        typename std::array<T,S>::iterator end() noexcept {
+        auto end() noexcept {
             return this->begin() + count;
         }
 };
