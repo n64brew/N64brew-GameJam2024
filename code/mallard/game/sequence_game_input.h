@@ -18,6 +18,16 @@ typedef struct Vector2
     float y;
 } Vector2;
 
+typedef struct Rect
+{
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+} Rect;
+
+bool detect_collision(Rect a, Rect b);
+
 void sequence_game_update(float deltatime);
 
 #endif // SEQUENCE_GAME_INPUT_H

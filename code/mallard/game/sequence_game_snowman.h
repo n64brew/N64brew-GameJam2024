@@ -4,6 +4,8 @@
 extern sprite_t *sequence_game_snowman_idle_sprite;
 extern sprite_t *sequence_game_snowman_jump_sprite;
 
+extern Duck *ducks;
+
 Snowman *add_snowman(Snowman *snowmen);
 void free_snowmen(Snowman *snowmen);
 void list_snowmen(Snowman *snowmen);

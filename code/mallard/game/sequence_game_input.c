@@ -171,14 +171,6 @@ void process_input_start_button(Controller *controller, joypad_buttons_t pressed
     }
 }
 
-typedef struct Rect
-{
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-} Rect;
-
 typedef struct Collision
 {
     bool x;
