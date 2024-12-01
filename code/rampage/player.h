@@ -10,6 +10,7 @@
 #include "./collision/dynamic_object.h"
 #include "./health.h"
 #include "./swing_effect.h"
+#include "./redraw_manager.h"
 
 #define MAX_HIT_COUNT   8
 
@@ -60,6 +61,8 @@ struct RampagePlayer {
 
     uint8_t already_hit_ids[MAX_HIT_COUNT];
     float attack_timer;
+
+    RedrawHandle redraw_handle;
 };
 
 void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_position, struct Vector2* start_rotation, int player_index, enum PlayerType type);
@@ -69,5 +72,7 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time);
 void rampage_player_render(struct RampagePlayer* player);
 
 void rampage_player_set_did_win(struct RampagePlayer* player, bool did_win);
+
+void rampage_player_redraw_rect(T3DViewport* viewport, struct RampagePlayer* player);
 
 #endif

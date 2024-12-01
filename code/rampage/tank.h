@@ -3,6 +3,7 @@
 
 #include <t3d/t3dmath.h>
 #include <libdragon.h>
+#include "./redraw_manager.h"
 
 #include "./collision/dynamic_object.h"
 #include "./health.h"
@@ -15,6 +16,9 @@ struct RampageTank {
     uint32_t is_active: 1;
     struct Bullet bullet;
     float fire_timer;
+
+    RedrawHandle redraw_handle;
+    RedrawHandle bullet_redraw_handle;
 };
 
 void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position);
@@ -23,5 +27,7 @@ void rampage_tank_destroy(struct RampageTank* tank);
 void rampage_tank_update(struct RampageTank* tank, float delta_time);
 void rampage_tank_render(struct RampageTank* tank);
 void rampage_tank_render_bullets(struct RampageTank* tank);
+
+void rampage_tank_redraw_rect(T3DViewport* viewport, struct RampageTank* tank);
 
 #endif

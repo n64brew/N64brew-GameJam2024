@@ -157,6 +157,8 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, 
         t3d_mat4fp_identity(UncachedAddr(&offsetMatrix[i]));
         t3d_mat4fp_set_pos(UncachedAddr(&offsetMatrix[i]), pos.v);
     }
+
+    building->redraw_handle = redraw_aquire_handle();
 }
 
 void rampage_building_destroy(struct RampageBuilding* building) {
@@ -220,4 +222,16 @@ void rampage_building_update(struct RampageBuilding* building, float delta_time)
             rampage_building_destroy(building);
         }
     }
+}
+
+#define BUILDING_RADIUS (SCALE_FIXED_POINT(0.5f) + SHAKE_AMPLITUDE)
+
+void rampage_building_redraw_rect(T3DViewport* viewport, struct RampageBuilding* building) {
+    if ((!building->shake_timer && !building->is_collapsing) || building->is_destroyed) {
+        return;
+    }
+
+    struct RedrawRect rect;
+    redraw_get_screen_rect(viewport, &building->dynamic_object.position, BUILDING_RADIUS, 0.0f, SCALE_FIXED_POINT(building->height), &rect);
+    redraw_update_dirty(building->redraw_handle, &rect);
 }

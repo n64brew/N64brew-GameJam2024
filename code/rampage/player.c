@@ -280,6 +280,8 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 
     swing_effect_init(&player->swing_effect);
+
+    player->redraw_handle = redraw_aquire_handle();
 }
 
 void rampage_player_destroy(struct RampagePlayer* player) {
@@ -584,4 +586,13 @@ void rampage_player_set_did_win(struct RampagePlayer* player, bool did_win) {
         player->did_lose = 1;
         t3d_anim_set_playing(&player->animLose, true);
     }
+}
+
+#define BOX_RADIUS  SCALE_FIXED_POINT(1.0f)
+#define BOX_HEIGHT  SCALE_FIXED_POINT(1.1f)
+
+void rampage_player_redraw_rect(T3DViewport* viewport, struct RampagePlayer* player) {
+    struct RedrawRect rect;
+    redraw_get_screen_rect(viewport, &player->dynamic_object.position, BOX_RADIUS, 0.0f, BOX_HEIGHT, &rect);
+    redraw_update_dirty(player->redraw_handle, &rect);
 }

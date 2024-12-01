@@ -143,6 +143,9 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 
     vector2ComplexFromAngle(1.0f / 30.0f, &tank_rotate_speed);
     bullet_init(&tank->bullet, entity_id);
+
+    tank->redraw_handle = redraw_aquire_handle();
+    tank->bullet_redraw_handle = redraw_aquire_handle();
 }
 
 void rampage_tank_destroy(struct RampageTank* tank) {
@@ -256,4 +259,21 @@ void rampage_tank_render(struct RampageTank* tank) {
 
 void rampage_tank_render_bullets(struct RampageTank* tank) {
     bullet_render(&tank->bullet);
+}
+
+#define TANK_RADIUS SCALE_FIXED_POINT(1.27636f * 0.5f)
+#define TANK_HEIGHT SCALE_FIXED_POINT(0.63024f)
+
+#define BULLET_RADIUS   SCALE_FIXED_POINT(0.4f)
+#define BULLET_HEIGHT   SCALE_FIXED_POINT(0.2f)
+
+void rampage_tank_redraw_rect(T3DViewport* viewport, struct RampageTank* tank) {
+    struct RedrawRect rect;
+    redraw_get_screen_rect(viewport, &tank->dynamic_object.position, TANK_RADIUS, 0.0f, TANK_HEIGHT, &rect);
+    redraw_update_dirty(tank->redraw_handle, &rect);
+
+    if (tank->bullet.is_active) {
+        redraw_get_screen_rect(viewport, &tank->bullet.dynamic_object.position, BULLET_RADIUS, -BULLET_HEIGHT, BULLET_HEIGHT * 2.0f, &rect);
+        redraw_update_dirty(tank->bullet_redraw_handle, &rect);
+    }
 }

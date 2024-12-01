@@ -50,6 +50,11 @@ void rampage_assets_init() {
     t3d_model_draw(gRampageAssets.ground);
     gRampageAssets.ground->userBlock = rspq_block_end();
 
+    gRampageAssets.ground_cover = t3d_model_load("rom://rampage/ground_cover.t3dm");
+    rspq_block_begin();
+    t3d_model_draw(gRampageAssets.ground_cover);
+    gRampageAssets.ground_cover->userBlock = rspq_block_end();
+
     gRampageAssets.tank = t3d_model_load("rom://rampage/tank0.t3dm");
     rampage_model_separate_material(gRampageAssets.tank, &gRampageAssets.tankSplit);
 

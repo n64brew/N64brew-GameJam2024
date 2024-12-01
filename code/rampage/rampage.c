@@ -21,8 +21,15 @@
 
 #define HIGH_RES    1
 
+#define HEIGHT_SCALE    1
+
+#define SCREEN_WIDTH    (HIGH_RES ? 640 : 320)
+#define SCREEN_HEIGHT   (HIGH_RES ? 480 / HEIGHT_SCALE: 240)
+
 surface_t *depthBuffer;
 T3DViewport viewport;
+surface_t background_surface;
+bool has_background;
 
 T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(5.0f), SCALE_FIXED_POINT(4.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
@@ -81,9 +88,38 @@ static struct mesh_collider global_mesh_collider = {
 struct frame_malloc frame_mallocs[2];
 int next_frame_malloc;
 
+#define PROJECTION_RATIO    1.2f
+#define NEAR_PLANE          SCALE_FIXED_POINT(-1.0f)
+#define FAR_PLANE           SCALE_FIXED_POINT(20.0f)
+#define ORTHO_SCALE     5.5f
+
+/**
+ * Modify an ortho matrix to apply some perspective
+ */
+void minigame_add_some_perspective(T3DMat4* mat, float near, float far) {
+    float scale = (PROJECTION_RATIO - 1.0f/PROJECTION_RATIO) / (near - far);
+    float offset = PROJECTION_RATIO - scale * near;
+
+    mat->m[2][3] = scale;
+    mat->m[3][3] = offset;
+}
+
+void minigame_init_viewport() {
+    t3d_viewport_set_ortho(
+        &viewport, 
+        SCALE_FIXED_POINT(-ORTHO_SCALE * 1.5f), SCALE_FIXED_POINT(ORTHO_SCALE * 1.5f),
+        SCALE_FIXED_POINT(-ORTHO_SCALE), SCALE_FIXED_POINT(ORTHO_SCALE),
+        NEAR_PLANE, FAR_PLANE
+    );
+    minigame_add_some_perspective(&viewport.matProj, NEAR_PLANE, FAR_PLANE);
+
+    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+}
+
 void minigame_init() {
     randomSeed((int)get_ticks_us());
-    display_init(HIGH_RES ? RESOLUTION_640x240 : RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(HIGH_RES ? RESOLUTION_640x480 : RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
+    redraw_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
     t3d_init((T3DInitParams){});
 
     collision_scene_init();
@@ -114,6 +150,8 @@ void minigame_init() {
     rampage_init(&gRampage);
 
     wav64_play(&rampage_assets_get()->startJingle, 2);
+
+    background_surface = surface_alloc(FMT_RGBA16, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 void minigame_set_active(bool is_active) {
@@ -246,8 +284,6 @@ void minigame_fixedloop(float deltatime) {
     }
 }
 
-#define ORTHO_SCALE     5.5f
-
 uint8_t colorWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
 uint8_t pointLightColors[][4] = {
@@ -274,12 +310,6 @@ float pointLightDistance[] = {
     0.2f,
 };
 
-#define HEIGHT_SCALE    2
-
-#define SCREEN_WIDTH    (HIGH_RES ? 640 : 320)
-// #define SCREEN_HEIGHT   (HIGH_RES ? 480 : 240)
-#define SCREEN_HEIGHT   (480 / HEIGHT_SCALE)
-
 #define NUMBER_WIDTH    21
 #define NUMBER_HEIGHT   33
 #define MARGIN          40
@@ -305,19 +335,60 @@ int get_winner_index(int index) {
     return 0;
 }
 
-#define PROJECTION_RATIO    1.2f
-#define NEAR_PLANE          SCALE_FIXED_POINT(-1.0f)
-#define FAR_PLANE           SCALE_FIXED_POINT(20.0f)
+uint8_t clear_shade = 128;
 
-/**
- * Modify an ortho matrix to apply some perspective
- */
-void minigame_add_some_perspective(T3DMat4* mat, float near, float far) {
-    float scale = (PROJECTION_RATIO - 1.0f/PROJECTION_RATIO) / (near - far);
-    float offset = PROJECTION_RATIO - scale * near;
+void minigame_redraw_rects() {
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        rampage_player_redraw_rect(&viewport, &gRampage.players[i]);
+    }
 
-    mat->m[2][3] = scale;
-    mat->m[3][3] = offset;
+    for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
+        for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
+            rampage_building_redraw_rect(&viewport, &gRampage.buildings[y][x]);
+        }
+    }
+
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        rampage_tank_redraw_rect(&viewport, &gRampage.tanks[i]);
+    }
+
+    struct RedrawRect rects[MAX_REDRAW_ENTITIES];
+
+    int rect_count = redraw_retrieve_dirty_rects(rects);
+    clear_shade += 1;
+
+    rdpq_set_prim_color((color_t){255 - clear_shade, clear_shade, 0, 255});
+
+    for (int i = 0; i < rect_count; i += 1) {
+        struct RedrawRect* rect = &rects[i];
+        
+        rdpq_set_scissor(rect->min[0], rect->min[1], rect->max[0], rect->max[1]);
+        rspq_block_run(rampage_assets_get()->ground_cover->userBlock);
+    }
+    rdpq_set_scissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    rdpq_sync_pipe();
+    rdpq_sync_tile();
+    rdpq_set_mode_copy(false);
+    
+    for (int i = 0; i < rect_count; i += 1) {
+        struct RedrawRect* rect = &rects[i];
+
+        rdpq_tex_blit(
+            &background_surface, 
+            rect->min[0], rect->min[1], 
+            &(rdpq_blitparms_t){
+                .s0 = rect->min[0],
+                .t0 = rect->min[1],
+                .width = rect->max[0] - rect->min[0],
+                .height = rect->max[1] - rect->min[1],
+            }
+        );
+    }
+
+    rdpq_sync_pipe();
+    rdpq_sync_tile();
+    t3d_frame_start();
 }
 
 void minigame_loop(float deltatime) {   
@@ -328,26 +399,54 @@ void minigame_loop(float deltatime) {
     frame_malloc_init(fm);
     next_frame_malloc ^= 1;
 
-    t3d_viewport_set_ortho(
-        &viewport, 
-        SCALE_FIXED_POINT(-ORTHO_SCALE * 1.5f), SCALE_FIXED_POINT(ORTHO_SCALE * 1.5f),
-        SCALE_FIXED_POINT(-ORTHO_SCALE), SCALE_FIXED_POINT(ORTHO_SCALE),
-        NEAR_PLANE, FAR_PLANE
-    );
-    minigame_add_some_perspective(&viewport.matProj, NEAR_PLANE, FAR_PLANE);
+    minigame_init_viewport();
 
-    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+    surface_t* display = display_get();
+    rdpq_attach(display, depthBuffer);
 
-    rdpq_attach(display_get(), depthBuffer);
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
-    t3d_screen_clear_color(RGBA32(0, 0, 0, 0xFF));
+
+    if (!has_background) {
+        rdpq_set_color_image_raw(
+            0, 
+            PhysicalAddr(background_surface.buffer), 
+            FMT_RGBA16, 
+            background_surface.width, 
+            background_surface.height, 
+            background_surface.stride
+        );
+
+        rdpq_attach(&background_surface, depthBuffer);
+        rdpq_clear((color_t){0, 0, 0, 0xFF});
+        t3d_screen_clear_depth();
+        t3d_light_set_ambient(colorWhite);
+        t3d_light_set_count(0);
+        rspq_block_run(rampage_assets_get()->ground->userBlock);
+        rdpq_detach();
+        has_background = true;
+
+        rdpq_set_color_image_raw(
+            0, 
+            PhysicalAddr(display->buffer), 
+            FMT_RGBA16, 
+            display->width, 
+            display->height, 
+            display->stride
+        );
+    }
+
+    // rdpq_clear((color_t){0, 0, 0, 0xFF});
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorWhite);
     t3d_light_set_count(0);
 
-    rspq_block_run(rampage_assets_get()->ground->userBlock);
+    // rdpq_set_scissor(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
+    // rspq_block_run(rampage_assets_get()->ground->userBlock);
+    // rdpq_set_scissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    minigame_redraw_rects();
 
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_count(sizeof(pointLightPositions) / sizeof(*pointLightPositions));
@@ -559,4 +658,5 @@ void rampage_destroy(struct Rampage* rampage) {
     rampage_assets_destroy();
     props_destroy(&rampage->props);
     spark_effects_destroy();
+    surface_free(&background_surface);
 }

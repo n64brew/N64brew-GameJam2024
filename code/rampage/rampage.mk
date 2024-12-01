@@ -20,6 +20,7 @@ ASSETS_LIST += \
 	filesystem/rampage/building.t3dm \
 	filesystem/rampage/player.t3dm \
 	filesystem/rampage/ground.t3dm \
+	filesystem/rampage/ground_cover.t3dm \
 	filesystem/rampage/tank0.t3dm \
 	filesystem/rampage/house.t3dm \
 	filesystem/rampage/building_2story.t3dm \

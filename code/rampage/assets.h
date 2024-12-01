@@ -17,6 +17,7 @@ struct RampageAssets {
     T3DModel* building[BUILDING_HEIGHT_STEPS];
     struct RampageSplitMesh buildingSplit[BUILDING_HEIGHT_STEPS];
     T3DModel* ground;
+    T3DModel* ground_cover;
     T3DModel* tank;
     struct RampageSplitMesh tankSplit;
     T3DModel* bullet;
