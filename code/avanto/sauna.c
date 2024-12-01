@@ -62,10 +62,10 @@ static bool sauna_stage_inited[NUM_SAUNA_STAGES];
 static float upness[4];
 static struct particle_source *kiuas_particle_source;
 
-char banner_str[16];
-float banner_time;
-float time_left;
-float min_time_before_exiting;
+static char banner_str[16];
+static float banner_time;
+static float time_left;
+static float min_time_before_exiting;
 
 static void sauna_do_light() {
   uint8_t light_color[4] = {255, 255, 255, 255};
@@ -150,6 +150,8 @@ void sauna_init() {
   kiuas_particle_source->movement_amplitude = 5.f;
   kiuas_particle_source->max_particles = 128;
   kiuas_particle_source->paused = true;
+
+  min_time_before_exiting = 3.f;
 
   for (size_t i = 0; i < 4; i++) {
     players[i].scale = SCALE;
@@ -522,7 +524,6 @@ static bool sauna_done_fixed_loop(float delta_time) {
 
   strcpy(banner_str, "DRAW");
   banner_time = INFINITY;
-  min_time_before_exiting = 3.f;
   xm64player_set_vol(&music, .5f);
   wav64_play(&sfx_winner, get_next_sfx_channel());
 

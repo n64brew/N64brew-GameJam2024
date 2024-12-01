@@ -90,6 +90,7 @@ struct script_action {
       size_t first_channel;
     };
     size_t signal;
+    const struct camera *camera;
   };
 };
 
@@ -124,6 +125,7 @@ enum script_actions {
   ACTION_SEND_SIGNAL,
   ACTION_ANIM_SET_PLAYING,
   ACTION_ANIM_UPDATE_TO_TS,
+  ACTION_READ_CAM_POS,
   ACTION_END,
 };
 
@@ -164,6 +166,7 @@ enum player_anims {
   STAND_UP,
   PASS_OUT,
   SWIM,
+  DANCE,
   NUM_PLAYER_ANIMS,
 };
 

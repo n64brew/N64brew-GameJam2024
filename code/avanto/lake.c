@@ -23,15 +23,43 @@
 #define PLAYER_STARTING_Z -490.f
 #define RACE_START_Z 1050.f
 #define RACE_END_Z (80.f*64.f)
+#define CELEB_Z (86.5f*64.f)
 #define LAKE_WALK_SPEED 200.f
+#define MAX_TIME 60.f
+#define TEMP_LOSS_TIME 30.f
+#define PENALTY_TIME 1.f
+#define WATER_DRAG -20.f
+#define SPEED_GAIN 20.f
+#define HEAT_BONUS 1.5f
+#define NUM_BUTTONS 13
+#define MAX_CAM_Z_OFFSET 200.f
+#define INST_X_OFFSET_LEFT 50
+#define INST_X_OFFSET_RIGHT 35
+#define INST_MIN_X 30
+#define INST_MAX_Y 170
+#define INST_Y_GAP 22
 
 enum lake_stages {
   LAKE_INTRO,
+  LAKE_GAME,
+  LAKE_OUTRO,
+  LAKE_END,
   NUM_LAKE_STAGES,
+};
+
+struct button {
+  sprite_t *sprite;
+  uint16_t mask;
 };
 
 extern T3DViewport viewport;
 extern struct character players[];
+extern wav64_t sfx_start;
+extern wav64_t sfx_winner;
+extern const char *const PLAYER_TITLES[];
+extern struct rdpq_textparms_s banner_params;
+extern struct rdpq_textparms_s timer_params;
+extern xm64player_t music;
 
 static struct entity map;
 static T3DModel *map_model;
@@ -54,21 +82,23 @@ static struct ground ground = {
 static bool lake_stage_inited[NUM_LAKE_STAGES];
 static size_t lake_stage;
 static wav64_t sfx_splash;
+static float speeds[4];
+static float penalties[4];
+static const struct button *next_buttons[4];
+static struct button buttons[NUM_BUTTONS];
+static sprite_t *penalty_sprite;
+static sprite_t *balloon_sprite;
+static sprite_t *tail_sprite;
+rdpq_blitparms_t tail_params;
+static uint8_t winners_mask;
+static char banner_str[32];
+static float min_time_before_exiting;
 
 static void update_cam(float z) {
   cam.target.v[2] = z;
   cam.pos.v[2] = z;
   cam.pos.v[0] = CAMERA_X;
   cam.target.v[0] = FOCUS_X;
-  /*
-  debugf("T %f %f %f; P %f %f %f\n",
-      cam.target.v[0],
-      cam.target.v[1],
-      cam.target.v[2],
-      cam.pos.v[0],
-      cam.pos.v[1],
-      cam.pos.v[2]);
-      */
   t3d_viewport_look_at(&viewport,
       &cam.pos,
       &cam.target,
@@ -80,6 +110,83 @@ bool filter_out_water(void *user_data, const T3DObject *object) {
     return false;
   }
   return true;
+}
+
+static void load_buttons() {
+  joypad_buttons_t b;
+
+  b.raw = 0;
+  b.a = 1;
+  buttons[0].sprite = sprite_load("rom:/core/AButton.sprite");
+  buttons[0].mask = b.raw;
+
+  b.raw = 0;
+  b.b = 1;
+  buttons[1].sprite = sprite_load("rom:/core/BButton.sprite");
+  buttons[1].mask = b.raw;
+
+  b.raw = 0;
+  b.c_up = 1;
+  buttons[2].sprite = sprite_load("rom:/core/CUp.sprite");
+  buttons[2].mask = b.raw;
+
+  b.raw = 0;
+  b.c_down = 1;
+  buttons[3].sprite = sprite_load("rom:/core/CDown.sprite");
+  buttons[3].mask = b.raw;
+
+  b.raw = 0;
+  b.c_left = 1;
+  buttons[4].sprite = sprite_load("rom:/core/CLeft.sprite");
+  buttons[4].mask = b.raw;
+
+  b.raw = 0;
+  b.c_right = 1;
+  buttons[5].sprite = sprite_load("rom:/core/CRight.sprite");
+  buttons[5].mask = b.raw;
+
+  b.raw = 0;
+  b.d_up = 1;
+  buttons[6].sprite = sprite_load("rom:/core/DUp.sprite");
+  buttons[6].mask = b.raw;
+
+  b.raw = 0;
+  b.d_down = 1;
+  buttons[7].sprite = sprite_load("rom:/core/DDown.sprite");
+  buttons[7].mask = b.raw;
+
+  b.raw = 0;
+  b.d_left = 1;
+  buttons[8].sprite = sprite_load("rom:/core/DLeft.sprite");
+  buttons[8].mask = b.raw;
+
+  b.raw = 0;
+  b.d_right = 1;
+  buttons[9].sprite = sprite_load("rom:/core/DRight.sprite");
+  buttons[9].mask = b.raw;
+
+  b.raw = 0;
+  b.l = 1;
+  buttons[10].sprite = sprite_load("rom:/core/LTrigger.sprite");
+  buttons[10].mask = b.raw;
+
+  b.raw = 0;
+  b.r = 1;
+  buttons[11].sprite = sprite_load("rom:/core/RTrigger.sprite");
+  buttons[11].mask = b.raw;
+
+  b.raw = 0;
+  b.z = 1;
+  buttons[12].sprite = sprite_load("rom:/core/ZTrigger.sprite");
+  buttons[12].mask = b.raw;
+}
+
+const struct button *get_next_button(const struct button *prev) {
+  struct button *b = NULL;
+  do {
+    b = &buttons[rand() % NUM_BUTTONS];
+  } while(b == prev);
+  return b;
 }
 
 void lake_init() {
@@ -115,9 +222,7 @@ void lake_init() {
     (T3DVec3) {{-1.f, 1.f, -1.f}},
   };
   static uint8_t light_color[] = {0xff, 0xff, 0xff, 0xff};
-  //static uint8_t ambient_color[] = {0x40, 0x9c, 0xff, 0xff};
-  //static uint8_t ambient_color[] = {0x7b, 0xb1, 0xfc, 0xff};
-  static uint8_t ambient_color[] = {0x64, 0x9c, 0xff, 0xff};
+  static uint8_t ambient_color[] = {0x40, 0x9c, 0xff, 0xff};
   t3d_vec3_norm(&light_dir[0]);
   t3d_vec3_norm(&light_dir[1]);
   t3d_light_set_directional(0, light_color, &light_dir[0]);
@@ -133,9 +238,22 @@ void lake_init() {
     t3d_anim_attach(&players[i].s.anims[WALK], &players[i].s.skeleton);
     players[i].current_anim = WALK;
     players[i].scale = 1.f;
+    speeds[i] = 0.f;
+    penalties[i] = 0.f;
+    next_buttons[i] = get_next_button(NULL);
   }
 
   wav64_open(&sfx_splash, "rom:/avanto/splash.wav64");
+
+  load_buttons();
+  penalty_sprite = sprite_load("rom:/avanto/penalty.sprite");
+  balloon_sprite = sprite_load("rom:/avanto/balloon.sprite");
+  tail_sprite = sprite_load("rom:/avanto/tail.sprite");
+  memset(&tail_params, 0, sizeof(tail_params));
+
+  winners_mask = 0;
+  banner_str[0] = 0;
+  min_time_before_exiting = 3.f;
 
   for (size_t i = 0; i < NUM_LAKE_STAGES; i++) {
     lake_stage_inited[i] = false;
@@ -144,90 +262,90 @@ void lake_init() {
 }
 
 void lake_dynamic_loop_pre(float delta_time) {
-  joypad_buttons_t pressed = joypad_get_buttons_pressed(0);
-  joypad_buttons_t held = joypad_get_buttons_held(0);
-  /*
-  if (pressed.d_up) {
-    cam.pos.v[1] += 10.f;
+  joypad_buttons_t pressed[4];
+  for (size_t i = 0; i < core_get_playercount(); i++) {
+    pressed[i] = joypad_get_buttons_pressed(core_get_playercontroller(i));
   }
-  if (pressed.d_down) {
-    cam.pos.v[1] -= 10.f;
-  }
-  if (pressed.d_left) {
-    cam.pos.v[0] -= 10.f;
-  }
-  if (pressed.d_right) {
-    cam.pos.v[0] += 10.f;
-  }
-  */
-  bool mudou = false;
-  static T3DVec3 light = (T3DVec3) {{1.f, 2.f, 1.f}};
-  static T3DVec3 light2;
-  static int qual = 0;
-  if (pressed.d_up) {
-    light.v[qual]++;
-    mudou = true;
-  }
-  if (pressed.d_down) {
-    light.v[qual]--;
-    mudou = true;
-  }
-  if (pressed.z) {
-    qual = (qual+1) % 3;
-    mudou = true;
+  for (size_t i = core_get_playercount(); i < 4; i++) {
+    pressed[i].raw = 0;
   }
 
-  if (mudou) {
-    light2.v[0] = light.v[0];
-    light2.v[1] = light.v[1];
-    light2.v[2] = light.v[2];
-    t3d_vec3_norm(&light2);
-    static uint8_t light_color[] = {0xff, 0xff, 0xff, 0xff};
-    t3d_light_set_directional(0, light_color, &light2);
-    for (int i = 0; i < 3; i++) {
-      if (qual == i) {
-        debugf("(");
-      }
-      debugf("%.f ", light.v[i]);
-      if (qual == i) {
-        debugf(")");
+  if (lake_stage == LAKE_END) {
+    if (min_time_before_exiting >= EPS) {
+      min_time_before_exiting -= delta_time;
+    }
+    else {
+      for (size_t i = 0; i < core_get_playercount(); i++) {
+        if (pressed[core_get_playercontroller(i)].a) {
+          minigame_end();
+          return;
+        }
       }
     }
-    debugf("\n");
   }
 
-  mudou = false;
-  float d = held.l? 1.f : 50.f;
-  if (pressed.c_right) {
-    players[0].pos.v[2] += d;
-    players[1].pos.v[2] += d;
-    players[2].pos.v[2] += d;
-    players[3].pos.v[2] += d;
-    mudou = true;
+  if (lake_stage != LAKE_GAME) {
+    return;
   }
-  if (pressed.c_left) {
-    players[0].pos.v[2] -= d;
-    players[1].pos.v[2] -= d;
-    players[2].pos.v[2] -= d;
-    players[3].pos.v[2] -= d;
-    mudou = true;
+
+  bool ended = false;
+  int num_in = 0;
+  float avg_z = 0.f;
+  float max_z = -INFINITY;
+  for (size_t i = 0; i < 4; i++) {
+    if (players[i].out) {
+      continue;
+    }
+    num_in++;
+
+    if (speeds[i] >= EPS) {
+      float drag_mul = speeds[i] / (-4.f*WATER_DRAG);
+      drag_mul = drag_mul > 2.0f? 2.0f : drag_mul;
+      drag_mul = drag_mul < 1.0f? 1.0f : drag_mul;
+      players[i].pos.v[2] += speeds[i] * delta_time;
+      speeds[i] += WATER_DRAG * drag_mul * delta_time;
+      t3d_anim_set_playing(&players[i].s.anims[players[i].current_anim], true);
+    }
+    t3d_anim_set_looping(&players[i].s.anims[players[i].current_anim],
+        speeds[i] >= 5.f);
+
+    avg_z += players[i].pos.v[2];
+    max_z = players[i].pos.v[2] > max_z? players[i].pos.v[2] : max_z;
+
+    if (RACE_END_Z - players[i].pos.v[2] < EPS) {
+      ended = true;
+      players[i].pos.v[2] = RACE_END_Z;
+      winners_mask |= 1 << i;
+      core_set_winner(i);
+      continue;
+    }
+
+    if (penalties[i] >= EPS) {
+      penalties[i] -= delta_time;
+    }
+    else {
+      if (pressed[i].raw == next_buttons[i]->mask) {
+        speeds[i] += SPEED_GAIN
+          * (players[i].temperature >= EPS? HEAT_BONUS : 1.f);
+        next_buttons[i] = get_next_button(next_buttons[i]);
+      }
+      else if (pressed[i].raw && !pressed[i].start) {
+        penalties[i] = PENALTY_TIME;
+      }
+    }
+
+    if (players[i].temperature >= EPS) {
+      players[i].temperature -= delta_time / TEMP_LOSS_TIME;
+    }
   }
-  if (pressed.c_up) {
-    players[0].pos.v[0] += d;
-    players[1].pos.v[0] += d;
-    players[2].pos.v[0] += d;
-    players[3].pos.v[0] += d;
-    mudou = true;
-  }
-  if (pressed.c_down) {
-    players[0].pos.v[0] -= d;
-    players[1].pos.v[0] -= d;
-    players[2].pos.v[0] -= d;
-    players[3].pos.v[0] -= d;
-    mudou = true;
-  }
-  if (mudou) {
-    update_cam((players[1].pos.v[2]+players[2].pos.v[2])/2.f);
+  avg_z /= (float) num_in;
+
+  float cam_z = max_z - avg_z < MAX_CAM_Z_OFFSET?
+    avg_z : max_z - MAX_CAM_Z_OFFSET;
+  update_cam(cam_z);
+
+  if (ended) {
+    lake_stage++;
   }
 }
 
@@ -274,7 +392,78 @@ void lake_dynamic_loop_render(float delta_time) {
     }
   }
 
-  draw_hud();
+  rdpq_sync_tile();
+  rdpq_sync_pipe();
+
+  if (lake_stage == LAKE_GAME) {
+    rdpq_mode_push();
+    rdpq_mode_zbuf(false, false);
+    for (size_t i = 0; i < 4; i++) {
+      if (players[i].out) {
+        continue;
+      }
+
+      T3DVec3 player_head = {{
+        players[i].pos.v[0],
+        players[i].pos.v[1] + 1.8f*64.f,
+        players[i].pos.v[2],
+      }};
+      T3DVec3 p_pos;
+      t3d_viewport_calc_viewspace_pos(&viewport, &p_pos, &player_head);
+      int inst_x = p_pos.v[0] < 100.f?
+        (int) p_pos.v[0] + INST_X_OFFSET_RIGHT
+        : (int) p_pos.v[0] - INST_X_OFFSET_LEFT;
+      inst_x = inst_x < INST_MIN_X? INST_MIN_X : inst_x;
+      int inst_y = INST_MAX_Y - i*INST_Y_GAP;
+
+      int tail_x;
+      if (inst_x < (int) p_pos.v[0]) {
+        tail_params.flip_x = false;
+        tail_x = inst_x + balloon_sprite->width - 2;
+      }
+      else {
+        tail_x = inst_x - tail_sprite->width + 1;
+        tail_params.flip_x = true;
+      }
+      int tail_y = (int) p_pos.v[1];
+      if (tail_y < inst_y) {
+        tail_y = inst_y;
+      }
+      else if (tail_y >= inst_y+balloon_sprite->height-tail_sprite->height) {
+        tail_y = inst_y + balloon_sprite->height - tail_sprite->height;
+      }
+
+      rdpq_mode_push();
+      rdpq_set_mode_standard();
+      rdpq_mode_alphacompare(0xff);
+      rdpq_sprite_blit(balloon_sprite, inst_x, inst_y, NULL);
+      rdpq_sprite_blit(tail_sprite, tail_x, tail_y, &tail_params);
+      rdpq_sprite_blit(
+          penalties[i] >= EPS? penalty_sprite : next_buttons[i]->sprite,
+          inst_x+16,
+          inst_y+3,
+          NULL);
+      rdpq_mode_pop();
+
+      rdpq_text_print(NULL,
+          FONT_NORMAL,
+          inst_x+3,
+          inst_y+14,
+          PLAYER_TITLES[i]);
+    }
+    rdpq_mode_pop();
+  }
+
+  if (lake_stage < LAKE_OUTRO) {
+    draw_hud();
+  }
+
+  if (lake_stage == LAKE_END) {
+    rdpq_mode_push();
+    rdpq_mode_zbuf(false, false);
+    rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
+    rdpq_mode_pop();
+  }
 }
 
 void lake_dynamic_loop_post(float delta_time) {
@@ -326,7 +515,7 @@ struct script_action intro_actions[][9] = {
     },
     {.type = ACTION_START_ANIM, .anim = SWIM},
     {.type = ACTION_ANIM_UPDATE_TO_TS, .time = 0.f},
-    {.type = ACTION_ANIM_SET_PLAYING, .playing = false},
+    {.type = ACTION_ANIM_SET_PLAYING, .playing = true},
     {.type = ACTION_END},
   },
   {
@@ -338,7 +527,7 @@ struct script_action intro_actions[][9] = {
     },
     {.type = ACTION_START_ANIM, .anim = SWIM},
     {.type = ACTION_ANIM_UPDATE_TO_TS, .time = 0.f},
-    {.type = ACTION_ANIM_SET_PLAYING, .playing = false},
+    {.type = ACTION_ANIM_SET_PLAYING, .playing = true},
     {.type = ACTION_END},
   },
   {
@@ -350,7 +539,7 @@ struct script_action intro_actions[][9] = {
     },
     {.type = ACTION_START_ANIM, .anim = SWIM},
     {.type = ACTION_ANIM_UPDATE_TO_TS, .time = 0.f},
-    {.type = ACTION_ANIM_SET_PLAYING, .playing = false},
+    {.type = ACTION_ANIM_SET_PLAYING, .playing = true},
     {.type = ACTION_END},
   },
   {
@@ -362,11 +551,11 @@ struct script_action intro_actions[][9] = {
     },
     {.type = ACTION_START_ANIM, .anim = SWIM},
     {.type = ACTION_ANIM_UPDATE_TO_TS, .time = 0.f},
-    {.type = ACTION_ANIM_SET_PLAYING, .playing = false},
+    {.type = ACTION_ANIM_SET_PLAYING, .playing = true},
     {.type = ACTION_END},
   },
 };
-static void lake_cam_intro_fixed_loop(float delta_time) {
+static void lake_intro_fixed_loop(float delta_time) {
   static struct script_state script_states[5];
   if (!lake_stage_inited[LAKE_INTRO]) {
     lake_stage_inited[LAKE_INTRO] = true;
@@ -393,14 +582,134 @@ static void lake_cam_intro_fixed_loop(float delta_time) {
   }
 
   if (done) {
+    wav64_play(&sfx_start, get_next_sfx_channel());
     lake_stage++;
   }
+}
+
+struct script_action outro_actions[][4] = {
+  {
+    {.type = ACTION_READ_CAM_POS, .camera = &cam},
+    {
+      .type = ACTION_MOVE_CAMERA_TO,
+      .pos = (T3DVec3) {{FOCUS_X-200, FOCUS_Y*1.5f, CELEB_Z-200.f}},
+      .target = (T3DVec3) {{FOCUS_X, FOCUS_Y*1.5f, CELEB_Z}},
+      .travel_time = (CELEB_Z-RACE_END_Z)/LAKE_WALK_SPEED,
+    },
+    {.type = ACTION_END},
+  },
+  {
+    {
+      .type = ACTION_WALK_TO,
+      .pos = (T3DVec3) {{PLAYER_MIN_X+PLAYER_DISTANCE*0.f, 0, CELEB_Z}},
+      .walk_speed = LAKE_WALK_SPEED,
+    },
+    {.type = ACTION_ROTATE_TO, .rot = T3D_PI, .speed = T3D_PI},
+    {.type = ACTION_START_ANIM, .anim = DANCE},
+    {.type = ACTION_END},
+  },
+  {
+    {
+      .type = ACTION_WALK_TO,
+      .pos = (T3DVec3) {{PLAYER_MIN_X+PLAYER_DISTANCE*1.f, 0, CELEB_Z}},
+      .walk_speed = LAKE_WALK_SPEED,
+    },
+    {.type = ACTION_ROTATE_TO, .rot = T3D_PI, .speed = T3D_PI},
+    {.type = ACTION_START_ANIM, .anim = DANCE},
+    {.type = ACTION_END},
+  },
+  {
+    {
+      .type = ACTION_WALK_TO,
+      .pos = (T3DVec3) {{PLAYER_MIN_X+PLAYER_DISTANCE*2.f, 0, CELEB_Z}},
+      .walk_speed = LAKE_WALK_SPEED,
+    },
+    {.type = ACTION_ROTATE_TO, .rot = T3D_PI, .speed = T3D_PI},
+    {.type = ACTION_START_ANIM, .anim = DANCE},
+    {.type = ACTION_END},
+  },
+  {
+    {
+      .type = ACTION_WALK_TO,
+      .pos = (T3DVec3) {{PLAYER_MIN_X+PLAYER_DISTANCE*3.f, 0, CELEB_Z}},
+      .walk_speed = LAKE_WALK_SPEED,
+    },
+    {.type = ACTION_ROTATE_TO, .rot = T3D_PI, .speed = T3D_PI},
+    {.type = ACTION_START_ANIM, .anim = DANCE},
+    {.type = ACTION_END},
+  },
+};
+static void lake_outro_fixed_loop(float delta_time) {
+  static struct script_state script_states[5];
+  static size_t num_active_scripts;
+  if (!lake_stage_inited[LAKE_OUTRO]) {
+    lake_stage_inited[LAKE_OUTRO] = true;
+    num_active_scripts = 1;
+
+    script_states[0] = (struct script_state)
+      {.character = NULL, .action = outro_actions[0], .time = 0.f};
+
+    for (size_t i = 0; i < 4; i++) {
+      if (!(winners_mask & (1<<i))) {
+        continue;
+      }
+      script_states[num_active_scripts++] = (struct script_state)
+        {.character = &players[i], .action = outro_actions[i+1], .time = 0.f};
+    }
+    delta_time = 0.f;
+  }
+
+  bool done = true;
+  for (size_t i = 0; i < num_active_scripts; i++) {
+    if (!script_update(&script_states[i], delta_time)) {
+      done = false;
+    }
+  }
+
+  if (done) {
+    lake_stage++;
+  }
+}
+
+void lake_end_fixed_loop(float delta_time) {
+  if (lake_stage_inited[LAKE_END]) {
+    return;
+  }
+
+  lake_stage_inited[LAKE_END] = true;
+
+  size_t num_winners = 0;
+  size_t o = 0;
+  for (size_t i = 0; i < 4; i++) {
+    if (!(winners_mask & (1<<i))) {
+      continue;
+    }
+    o += sprintf(banner_str+o,
+        "%s%s",
+        num_winners? (num_winners == 3? "\n" : " ") : "",
+        PLAYER_TITLES[i]);
+    num_winners++;
+  }
+  sprintf(banner_str+o, "%s%s%s",
+      num_winners < 4? "\n" : " ",
+      SW_BANNER_S,
+      num_winners > 1? "WIN" : "WINS");
+  xm64player_set_vol(&music, .5f);
+  wav64_play(&sfx_winner, get_next_sfx_channel());
 }
 
 bool lake_fixed_loop(float delta_time) {
   switch (lake_stage) {
     case LAKE_INTRO:
-      lake_cam_intro_fixed_loop(delta_time);
+      lake_intro_fixed_loop(delta_time*1000.f);
+      break;
+
+    case LAKE_OUTRO:
+      lake_outro_fixed_loop(delta_time);
+      break;
+
+    case LAKE_END:
+      lake_end_fixed_loop(delta_time);
       break;
   }
 
@@ -415,6 +724,12 @@ bool lake_fixed_loop(float delta_time) {
 }
 
 void lake_cleanup() {
+  sprite_free(tail_sprite);
+  sprite_free(balloon_sprite);
+  sprite_free(penalty_sprite);
+  for (size_t i = 0; i < NUM_BUTTONS; i++) {
+    sprite_free(buttons[i].sprite);
+  }
   wav64_close(&sfx_splash);
   entity_free(&map);
   t3d_model_free(map_model);

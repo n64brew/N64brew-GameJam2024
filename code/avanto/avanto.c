@@ -130,6 +130,9 @@ void minigame_init() {
     players[i].s.anims[SWIM] =
       t3d_anim_create(player_model, "swimming");
     t3d_anim_set_looping(&players[i].s.anims[SWIM], true);
+    players[i].s.anims[DANCE] =
+      t3d_anim_create(player_model, "dancing");
+    t3d_anim_set_looping(&players[i].s.anims[DANCE], true);
     players[i].pos = (T3DVec3) {{0, 0, 0}};
     players[i].scale = 1.f;
     players[i].current_anim = -1;
@@ -221,7 +224,6 @@ void minigame_init() {
   }
 
   current_subgame = &subgames[0];
-  current_subgame = &subgames[1];
   current_subgame->init();
 }
 

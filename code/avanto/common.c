@@ -14,6 +14,13 @@ extern struct character players[];
 extern rspq_block_t *empty_hud_block;
 extern struct particle_source particle_sources[];
 
+const char *const PLAYER_TITLES[] = {
+  SW_PLAYER1_S "P1",
+  SW_PLAYER2_S "P2",
+  SW_PLAYER3_S "P3",
+  SW_PLAYER4_S "P4",
+};
+
 static int next_sfx_channel = FIRST_SFX_CHANNEL;
 static bool script_signals[SCRIPT_NUM_SIGNALS];
 
@@ -274,6 +281,10 @@ bool script_update(struct script_state *state, float delta_time) {
       T3DAnim *anim = &c->s.anims[c->current_anim];
       t3d_anim_update(anim, state->action->time);
     }
+    else if (state->action->type == ACTION_READ_CAM_POS) {
+      cam_pos = state->action->camera->pos;
+      cam_target = state->action->camera->target;
+    }
 
     state->action++;
     state->time = 0.f;
@@ -285,12 +296,6 @@ bool script_update(struct script_state *state, float delta_time) {
 rspq_block_t *build_empty_hud_block() {
   const color_t LINE_COLOR = RGBA32(0x00, 0x00, 0x00, 0xff);
   const color_t BAR_BG_COLOR = RGBA32(0x00, 0xc9, 0xff, 0xff);
-  static const char *const TITLES[] = {
-    SW_PLAYER1_S "P1",
-    SW_PLAYER2_S "P2",
-    SW_PLAYER3_S "P3",
-    SW_PLAYER4_S "P4",
-  };
 
   rspq_block_begin();
   rdpq_mode_push();
@@ -300,7 +305,7 @@ rspq_block_t *build_empty_hud_block() {
     int x = HUD_HORIZONTAL_BORDER + i*HUD_INDIVIDUAL_H_SPACE;
     int mid_x = x + HUD_INDIVIDUAL_H_SPACE/2;
 
-    rdpq_text_print(NULL, FONT_NORMAL, mid_x-4, y, TITLES[i]);
+    rdpq_text_print(NULL, FONT_NORMAL, mid_x-4, y, PLAYER_TITLES[i]);
 
     x += HUD_BAR_X_OFFSET;
     y += HUD_BAR_Y_OFFSET;

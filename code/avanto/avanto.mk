@@ -13,6 +13,9 @@
 # water-bg.sprite https://opengameart.org/content/water-texture-pack
 # finish.sprite own
 # splash.wav64 https://opengameart.org/content/40-cc0-water-splash-slime-sfx
+# tail.sprite own
+# balloon.sprite own
+# penalty.sprite own
 ASSETS_LIST += \
 	filesystem/avanto/sauna.sprite \
 	filesystem/avanto/sauna-depth.sprite \
@@ -38,7 +41,10 @@ ASSETS_LIST += \
 	filesystem/avanto/water-bg.sprite \
 	filesystem/avanto/finish.sprite \
 	filesystem/avanto/splash.wav64 \
-	filesystem/avanto/map.t3dm
+	filesystem/avanto/map.t3dm \
+	filesystem/avanto/tail.sprite \
+	filesystem/avanto/balloon.sprite \
+	filesystem/avanto/penalty.sprite
 
 AVANTO_AUDIOCONV_FLAGS += --wav-mono --wav-resample 22050 --wav-compress 3
 $(FILESYSTEM_DIR)/avanto/%.wav64: $(ASSETS_DIR)/avanto/%.mp3
@@ -55,7 +61,7 @@ $(FILESYSTEM_DIR)/avanto/%.sprite: $(ASSETS_DIR)/avanto/%.png
 $(FILESYSTEM_DIR)/avanto/banner.font64: $(ASSETS_DIR)/squarewave.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [AVANTO FONT] $@"
-	$(N64_MKFONT) --outline 2 --range 30-5A -s 100 --ellipsis 30,3 -o $(dir $@) "$<"
+	$(N64_MKFONT) --outline 2 --range 20-5A -s 100 -o $(dir $@) "$<"
 	mv "$(dir $@)/squarewave.font64" "$@"
 
 $(FILESYSTEM_DIR)/avanto/timer.font64: $(ASSETS_DIR)/squarewave.ttf
