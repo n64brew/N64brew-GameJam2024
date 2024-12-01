@@ -33,7 +33,7 @@ void list_snowmen(Snowman *snowmen)
 {
     while (snowmen != NULL)
     {
-        fprintf(stderr, "Snowman: (%f,%f) for %f\n", snowmen->x, snowmen->y, snowmen->time);
+        // fprintf(stderr, "Snowman: (%f,%f) for %f\n", snowmen->x, snowmen->y, snowmen->time);
         snowmen = snowmen->next;
     }
 }

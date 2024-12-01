@@ -64,7 +64,7 @@ void update_snowmen(float deltatime)
 
         // TODO: Delete these logging functions once I'm sure that we're correctly destroying the snowmen.
         list_snowmen(snowmen);
-        fprintf(stderr, "Snowmen: %d\n", count_snowmen(snowmen));
+        // fprintf(stderr, "Snowmen: %d\n", count_snowmen(snowmen));
     }
 
     time_elapsed += deltatime;
@@ -179,17 +179,40 @@ typedef struct Rect
     float y2;
 } Rect;
 
+typedef struct Collision
+{
+    bool x;
+    bool y;
+} Collision;
+
 bool detect_collision(Rect a, Rect b)
 {
     return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
 }
 
-bool check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
+Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
 {
+    Collision collision = (Collision){.x = false, .y = false};
+    fprintf(stderr, "Checking for collisions, x is %s, y is %s\n", collision.x ? "true" : "false", collision.y ? "true" : "false");
+
     Rect duck_rect = (Rect){
         .x1 = duck->collision_box_x1 + movement.x,
         .y1 = duck->collision_box_y1 + movement.y,
         .x2 = duck->collision_box_x2 + movement.x,
+        .y2 = duck->collision_box_y2 + movement.y,
+    };
+
+    Rect duck_rect_x = (Rect){
+        .x1 = duck->collision_box_x1 + movement.x,
+        .y1 = duck->collision_box_y1,
+        .x2 = duck->collision_box_x2 + movement.x,
+        .y2 = duck->collision_box_y2,
+    };
+
+    Rect duck_rect_y = (Rect){
+        .x1 = duck->collision_box_x1,
+        .y1 = duck->collision_box_y1 + movement.y,
+        .x2 = duck->collision_box_x2,
         .y2 = duck->collision_box_y2 + movement.y,
     };
 
@@ -201,7 +224,23 @@ bool check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
 
         if (detect_collision(duck_rect, temporary_rect))
         {
-            return true;
+            if (detect_collision(duck_rect_x, temporary_rect))
+            {
+                fprintf(stderr, "Collision detected in X\n");
+                collision.x = true;
+            }
+
+            if (detect_collision(duck_rect_y, temporary_rect))
+            {
+                fprintf(stderr, "Collision detected in Y\n");
+                collision.y = true;
+            }
+        }
+
+        // Stop checking if we've already collided in both directions.
+        if (collision.x && collision.y)
+        {
+            return collision;
         }
 
         temporary = temporary->next;
@@ -220,16 +259,33 @@ bool check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
 
         if (detect_collision(duck_rect, temporary_rect))
         {
-            return true;
+            if (detect_collision(duck_rect_x, temporary_rect))
+            {
+                fprintf(stderr, "Collision detected in X\n");
+                collision.x = true;
+            }
+
+            if (detect_collision(duck_rect_y, temporary_rect))
+            {
+                fprintf(stderr, "Collision detected in Y\n");
+                collision.y = true;
+            }
+        }
+
+        // Stop checking if we've already collided in both directions.
+        if (collision.x && collision.y)
+        {
+            return collision;
         }
     }
 
-    return false;
+    return collision;
 }
 
 void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, joypad_8way_t direction, size_t i, float deltatime)
 {
     Vector2 movement;
+    Collision collision;
 
     // Movement
     switch (direction)
@@ -241,9 +297,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = 0, .y = -1 * BOOST};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -271,9 +333,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = SQRT_ONE_HALF * BOOST, .y = -SQRT_ONE_HALF * BOOST};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -301,9 +369,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = 1 * BOOST, .y = 0};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -331,9 +405,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = SQRT_ONE_HALF * BOOST, .y = SQRT_ONE_HALF * BOOST};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -358,9 +438,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = 0, .y = 1 * BOOST};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -388,9 +474,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = -SQRT_ONE_HALF * BOOST, .y = SQRT_ONE_HALF * BOOST};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -418,9 +510,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = -1, .y = 0};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
@@ -448,9 +546,15 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = -SQRT_ONE_HALF * BOOST, .y = -SQRT_ONE_HALF * BOOST};
 
-        if (!check_for_duck_collisions(duck, i, movement))
+        collision = check_for_duck_collisions(duck, i, movement);
+
+        if (!collision.x)
         {
             duck->x += movement.x;
+        }
+
+        if (!collision.y)
+        {
             duck->y += movement.y;
         }
 
