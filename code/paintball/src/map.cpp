@@ -141,7 +141,7 @@ void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
             int idx = iy * (MapWidth/TileSize) + ix;
 
             int halfSegmentCount = (MapWidth/TileSize)/2;
-            int effectiveCount = (int)(halfSegmentCount * mapSize) + 1;
+            int effectiveCount = (int)(halfSegmentCount * mapSize);
             if (effectiveCount < MinSegmentCount/2) effectiveCount = MinSegmentCount/2;
 
             // This assumes zero height
