@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "sauna.h"
+#include "lake.h"
 
 const MinigameDef minigame_def = {
     .gamename = "Avanto",
@@ -39,6 +40,14 @@ struct subgame subgames[] = {
     .dynamic_loop_post = sauna_dynamic_loop_post,
     .cleanup = sauna_cleanup,
     .init = sauna_init,
+  },
+  {
+    .fixed_loop = lake_fixed_loop,
+    .dynamic_loop_pre = lake_dynamic_loop_pre,
+    .dynamic_loop_render = lake_dynamic_loop_render,
+    .dynamic_loop_post = lake_dynamic_loop_post,
+    .cleanup = lake_cleanup,
+    .init = lake_init,
   },
   {
     .fixed_loop = NULL,
@@ -85,7 +94,7 @@ void minigame_init() {
       DEPTH_16_BPP,
       3,
       GAMMA_NONE,
-      FILTERS_RESAMPLE_ANTIALIAS);
+      FILTERS_RESAMPLE);
   z_buffer = display_get_zbuf();
 
   t3d_init((T3DInitParams){});
@@ -118,8 +127,11 @@ void minigame_init() {
     players[i].s.anims[PASS_OUT] =
       t3d_anim_create(player_model, "passing_out");
     t3d_anim_set_looping(&players[i].s.anims[PASS_OUT], false);
+    players[i].s.anims[SWIM] =
+      t3d_anim_create(player_model, "swimming");
+    t3d_anim_set_looping(&players[i].s.anims[SWIM], true);
     players[i].pos = (T3DVec3) {{0, 0, 0}};
-    players[i].scale = 2.5f;
+    players[i].scale = 1.f;
     players[i].current_anim = -1;
     players[i].visible = false;
     players[i].temperature = 0.f;
@@ -131,7 +143,7 @@ void minigame_init() {
         &(T3DVec3) {{0, players[i].rotation, 0}},
         &players[i].pos,
         &players[i].s.skeleton,
-        player_draw_conf);
+        &player_draw_conf);
   }
 
   const color_t BLACK = RGBA32(0x00, 0x00, 0x00, 0xff);
@@ -209,12 +221,13 @@ void minigame_init() {
   }
 
   current_subgame = &subgames[0];
+  current_subgame = &subgames[1];
   current_subgame->init();
 }
 
 void minigame_fixedloop(float delta_time) {
-  if (current_subgame->fixed_loop) {
-    if (current_subgame->fixed_loop(delta_time, paused)) {
+  if (current_subgame->fixed_loop && !paused) {
+    if (current_subgame->fixed_loop(delta_time)) {
       current_subgame->cleanup();
       current_subgame++;
       if (current_subgame->init) {
@@ -232,14 +245,14 @@ void minigame_fixedloop(float delta_time) {
 void minigame_loop(float delta_time) {
   static int paused_controller = 0;
   static int paused_selection = 0;
+  static surface_t *first_paused = NULL;
 
   if (!paused) {
     for (size_t i = 0; i < core_get_playercount(); i++) {
       joypad_buttons_t pressed = joypad_get_buttons_pressed(
           core_get_playercontroller(i));
-      {
-      }
       if (pressed.start) {
+        first_paused = NULL;
         paused_controller = core_get_playercontroller(i);
         paused_selection = 0;
         paused = true;
@@ -261,16 +274,18 @@ void minigame_loop(float delta_time) {
     }
   }
 
-  if (current_subgame->dynamic_loop_pre) {
-    current_subgame->dynamic_loop_pre(delta_time, paused);
+  if (current_subgame->dynamic_loop_pre && !paused) {
+    current_subgame->dynamic_loop_pre(delta_time);
   }
 
-  rdpq_attach(display_get(), z_buffer);
+  surface_t *display_surface;
+  display_surface = display_get();
+  rdpq_attach(display_surface, z_buffer);
   t3d_frame_start();
   t3d_viewport_attach(&viewport);
 
-  if (current_subgame->dynamic_loop_render) {
-    current_subgame->dynamic_loop_render(delta_time, paused);
+  if (current_subgame->dynamic_loop_render && !paused) {
+    current_subgame->dynamic_loop_render(delta_time);
   }
 
   rdpq_sync_pipe();
@@ -279,15 +294,23 @@ void minigame_loop(float delta_time) {
   rdpq_mode_zbuf(false, false);
 
   if (paused) {
+    if (!first_paused) {
+      rdpq_mode_push();
+      rdpq_set_fog_color(RGBA32(0xff, 0xff, 0xff, 0xc0));
+      rdpq_set_prim_color(RGBA32(0x00, 0x00, 0x00, 0xff));
+      rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+      rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
+      rdpq_fill_rectangle(0, 0, 320, 240);
+      rdpq_mode_pop();
 
-
-    rdpq_mode_push();
-    rdpq_set_fog_color(RGBA32(0xff, 0xff, 0xff, 0xc0));
-    rdpq_set_prim_color(RGBA32(0x00, 0x00, 0x00, 0xff));
-    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
-    rdpq_fill_rectangle(0, 0, 320, 240);
-    rdpq_mode_pop();
+      first_paused = display_surface;
+    }
+    else if (first_paused != display_surface) {
+      rdpq_mode_push();
+      rdpq_set_mode_copy(false);
+      rdpq_tex_blit(first_paused, 0, 0, NULL);
+      rdpq_mode_pop();
+    }
 
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 60, "PAUSED");
 
@@ -331,8 +354,8 @@ void minigame_loop(float delta_time) {
 
   rdpq_detach_show();
 
-  if (current_subgame->dynamic_loop_post) {
-    current_subgame->dynamic_loop_post(delta_time, paused);
+  if (current_subgame->dynamic_loop_post && !paused) {
+    current_subgame->dynamic_loop_post(delta_time);
   }
 }
 

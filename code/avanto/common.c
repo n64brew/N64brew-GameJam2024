@@ -15,6 +15,7 @@ extern rspq_block_t *empty_hud_block;
 extern struct particle_source particle_sources[];
 
 static int next_sfx_channel = FIRST_SFX_CHANNEL;
+static bool script_signals[SCRIPT_NUM_SIGNALS];
 
 float get_ground_height(float z, struct ground *ground) {
   float height = 0;
@@ -22,7 +23,15 @@ float get_ground_height(float z, struct ground *ground) {
     if (ground->changes[i].start_z > z) {
       break;
     }
-    height = ground->changes[i].height;
+    if (!ground->changes[i].ramp_to_next) {
+      height = ground->changes[i].height;
+    }
+    else {
+      float diff = ground->changes[i+1].height - ground->changes[i].height;
+      float len = ground->changes[i+1].start_z - ground->changes[i].start_z;
+      float prog = z - ground->changes[i].start_z;
+      height = ground->changes[i].height + diff*(prog/len);
+    }
   }
   return height;
 }
@@ -57,7 +66,7 @@ void entity_init(struct entity *e,
     const T3DVec3 *rotation,
     const T3DVec3 *pos,
     T3DSkeleton *skeleton,
-    T3DModelDrawConf draw_conf) {
+    T3DModelDrawConf *draw_conf) {
 
   e->model = model;
   e->transform = malloc_uncached(sizeof(T3DMat4FP));
@@ -67,11 +76,19 @@ void entity_init(struct entity *e,
   rspq_block_begin();
   t3d_matrix_push(e->transform);
 
+  T3DModelDrawConf dummy_conf;
+  memset(&dummy_conf, 0, sizeof(dummy_conf));
+  if (!draw_conf) {
+    draw_conf = &dummy_conf;
+  }
   if (e->skeleton) {
-    draw_conf.matrices = skeleton->bufferCount == 1? skeleton->boneMatricesFP
+    draw_conf->matrices = skeleton->bufferCount == 1? skeleton->boneMatricesFP
       : (const T3DMat4FP*) t3d_segment_placeholder(T3D_SEGMENT_SKELETON);
   }
-  t3d_model_draw_custom(e->model, draw_conf);
+  else {
+    draw_conf->matrices = NULL;
+  }
+  t3d_model_draw_custom(e->model, *draw_conf);
 
   t3d_matrix_pop(1);
   e->display_block = rspq_block_end();
@@ -82,7 +99,15 @@ void entity_free(struct entity *e) {
   rspq_block_free(e->display_block);
 }
 
+void script_reset_signals() {
+  for (size_t i = 0; i < SCRIPT_NUM_SIGNALS; i++) {
+    script_signals[i] = false;
+  }
+}
+
 bool script_update(struct script_state *state, float delta_time) {
+  static T3DVec3 cam_pos;
+  static T3DVec3 cam_target;
   while (delta_time > EPS) {
     if (state->action->type == ACTION_END) {
       return true;
@@ -141,7 +166,7 @@ bool script_update(struct script_state *state, float delta_time) {
           &(T3DVec3) {{c->pos.v[0], 0.f, c->pos.v[2]}});
 
       float time_to_end = state->action->type == ACTION_WALK_TO?
-        t3d_vec3_len(&diff) / WALK_SPEED :
+        t3d_vec3_len(&diff) / state->action->walk_speed:
         c->s.anims[CLIMB].animRef->duration - state->time;
 
       if (time_to_end - delta_time < EPS) {
@@ -184,6 +209,70 @@ bool script_update(struct script_state *state, float delta_time) {
     }
     else if (state->action->type == ACTION_START_XM64) {
       xm64player_play(state->action->xm64, state->action->first_channel);
+    }
+    else if (state->action->type == ACTION_MOVE_CAMERA_TO) {
+      float new_time = state->time + delta_time;
+
+      if (state->action->travel_time - new_time < EPS) {
+        delta_time -= new_time - state->action->travel_time;
+        cam_pos = state->action->pos;
+        cam_target = state->action->target;
+        t3d_viewport_look_at(&viewport,
+            &cam_pos,
+            &cam_target,
+            &(T3DVec3) {{0, 1, 0}});
+      }
+      else {
+        T3DVec3 end_angle = {{
+          state->action->target.v[0] - state->action->pos.v[0],
+          state->action->target.v[1] - state->action->pos.v[1],
+          state->action->target.v[2] - state->action->pos.v[2],
+        }};
+        T3DVec3 cam_angle = {{
+          cam_target.v[0] - cam_pos.v[0],
+          cam_target.v[1] - cam_pos.v[1],
+          cam_target.v[2] - cam_pos.v[2],
+        }};
+        float time_left = state->action->travel_time - new_time;
+        for (size_t i = 0; i < 3; i++) {
+          float d = state->action->pos.v[i] - cam_pos.v[i];
+          cam_pos.v[i] += d * (delta_time / time_left);
+
+          d = end_angle.v[i] - cam_angle.v[i];
+          cam_angle.v[i] += d * (delta_time / time_left);
+        }
+
+        cam_target = (T3DVec3) {{
+          cam_pos.v[0] + cam_angle.v[0],
+          cam_pos.v[1] + cam_angle.v[1],
+          cam_pos.v[2] + cam_angle.v[2],
+        }};
+        t3d_viewport_look_at(&viewport,
+            &cam_pos,
+            &cam_target,
+            &(T3DVec3) {{0, 1, 0}});
+
+        state->time = new_time;
+        break;
+      }
+    }
+    else if (state->action->type == ACTION_SEND_SIGNAL) {
+      script_signals[state->action->signal] = true;
+    }
+    else if (state->action->type == ACTION_WAIT_FOR_SIGNAL) {
+      if (!script_signals[state->action->signal]) {
+        break;
+      }
+    }
+    else if (state->action->type == ACTION_ANIM_SET_PLAYING) {
+      struct character *c = state->character;
+      T3DAnim *anim = &c->s.anims[c->current_anim];
+      t3d_anim_set_playing(anim, state->action->playing);
+    }
+    else if (state->action->type == ACTION_ANIM_UPDATE_TO_TS) {
+      struct character *c = state->character;
+      T3DAnim *anim = &c->s.anims[c->current_anim];
+      t3d_anim_update(anim, state->action->time);
     }
 
     state->action++;

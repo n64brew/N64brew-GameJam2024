@@ -3,6 +3,16 @@
 # sj-polkka.xm64 https://musescore.com/user/179734/scores/5907389
 #                samples from https://freewavesamples.com/
 # door.wav64 https://opengameart.org/content/creaky-door-hinge-spooky
+# pine-64-*.sprite https://opengameart.org/content/freebies-mundo-commissions
+# cabin model and cabin.sprite https://opengameart.org/content/low-poly-log-cabin
+# snow.sprite https://opengameart.org/content/terrain-textures-pack-from-stunt-rally-23
+# ice-gs.sprite https://opengameart.org/content/terrain-textures-pack-from-stunt-rally-23
+# planks-gs.sprite https://opengameart.org/content/handpainted-wood
+# metsa-4-bit-* based on https://opengameart.org/content/freebies-mundo-commissions
+#        and https://opengameart.org/content/jkms-tree-set
+# water-bg.sprite https://opengameart.org/content/water-texture-pack
+# finish.sprite own
+# splash.wav64 https://opengameart.org/content/40-cc0-water-splash-slime-sfx
 ASSETS_LIST += \
 	filesystem/avanto/sauna.sprite \
 	filesystem/avanto/sauna-depth.sprite \
@@ -14,7 +24,21 @@ ASSETS_LIST += \
 	filesystem/avanto/sj-polkka.xm64 \
 	filesystem/avanto/banner.font64 \
 	filesystem/avanto/timer.font64 \
-	filesystem/avanto/door.wav64
+	filesystem/avanto/door.wav64 \
+	filesystem/avanto/pine-64-00.sprite \
+	filesystem/avanto/pine-64-01.sprite \
+	filesystem/avanto/pine-64-10.sprite \
+	filesystem/avanto/pine-64-11.sprite \
+	filesystem/avanto/cabin.sprite \
+	filesystem/avanto/snow.sprite \
+	filesystem/avanto/metsa-4bit-top.sprite \
+	filesystem/avanto/metsa-4bit-bottom.sprite \
+	filesystem/avanto/ice-gs.sprite \
+	filesystem/avanto/planks-gs.sprite \
+	filesystem/avanto/water-bg.sprite \
+	filesystem/avanto/finish.sprite \
+	filesystem/avanto/splash.wav64 \
+	filesystem/avanto/map.t3dm
 
 AVANTO_AUDIOCONV_FLAGS += --wav-mono --wav-resample 22050 --wav-compress 3
 $(FILESYSTEM_DIR)/avanto/%.wav64: $(ASSETS_DIR)/avanto/%.mp3

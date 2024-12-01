@@ -1,7 +1,6 @@
-#define MAX_GROUND_CHANGES 4
+#define MAX_GROUND_CHANGES 6
 #define NUM_SFX_CHANNELS 4
 #define FIRST_SFX_CHANNEL (31-NUM_SFX_CHANNELS)
-#define WALK_SPEED 100.f
 #define EPS 1e-6
 #define TIMER_Y 220
 #define HUD_HORIZONTAL_BORDER 26
@@ -10,8 +9,9 @@
 #define HUD_BAR_HEIGHT 16
 #define HUD_BAR_Y_OFFSET 4
 #define HUD_BAR_X_OFFSET 1
-#define GRAVITY 200.f
+#define GRAVITY 240.f
 #define MAX_PARTICLE_SOURCES 4
+#define SCRIPT_NUM_SIGNALS 4
 
 struct entity {
   const T3DModel *model;
@@ -46,6 +46,7 @@ struct character {
 struct ground_height_change {
   float start_z;
   float height;
+  bool ramp_to_next;
 };
 
 struct ground {
@@ -71,7 +72,15 @@ struct script_action {
       float rot;
       float speed;
     };
-    T3DVec3 pos;
+    struct {
+      T3DVec3 pos;
+      T3DVec3 target;
+      union {
+        float travel_time;
+        float walk_speed;
+      };
+    };
+    bool playing;
     size_t anim;
     bool visibility;
     float time;
@@ -80,6 +89,7 @@ struct script_action {
       xm64player_t *xm64;
       size_t first_channel;
     };
+    size_t signal;
   };
 };
 
@@ -90,10 +100,10 @@ struct script_state {
 };
 
 struct subgame {
-  void (*dynamic_loop_pre)(float, bool);
-  void (*dynamic_loop_render)(float, bool);
-  void (*dynamic_loop_post)(float, bool);
-  bool (*fixed_loop)(float, bool);
+  void (*dynamic_loop_pre)(float);
+  void (*dynamic_loop_render)(float);
+  void (*dynamic_loop_post)(float);
+  bool (*fixed_loop)(float);
   void (*cleanup)();
   void (*init)();
 };
@@ -109,6 +119,11 @@ enum script_actions {
   ACTION_DO_WHOLE_ANIM,
   ACTION_PLAY_SFX,
   ACTION_START_XM64,
+  ACTION_MOVE_CAMERA_TO,
+  ACTION_WAIT_FOR_SIGNAL,
+  ACTION_SEND_SIGNAL,
+  ACTION_ANIM_SET_PLAYING,
+  ACTION_ANIM_UPDATE_TO_TS,
   ACTION_END,
 };
 
@@ -148,6 +163,7 @@ enum player_anims {
   UNBEND,
   STAND_UP,
   PASS_OUT,
+  SWIM,
   NUM_PLAYER_ANIMS,
 };
 
@@ -206,8 +222,9 @@ void entity_init(struct entity *e,
     const T3DVec3 *rotation,
     const T3DVec3 *pos,
     T3DSkeleton *skeleton,
-    T3DModelDrawConf draw_conf);
+    T3DModelDrawConf *draw_conf);
 void entity_free(struct entity *e);
+void script_reset_signals();
 bool script_update(struct script_state *state, float delta_time);
 void draw_hud();
 rspq_block_t *build_empty_hud_block();
