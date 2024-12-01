@@ -3,10 +3,15 @@
 
 #include "sequence_game.h"
 
-#define MIN_X 5
-#define MAX_X 152 + 152 - 15
-#define MIN_Y 111 - 85
-#define MAX_Y 194
+#define DUCK_MIN_X 5
+#define DUCK_MAX_X 294
+#define DUCK_MIN_Y 26
+#define DUCK_MAX_Y 194
+
+#define SNOWMAN_MIN_X 17
+#define SNOWMAN_MAX_X 304
+#define SNOWMAN_MIN_Y 32
+#define SNOWMAN_MAX_Y 205
 
 #define PLAYER_1_SPAWN_X1 5
 #define PLAYER_1_SPAWN_Y1 111

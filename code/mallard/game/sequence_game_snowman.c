@@ -16,10 +16,10 @@ Snowman *add_snowman(Snowman *snowmen)
 
     while (validSpawn == false)
     {
-        x = random_between(MIN_X, MAX_X);
-        y = random_between(MIN_Y, MAX_Y);
-        x1 = x + 1;
-        y1 = y + 1;
+        x = random_between(SNOWMAN_MIN_X, SNOWMAN_MAX_X);
+        y = random_between(SNOWMAN_MIN_Y, SNOWMAN_MAX_Y);
+        x1 = x;
+        y1 = y + 8;
         x2 = x + 12;
         y2 = y + 16;
 

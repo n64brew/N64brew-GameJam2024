@@ -237,7 +237,7 @@ void sequence_game_render(float deltatime)
         // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
         // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         // rdpq_set_prim_color(RGBA32(0, 0, 0, 128));
-        // rdpq_fill_rectangle(MIN_X, MIN_Y, MAX_X, MAX_Y);
+        // rdpq_fill_rectangle(DUCK_MIN_X, DUCK_MIN_Y, DUCK_MAX_X, DUCK_MAX_Y);
 
         sequence_game_render_ducks();
 

@@ -49,7 +49,7 @@ void update_snowmen(float deltatime)
 
         // Update the collision box for the snowman. Don't do this for each frame, because when it moves around it can get "caught" on other entities, and feels bad.
         temporary->collision_box_x1 = temporary->x;
-        temporary->collision_box_y1 = temporary->y;
+        temporary->collision_box_y1 = temporary->y + 8;
         temporary->collision_box_x2 = temporary->x + 12;
         temporary->collision_box_y2 = temporary->y + 16;
 
@@ -83,7 +83,7 @@ void update_ducks(float deltatime)
 
         // Update the collision box for the duck. Don't do this for each frame, because when it moves around it can get "caught" on other entities, and feels bad.
         duck->collision_box_x1 = duck->x + 8;
-        duck->collision_box_y1 = duck->y + 8;
+        duck->collision_box_y1 = duck->y + 16;
         duck->collision_box_x2 = duck->x + 24;
         duck->collision_box_y2 = duck->y + 24;
     }
@@ -500,7 +500,7 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         // Position
         movement = (Vector2){.x = -1, .y = 0};
         if (held.b)
-            movement = (Vector2){.x = -1, .y = 0};
+            movement = (Vector2){.x = -1 * BOOST, .y = 0};
 
         collision = check_for_duck_collisions(duck, i, movement);
 
@@ -571,24 +571,24 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         break;
     }
 
-    if (duck->x > MAX_X)
+    if (duck->x > DUCK_MAX_X)
     {
-        duck->x = MAX_X;
+        duck->x = DUCK_MAX_X;
     }
 
-    if (duck->x < MIN_X)
+    if (duck->x < DUCK_MIN_X)
     {
-        duck->x = MIN_X;
+        duck->x = DUCK_MIN_X;
     }
 
-    if (duck->y > MAX_Y)
+    if (duck->y > DUCK_MAX_Y)
     {
-        duck->y = MAX_Y;
+        duck->y = DUCK_MAX_Y;
     }
 
-    if (duck->y < MIN_Y)
+    if (duck->y < DUCK_MIN_Y)
     {
-        duck->y = MIN_Y;
+        duck->y = DUCK_MIN_Y;
     }
 
     if (pressed.a)

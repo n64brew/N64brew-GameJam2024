@@ -27,7 +27,7 @@ void initialize_ducks()
             x = random_between(PLAYER_1_SPAWN_X1, PLAYER_1_SPAWN_X2);
             y = random_between(PLAYER_1_SPAWN_Y1, PLAYER_1_SPAWN_Y2);
             x1 = x + 8;
-            y1 = y + 8;
+            y1 = y + 16;
             x2 = x + 24;
             y2 = y + 24;
             validSpawn = true;
@@ -52,11 +52,10 @@ void initialize_ducks()
         {
             x = random_between(PLAYER_2_SPAWN_X1, PLAYER_2_SPAWN_X2);
             y = random_between(PLAYER_2_SPAWN_Y1, PLAYER_2_SPAWN_Y2);
-            x1 = x + 8;
-            y1 = y + 8;
-            x2 = x + 24;
+            x1 = x + 4;
+            y1 = y + 16;
+            x2 = x + 20;
             y2 = y + 24;
-
             if (!detect_collision((Rect){.x1 = ducks[0].collision_box_x1, .y1 = ducks[0].collision_box_y1, .x2 = ducks[0].collision_box_x2, .y2 = ducks[0].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}))
                 validSpawn = true;
         }
@@ -80,9 +79,9 @@ void initialize_ducks()
         {
             x = random_between(PLAYER_3_SPAWN_X1, PLAYER_3_SPAWN_X2);
             y = random_between(PLAYER_3_SPAWN_Y1, PLAYER_3_SPAWN_Y2);
-            x1 = x + 8;
-            y1 = y + 8;
-            x2 = x + 24;
+            x1 = x + 4;
+            y1 = y + 16;
+            x2 = x + 20;
             y2 = y + 24;
             if (!detect_collision((Rect){.x1 = ducks[0].collision_box_x1, .y1 = ducks[0].collision_box_y1, .x2 = ducks[0].collision_box_x2, .y2 = ducks[0].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
                 !detect_collision((Rect){.x1 = ducks[1].collision_box_x1, .y1 = ducks[1].collision_box_y1, .x2 = ducks[1].collision_box_x2, .y2 = ducks[1].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}))
@@ -108,11 +107,10 @@ void initialize_ducks()
         {
             x = random_between(PLAYER_4_SPAWN_X1, PLAYER_4_SPAWN_X2);
             y = random_between(PLAYER_4_SPAWN_Y1, PLAYER_4_SPAWN_Y2);
-            x1 = x + 8;
-            y1 = y + 8;
-            x2 = x + 24;
+            x1 = x + 4;
+            y1 = y + 16;
+            x2 = x + 20;
             y2 = y + 24;
-
             if (!detect_collision((Rect){.x1 = ducks[0].collision_box_x1, .y1 = ducks[0].collision_box_y1, .x2 = ducks[0].collision_box_x2, .y2 = ducks[0].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
                 !detect_collision((Rect){.x1 = ducks[1].collision_box_x1, .y1 = ducks[1].collision_box_y1, .x2 = ducks[1].collision_box_x2, .y2 = ducks[1].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
                 !detect_collision((Rect){.x1 = ducks[2].collision_box_x1, .y1 = ducks[2].collision_box_y1, .x2 = ducks[2].collision_box_x2, .y2 = ducks[2].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}))
