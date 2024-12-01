@@ -131,6 +131,11 @@ rdpq_font_t* fontBillboard;
 // Sound globals
 wav64_t sfx_start;
 wav64_t sfx_countdown;
+wav64_t sfx_winner;
+wav64_t sfx_objectiveCompleted;
+wav64_t sfx_guardStunAbility;
+wav64_t sfx_thiefJumpAbility;
+wav64_t sfx_thiefCaught;
 
 // Gameplay globals
 int lastCountdownNumber;
@@ -138,6 +143,8 @@ float countdownTimer;
 bool gameStarting;
 bool gameEnding;
 float gameTimeRemaining;
+
+player_team winningTeam;
 
 // You need this function defined somewhere in your project
 // so that the minigame manager can work
@@ -179,7 +186,7 @@ void debugInfoDraw(float deltaTime)
 ==============================*/
 void HUD_Update(float deltaTime)
 {
-    if(!gameStarting)
+    if(!gameStarting && !gameEnding)
     {
         // Update anything needed on the HUD (ability timer bar resizing/game time remaining)
         gameTimeRemaining -= deltaTime;
@@ -238,6 +245,11 @@ void HUD_draw()
             int y = floorf(billboardScreenPos.v[1]);
 
             rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, x-5, y-16, "P%d", iDx+1);
+            
+            if(players[iDx].stunTimer > 0.0f)
+            {
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, x-35, y-26, "Stunned: %.2f", players[iDx].stunTimer);
+            }
 
             // draw the rest of the text for the HUD
             // draw the A button sprite
@@ -407,6 +419,36 @@ void collision_cleanup()
     }
 }
 
+
+/*==============================
+    end_game
+    Sets the game state to ending and performs any tasks that are related
+    
+    Call when game is entirely over as this starts a timer to send us back to the main menu
+
+    @param the winning team passed in as an enum
+==============================*/
+
+void end_game(player_team victoriousTeam)
+{
+    winningTeam = victoriousTeam;
+    // reset the countdown timers
+    lastCountdownNumber = COUNTDOWN_DELAY;
+    countdownTimer = COUNTDOWN_DELAY;
+
+    // set game state to game ending
+    gameEnding = true;
+    gameStarting = false;
+
+    wav64_play(&sfx_winner, 31);
+
+    // interate through teams and set a winner
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        if(players[iDx].playerTeam == winningTeam) core_set_winner(iDx);
+    }
+}
+
 /*==============================
     player_init
     The player initialization function, determines number of 
@@ -431,7 +473,7 @@ void player_init(int playerNumber)
     }
 
     // remember that players are zero indexed
-    if(playerNumber == 1 || playerNumber == 2)
+    if(playerNumber == 0 || playerNumber == 2)
     {
         players[playerNumber].playerTeam = teamThief;
         players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
@@ -516,7 +558,7 @@ void player_cleanup(int playerNumber)
 
 void player_fixedloop(float deltaTime, int playerNumber)
 {
-    if(gameStarting)
+    if(gameStarting || gameEnding)
     {
         return;
     }
@@ -641,17 +683,28 @@ void player_fixedloop(float deltaTime, int playerNumber)
     if(players[playerNumber].playerPos.v[2] > BOX_SIZE)players[playerNumber].playerPos.v[2] = BOX_SIZE;
 
     // do objective touching check
+    // only thieves can complete objectives
     if(players[playerNumber].playerTeam == teamThief)
     {
+        // for every objective, check if closer than 10 units
         for(int iDx = 0; iDx < sizeof(objectives) / sizeof(objectives[0]); iDx++)
         {
+            // skip if not active
             if(objectives[iDx].isActive == false)
             {
                 continue;
             }
+            // create a temporary vector
             T3DVec3 tempVec = {0};
+            // get the vector offset between the player and the objective positions
             t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &objectives[iDx].objectivePos);
-            if(t3d_vec3_len(&tempVec) < 10) objectives[iDx].isActive = false;
+            // if objective is closer than 10 units, then count as having been completed
+            if(t3d_vec3_len(&tempVec) < 10)
+            {
+                objectives[iDx].isActive = false;
+                
+                wav64_play(&sfx_objectiveCompleted, 30);
+            }
         }
     }
 
@@ -666,7 +719,13 @@ void player_fixedloop(float deltaTime, int playerNumber)
             }
             T3DVec3 tempVec = {0};
             t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
-            if(t3d_vec3_len(&tempVec) < 10 && players[iDx].stunTimer > 0.0f) players[iDx].isActive = false;
+            if(t3d_vec3_len(&tempVec) < 10 && players[iDx].stunTimer > 0.0f)
+            {
+                players[iDx].isActive = false;
+
+                
+                wav64_play(&sfx_thiefCaught, 1);
+            }
         }
     }
 }
@@ -688,11 +747,13 @@ void player_loop(float deltaTime, int playerNumber)
         return;
     }
 
-    if(!players[playerNumber].isAi && !gameStarting)
+    if(!players[playerNumber].isAi && !gameStarting && !gameEnding)
     {
         joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
 
         if(btn.start) minigame_end();
+        if(btn.c_left) end_game(teamThief);
+        if(btn.c_right) end_game(teamGuard);
 
         if(btn.a && players[playerNumber].playerTeam == teamGuard)
         {
@@ -719,7 +780,7 @@ void player_loop(float deltaTime, int playerNumber)
                 effectPool[playerNumber].effectSize = 100.0f;
 
                 // play sound effect here
-                // TODO ability sound effect 
+                wav64_play(&sfx_guardStunAbility, 29);
             }
         }
     }
@@ -938,6 +999,13 @@ void minigame_init()
     // load sounds
     wav64_open(&sfx_start, "rom:/core/Start.wav64");
     wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
+    
+    wav64_open(&sfx_objectiveCompleted, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_guardStunAbility, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_thiefJumpAbility, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_thiefCaught, "rom:/core/Countdown.wav64");
+    
     mixer_ch_set_vol(31, 0.5f, 0.5f);
 
     // load players
@@ -997,6 +1065,16 @@ void minigame_fixedloop(float deltatime)
             // TODO: start playing music
         }
     }
+
+    if(gameEnding)
+    {
+        countdownTimer -= deltatime;
+
+        if(countdownTimer < 1.0f)
+        {
+            minigame_end();
+        }
+    }
     return;
 }
 
@@ -1013,6 +1091,36 @@ void minigame_loop(float deltatime)
     for(int i = 0; i < MAXPLAYERS; i++)
     {
         player_loop(deltatime, i);
+    }
+
+    // Check for victory conditions
+    if(!gameStarting && !gameEnding)
+    {
+        if(gameTimeRemaining < 0) end_game(teamGuard);
+        // start this bool as true and set it false as soon as you get a single active objective
+        bool tempGameEndFlag = true;
+        for(int iDx = 0; iDx < sizeof(objectives) / sizeof(objectives[0]); iDx++)
+        {
+            if(objectives[iDx].isActive == true)
+            {
+                tempGameEndFlag = false;
+                break;
+            }
+        }
+        // if bool isn't set to false, then all objectives collected, thieves win
+        if(tempGameEndFlag) end_game(teamThief);
+        // now check for if all thieves have been caught
+        tempGameEndFlag = true;
+        for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+        {
+            if(players[iDx].isActive == true && players[iDx].playerTeam == teamThief)
+            {
+                tempGameEndFlag = false;
+                break;
+            }
+        }
+        // if bool isn't set to false, then all thieves have been caught, guards win
+        if(tempGameEndFlag) end_game(teamGuard);
     }
 
     // set up the ambient light colour and the directional light colour
@@ -1079,7 +1187,20 @@ void minigame_loop(float deltatime)
     if(gameStarting)
     {
         rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 235, "Starting in %i...", (int)countdownTimer);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Starting in %i...", (int)countdownTimer);
+    }
+
+    if(gameEnding)
+    {
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
+        if(winningTeam == teamThief)
+        {
+            rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Thieves Win!");
+        }
+        else
+        {
+            rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Guards Win!");
+        }
     }
     
     // detach the queue to flip the buffers and show it on screen
@@ -1113,6 +1234,11 @@ void minigame_cleanup()
 
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);
+    wav64_close(&sfx_winner);
+    wav64_close(&sfx_objectiveCompleted);
+    wav64_close(&sfx_guardStunAbility);
+    wav64_close(&sfx_thiefJumpAbility);
+    wav64_close(&sfx_thiefCaught);
 
     t3d_model_free(modelStunWeaponEffect);
 
