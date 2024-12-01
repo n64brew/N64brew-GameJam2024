@@ -10,7 +10,7 @@
 
 constexpr float AITemperature = 0.06f;
 constexpr float AIUnstable = 0.02f;
-constexpr float AIActionRateSecond = 0.1;
+constexpr float AIActionRateSecond = 0.2;
 
 class AI
 {

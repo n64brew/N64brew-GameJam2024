@@ -13,15 +13,16 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
         if (player.aiState != AIState::AI_ATTACK) {
             return Direction::NONE;
         }
-        actionRate = AIActionRateSecond * 3.f;
+        actionRate = AIActionRateSecond * 2.f;
     } else if (difficulty == AiDiff::DIFF_MEDIUM) {
         if (player.aiState == AIState::AI_RUN) {
             return Direction::NONE;
         }
-        actionRate = AIActionRateSecond * 2.5f;
+        actionRate = AIActionRateSecond * 1.5f;
     } else if (difficulty == AiDiff::DIFF_HARD) {
         actionRate = AIActionRateSecond;
-        tempControl = (player.aiState == AIState::AI_ATTACK) ? (TempPerBullet*2) : 0.4f;
+        // Hard can barely overheat
+        tempControl = (player.aiState == AIState::AI_ATTACK) ? CooldownPerSecond : 0.4f;
     }
 
     if (aiActionTimer < actionRate) {
@@ -55,8 +56,8 @@ Direction AI::calculateFireDirection(Player& player, float deltaTime, std::vecto
                 shouldMiss = true;
             }
         } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-            missFactorSeconds = random * 0.2f;
-            if (random < 0.3f && other.team != player.team) {
+            missFactorSeconds = random * 0.25f;
+            if (random < 0.45f && other.team != player.team) {
                 shouldMiss = true;
             }
         }
