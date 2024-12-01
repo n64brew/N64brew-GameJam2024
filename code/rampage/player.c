@@ -104,6 +104,18 @@ bool rampage_player_is_touching_target(struct RampagePlayer* player, struct Vect
     return false;
 }
 
+float attack_delay[] = {
+    1.2f,
+    0.6f,
+    0.0f,
+};
+
+float target_finding_accuracy[] = {
+    4.0f,
+    2.0f,
+    1.0f,
+};
+
 struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float delta_time) {
     if (!player->is_active) {
         return (struct RampageInput){};
@@ -152,11 +164,16 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
 
         if (rampage_player_is_touching_target(player, &result.direction)) {
             if (!player->is_attacking) {
-                result.do_attack = true;
+                if (player->attack_delay <= 0.0f) {
+                    result.do_attack = true;
+                    player->attack_delay = attack_delay[player->type - PLAYER_TYPE_EASY];
+                } else {
+                    player->attack_delay -= delta_time;
+                }
             }
         }
     } else {
-        struct Vector3* new_target = find_nearest_target(&player->dynamic_object.position, 1.3f);
+        struct Vector3* new_target = find_nearest_target(&player->dynamic_object.position, target_finding_accuracy[player->type - PLAYER_TYPE_EASY]);
 
         if (new_target) {
             player->moving_to_target = 1;
@@ -276,6 +293,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->did_lose = 0;
     player->tail_tip_index = t3d_skeleton_find_bone(&player->skeleton, "j_tail_2");
     player->next_shape_offset = 0;
+    player->attack_delay = 0.0f;
 
     vector2ComplexFromAngle(4.14f / 30.0f, &max_rotate);
 

@@ -61,6 +61,7 @@ struct RampagePlayer {
 
     uint8_t already_hit_ids[MAX_HIT_COUNT];
     float attack_timer;
+    float attack_delay;
 
     RedrawHandle redraw_handle;
 };

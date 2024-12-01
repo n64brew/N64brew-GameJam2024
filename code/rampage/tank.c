@@ -15,8 +15,8 @@ struct Vector2 tank_rotate_speed;
 #define TANK_SLOW_SPEED     SCALE_FIXED_POINT(0.01f)
 #define TANK_ACCEL          SCALE_FIXED_POINT(0.5f)
 
-#define MIN_FIRE_TIME   2.0f
-#define MAX_FIRE_TIME   3.0f
+#define MIN_FIRE_TIME   3.0f
+#define MAX_FIRE_TIME   5.0f
 
 struct dynamic_object_type tank_collider = {
     .minkowsi_sum = box_minkowski_sum,

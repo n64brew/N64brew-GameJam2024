@@ -370,7 +370,7 @@ void minigame_redraw_rects() {
     rdpq_sync_pipe();
     rdpq_sync_tile();
     rdpq_set_mode_copy(false);
-    
+
     for (int i = 0; i < rect_count; i += 1) {
         struct RedrawRect* rect = &rects[i];
 
@@ -417,13 +417,11 @@ void minigame_loop(float deltatime) {
             background_surface.stride
         );
 
-        rdpq_attach(&background_surface, depthBuffer);
         rdpq_clear((color_t){0, 0, 0, 0xFF});
         t3d_screen_clear_depth();
         t3d_light_set_ambient(colorWhite);
         t3d_light_set_count(0);
         rspq_block_run(rampage_assets_get()->ground->userBlock);
-        rdpq_detach();
         has_background = true;
 
         rdpq_set_color_image_raw(
