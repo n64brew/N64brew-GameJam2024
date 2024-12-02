@@ -33,14 +33,7 @@ UIRenderer::UIRenderer() :
     rdpq_font_style(fnt, 3, &p4Style);
 }
 
-void UIRenderer::render(const GameState &state, T3DViewport &viewport, float deltaTime)
-{
-    renderHitMarks(viewport, deltaTime);
-
-    rdpq_sync_tile();
-    rdpq_sync_pipe(); // Hardware crashes otherwise
-    rdpq_set_mode_standard();
-
+State UIRenderer::renderMenu(const State &state) {
     rdpq_textparms_t centerparms = {
         .style_id = 4,
         .width = ScreenWidth,
@@ -49,6 +42,51 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
         .valign = VALIGN_CENTER,
         .disable_aa_fix = true
     };
+
+    joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller(PLAYER_1));
+
+    if (state == STATE_PAUSED) {
+        rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 4, "Paused");
+        rdpq_text_printf(&centerparms, selectedMenuItem == MENU_PLAY ? MediumFont : SmallFont, 0, 0, "Continue");
+        rdpq_text_printf(&centerparms, selectedMenuItem == MENU_EXIT ? MediumFont : SmallFont, 0, ScreenHeight / 8, "Abandon");
+
+        if (pressed.a || pressed.b) {
+            switch(selectedMenuItem) {
+                case MENU_PLAY:
+                    return pausedState;
+                case MENU_EXIT:
+                    minigame_end();
+            }
+        } else if (pressed.c_up || pressed.d_up || pressed.c_down || pressed.d_down) {
+            selectedMenuItem == MENU_PLAY ? selectedMenuItem = MENU_EXIT : selectedMenuItem = MENU_PLAY;
+            return state;
+        }
+    } else if (pressed.start) {
+        pausedState = state;
+        selectedMenuItem = MENU_PLAY;
+        return STATE_PAUSED;
+    }
+    return state;
+}
+
+void UIRenderer::render(GameState &state, T3DViewport &viewport, float deltaTime)
+{
+    rdpq_textparms_t centerparms = {
+        .style_id = 4,
+        .width = ScreenWidth,
+        .height = ScreenHeight,
+        .align = ALIGN_CENTER,
+        .valign = VALIGN_CENTER,
+        .disable_aa_fix = true
+    };
+
+    renderHitMarks(viewport, deltaTime);
+
+    rdpq_sync_tile();
+    rdpq_sync_pipe(); // Hardware crashes otherwise
+    rdpq_set_mode_standard();
+
+    state.state = renderMenu(state.state);
 
     if (state.state == STATE_COUNTDOWN) {
         if (state.currentRound == (RoundCount-1)) {

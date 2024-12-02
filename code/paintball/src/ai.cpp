@@ -142,7 +142,7 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
     // Defaults
     float escapeWeight = 100.f;
 
-    float centerAttraction = 0.f;
+    float centerAttraction = 0.01f;
     float randomWeight = 0.1f;
 
     // TODO: add bias based on player teams

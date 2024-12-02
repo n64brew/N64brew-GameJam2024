@@ -8,10 +8,17 @@
 #include "./gamestate.hpp"
 #include "./list.hpp"
 
+#include "../../../minigame.h"
+
 struct HitMark {
     T3DVec3 pos;
     PlyNum team;
     float lifetime;
+};
+
+enum SelectedMenuItem {
+    MENU_PLAY,
+    MENU_EXIT
 };
 
 class UIRenderer
@@ -29,9 +36,13 @@ class UIRenderer
 
         void renderHitMarks(T3DViewport &viewport, float deltaTime);
 
+        State renderMenu(const State &state);
+        SelectedMenuItem selectedMenuItem;
+        State pausedState;
+
     public:
         UIRenderer();
-        void render(const GameState &state, T3DViewport &viewport, float deltaTime);
+        void render(GameState &state, T3DViewport &viewport, float deltaTime);
 
         void registerHit(const HitMark &hit);
 };

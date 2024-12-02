@@ -44,6 +44,9 @@ Game::~Game() {
 }
 
 void Game::render(float deltaTime) {
+    if (state.state == STATE_PAUSED) {
+        deltaTime = 0.0f;
+    }
     assertf(mapRenderer.get(), "Map renderer is null");
 
     mixer_ch_set_vol(GeneralPurposeAudioChannel, 0.5f, 0.5f);
@@ -82,20 +85,28 @@ void Game::render(float deltaTime) {
 
     // 3D
     mapRenderer->render(deltaTime, viewport.viewFrustum);
-    gameplayController.render(deltaTime, viewport, state);
 
-    // 2D
-    gameplayController.renderUI();
+    if (state.state != STATE_PAUSED) {
+        gameplayController.render(deltaTime, viewport, state);
+
+        // 2D
+        gameplayController.renderUI();
+    }
     uiRenderer->render(state, viewport, deltaTime);
+
     rdpq_detach_show();
 
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
 
-    debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
+    // debugf("msPF: %.2f, heap Mem: %d B\n", 1000/display_get_fps(), heap_stats.used);
 }
 
 void Game::fixedUpdate(float deltaTime) {
+    if (state.state == STATE_PAUSED) {
+        return;
+    }
+
     state.timeInState += deltaTime;
 
     if (state.state == STATE_GAME) {
@@ -121,7 +132,12 @@ void Game::addScores(const std::vector<Player> &playerData) {
 
 void Game::processState() {
     if (state.state == STATE_FINISHED) {
-        state.state = STATE_FINISHED;
+        if (timer.get() == nullptr) {
+            timer = {
+                new_timer_context(TICKS_FROM_MS(5000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
+                delete_timer
+            };
+        }
         return;
     }
 
@@ -139,12 +155,6 @@ void Game::processState() {
         state.winner = winner;
         core_set_winner(winner);
 
-        if (timer.get() == nullptr) {
-            timer = {
-                new_timer_context(TICKS_FROM_MS(5000), TF_ONE_SHOT, [](int ovfl, void* self) -> void { ((Game*)self)->gameOver(); }, this),
-                delete_timer
-            };
-        }
         state.state = STATE_FINISHED;
         wav64_play(sfxFinish.get(), GeneralPurposeAudioChannel);
         return;

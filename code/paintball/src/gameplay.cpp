@@ -155,6 +155,9 @@ void GameplayController::handleFire(Player &player, uint32_t id, Direction direc
 // TODO: remove viewport from here, move to UI
 void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
+    if (state.state == STATE_PAUSED) {
+        return;
+    }
     state.avPos = {0};
     int id = 0;
     for (auto& player : playerData)
@@ -162,9 +165,6 @@ void GameplayController::render(float deltaTime, T3DViewport &viewport, GameStat
         Direction dir = NONE;
         if (id < (int)core_get_playercount()) {
             joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller((PlyNum)id));
-
-            // TODO: implement basic pause menu
-            if (pressed.start) minigame_end();
 
             if (pressed.c_up || pressed.d_up) {
                 dir = UP;

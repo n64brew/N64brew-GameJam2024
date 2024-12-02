@@ -10,6 +10,7 @@ enum State
     STATE_LAST_ONE_STANDING,
     STATE_WAIT_FOR_NEW_ROUND,
     STATE_FINISHED,
+    STATE_PAUSED,
 };
 
 struct GameState
