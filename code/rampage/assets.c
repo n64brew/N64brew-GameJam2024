@@ -33,14 +33,22 @@ void rampage_model_free_split(struct RampageSplitMesh* result) {
 }
 
 static const char* building_models[] = {
-    "rom:/rampage/house.t3dm",
+    "rom:/rampage/building_1story.t3dm",
     "rom:/rampage/building_2story.t3dm",
+    "rom:/rampage/building_3story.t3dm",
 };
 
 void rampage_assets_init() {
     for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
         gRampageAssets.building[i] = t3d_model_load(building_models[i]);
         rampage_model_separate_material(gRampageAssets.building[i], &gRampageAssets.buildingSplit[i]);
+    }
+
+    for (int i = 0; i < BILLBOARD_COUNT; i += 1) {
+        char filename[32];
+        sprintf(filename, "rom:/rampage/billboard%d.t3dm", i);
+        gRampageAssets.billboards[i] = t3d_model_load(filename);
+        rampage_model_separate_material(gRampageAssets.billboards[i], &gRampageAssets.billboardsSplit[i]);
     }
 
     gRampageAssets.player = t3d_model_load("rom:/rampage/Jira_01.t3dm");
@@ -101,6 +109,11 @@ void rampage_assets_destroy() {
     for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
         rampage_model_free_split(&gRampageAssets.buildingSplit[i]);
         t3d_model_free(gRampageAssets.building[i]);
+    }
+
+    for (int i = 0; i < BILLBOARD_COUNT; i += 1) {
+        rampage_model_free_split(&gRampageAssets.billboardsSplit[i]);
+        t3d_model_free(gRampageAssets.billboards[i]);
     }
 
     t3d_model_free(gRampageAssets.player);

@@ -446,6 +446,10 @@ void minigame_loop(float deltatime) {
 
     minigame_redraw_rects();
 
+    for (int i = 0; i < TANK_COUNT; i += 1) {
+        rampage_tank_render_bullets(&gRampage.tanks[i]);
+    }
+
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_count(sizeof(pointLightPositions) / sizeof(*pointLightPositions));
 
@@ -468,12 +472,16 @@ void minigame_loop(float deltatime) {
         }
     }
 
+    rspq_block_run(rampage_assets_get()->billboardsSplit[0].material);
+    for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
+        for (int x = 0; x < BUILDING_COUNT_X; x += 1) {
+            rampage_building_render_billboards(&gRampage.buildings[y][x]);
+        }
+    }
+
     rspq_block_run(rampage_assets_get()->tankSplit.material);
     for (int i = 0; i < TANK_COUNT; i += 1) {
         rampage_tank_render(&gRampage.tanks[i]);
-    }
-    for (int i = 0; i < TANK_COUNT; i += 1) {
-        rampage_tank_render_bullets(&gRampage.tanks[i]);
     }
 
     props_render(&gRampage.props);
@@ -609,6 +617,28 @@ enum PlayerType rampage_player_type(int index) {
     }
 }
 
+bool rampage_add_billboard(struct Rampage* rampage) {
+    int x = randomInRange(0, BUILDING_COUNT_X);
+    int y = randomInRange(0, BUILDING_COUNT_Y);
+    int billboard = randomInRange(0, BILLBOARD_COUNT);
+
+    return rampage_building_add_billboard(&rampage->buildings[y][x], 1 << billboard);
+}
+
+static uint8_t min_building_height[BUILDING_COUNT_Y][BUILDING_COUNT_X] = {
+    {1, 1, 2, 1, 1},
+    {1, 2, 3, 2, 1},
+    {1, 2, 3, 2, 1},
+    {1, 1, 2, 1, 1},
+};
+
+static uint8_t max_building_height[BUILDING_COUNT_Y][BUILDING_COUNT_X] = {
+    {1, 2, 2, 2, 1},
+    {2, 2, 3, 3, 2},
+    {2, 3, 3, 2, 2},
+    {1, 2, 2, 2, 1},
+};
+
 void rampage_init(struct Rampage* rampage) {
     rampage_assets_init();
 
@@ -623,7 +653,19 @@ void rampage_init(struct Rampage* rampage) {
                 0.0f,
                 (y - (BUILDING_COUNT_Y - 1) * 0.5f) * BUILDING_SPACING,
             }};
-            rampage_building_init(&rampage->buildings[y][x], &position, randomInRange(0, 4));
+            rampage_building_init(
+                &rampage->buildings[y][x], 
+                &position, 
+                randomInRange(0, 4), 
+                randomInRange(min_building_height[y][x], max_building_height[y][x] + 1)
+            );
+        }
+    }
+
+    int billboard_count = randomInRange(7, 10);
+    while (billboard_count) {
+        if (rampage_add_billboard(rampage)) {
+            billboard_count -= 1;
         }
     }
 

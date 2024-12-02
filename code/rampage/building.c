@@ -110,18 +110,13 @@ uint8_t building_health[] = {
     0,
     1,
     3,
+    5,
 };
 
-void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, int rotation) {
+void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, int rotation, int building_height) {
     int entity_id = entity_id_next();
 
-    float random_height = randomInRangef(0.0f, 1.0f);
-
-    if (random_height < 0.25f) {
-        building->height = 1;
-    } else {
-        building->height = 2;
-    }
+    building->height = building_height;
 
     dynamic_object_init(
         entity_id,
@@ -141,6 +136,7 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, 
     building->hp = building_health[building->height];
     building->shake_timer = 0.0f;
     building->is_collapsing = false;
+    building->billboards = 0;
 
     collision_scene_add(&building->dynamic_object);
 
@@ -161,6 +157,16 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, 
     building->redraw_handle = redraw_aquire_handle();
 }
 
+bool rampage_building_add_billboard(struct RampageBuilding* building, int billboard_mask) {
+    if ((building->billboards & billboard_mask) || building->height <= 1) {
+        // already has billboard
+        return false;
+    }
+
+    building->billboards |= billboard_mask;
+    return true;
+}
+
 void rampage_building_destroy(struct RampageBuilding* building) {
     if (building->is_destroyed) {
         return;
@@ -176,6 +182,10 @@ static T3DQuat rotations[] = {
     {{0, 1, 0, 0}},
     {{0, 0.707f, 0, -0.707f}},
 };
+
+bool rampage_building_is_light_off(struct RampageBuilding* building) {
+    return randomInRangef(building->dynamic_object.position.y, 1.0f) < 0.0f || (building->shake_timer > 0.0f && randomInRangef(0.0f, 1.0f) > 0.5f);
+}
 
 void rampage_building_render(struct RampageBuilding* building, int height_pass) {
     if (building->is_destroyed) {
@@ -202,7 +212,32 @@ void rampage_building_render(struct RampageBuilding* building, int height_pass) 
 
     t3d_mat4fp_from_srt(UncachedAddr(&building->mtx), scale.v, rotations[building->rotation].v, (float*)&final_pos);
     t3d_matrix_push(&building->mtx);
+    if (rampage_building_is_light_off(building)) {
+        rdpq_set_prim_color((color_t){0x00, 0x00, 0x00, 0xFF});
+    } else {
+        rdpq_set_prim_color((color_t){0xEE, 0xE3, 0xC4, 0xFF});
+    }
     rspq_block_run(rampage_assets_get()->buildingSplit[height_pass].mesh);
+    t3d_matrix_pop(1);
+}
+
+void rampage_building_render_billboards(struct RampageBuilding* building) {
+    if (building->is_destroyed || !building->billboards) {
+        return;
+    }
+
+    if (rampage_building_is_light_off(building)) {
+        rdpq_set_prim_color((color_t){0x40, 0x40, 0x40, 0xFF});
+    } else {
+        rdpq_set_prim_color((color_t){0xFF, 0xFF, 0xFF, 0xFF});
+    }
+
+    t3d_matrix_push(&building->mtx);
+    for (int i = 0; i < BILLBOARD_COUNT; i += 1) {
+        if ((1 << i) & building->billboards) {
+            rspq_block_run(rampage_assets_get()->billboardsSplit[i].mesh);
+        }
+    }
     t3d_matrix_pop(1);
 }
 

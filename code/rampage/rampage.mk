@@ -17,13 +17,20 @@ ASSETS_LIST += \
 	filesystem/rampage/destroy.sprite \
 	filesystem/rampage/finish.sprite \
 	filesystem/rampage/spark_blob.i8.sprite \
-	filesystem/rampage/building.t3dm \
 	filesystem/rampage/player.t3dm \
 	filesystem/rampage/ground.t3dm \
 	filesystem/rampage/ground_cover.t3dm \
 	filesystem/rampage/tank0.t3dm \
-	filesystem/rampage/house.t3dm \
+	filesystem/rampage/building_1story.t3dm \
 	filesystem/rampage/building_2story.t3dm \
+	filesystem/rampage/building_3story.t3dm \
+	filesystem/rampage/billboards.ci4.sprite \
+	filesystem/rampage/billboard0.t3dm \
+	filesystem/rampage/billboard1.t3dm \
+	filesystem/rampage/billboard2.t3dm \
+	filesystem/rampage/billboard3.t3dm \
+	filesystem/rampage/billboard4.t3dm \
+	filesystem/rampage/billboard5.t3dm \
 	filesystem/rampage/Jira_01.t3dm \
 	filesystem/rampage/level.t3dm \
 	filesystem/rampage/bullet.t3dm \
@@ -38,8 +45,9 @@ ASSETS_LIST += \
 	filesystem/rampage/tank1_64x4.ci4.sprite \
 	filesystem/rampage/tank2_32x4.ci4.sprite \
 	filesystem/rampage/tank2_64x4.ci4.sprite \
-	filesystem/rampage/house_wall.ci4.sprite \
-	filesystem/rampage/building1.ci4.sprite \
+	filesystem/rampage/building_1story.ci4.sprite \
+	filesystem/rampage/building_2story.ci4.sprite \
+	filesystem/rampage/building_3story.ci4.sprite \
 	filesystem/rampage/Jira32.sprite \
 	filesystem/rampage/Jira_GS.i4.sprite \
 	filesystem/rampage/pavement_1.sprite \

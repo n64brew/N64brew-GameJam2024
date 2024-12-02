@@ -5,7 +5,8 @@
 
 #define COUNTDOWN_NUMBER_COUNT  6
 
-#define BUILDING_HEIGHT_STEPS   2
+#define BUILDING_HEIGHT_STEPS   3
+#define BILLBOARD_COUNT         6
 
 struct RampageSplitMesh {
     rspq_block_t* mesh;
@@ -16,6 +17,8 @@ struct RampageAssets {
     T3DModel* player;
     T3DModel* building[BUILDING_HEIGHT_STEPS];
     struct RampageSplitMesh buildingSplit[BUILDING_HEIGHT_STEPS];
+    T3DModel* billboards[BILLBOARD_COUNT];
+    struct RampageSplitMesh billboardsSplit[BILLBOARD_COUNT];
     T3DModel* ground;
     T3DModel* ground_cover;
     T3DModel* tank;
