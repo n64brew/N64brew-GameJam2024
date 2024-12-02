@@ -68,8 +68,8 @@ void sequence_game_init()
     //                  Set up Graphics                      //
     ///////////////////////////////////////////////////////////
 
-    sequence_game_snowman_idle_sprite = sprite_load("rom:/mallard/snowman/snowman_idle.rgba32.sprite");
-    sequence_game_snowman_jump_sprite = sprite_load("rom:/mallard/snowman/snowman_jump.rgba32.sprite");
+    sequence_game_snowman_idle_sprite = sprite_load("rom:/mallard/snowman/snowman_idle_evil.rgba32.sprite");
+    sequence_game_snowman_jump_sprite = sprite_load("rom:/mallard/snowman/snowman_jump_evil.rgba32.sprite");
 
     // Game - Mallard
     sequence_game_mallard_one_base_sprite = sprite_load("rom:/mallard/one/duck_base.rgba32.sprite");
