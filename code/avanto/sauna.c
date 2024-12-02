@@ -116,6 +116,9 @@ static void sauna_do_light() {
   t3d_light_set_point(1, light_color, &lights[1], 1, false);
   t3d_light_set_point(2, light_color, &lights[2], 1, false);
   t3d_light_set_count(3);
+
+  uint8_t no_light[] = {0x0, 0x0, 0x0};
+  t3d_light_set_ambient(no_light);
 }
 static struct scene sauna_scene = {
   .bg_path = "rom:/avanto/sauna.sprite",
