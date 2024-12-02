@@ -52,6 +52,8 @@ ASSETS_LIST += \
 	filesystem/rampage/road_straight.sprite \
 	filesystem/rampage/road_tjunction.sprite \
 	filesystem/rampage/road_warning1.sprite \
+	filesystem/rampage/canal.sprite \
+	filesystem/rampage/walls.ci4.sprite \
 	filesystem/rampage/props.sprite \
 	filesystem/rampage/QuirkyRobot.font64 \
 	filesystem/rampage/stompin.wav64 \
