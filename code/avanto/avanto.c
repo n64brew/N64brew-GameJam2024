@@ -12,10 +12,11 @@
 #include "lake.h"
 
 const MinigameDef minigame_def = {
-    .gamename = "Avanto",
-    .developername = "Flavio Zavan",
-    .description = "Whatever description",
-    .instructions = "Sauna: Hold Z to crouch\nWater: Blabla"
+  .gamename = "Sauna Rush",
+  .developername = "Flávio Zavan",
+  .description = "A relaxing winter day suddenly turns into a competition",
+  .instructions = "Inside: Hold Z to duck\n"
+    "Outside: Press the buttons indicated on the screen",
 };
 
 surface_t *z_buffer;
