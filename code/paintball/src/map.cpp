@@ -7,6 +7,12 @@ MapRenderer::MapRenderer() :
     // drawBlock {nullptr, rspq_block_free},
     sprite {sprite_load("rom:/paintball/splash.ia4.sprite"), sprite_free},
     footstep {sprite_load("rom:/paintball/step.ia4.sprite"), sprite_free},
+    splashSprites {
+        {sprite_load("rom:/paintball/splash1.ia4.sprite"), sprite_free},
+        {sprite_load("rom:/paintball/splash2.ia4.sprite"), sprite_free},
+        {sprite_load("rom:/paintball/splash3.ia4.sprite"), sprite_free},
+        {sprite_load("rom:/paintball/splash4.ia4.sprite"), sprite_free}
+    },
     tlut {
         (uint16_t*)malloc_uncached(sizeof(uint16_t[256])),
         free_uncached
@@ -89,7 +95,7 @@ MapRenderer::MapRenderer() :
         rdpq_mode_filter(FILTER_POINT);
         rdpq_mode_persp(true);
 
-        rdpq_mode_zbuf(false, true);
+        rdpq_mode_zbuf(false, false);
 
         rdpq_change_other_modes_raw(SOM_COVERAGE_DEST_MASK, SOM_COVERAGE_DEST_ZAP);
     renderModeBlock = U::RSPQBlock(rspq_block_end(), rspq_block_free);
@@ -122,10 +128,7 @@ MapRenderer::~MapRenderer() {
 
 void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
     for (auto splash = newSplashes.begin(); splash < newSplashes.end(); ++splash) {
-        float distancePerSegment = SegmentSize * (MapWidth/TileSize);
-        int finalX = (splash->x/distancePerSegment) * MapWidth + MapWidth/2;
-        int finalY = (splash->y/distancePerSegment) * MapWidth + MapWidth/2;
-        __splash(finalX, finalY, splash->team);
+        __splash(*splash);
     }
     newSplashes.clear();
 
@@ -178,37 +181,42 @@ void MapRenderer::render(float deltaTime, const T3DFrustum &frustum) {
     }
 }
 
-void MapRenderer::__splash(int x, int y, PlyNum player) {
-    if (x > MapWidth - 16) return;
-    if (x < 16) return;
-    if (y > MapWidth - 16) return;
-    if (y < 16) return;
+void MapRenderer::__splash(Splash &splash) {
+    int safeMargin = 52;
+    if (splash.x > MapWidth - safeMargin) return;
+    if (splash.x < safeMargin) return;
+    if (splash.y > MapWidth - safeMargin) return;
+    if (splash.y < safeMargin) return;
 
-    surface_t s = sprite_get_pixels(sprite.get());
+    int id = randomRange(0, SplashVariations - 1);
+    surface_t s = sprite_get_pixels(splashSprites[id].get());
 
     rdpq_attach(surface.get(), nullptr);
         rspq_block_run(paintBlock.get());
 
-        rdpq_set_scissor(x - 16, y - 16, x + 16, y + 16);
+        rdpq_set_scissor(splash.x - safeMargin, splash.y - safeMargin, splash.x + safeMargin, splash.y + safeMargin);
         rdpq_blitparms_t params {
             .width = 32,
             .height = 32,
+            .flip_x = (bool)randomRange(0, 1),
+            .flip_y = true,
             .cx = 16,
             .cy = 16,
-            // TODO: use the firing direction + some randomness
-            .theta = 2 * T3D_PI * static_cast<float>(rand()) / RAND_MAX,
+            .scale_x = 0.8f + static_cast<float>(rand()) / RAND_MAX,
+            .scale_y = 0.8f + static_cast<float>(rand()) / RAND_MAX,
+            .theta = splash.direction,
         };
         // Set all channels to the same value b/c for an I8 target, RDP will
         // interleave R&G channels
         rdpq_set_prim_color(
             RGBA32(
-                (uint8_t)(player + 1),
-                (uint8_t)(player + 1),
-                (uint8_t)(player + 1),
+                (uint8_t)(splash.team + 1),
+                (uint8_t)(splash.team + 1),
+                (uint8_t)(splash.team + 1),
                 255
             )
         );
-        rdpq_tex_blit(&s, x, y, &params);
+        rdpq_tex_blit(&s, splash.x, splash.y, &params);
     rdpq_detach();
 }
 
@@ -248,9 +256,17 @@ void MapRenderer::__step(Splash &step) {
     rdpq_detach();
 }
 
-void MapRenderer::splash(float x, float y, PlyNum team) {
-    // TODO: use the firing direction + some randomness
-    newSplashes.add(Splash {x, y, team, 2 * T3D_PI * static_cast<float>(rand()) / RAND_MAX, false});
+void MapRenderer::splash(float x, float y, PlyNum team, float direction) {
+    float distancePerSegment = SegmentSize * (MapWidth/TileSize);
+    float finalX = (x/distancePerSegment) * MapWidth + MapWidth/2;
+    float finalY = (y/distancePerSegment) * MapWidth + MapWidth/2;
+    newSplashes.add(Splash {
+        finalX,
+        finalY,
+        team,
+        direction + T3D_DEG_TO_RAD(45 * static_cast<float>(rand()) / RAND_MAX),
+        false
+    });
 }
 
 void MapRenderer::step(float x, float y, PlyNum team, float direction, bool firstStep) {

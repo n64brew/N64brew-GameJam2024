@@ -14,6 +14,7 @@
 #include "./constants.hpp"
 #include "./wrappers.hpp"
 #include "./list.hpp"
+#include "./common.hpp"
 
 #include "../../../core.h"
 
@@ -21,6 +22,7 @@ constexpr int MapWidth = 32 * 16;
 constexpr int TileSize = 32;
 constexpr int SegmentSize = 75;
 constexpr int MinSegmentCount = 4;
+constexpr int SplashVariations = 4;
 
 struct Splash {
     float x;
@@ -40,6 +42,7 @@ class MapRenderer
         // U::RSPQBlock drawBlock;
         U::Sprite sprite;
         U::Sprite footstep;
+        U::Sprite splashSprites[SplashVariations];
 
         U::TLUT tlut;
 
@@ -53,13 +56,13 @@ class MapRenderer
         // As a ratio of the maximum map size
         float mapSize;
 
-        void __splash(int x, int y, PlyNum player);
+        void __splash(Splash &splash);
         void __step(Splash &);
     public:
         MapRenderer();
         ~MapRenderer();
         void render(float deltaTime, const T3DFrustum &frustum);
-        void splash(float x, float y, PlyNum team);
+        void splash(float x, float y, PlyNum team, float direction);
         void step(float x, float y, PlyNum team, float direction, bool firstStep);
         float getHalfSize();
         void setSize(float size);

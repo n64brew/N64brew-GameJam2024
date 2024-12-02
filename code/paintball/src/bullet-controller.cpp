@@ -95,7 +95,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gamepla
     for (auto bullet = bullets.begin(); bullet != bullets.end(); ++bullet) {
         bool isDead = simulatePhysics(deltaTime, *bullet);
         if (isDead) {
-            map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
+            map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team, atan2f(bullet->velocity.v[0], bullet->velocity.v[2]));
             bullets.remove(bullet);
             continue;
         }
@@ -123,7 +123,7 @@ void BulletController::fixedUpdate(float deltaTime, std::vector<Player> &gamepla
                 player.acceptHit(*bullet);
 
                 ui->registerHit(HitMark {bullet->pos, bullet->owner});
-                map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team);
+                map->splash(bullet->pos.v[0], bullet->pos.v[2], bullet->team, atan2f(bullet->velocity.v[0], bullet->velocity.v[2]));
                 wav64_play(sfxHit.get(), HitAudioChannel);
                 bullets.remove(bullet);
 
