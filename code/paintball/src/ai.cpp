@@ -152,10 +152,10 @@ void AI::calculateMovement(Player& player, float deltaTime, std::vector<Player> 
     float alignment = 0.1f;
 
     if (difficulty == AiDiff::DIFF_EASY) {
-        escapeWeight *= 1.f;
+        escapeWeight = 1.f;
         alignment *= 0.f;
     } else if (difficulty == AiDiff::DIFF_MEDIUM) {
-        escapeWeight *= 6.f;
+        escapeWeight = 6.f;
         alignment *= 0.5f;
     }
 
