@@ -43,6 +43,25 @@ float get_ground_height(float z, struct ground *ground) {
   return height;
 }
 
+float get_ground_angle(float z, struct ground *ground) {
+  float angle = 0.f;
+  for (size_t i = 0; i < ground->num_changes; i++) {
+    if (ground->changes[i].start_z > z) {
+      break;
+    }
+    if (!ground->changes[i].ramp_to_next) {
+      angle = 0.f;
+    }
+    else {
+      float h = ground->changes[i+1].height - ground->changes[i].height;
+      float dz = ground->changes[i+1].start_z - ground->changes[i].start_z;
+      float hip = sqrtf(h*h + dz*dz);
+      angle = asinf(h*sinf(T3D_PI/2.f)/hip);
+    }
+  }
+  return angle;
+}
+
 int get_next_sfx_channel() {
   int r = next_sfx_channel++;
   if (next_sfx_channel >= FIRST_SFX_CHANNEL + NUM_SFX_CHANNELS) {
@@ -162,6 +181,7 @@ bool script_update(struct script_state *state, float delta_time) {
         size_t anim = state->action->type == ACTION_WALK_TO? WALK : CLIMB;
         c->current_anim = anim;
         t3d_anim_attach(&c->s.anims[anim], &c->s.skeleton);
+        t3d_anim_set_playing(&c->s.anims[anim], true);
         float dz = state->action->pos.v[2] - c->pos.v[2];
         float dx = state->action->pos.v[0] - c->pos.v[0];
         c->rotation = -fm_atan2f(dx, dz);
@@ -537,3 +557,9 @@ void particle_source_draw_all() {
   }
   rdpq_mode_pop();
 }
+
+float rand_float(float min, float max) {
+  float r = (float) rand() / (float) RAND_MAX;
+  return r*(max-min) + min;
+}
+

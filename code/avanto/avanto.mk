@@ -16,6 +16,8 @@
 # tail.sprite own
 # balloon.sprite own
 # penalty.sprite own
+# shadow.* own
+# map.t3dm own
 ASSETS_LIST += \
 	filesystem/avanto/sauna.sprite \
 	filesystem/avanto/sauna-depth.sprite \
@@ -44,7 +46,9 @@ ASSETS_LIST += \
 	filesystem/avanto/map.t3dm \
 	filesystem/avanto/tail.sprite \
 	filesystem/avanto/balloon.sprite \
-	filesystem/avanto/penalty.sprite
+	filesystem/avanto/penalty.sprite \
+	filesystem/avanto/shadow.t3dm \
+	filesystem/avanto/shadow.sprite
 
 AVANTO_AUDIOCONV_FLAGS += --wav-mono --wav-resample 22050 --wav-compress 3
 $(FILESYSTEM_DIR)/avanto/%.wav64: $(ASSETS_DIR)/avanto/%.mp3

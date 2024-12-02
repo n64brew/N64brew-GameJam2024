@@ -213,6 +213,7 @@ struct particle_source {
 };
 
 float get_ground_height(float z, struct ground *ground);
+float get_ground_angle(float z, struct ground *ground);
 int get_next_sfx_channel();
 void init_sfx();
 void skeleton_init(struct skeleton *s,
@@ -240,3 +241,4 @@ void particle_source_draw(const struct particle_source *source);
 void particle_source_reset_steam(struct particle_source *source);
 void particle_source_init_steam(struct particle_source *source);
 void particle_source_draw_all();
+float rand_float(float min, float max);

@@ -38,6 +38,7 @@
 #define INST_MIN_X 30
 #define INST_MAX_Y 170
 #define INST_Y_GAP 22
+#define SHADOW_SCALE .6f
 
 enum lake_stages {
   LAKE_INTRO,
@@ -52,6 +53,15 @@ struct button {
   uint16_t mask;
 };
 
+struct lake_ai {
+  size_t pid;
+  void (*handler) (struct lake_ai *, joypad_buttons_t *, float);
+  float miss_chance;
+  float min_delay;
+  float max_delay;
+  float time_to_next;
+};
+
 extern T3DViewport viewport;
 extern struct character players[];
 extern wav64_t sfx_start;
@@ -63,6 +73,8 @@ extern xm64player_t music;
 
 static struct entity map;
 static T3DModel *map_model;
+static struct entity shadows[4];
+static T3DModel *shadow_model;
 static T3DObject *water_object;
 static struct camera cam = {
   .target = (T3DVec3) {{FOCUS_X, FOCUS_Y, 0.f}},
@@ -93,6 +105,57 @@ rdpq_blitparms_t tail_params;
 static uint8_t winners_mask;
 static char banner_str[32];
 static float min_time_before_exiting;
+static struct lake_ai ais[4];
+static const T3DBone *leg_bones[4][2];
+
+static void ai_standard(struct lake_ai *ai,
+    joypad_buttons_t *pressed,
+    float delta_time) {
+  pressed->raw = 0;
+
+  float time_error = 0.f;
+  if (ai->time_to_next > 1000.f) {
+    ai->time_to_next = rand_float(ai->min_delay, ai->max_delay);
+  } else {
+    time_error = delta_time - ai->time_to_next;
+    ai->time_to_next -= delta_time;
+  }
+
+  if (penalties[ai->pid] >= EPS || ai->time_to_next >= EPS) {
+    return;
+  }
+
+  if (rand_float(0.f, 1.f) < ai->miss_chance) {
+    pressed->a = 1;
+    pressed->b = 1;
+  }
+  else {
+    pressed->raw = next_buttons[ai->pid]->mask;
+  }
+  ai->time_to_next = rand_float(ai->min_delay, ai->max_delay) - time_error;
+}
+
+static void ai_init(struct lake_ai *ai, size_t pid, AiDiff diff) {
+  ai->pid = pid;
+  ai->handler = ai_standard;
+  ai->time_to_next = INFINITY;
+
+  if (diff == DIFF_EASY) {
+    ai->miss_chance = .07f;
+    ai->min_delay = .7f;
+    ai->max_delay = 1.2f;
+  }
+  else if (diff == DIFF_MEDIUM) {
+    ai->miss_chance = .03f;
+    ai->min_delay = .6f;
+    ai->max_delay = 1.1f;
+  }
+  else {
+    ai->miss_chance = .02f;
+    ai->min_delay = .4f;
+    ai->max_delay = .9f;
+  }
+}
 
 static void update_cam(float z) {
   cam.target.v[2] = z;
@@ -214,6 +277,17 @@ void lake_init() {
       NULL,
       &map_draw_conf);
 
+  shadow_model = t3d_model_load("rom:/avanto/shadow.t3dm");
+  for (size_t i = 0; i < 4; i++) {
+    entity_init(&shadows[i],
+        shadow_model,
+        &(T3DVec3) {{1.f, 1.f, 1.f}},
+        &(T3DVec3) {{0.f, 0.f, 0.f}},
+        &(T3DVec3) {{0.f, 0.f, 0.f}},
+        NULL,
+        NULL);
+  }
+
   t3d_viewport_set_projection(&viewport, FOV, 50, 5000);
   update_cam(PLAYER_STARTING_Z);
 
@@ -230,17 +304,30 @@ void lake_init() {
   t3d_light_set_ambient(ambient_color);
   t3d_light_set_count(2);
 
+  memset(ais, 0, sizeof(ais));
   for (size_t i = 0; i < 4; i++) {
     players[i].visible = !players[i].out;
     players[i].rotation = 0.f;
     players[i].pos =
       (T3DVec3) {{PLAYER_MIN_X+PLAYER_DISTANCE*i, 0.f, PLAYER_STARTING_Z}};
     t3d_anim_attach(&players[i].s.anims[WALK], &players[i].s.skeleton);
+    t3d_anim_update(&players[i].s.anims[WALK], 0);
     players[i].current_anim = WALK;
+    t3d_anim_set_playing(&players[i].s.anims[players[i].current_anim], false);
     players[i].scale = 1.f;
     speeds[i] = 0.f;
     penalties[i] = 0.f;
     next_buttons[i] = get_next_button(NULL);
+    if (i >= core_get_playercount()) {
+      ai_init(&ais[i], i, core_get_aidifficulty());
+    }
+    int bone_index;
+    bone_index = t3d_skeleton_find_bone(&players[i].s.skeleton, "LeftLeg");
+    leg_bones[i][0] = bone_index == -1?
+      NULL : &players[i].s.skeleton.bones[bone_index];
+    bone_index = t3d_skeleton_find_bone(&players[i].s.skeleton, "RightLeg");
+    leg_bones[i][1] = bone_index == -1?
+      NULL : &players[i].s.skeleton.bones[bone_index];
   }
 
   wav64_open(&sfx_splash, "rom:/avanto/splash.wav64");
@@ -267,7 +354,12 @@ void lake_dynamic_loop_pre(float delta_time) {
     pressed[i] = joypad_get_buttons_pressed(core_get_playercontroller(i));
   }
   for (size_t i = core_get_playercount(); i < 4; i++) {
-    pressed[i].raw = 0;
+    if (lake_stage == LAKE_GAME) {
+      ais[i].handler(&ais[i], &pressed[i], delta_time);
+    }
+    else {
+      pressed[i].raw = 0;
+    }
   }
 
   if (lake_stage == LAKE_END) {
@@ -378,18 +470,49 @@ void lake_dynamic_loop_render(float delta_time) {
   t3d_matrix_pop(1);
 
   for (size_t i = 0; i < 4; i++) {
+    if (!players[i].visible) {
+      continue;
+    }
+
     if (players[i].current_anim != -1) {
       t3d_anim_update(&players[i].s.anims[players[i].current_anim],
           delta_time);
       t3d_skeleton_update(&players[i].s.skeleton);
     }
-    if (players[i].visible) {
-      t3d_mat4fp_from_srt_euler(players[i].e.transform,
-        (float[3]) {players[i].scale, players[i].scale, players[i].scale},
-        (float[3]) {0, players[i].rotation, 0},
-        players[i].pos.v);
-      rspq_block_run(players[i].e.display_block);
-    }
+
+    T3DMat4 player_matrix;
+    t3d_mat4_from_srt_euler(&player_matrix,
+      (float[3]) {players[i].scale, players[i].scale, players[i].scale},
+      (float[3]) {0, players[i].rotation, 0},
+      players[i].pos.v);
+    t3d_mat4_to_fixed(players[i].e.transform, &player_matrix);
+    rspq_block_run(players[i].e.display_block);
+
+    T3DVec3 tmp;
+    T3DVec3 tmp2;
+
+    T3DVec3 left_pos;
+    tmp = leg_bones[i][0]->position;
+    t3d_mat3_mul_vec3(&tmp2, &leg_bones[i][0]->matrix, &tmp);
+    t3d_mat3_mul_vec3(&left_pos, &player_matrix, &tmp2);
+
+    T3DVec3 right_pos;
+    tmp = leg_bones[i][1]->position;
+    t3d_mat3_mul_vec3(&tmp2, &leg_bones[i][1]->matrix, &tmp);
+    t3d_mat3_mul_vec3(&right_pos, &player_matrix, &tmp2);
+
+    t3d_vec3_add(&tmp, &left_pos, &right_pos);
+    t3d_vec3_scale(&tmp2, &tmp, .5f);
+
+    T3DVec3 shadow_pos;
+    t3d_vec3_add(&shadow_pos, &players[i].pos, &tmp2);
+    shadow_pos.v[1] = get_ground_height(players[i].pos.v[2], &ground) + 4.f;
+
+    t3d_mat4fp_from_srt_euler(shadows[i].transform,
+      (float[3]) {SHADOW_SCALE, SHADOW_SCALE, SHADOW_SCALE},
+      (float[3]) {get_ground_angle(shadow_pos.v[2], &ground), 0, 0},
+      shadow_pos.v);
+    rspq_block_run(shadows[i].display_block);
   }
 
   rdpq_sync_tile();
@@ -731,6 +854,10 @@ void lake_cleanup() {
     sprite_free(buttons[i].sprite);
   }
   wav64_close(&sfx_splash);
+  for (size_t i = 0; i < 4; i++) {
+    entity_free(&shadows[i]);
+  }
+  t3d_model_free(shadow_model);
   entity_free(&map);
   t3d_model_free(map_model);
 }

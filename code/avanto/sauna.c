@@ -37,6 +37,12 @@ enum ukko_anims {
   NUM_UKKO_ANIMS,
 };
 
+struct sauna_ai {
+  size_t pid;
+  void (*handler)(struct sauna_ai *, joypad_buttons_t *t);
+  float target;
+};
+
 extern struct character players[];
 extern surface_t *z_buffer;
 extern T3DViewport viewport;
@@ -66,6 +72,38 @@ static char banner_str[16];
 static float banner_time;
 static float time_left;
 static float min_time_before_exiting;
+static struct sauna_ai ais[4];
+
+static void ai_coward(struct sauna_ai *ai, joypad_buttons_t *held) {
+  held->raw = 0;
+}
+
+static void ai_bold(struct sauna_ai *ai, joypad_buttons_t *held) {
+  held->raw = 0;
+  held->z = 1;
+}
+
+static void ai_smart(struct sauna_ai *ai, joypad_buttons_t *held) {
+  float elapsed = (SAUNA_LEN - time_left) / SAUNA_LEN;
+  float expected = elapsed * ai->target;
+
+  held->raw = 0;
+  if (players[ai->pid].temperature > expected) {
+    held->z = 1;
+  }
+}
+
+static void ai_init(struct sauna_ai *ai, size_t pid, AiDiff diff) {
+  ai->pid = pid;
+  if (diff == DIFF_EASY) {
+    ai->handler = rand() & 1? ai_coward : ai_bold;
+  }
+  else {
+    ai->target = diff == DIFF_MEDIUM?
+      rand_float(.6f, .75f) : rand_float(.85f, .95f);
+    ai->handler = ai_smart;
+  }
+}
 
 static void sauna_do_light() {
   uint8_t light_color[4] = {255, 255, 255, 255};
@@ -153,8 +191,12 @@ void sauna_init() {
 
   min_time_before_exiting = 3.f;
 
+  memset(ais, 0, sizeof(ais));
   for (size_t i = 0; i < 4; i++) {
     players[i].scale = SCALE;
+    if (i >= core_get_playercount()) {
+      ai_init(&ais[i], i, core_get_aidifficulty());
+    }
   }
 
   sauna_stage = SAUNA_INTRO;
@@ -343,17 +385,12 @@ static void sauna_countdown_fixed_loop(float delta_time) {
   total_time += delta_time;
 }
 
-static float sauna_rand_float(float min, float max) {
-  float r = (float) rand() / (float) RAND_MAX;
-  return r*(max-min) + min;
-}
-
 static void sauna_game_fixed_loop(float delta_time) {
   static float next_throw;
   if (!sauna_stage_inited[SAUNA_GAME]) {
     sauna_stage_inited[SAUNA_GAME] = true;
     time_left = SAUNA_LEN;
-    next_throw = sauna_rand_float(0.f, LOYLY_LENGTH);
+    next_throw = rand_float(0.f, LOYLY_LENGTH);
     delta_time = 0.f;
 
     for (size_t i = 0; i < 4; i++) {
@@ -369,7 +406,7 @@ static void sauna_game_fixed_loop(float delta_time) {
   next_throw -= delta_time;
 
   if (next_throw < EPS) {
-    next_throw = sauna_rand_float(LOYLY_LENGTH * 1.05f, LOYLY_LENGTH * 2.5f);
+    next_throw = rand_float(LOYLY_LENGTH * 1.05f, LOYLY_LENGTH * 2.5f);
 
     if (time_left < next_throw + LOYLY_LENGTH + LOYLY_DELAY) {
       next_throw = INFINITY;
@@ -406,6 +443,7 @@ static void sauna_game_fixed_loop(float delta_time) {
 
 struct script_action walk_out_actions[][10] = {
   {
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
     {.type = ACTION_WAIT, .time = 2.f+3.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(90.f), .speed = -T3D_PI},
@@ -429,6 +467,7 @@ struct script_action walk_out_actions[][10] = {
     {.type = ACTION_END},
   },
   {
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
     {.type = ACTION_WAIT, .time = 2.f+2.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {
@@ -445,6 +484,7 @@ struct script_action walk_out_actions[][10] = {
     {.type = ACTION_END},
   },
   {
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
     {.type = ACTION_WAIT, .time = 2.f+1.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {
@@ -461,6 +501,7 @@ struct script_action walk_out_actions[][10] = {
     {.type = ACTION_END},
   },
   {
+    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
     {.type = ACTION_WAIT, .time = 2.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {
@@ -723,8 +764,13 @@ void sauna_dynamic_loop_post(float delta_time) {
     pressed[i] = joypad_get_buttons_pressed(core_get_playercontroller(i));
   }
   for (size_t i = core_get_playercount(); i < 4; i++) {
-    held[i].raw = 0;
     pressed[i].raw = 0;
+    if (sauna_stage == SAUNA_GAME) {
+      ais[i].handler(&ais[i], &held[i]);
+    }
+    else {
+      held[i].raw = 0;
+    }
   }
 
   if (sauna_stage == SAUNA_DONE) {
@@ -733,7 +779,7 @@ void sauna_dynamic_loop_post(float delta_time) {
     }
     else {
       for (size_t i = 0; i < 4; i++) {
-        if (pressed[i].start || pressed[i].a || pressed[i].b) {
+        if (pressed[i].a || pressed[i].b) {
           minigame_end();
           return;
         }
