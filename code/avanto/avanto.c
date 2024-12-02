@@ -28,6 +28,40 @@ rdpq_font_t *normal_font;
 rdpq_font_t *timer_font;
 rdpq_font_t *banner_font;
 color_t player_colors[4];
+const color_t skin_tones[] = {
+  (color_t) {0xff, 0xf5, 0xdf, 0xff},
+  (color_t) {0xff, 0xdd, 0xc4, 0xff},
+  (color_t) {0xff, 0xd9, 0xae, 0xff},
+  (color_t) {0xff, 0xcb, 0x93, 0xff},
+  (color_t) {0xf6, 0xe2, 0xac, 0xff},
+  (color_t) {0xff, 0xd8, 0xb9, 0xff},
+  (color_t) {0xee, 0xc2, 0xa8, 0xff},
+  (color_t) {0xdc, 0xb7, 0x8b, 0xff},
+  (color_t) {0xf3, 0xb7, 0x8d, 0xff},
+  (color_t) {0xe7, 0xad, 0x86, 0xff},
+  (color_t) {0xe4, 0xab, 0x84, 0xff},
+  (color_t) {0xcd, 0x9a, 0x77, 0xff},
+  (color_t) {0xca, 0x95, 0x75, 0xff},
+  (color_t) {0xd6, 0x8b, 0x62, 0xff},
+  (color_t) {0xcc, 0x8a, 0x6f, 0xff},
+  (color_t) {0xc4, 0x8b, 0x69, 0xff},
+  (color_t) {0xc6, 0x7f, 0x5a, 0xff},
+  (color_t) {0xb4, 0x71, 0x51, 0xff},
+  (color_t) {0xa4, 0x67, 0x4a, 0xff},
+  (color_t) {0x93, 0x5c, 0x41, 0xff},
+  (color_t) {0x86, 0x55, 0x3c, 0xff},
+  (color_t) {0xa5, 0x73, 0x58, 0xff},
+  (color_t) {0x98, 0x69, 0x51, 0xff},
+  (color_t) {0x8e, 0x64, 0x4d, 0xff},
+  (color_t) {0x86, 0x55, 0x3c, 0xff},
+  (color_t) {0x89, 0x3a, 0x2e, 0xff},
+  (color_t) {0x88, 0x41, 0x43, 0xff},
+  (color_t) {0x91, 0x34, 0x00, 0xff},
+  (color_t) {0x6d, 0x44, 0x31, 0xff},
+  (color_t) {0x58, 0x35, 0x27, 0xff},
+  (color_t) {0x4c, 0x2e, 0x21, 0xff},
+  (color_t) {0x41, 0x27, 0x1c, 0xff},
+};
 struct rdpq_textparms_s banner_params;
 struct rdpq_textparms_s timer_params;
 rspq_block_t *empty_hud_block;
@@ -83,7 +117,6 @@ static void update_all_particles(float delta_time) {
   }
 }
 
-
 void minigame_init() {
   player_colors[0] = PLAYERCOLOR_1;
   player_colors[1] = PLAYERCOLOR_2;
@@ -109,6 +142,14 @@ void minigame_init() {
     .dynTextureCb = NULL,
     .matrices = NULL,
   };
+  static T3DObject *body_object = NULL;
+  T3DModelIter it = t3d_model_iter_create(player_model, T3D_CHUNK_TYPE_OBJECT);
+  while (t3d_model_iter_next(&it)) {
+    if (!strcmp("body", it.object->name)) {
+      body_object = it.object;
+      break;
+    }
+  }
   for (size_t i = 0; i < 4; i++) {
     players[i].rotation = 0;
     skeleton_init(&players[i].s, player_model, NUM_PLAYER_ANIMS);
@@ -140,6 +181,8 @@ void minigame_init() {
     players[i].temperature = 0.f;
     players[i].out = false;
     player_draw_conf.userData = &player_colors[i];
+    int skin_color_index = rand() % (sizeof(skin_tones)/sizeof(color_t));
+    body_object->material->primColor = skin_tones[skin_color_index];
     entity_init(&players[i].e,
         player_model,
         &(T3DVec3) {{players[i].scale, players[i].scale, players[i].scale}},
