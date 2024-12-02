@@ -56,8 +56,6 @@ class Player
         float temperature;
         int fragCount;
 
-        // Which player (key) brought this player to which team (value)
-        // std::array<PlyNum, PlayerCount> fragList;
         // Who captured this player?
         int capturer;
 
