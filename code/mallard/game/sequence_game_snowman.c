@@ -3,6 +3,18 @@
 #include "sequence_game_snowman.h"
 #include "sequence_game_input.h"
 
+int count_snowmen()
+{
+    int count = 0;
+    Snowman *current = snowmen;
+    while (current != NULL)
+    {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
 void display_snowmen()
 {
     Snowman *current = snowmen;

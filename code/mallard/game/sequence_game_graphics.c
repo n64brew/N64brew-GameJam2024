@@ -224,6 +224,184 @@ void sequence_game_render_snowmen()
     // rdpq_mode_pop();
 }
 
+void sequence_game_render_snowmen_and_ducks()
+{
+    bool duck1_rendered = false;
+    bool duck2_rendered = false;
+    bool duck3_rendered = false;
+    bool duck4_rendered = false;
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+
+    Snowman *current = snowmen;
+    while (current != NULL)
+    {
+        // Render duck
+        if (duck1_rendered == false)
+            if (current->collision_box_y2 >= ducks[0].collision_box_y2)
+            {
+                rdpq_blitparms_t blitparms = {
+                    .s0 = get_frame_from_duck(&ducks[0]) * 32,
+                    .t0 = 0,
+                    .width = 32,
+                    .height = 32,
+                    .flip_x = ducks[0].direction == RIGHT ? true : false,
+                };
+
+                rdpq_sprite_blit(get_sprite_from_duck(&ducks[0]),
+                                 ducks[0].x,
+                                 ducks[0].y,
+                                 &blitparms);
+
+                duck1_rendered = true;
+            }
+        if (duck2_rendered == false)
+            if (current->collision_box_y2 >= ducks[1].collision_box_y2)
+            {
+                rdpq_blitparms_t blitparms = {
+                    .s0 = get_frame_from_duck(&ducks[1]) * 32,
+                    .t0 = 0,
+                    .width = 32,
+                    .height = 32,
+                    .flip_x = ducks[1].direction == RIGHT ? true : false,
+                };
+
+                rdpq_sprite_blit(get_sprite_from_duck(&ducks[1]),
+                                 ducks[1].x,
+                                 ducks[1].y,
+                                 &blitparms);
+
+                duck2_rendered = true;
+            }
+        if (duck3_rendered == false)
+            if (current->collision_box_y2 >= ducks[2].collision_box_y2)
+            {
+                rdpq_blitparms_t blitparms = {
+                    .s0 = get_frame_from_duck(&ducks[2]) * 32,
+                    .t0 = 0,
+                    .width = 32,
+                    .height = 32,
+                    .flip_x = ducks[2].direction == RIGHT ? true : false,
+                };
+
+                rdpq_sprite_blit(get_sprite_from_duck(&ducks[2]),
+                                 ducks[2].x,
+                                 ducks[2].y,
+                                 &blitparms);
+
+                duck3_rendered = true;
+            }
+        if (duck4_rendered == false)
+            if (current->collision_box_y2 >= ducks[3].collision_box_y2)
+            {
+                rdpq_blitparms_t blitparms = {
+                    .s0 = get_frame_from_duck(&ducks[3]) * 32,
+                    .t0 = 0,
+                    .width = 32,
+                    .height = 32,
+                    .flip_x = ducks[3].direction == RIGHT ? true : false,
+                };
+
+                rdpq_sprite_blit(get_sprite_from_duck(&ducks[3]),
+                                 ducks[3].x,
+                                 ducks[3].y,
+                                 &blitparms);
+
+                duck4_rendered = true;
+            }
+
+        // Render snowman
+        rdpq_blitparms_t blitparms = {
+            .s0 = get_frame_from_snowman(current) * 13,
+            .t0 = 0,
+            .width = 13,
+            .height = 17,
+        };
+        rdpq_sprite_blit(get_sprite_from_snowman(current),
+                         current->x,
+                         current->y,
+                         &blitparms);
+
+        // Next snowman.
+        current = current->next;
+    }
+
+    // Render remaining ducks.
+    if (duck1_rendered == false)
+    {
+        rdpq_blitparms_t blitparms = {
+            .s0 = get_frame_from_duck(&ducks[0]) * 32,
+            .t0 = 0,
+            .width = 32,
+            .height = 32,
+            .flip_x = ducks[0].direction == RIGHT ? true : false,
+        };
+
+        rdpq_sprite_blit(get_sprite_from_duck(&ducks[0]),
+                         ducks[0].x,
+                         ducks[0].y,
+                         &blitparms);
+
+        duck1_rendered = true;
+    }
+    if (duck2_rendered == false)
+    {
+        rdpq_blitparms_t blitparms = {
+            .s0 = get_frame_from_duck(&ducks[1]) * 32,
+            .t0 = 0,
+            .width = 32,
+            .height = 32,
+            .flip_x = ducks[1].direction == RIGHT ? true : false,
+        };
+
+        rdpq_sprite_blit(get_sprite_from_duck(&ducks[1]),
+                         ducks[1].x,
+                         ducks[1].y,
+                         &blitparms);
+
+        duck2_rendered = true;
+    }
+    if (duck3_rendered == false)
+    {
+        rdpq_blitparms_t blitparms = {
+            .s0 = get_frame_from_duck(&ducks[2]) * 32,
+            .t0 = 0,
+            .width = 32,
+            .height = 32,
+            .flip_x = ducks[2].direction == RIGHT ? true : false,
+        };
+
+        rdpq_sprite_blit(get_sprite_from_duck(&ducks[2]),
+                         ducks[2].x,
+                         ducks[2].y,
+                         &blitparms);
+
+        duck3_rendered = true;
+    }
+    if (duck4_rendered == false)
+    {
+        rdpq_blitparms_t blitparms = {
+            .s0 = get_frame_from_duck(&ducks[3]) * 32,
+            .t0 = 0,
+            .width = 32,
+            .height = 32,
+            .flip_x = ducks[3].direction == RIGHT ? true : false,
+        };
+
+        rdpq_sprite_blit(get_sprite_from_duck(&ducks[3]),
+                         ducks[3].x,
+                         ducks[3].y,
+                         &blitparms);
+
+        duck4_rendered = true;
+    }
+
+    rdpq_mode_pop();
+
+    fprintf(stderr, "Duck 1: %f\n", ducks[0].y);
+}
+
 void sequence_game_render(float deltatime)
 {
     if (sequence_game_started == true && sequence_game_finished == false)
@@ -239,9 +417,11 @@ void sequence_game_render(float deltatime)
         // rdpq_set_prim_color(RGBA32(0, 0, 0, 128));
         // rdpq_fill_rectangle(DUCK_MIN_X, DUCK_MIN_Y, DUCK_MAX_X, DUCK_MAX_Y);
 
-        sequence_game_render_ducks();
+        // sequence_game_render_ducks();
 
-        sequence_game_render_snowmen();
+        // sequence_game_render_snowmen();
+
+        sequence_game_render_snowmen_and_ducks();
 
         if (sequence_game_paused == false)
             sequence_game_draw_press_start_to_pause();
