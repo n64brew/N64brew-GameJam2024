@@ -74,13 +74,9 @@ void sequence_introduction_init()
     //                  Set up Audio                         //
     ///////////////////////////////////////////////////////////
 
-    fprintf(stderr, "Mallard Intro audio init\n");
-
     xm64player_open(&sequence_introduction_xm, "rom:/mallard/mallard_intro_music.xm64");
     xm64player_play(&sequence_introduction_xm, 0);
     xm64player_seek(&sequence_introduction_xm, sequence_introduction_currentXMPattern, 0, 0);
-
-    fprintf(stderr, "Mallard Intro audio DONE\n");
 
     sequence_introduction_should_initialize = false;
     sequence_introduction_did_initialize = true;
@@ -106,7 +102,6 @@ void sequence_introduction_cleanup()
     // Stop the music and free the allocated memory.
     xm64player_stop(&sequence_introduction_xm);
     xm64player_close(&sequence_introduction_xm);
-    fprintf(stderr, "Mallard Intro audio cleanup DONE\n");
 
     // Close the display and free the allocated memory.
     rspq_wait();

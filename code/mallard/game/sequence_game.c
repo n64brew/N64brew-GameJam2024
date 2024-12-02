@@ -111,7 +111,6 @@ void sequence_game_init()
 
     xm64player_open(&sequence_game_xm, "rom:/mallard/mallard_game_music.xm64");
     xm64player_play(&sequence_game_xm, 0);
-    fprintf(stderr, "Mallard GAME audio init DONE\n");
 }
 
 void sequence_game_cleanup()
@@ -146,13 +145,12 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_paused_text_sprite);
 
     free_ducks();
-    free_snowmen(snowmen);
+    free_snowmen();
     free_controllers();
 
     // Stop the music and free the allocated memory.
     xm64player_stop(&sequence_game_xm);
     xm64player_close(&sequence_game_xm);
-    fprintf(stderr, "Mallard GAME audio cleanup DONE\n");
 
     // Close the display and free the allocated memory.
     rspq_wait();

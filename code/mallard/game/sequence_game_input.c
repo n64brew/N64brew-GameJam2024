@@ -59,12 +59,8 @@ void update_snowmen(float deltatime)
     // Add snowman.
     if (time_elapsed_since_last_snowman_spawn >= SNOWMAN_SPAWN_FREQUENCY)
     {
-        snowmen = add_snowman(snowmen);
+        add_snowman();
         time_elapsed_since_last_snowman_spawn = 0.0f;
-
-        // TODO: Delete these logging functions once I'm sure that we're correctly destroying the snowmen.
-        list_snowmen(snowmen);
-        // fprintf(stderr, "Snowmen: %d\n", count_snowmen(snowmen));
     }
 
     time_elapsed += deltatime;
@@ -185,7 +181,6 @@ bool detect_collision(Rect a, Rect b)
 Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
 {
     Collision collision = (Collision){.x = false, .y = false};
-    fprintf(stderr, "Checking for collisions, x is %s, y is %s\n", collision.x ? "true" : "false", collision.y ? "true" : "false");
 
     Rect duck_rect = (Rect){
         .x1 = duck->collision_box_x1 + movement.x,
@@ -218,13 +213,11 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
         {
             if (detect_collision(duck_rect_x, temporary_rect))
             {
-                fprintf(stderr, "Collision detected in X\n");
                 collision.x = true;
             }
 
             if (detect_collision(duck_rect_y, temporary_rect))
             {
-                fprintf(stderr, "Collision detected in Y\n");
                 collision.y = true;
             }
         }
@@ -253,13 +246,11 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
         {
             if (detect_collision(duck_rect_x, temporary_rect))
             {
-                fprintf(stderr, "Collision detected in X\n");
                 collision.x = true;
             }
 
             if (detect_collision(duck_rect_y, temporary_rect))
             {
-                fprintf(stderr, "Collision detected in Y\n");
                 collision.y = true;
             }
         }

@@ -3,18 +3,24 @@
 #include "sequence_game_snowman.h"
 #include "sequence_game_input.h"
 
-Snowman *add_snowman(Snowman *snowmen)
+void display_snowmen()
 {
-    bool validSpawn = false;
+    Snowman *current = snowmen;
+    while (current != NULL)
+    {
+        fprintf(stderr, "(%f ,%f)\n", current->x, current->y);
+        current = current->next;
+    }
+    fprintf(stderr, "NULL\n");
+}
+
+Vector2 get_snowman_spawn()
+{
     int x, y;
     float x1, y1, x2, y2;
 
-    Snowman *snowman = (Snowman *)malloc(sizeof(Snowman));
-    snowman->action = SNOWMAN_IDLE;
-    snowman->frames = 0;
-    snowman->locked_for_frames = 0;
-
-    while (validSpawn == false)
+    int attempts = 0;
+    while (attempts < 20)
     {
         x = random_between(SNOWMAN_MIN_X, SNOWMAN_MAX_X);
         y = random_between(SNOWMAN_MIN_Y, SNOWMAN_MAX_Y);
@@ -27,47 +33,73 @@ Snowman *add_snowman(Snowman *snowmen)
             !detect_collision((Rect){.x1 = ducks[1].collision_box_x1, .y1 = ducks[1].collision_box_y1, .x2 = ducks[1].collision_box_x2, .y2 = ducks[1].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
             !detect_collision((Rect){.x1 = ducks[2].collision_box_x1, .y1 = ducks[2].collision_box_y1, .x2 = ducks[2].collision_box_x2, .y2 = ducks[2].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
             !detect_collision((Rect){.x1 = ducks[3].collision_box_x1, .y1 = ducks[3].collision_box_y1, .x2 = ducks[3].collision_box_x2, .y2 = ducks[3].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}))
-            validSpawn = true;
-    }
-    validSpawn = false;
+            return (Vector2){.x = x, .y = y};
 
-    snowman->x = x;
-    snowman->y = y;
-    snowman->collision_box_x1 = x1;
-    snowman->collision_box_y1 = y1;
-    snowman->collision_box_x2 = x2;
-    snowman->collision_box_y2 = y2;
+        attempts++;
+    }
+
+    return (Vector2){.x = -1.0F, .y = -1.0F};
+}
+
+Snowman *create_snowman()
+{
+    Snowman *snowman = (Snowman *)malloc(sizeof(Snowman));
+    Vector2 spawn = get_snowman_spawn();
+    snowman->x = spawn.x;
+    snowman->y = spawn.y;
+    snowman->collision_box_x1 = spawn.x;
+    snowman->collision_box_y1 = spawn.y + 8;
+    snowman->collision_box_x2 = spawn.x + 12;
+    snowman->collision_box_y2 = spawn.y + 16;
+    snowman->action = SNOWMAN_IDLE;
+    snowman->frames = 0;
+    snowman->locked_for_frames = 0;
     snowman->time = 0.0f;
     snowman->idle_sprite = sequence_game_snowman_idle_sprite;
     snowman->jump_sprite = sequence_game_snowman_jump_sprite;
-    snowman->next = snowmen;
     return snowman;
 }
 
-void free_snowmen(Snowman *snowmen)
+void add_snowman()
 {
-    if (snowmen == NULL)
+    Snowman *snowman = create_snowman();
+
+    if (snowman->x == -1.0F && snowman->y == -1.0F)
+    {
+        fprintf(stderr, "Failed to spawn snowman\n");
+        free(snowman);
         return;
-    free_snowmen(snowmen->next);
-    free(snowmen);
+    }
+
+    // Insert at the head if the list is empty or the new value is smaller
+    if (snowmen == NULL || snowmen->y >= snowman->y)
+    {
+        snowman->next = snowmen;
+        snowmen = snowman;
+        return;
+    }
+
+    // Traverse to find the insertion point
+    Snowman *current = snowmen;
+    while (current->next != NULL && current->next->y < snowman->y)
+    {
+        current = current->next;
+    }
+
+    // Insert the new snowman
+    snowman->next = current->next;
+    current->next = snowman;
+
+    // display_snowmen();
 }
 
-void list_snowmen(Snowman *snowmen)
+void free_snowmen()
 {
+    Snowman *temporary;
     while (snowmen != NULL)
     {
-        // fprintf(stderr, "Snowman: (%f,%f) for %f\n", snowmen->x, snowmen->y, snowmen->time);
+        temporary = snowmen;
         snowmen = snowmen->next;
+        free(temporary);
     }
-}
-
-int count_snowmen(Snowman *snowmen)
-{
-    int count = 0;
-    while (snowmen != NULL)
-    {
-        count++;
-        snowmen = snowmen->next;
-    }
-    return count;
 }

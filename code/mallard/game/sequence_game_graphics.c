@@ -210,13 +210,13 @@ void sequence_game_render_snowmen()
                          &blitparms);
         rdpq_mode_pop();
 
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
-        rdpq_fill_rectangle(temporary->collision_box_x1, temporary->collision_box_y1, temporary->collision_box_x2, temporary->collision_box_y2);
-        rdpq_mode_pop();
+        // rdpq_mode_push();
+        // rdpq_set_mode_standard();
+        // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        // rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
+        // rdpq_fill_rectangle(temporary->collision_box_x1, temporary->collision_box_y1, temporary->collision_box_x2, temporary->collision_box_y2);
+        // rdpq_mode_pop();
 
         temporary = temporary->next;
     }
