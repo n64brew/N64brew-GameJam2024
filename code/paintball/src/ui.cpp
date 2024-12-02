@@ -102,6 +102,7 @@ void UIRenderer::render(const GameState &state, T3DViewport &viewport, float del
     }
 
     if(state.state != STATE_WAIT_FOR_NEW_ROUND && state.state != STATE_FINISHED){
+        rdpq_text_printf(&centerparms, SmallFont, -5 * ScreenWidth/16, 3 * ScreenHeight / 8, "%d/%d", state.currentRound + 1, RoundCount);
         for (int i = 0; i < MAXPLAYERS; i++) {
             centerparms.style_id = i;
             rdpq_text_printf(&centerparms, SmallFont, ((i-1) * 2 - 1) * ScreenWidth/16, 3 * ScreenHeight / 8, "P%d: %d", i + 1, state.scores[i]);
