@@ -701,7 +701,7 @@ void lake_end_fixed_loop(float delta_time) {
 bool lake_fixed_loop(float delta_time) {
   switch (lake_stage) {
     case LAKE_INTRO:
-      lake_intro_fixed_loop(delta_time*1000.f);
+      lake_intro_fixed_loop(delta_time);
       break;
 
     case LAKE_OUTRO:
