@@ -8,6 +8,7 @@
 #include "./collision/collision_scene.h"
 #include "./math/mathf.h"
 #include "./scene_query.h"
+#include "./spark_effect.h"
 
 #include "./rampage.h"
 
@@ -22,6 +23,15 @@
 #define HOUSE_SEGMENT_HEIGHT    SCALE_FIXED_POINT(1.0f)
 
 static T3DMat4FP offsetMatrix[9];
+
+static struct Vector3 billboards_locations[BILLBOARD_COUNT] = {
+    {SCALE_FIXED_POINT(0.65f), SCALE_FIXED_POINT(1.2f), SCALE_FIXED_POINT(-0.36f)},
+    {SCALE_FIXED_POINT(0.62f), SCALE_FIXED_POINT(1.5f), SCALE_FIXED_POINT(0.22f)},
+    {SCALE_FIXED_POINT(-0.68f), SCALE_FIXED_POINT(0.89f), SCALE_FIXED_POINT(0.39f)},
+    {SCALE_FIXED_POINT(-0.1f), SCALE_FIXED_POINT(1.1f), SCALE_FIXED_POINT(-0.6f)},
+    {SCALE_FIXED_POINT(0.14f), SCALE_FIXED_POINT(0.92f), SCALE_FIXED_POINT(0.58f)},
+    {SCALE_FIXED_POINT(-0.53f), SCALE_FIXED_POINT(1.3f), SCALE_FIXED_POINT(-0.2f)},
+};
 
 struct dynamic_object_type building_colliders[] = {
     {
@@ -86,6 +96,27 @@ struct dynamic_object_type building_colliders[] = {
     },
 };
 
+void ramapge_building_spawn_spark(struct RampageBuilding* building) {
+    if (!building->billboards) {
+        return;
+    }
+    
+    for (int i = 0; i < BILLBOARD_COUNT; i += 1) {
+        if ((1 << i) & building->billboards) {
+            struct Vector3 position;
+            struct Vector3* local_pos = &billboards_locations[i];
+            position.x = building->dynamic_object.position.x + 
+                building->dynamic_object.rotation.x * local_pos->x - building->dynamic_object.rotation.y * local_pos->z;
+            position.y = local_pos->y;
+            position.z = building->dynamic_object.position.z + 
+                building->dynamic_object.rotation.x * local_pos->z + building->dynamic_object.rotation.y * local_pos->x;
+
+            spark_effects_spawn(&position);
+            break;
+        }
+    }
+}
+
 void rampage_building_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampageBuilding* building = (struct RampageBuilding*)data;
 
@@ -101,6 +132,7 @@ void rampage_building_damage(void* data, int amount, struct Vector3* velocity, i
         give_player_score(source_id, building->height);
         building->health.is_dead = 1;
         building->is_collapsing = true;
+        ramapge_building_spawn_spark(building);
     } else {
         wav64_play(&rampage_assets_get()->hitSound, 3);
     }
