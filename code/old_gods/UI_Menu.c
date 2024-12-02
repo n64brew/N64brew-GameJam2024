@@ -175,63 +175,48 @@ void UI_Menu_Start(AppData* _appData){
 	
 
  
-    // ======== GAME OVER =========
-    // game over text
     
-    Vec2 gameOverTitleSize = {64,64};
-    Vec2 gameOverSpriteScale = {4.5f, 1.0f};
-    Vec2 gameOverTitlePos = {(screenHalfWidth) - 120, padding + 54};
-    Vec2 gameOverSubTitlePos = {(screenHalfWidth) - (screenHalfWidth * 0.5f) + 64, padding+ (padding * 4)};
-    Vec2 gameOverSubTitleSize = subTitleSize;
-    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, gameOverTitlePos, gameOverSubTitleSize);
-    gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitle, FONT4_ID, fontPath4, pink, gameOverSubTitlePos, gameOverSubTitleSize);
-    // disable at the start
-	gameOverTitleEntity->text->isShowing = FALSE;
-    gameOverSubTitleEntity->text->isShowing = FALSE;
-
-
-    // gameOver background
-    Vec2 gameOverTitleBackgroundPos = {(screenHalfWidth) - (screenHalfWidth * 0.5f), padding};
-    Vec2 gameOverSubTitleBackgroundPos = {gameOverTitleBackgroundPos.x, gameOverSubTitlePos.y - 32};
-    gameOverTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],gameOverTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSize,whiteColor,0,gameOverTitleSize);
-    gameOverSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],gameOverSubTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSize,pink,0,gameOverTitleSize);
-
     // ======== MAIN MENU =========
     // Create Main Menu
     Vec2 mainMenuTitlePos = titlePos;
     Vec2 mainMenuTitleSize = titleSize;
     Vec2 mainMenuSubTitleSize = subTitleSize;
-    mainMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
-
+    
     // title background elements
-    Vec2 titleSpriteSize = {64,64};
-    Vec2 titleSheetSpriteSize = {64,64};
-    Vec2 titleSpriteScale = {7.0f, 1.0f};
+    Vec2 titleSpriteSize = {256, 256};//{64,64};
+    Vec2 titleSheetSpriteSize = {256, 256};//{64,64};
+    
+    Vec2 titleSpriteScale = {2.0f, 0.25f};//{7.0f, 1.0f};
     uint8_t fontSize = 14;
-    Vec2 mainMenutitleSpritePos = {titlePos.x - (titleSpriteSize.y*titleSpriteScale.y), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y) *titleSpriteScale.y) + fontSize};
+    //Vec2 mainMenutitleSpritePos = {titlePos.x - (titleSpriteSize.y*titleSpriteScale.y), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y) *titleSpriteScale.y) + fontSize};
+    Vec2 mainMenutitleSpritePos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.5f), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
+    
+    Vec2 subTitleSpriteSize = {256, 256};//{64,64};
+    Vec2 subTitleSheetSpriteSize = {256, 256};//{64,64};
+    Vec2 subTitleSpriteScale = {1.25, 0.25f};//{7.0f, 1.0f};
+    Vec2 mainMenuSubTitlePos = {screenHalfWidth- ((subTitleSpriteSize.x*subTitleSpriteScale.x)* 0.5f), screenHalfHeight};
+    Vec2 mainMenuSubTitleTextPos = {screenHalfWidth - 96,  screenHalfHeight + 32+8};
+    
+    //mainMenuSubTitleBackground->sprite->spriteRotation = 0.2f;
     mainMenuTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],mainMenutitleSpritePos, titleSpriteScale,titleSpriteSize,pink,0,titleSheetSpriteSize);
+    mainMenuSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],mainMenuSubTitlePos, subTitleSpriteScale,subTitleSpriteSize,whiteColor,0,subTitleSheetSpriteSize);
     AF_CSprite* mainMenuTitleBackgroundSprite = mainMenuTitleBackground->sprite;
     mainMenuTitleBackgroundSprite->filtering = TRUE;
-    //mainMenuTitleBackgroundSprite->flipY = TRUE;
-    //mainMenuTitleBackground->text->isShowing = FALSE;
-
-    Vec2 mainMenuSubTitlePos = {mainMenutitleSpritePos.x, screenHalfHeight};
-    Vec2 mainMenuSubTitleTextPos = {screenHalfWidth - 96,  screenHalfHeight + 32+8};
-    mainMenuSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],mainMenuSubTitlePos, titleSpriteScale,titleSpriteSize,whiteColor,0,titleSheetSpriteSize);
     mainMenuSubTitleBackground->sprite->filtering = TRUE;
+
+    
+    mainMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, mainMenuTitlePos, mainMenuTitleSize);
     mainMenuSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, mainMenuSubTitleCharBuffer, FONT4_ID, fontPath4, whiteColor, mainMenuSubTitleTextPos, mainMenuSubTitleSize);
 
-    // disable at the start
-	//mainMenuTitleEntity->text->isShowing = FALSE;
-    //mainMenuSubTitleEntity->text->isShowing = FALSE;
+    // ============ Player Score ========
 
     Vec2 playerScoreBackgroundSize = {64,64};
     //Vec2 playerScoreBackgroundSheetSpriteSize = {64,64};
-    Vec2 playerScoreBackgroundSizeScale = {0.5f, 0.5f};
+    Vec2 playerScoreBackgroundSizeScale = {1.0f, 0.6f};
     float scorePadding = (screenWidth - (padding*2)) * .25f;
 
     float scoreBasePosX = paddingMargin;
-    float scoreBasePosY = screenHeight - padding;
+    float scoreBasePosY = screenHeight - (padding + 15);
 
 
     // TODO: clean this up
@@ -241,7 +226,7 @@ void UI_Menu_Start(AppData* _appData){
     Vec2 player3coreBackgroundSpritePos = {scoreBasePosX + (2 * scorePadding) + 12,scoreBasePosY};
     Vec2 player4ScoreBackgroundSpritePos = {scoreBasePosX + (3 * scorePadding) + 20, scoreBasePosY};
 
-    Vec2 scoreTextPos = {player1ScoreBackgroundSpritePos.x + 8, player1ScoreBackgroundSpritePos.y - 16};
+    Vec2 scoreTextPos = {player1ScoreBackgroundSpritePos.x + 8, player1ScoreBackgroundSpritePos.y - 15};
 
     // Create Player 1 card
     //Vec2 playe1CountLabelPos = {padding, screenHeight - paddingMargin};
@@ -254,6 +239,48 @@ void UI_Menu_Start(AppData* _appData){
     player3ScoreBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_4],player3coreBackgroundSpritePos, playerScoreBackgroundSizeScale,playerScoreBackgroundSize,whiteColor,0,playerScoreBackgroundSizeScale);
     player4ScoreBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_5],player4ScoreBackgroundSpritePos, playerScoreBackgroundSizeScale,playerScoreBackgroundSize,whiteColor,0,playerScoreBackgroundSizeScale);
     
+
+    // ======== GAME OVER =========
+    // game over text
+    // title background elements
+
+    Vec2 gameOverTitleSize = {256,256};
+    Vec2 gameOverSpriteSize = {256, 256};//{64,64};
+    Vec2 gameOverSpriteScale = {2.0f, 0.25f};
+    Vec2 gameOverTitlePos = mainMenuTitlePos;
+    Vec2 gameOverSubTitlePos = mainMenuSubTitlePos;//{(screenHalfWidth) - (screenHalfWidth * 0.5f) + 64, screenHalfHeight};
+    Vec2 gameOverSubTitleSize = subTitleSize;
+    //gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, mainMenuSubTitleTextPos, mainMenuTitleSize);
+    //gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitle, FONT4_ID, fontPath4, pink, mainMenuSubTitleTextPos, mainMenuSubTitleSize);
+
+     //mainMenuSubTitleBackground->sprite->spriteRotation = 0.2f;
+   
+    
+    // disable at the start
+	
+
+
+    // gameOver background
+    //Vec2 mainMenutitleSpritePos = {titlePos.x - (titleSpriteSize.y*titleSpriteScale.y), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y) *titleSpriteScale.y) + fontSize};
+ 
+    Vec2 gameOverTitleBackgroundPos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.5f), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
+    Vec2 gameOverSubTitleBackgroundPos = {gameOverTitleBackgroundPos.x, gameOverSubTitlePos.y - 32};
+    
+
+    Vec2 gameOverTitleTextPos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.2f ), titlePos.y };//- ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
+    Vec2 gameOverSubTitleTextPos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.15f ), subTitlePos.y};
+    
+    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, gameOverTitleTextPos, mainMenuTitleSize);
+    gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitle, FONT4_ID, fontPath4, whiteColor, gameOverSubTitleTextPos, mainMenuSubTitleSize);
+
+    gameOverTitleEntity->text->isShowing = FALSE;
+    gameOverSubTitleEntity->text->isShowing = FALSE;
+
+
+   
+    gameOverTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],gameOverTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSize,whiteColor,0,gameOverTitleSize);
+    gameOverSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],gameOverSubTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSize,pink,0,gameOverTitleSize);
+    
     
 }
 
@@ -263,6 +290,7 @@ void UI_Menu_Update(AppData* _appData){
         case GAME_STATE_MAIN_MENU:
             // this will decide how to render depending on game state
             // TODO
+            //UI_Menu_RenderGameOverScreen(_appData);
             UI_Menu_RenderMainMenu(_appData);
         break;
 
@@ -397,7 +425,7 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
     
     // TODO, figure out how to reference the player entities
     
-    sprintf(playerCountCharBuff, "%i%s%i%s%i%s%i", 
+    sprintf(playerCountCharBuff, " %i%s%i%s%i%s%i", 
         (int)gameplayData->playerEntities[0]->playerData->score, 
         characterSpace, 
         (int)gameplayData->playerEntities[1]->playerData->score, 

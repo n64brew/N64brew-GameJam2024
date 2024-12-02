@@ -317,10 +317,11 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             //debugf("AF_Renderer_T3D: AF_RenderInit modelsMat address: %p \n",meshMat);
             mesh->modelMatrix = (void*)meshMat;
             //mesh->modelMatrix = (Mat4FP*)(sizeof(T3DMat4FP));
-            if(mesh->modelMatrix == NULL){
+            
+            /*if(mesh->modelMatrix == NULL){
                 debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
-                continue;
-            }
+                //continue;
+            }*/
             //rspq_block_begin();
            
             t3d_matrix_push(mesh->modelMatrix);
@@ -441,8 +442,8 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
             float rot[3]= {entityTransform->rot.x, entityTransform->rot.y, entityTransform->rot.z};
             float scale[3] = {entityTransform->scale.x * MODEL_SCALE_FACTOR, entityTransform->scale.y * MODEL_SCALE_FACTOR, entityTransform->scale.z * MODEL_SCALE_FACTOR};
 
-            
             T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
+            
             if(meshMat == NULL){
                 debugf("AF_Renderer_T3D: AF_RenderUpdate modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
                 continue;
@@ -708,7 +709,7 @@ void AF_Renderer_PlayAnimation(AF_CSkeletalAnimation* _animation){
       //return;
     }
 
-    if(animAttackData->isPlaying == false) {//animAttacks[MODEL_SNAKE].isPlaying == false) {
+    //if(animAttackData->isPlaying == false) {//animAttacks[MODEL_SNAKE].isPlaying == false) {
       
       //debugf("AF_Renderer_PlayAnimation: 1\n");
       //t3d_anim_set_playing(animAttackData, true);
@@ -720,10 +721,11 @@ void AF_Renderer_PlayAnimation(AF_CSkeletalAnimation* _animation){
       
       t3d_anim_set_playing(animAttackData, true);
       t3d_anim_set_time(animAttackData, 0.0f);
-      animAttackData->isPlaying = true;
+      //animAttackData->isPlaying = true;
       //player->isAttack = true;
       //player->attackTimer = 0;
-    }
+    //}
+
   /*
   // play animation
   AF_Animation* animation = &_entity->animation;

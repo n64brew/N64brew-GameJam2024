@@ -11,9 +11,10 @@ Definition gameplay data struct
 
 // Gameplay variables
 #define COUNT_DOWN_TIME 120
-#define GODS_EAT_COUNT 5
+#define GODS_EAT_COUNT 1
 #define MAX_OBSERVERS 10
 #define PLAYER_COUNT 4
+#define ENEMY_POOL_COUNT 0
 
 // ===== Game State ====
 enum GAME_STATE{
@@ -38,6 +39,7 @@ typedef struct GameplayData {
     // SpriteSheet
     int currentBucket;
     AF_Entity* playerEntities[PLAYER_COUNT];
+    AF_Entity* enemyEntities[ENEMY_POOL_COUNT];
     Vec3 levelPos;
     Vec3 levelBounds;
     //Observer observers[MAX_OBSERVERS];

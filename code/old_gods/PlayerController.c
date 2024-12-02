@@ -56,6 +56,7 @@ void PlayerController_Attack(AF_Entity* _entity){
 	BOOL hasMeshComponent = AF_Component_GetHas(animation->enabled);
 	BOOL isEnabled = AF_Component_GetEnabled(animation->enabled);
 	if(hasMeshComponent == TRUE && isEnabled == TRUE){
+		
 		AF_Renderer_PlayAnimation(animation);
 	}
 }

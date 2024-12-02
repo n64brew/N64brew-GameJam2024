@@ -1,0 +1,17 @@
+[] make floor water
+[] make boundry area
+[] make corners sand island
+[] make centre sand island
+[] make rat simple non animation
+[] snakes have floaties
+[] snakes pickup rat
+[] snakes have water movement effect
+[] snakes can attack each other
+[] celebration at end
+[] player win number is correct
+[] background music
+[] count down visual at start
+[] count down audio
+[] end screen audio
+[] pickup audio
+[] put down audio

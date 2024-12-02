@@ -164,15 +164,15 @@ void AF_UI_RendererSprite_Update(AF_CSprite* _sprite, AF_Time* _time){
     //int horizontalFrame = 0;
     //Draw knight sprite
     rdpq_sprite_blit((sprite_t*)_sprite->spriteData, _sprite->spritePos.x, _sprite->spritePos.y, &(rdpq_blitparms_t){
-            .s0 = _sprite->currentFrame * _sprite->spriteSheetSize.x,  //< Source sub-rect top-left X coordinate
-            .t0 = _sprite->currentFrame * _sprite->spriteSheetSize.y,                                        ///< Source sub-rect top-left Y coordinate
+            .s0 = 0,//_sprite->currentFrame * _sprite->spriteSheetSize.x,  //< Source sub-rect top-left X coordinate
+            .t0 = 0,//_sprite->currentFrame * _sprite->spriteSheetSize.y,                                        ///< Source sub-rect top-left Y coordinate
             .width = _sprite->spriteSize.x,            ///< Source sub-rect width. If 0, the width of the surface is used
             //Set sprite center to bottom-center
             .height = _sprite->spriteSize.y,           ///< Source sub-rect height. If 0, the height of the surface is used
             .flip_x = _sprite->flipX,                       ///< Flip horizontally. If true, the source sub-rect is treated as horizontally flipped (so flipping is performed before all other transformations)
             .flip_y = _sprite->flipY,                       ///< Flip vertically. If true, the source sub-rect is treated as vertically flipped (so flipping is performed before all other transformations)
-            .cx = 0.0f, //.5f,                                      ///< Transformation center (aka "hotspot") X coordinate, relative to (s0, t0). Used for all transformations
-            .cy = 0.0f,//.5f,                                      ///< Transformation center (aka "hotspot") X coordinate, relative to (s0, t0). Used for all transformations
+            .cx = 0.5f,                                      ///< Transformation center (aka "hotspot") X coordinate, relative to (s0, t0). Used for all transformations
+            .cy = 0.5f,                                      ///< Transformation center (aka "hotspot") X coordinate, relative to (s0, t0). Used for all transformations
             .scale_x = _sprite->spriteScale.x,                     ///< Horizontal scale factor to apply to the surface. If 0, no scaling is performed (the same as 1.0f). If negative, horizontal flipping is applied
             .scale_y = _sprite->spriteScale.y,                     ///< Vertical scale factor to apply to the surface. If 0, no scaling is performed (the same as 1.0f). If negative, vertical flipping is applied
             .theta = _sprite->spriteRotation,                        ///< Rotation angle in radians

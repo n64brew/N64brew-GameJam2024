@@ -41,6 +41,9 @@ AF_Entity* bucket4 = NULL;
 // Villagers
 AF_Entity* villager1 = NULL;
 
+// Rates
+
+
 // Audio
 //AF_Entity* laserSoundEntity = NULL;
 //AF_Entity* cannonSoundEntity = NULL;
@@ -78,6 +81,9 @@ PlyNum winner;
 
 #define PLAYER_MOVEMENT_SPEED 1.0f
 #define AI_MOVEMENT_SPEED_MOD 0.3f
+#define AI_TARGET_DISTANCE 1.0f
+
+#define RAT_MOVEMENT_SPEED 0.5f
 
 AF_Color WHITE_COLOR = {255, 255, 255, 255};
 AF_Color SAND_COLOR = {255, 245, 177};
@@ -131,6 +137,9 @@ wav64_t sfx_winner;
 void PlayerController_DamageHandler(AppData* _appData);
 void Scene_AIFollowEntity(AF_AI_Action* _aiAction);
 void Scene_AIStateMachine(AF_AI_Action* _aiAction);
+void OnRatCollision(AF_Collision* _collision);
+void RatAIBehaviourUpdate(AppData* _appData);
+void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state);
 
 void PlayerController_DamageHandler(AppData* _appData){
     for(int i = 0; i < PLAYER_COUNT; ++i){
@@ -200,6 +209,8 @@ void Scene_Update(AppData* _appData){
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
 
+        RatAIBehaviourUpdate(_appData);
+
     }
 
     AF_ECS* ecs = &_appData->ecs;
@@ -218,9 +229,8 @@ void Scene_Update(AppData* _appData){
             
             //debugf("entity carrying villager: x: %f y: %f x: %f \n", villagerCarryPos.x, villagerCarryPos.y, villagerCarryPos.z);
         }
-
-        
     }
+
 
     // Update the god count by summing the players scores
     
@@ -317,12 +327,14 @@ void Scene_SetupEntities(AppData* _appData){
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
+    player1Entity->playerData->faction = 1;
     player1Entity->playerData->startPosition = player1Pos;
     player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
+    /*
     Vec3 player1HatPos = {0.0f, 1.5f, 1.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
     Vec3 player1HatScale = {0.5f, 0.5f, 0.5f};
     AF_Entity* player1Hat = AF_ECS_CreateEntity(_ecs);
@@ -338,7 +350,7 @@ void Scene_SetupEntities(AppData* _appData){
     //player1Hat->parentTransform = player1Entity->transform;
     player1Hat->mesh->meshID = MODEL_BOX;//MODEL_SNAKE2;
     player1Hat->mesh->material.color = PLAYER1_COLOR;
-
+    */
 
 
     // Get AI Level
@@ -356,6 +368,7 @@ void Scene_SetupEntities(AppData* _appData){
     player2Entity->rigidbody->inverseMass = 1.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
+    player2Entity->playerData->faction = 1;
     player2Entity->playerData->startPosition = player2Pos;
     player2Entity->playerData->movementSpeed = aiReactionSpeed;
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -373,6 +386,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = 1.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
+    player3Entity->playerData->faction = 1;
     player3Entity->playerData->startPosition = player3Pos;
     player3Entity->playerData->movementSpeed = aiReactionSpeed;
     *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -389,6 +403,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = 1.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
+    player4Entity->playerData->faction = 1;
     player4Entity->playerData->startPosition = player4Pos;
     player4Entity->playerData->movementSpeed = aiReactionSpeed;
     *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -470,37 +485,24 @@ void Scene_SetupEntities(AppData* _appData){
 	villager1->rigidbody->inverseMass = zeroInverseMass;
 	villager1->rigidbody->isKinematic = TRUE;
     villager1->collider->collision.callback = Scene_OnCollision;
-    /*
-
-   float wallHeight = 3;
-    // Create Left Wall
-	Vec3 leftWallPos = {-8, 0, 3};
-	Vec3 leftWallScale = {1,wallHeight,10};
-	leftWall = Entity_Factory_CreatePrimative(_ecs, leftWallPos, leftWallScale,AF_MESH_TYPE_MESH, AABB);
-    leftWall->mesh->meshID = MODEL_BOX;
-    leftWall->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Right Wall
-	Vec3 rightWallPos = {8, 0, 3};
-	Vec3 rightWallScale = {1,wallHeight,10};
-	rightWall = Entity_Factory_CreatePrimative(_ecs, rightWallPos, rightWallScale,AF_MESH_TYPE_MESH, AABB);
-    rightWall->mesh->meshID = MODEL_BOX;
-    rightWall->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Back Wall
-	Vec3 backWallPos = {0, 0, -1.5};
-	Vec3 backWallScale = {18, wallHeight, 0};
-	backWall = Entity_Factory_CreatePrimative(_ecs, backWallPos, backWallScale, AF_MESH_TYPE_MESH, AABB);
-    backWall->mesh->meshID = MODEL_BOX;
-    backWall->rigidbody->inverseMass = zeroInverseMass;
-
-    // Create Front Wall
-	Vec3 frontWallPos = {0, 0, 7};
-	Vec3 frontWallScale = {8,wallHeight,1};
-	frontWall = Entity_Factory_CreatePrimative(_ecs, frontWallPos, frontWallScale,AF_MESH_TYPE_MESH, AABB);
-    frontWall->mesh->meshID = MODEL_BOX;
-    frontWall->rigidbody->inverseMass = zeroInverseMass;
-    */
+    
+    // ======== RATS ========
+    Vec3 ratSpawnPos = {2, 0,0};
+    Vec3 ratScale = {1,1,1};
+    for(int i = 0; i < ENEMY_POOL_COUNT; ++i){
+        
+        _appData->gameplayData.enemyEntities[i] = Entity_Factory_CreatePrimative(_ecs, ratSpawnPos, ratScale, AF_MESH_TYPE_MESH, AABB);
+        AF_Entity* rat = _appData->gameplayData.enemyEntities[i];
+        *rat->playerData = AF_CPlayerData_ADD();
+        rat->playerData->isAlive = FALSE;
+        rat->playerData->movementSpeed = RAT_MOVEMENT_SPEED;
+        rat->mesh->meshID = MODEL_FOOD;
+        rat->rigidbody->inverseMass = zeroInverseMass;
+        rat->rigidbody->isKinematic = TRUE;
+        // disable the collision, mesh and physics for now
+        rat->collider->collision.callback = OnRatCollision;
+        //TogglePrimativeComponents(rat, TRUE);
+    }
 
 	// Scale everything due to strange model sizes exported from blender
     for(int i = 0; i < _ecs->entitiesCount; ++i){
@@ -612,12 +614,7 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         // play sound
         // clear the players from carrying
     }
-    
-	// Play sound
 }
-
-
-
 
 /*
 Scene_BucketCollisionBehaviour
@@ -817,6 +814,105 @@ void Scene_AIFollowEntity(AF_AI_Action* _aiAction){
         // Attack * AI difficulty
 }
 
+void OnRatCollision(AF_Collision* _collision){
+    if(_collision == NULL){
+        return;
+    }
+
+    AF_Entity* rat =  _collision->entity1;
+	AF_Entity* player =  _collision->entity2;
+
+    // Second collision is the playable character
+    // skip if collision object doesn't have player data
+    AF_CPlayerData* playerData = player->playerData;
+    AF_CPlayerData* ratData = rat->playerData;
+    if(AF_Component_GetHas(playerData->enabled) == FALSE){
+        return;
+    }
+
+    if(playerData->faction == 1){
+        
+        // if player is attacking
+        if(playerData->isAttacking == TRUE){
+            debugf("OnRatCollision: hit player attacking player \n");
+            // Rat is carried by colliding player
+            playerData->isCarrying = TRUE;
+            playerData->carryingEntity = AF_ECS_GetID(rat->id_tag);
+            ratData->isCarried = TRUE;
+            //ratData->isAlive = FALSE;
+        }
+        
+    }
+    //debugf("OnRatCollision: with a player\n");
+    // is rat dead?
+        // attatch to collided player
+    // if rat is alive
+        // puff of smoke
+        // rat flips onto its back
+        // rat is dead
+}
+
+void RatAIBehaviourUpdate(AppData* _appData){
+    Vec3 spawnBounds = {7, 1, 3.5};
+    int upperX = spawnBounds.x;
+    int lowerX = -spawnBounds.x;
+    int upperZ = spawnBounds.z;
+    int lowerZ = -spawnBounds.z;
+    
+    
+    for(int i = 0; i < ENEMY_POOL_COUNT; ++i){
+        AF_Entity* ratEntity = _appData->gameplayData.enemyEntities[i];
+        assert(ratEntity != NULL);
+        AF_CPlayerData* ratPlayerData = ratEntity->playerData;
+        // check if rat is alive)
+        if(ratPlayerData->isAlive == FALSE){
+            // spawn in random spot within bounds
+            int randomX = (rand() % (upperX + - lowerX) + lowerX);
+            int randomZ = (rand() % (upperZ + - lowerZ) + lowerZ);
+            Vec3 randomPos = {randomX, ratEntity->transform->pos.y, randomZ};
+            ratEntity->transform->pos = randomPos;
+            ratPlayerData->isAlive = TRUE;
+            TogglePrimativeComponents(ratEntity, TRUE);
+            
+        }else{
+            //debugf("Move Rat\n");
+            AF_CPlayerData* ratPlayerData = ratEntity->playerData;
+            Vec3* ratPosition = &ratEntity->transform->pos;
+            Vec3* ratDestination = &ratPlayerData->targetDestination;
+
+            // Are we clost to our target
+            float distanceToDest = Vec3_DISTANCE(*ratPosition, *ratDestination);
+            if(distanceToDest < AI_TARGET_DISTANCE){
+                // time to find a new destination point
+                // spawn in random spot within bounds
+                int randomX = (rand() % (upperX + - lowerX) + lowerX);
+                int randomZ = (rand() % (upperZ + - lowerZ) + lowerZ);
+                Vec3 randomDest = {randomX, ratEntity->transform->pos.y, randomZ};
+                *ratDestination = randomDest;
+            }
+            
+            AF_C3DRigidbody* ratRigidbody = ratEntity->rigidbody;
+            Vec3 initialForce = Vec3_NORMALIZE(Vec3_MINUS(*ratDestination, *ratPosition));
+            Vec3 directionForce = {ratPlayerData->movementSpeed * initialForce.x, 0, ratPlayerData->movementSpeed * initialForce.z};
+            //debugf("Rat target   : x: %f y: %f z: %f\nRat direction: x: %f y: %f z: %f\n", ratDestination->x, ratDestination->y, ratDestination->z, directionForce.x, directionForce.y, directionForce.z);
+            AF_Physics_ApplyLinearImpulse(ratRigidbody, Vec3_MULT_SCALAR(directionForce, ratPlayerData->movementSpeed));
+            // Move rat towards destination
+            // Is time time change direct reached?
+            // is distance to destination reached?
+            // pick new point to head towards.
+        }
+        // if not alive, is it time to spawn
+        // TogglePrimativeComponents(rats[i], FALSE);
+        // move rats around if they are alive
+
+    }
+}
+
+void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state){
+    _entity->rigidbody->enabled = AF_Component_SetEnabled(_entity->rigidbody->enabled, _state);
+    _entity->mesh->enabled = AF_Component_SetEnabled(_entity->mesh->enabled, _state);
+    _entity->collider->enabled = AF_Component_SetEnabled(_entity->collider->enabled, _state);
+}
 
 AF_Entity* GetBucket1(){
     return bucket1;
