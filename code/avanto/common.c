@@ -379,9 +379,12 @@ void particle_source_init(struct particle_source *source,
     int type) {
   source->_type = type;
 
-  source->_num_allocated_particles = num_particles;
-  source->_particles = malloc_uncached(sizeof(TPXParticle) * num_particles/2);
-  source->_meta = malloc(sizeof(struct particle_meta) * num_particles);
+  source->_num_allocated_particles = num_particles & 1?
+    num_particles + 1 : num_particles;
+  source->_particles = malloc_uncached(
+      sizeof(TPXParticle) * (source->_num_allocated_particles/2));
+  source->_meta = malloc(
+      sizeof(struct particle_meta) * source->_num_allocated_particles);
   source->_transform = malloc_uncached(sizeof(T3DMat4FP));
 
   switch (type) {

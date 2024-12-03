@@ -21,6 +21,7 @@
 #define SCALE 2.5f
 #define SAUNA_GRAVITY (GRAVITY*SCALE)
 #define SAUNA_WALK_SPEED 100.f
+#define KIUAS_MAX_PARTICLES 128
 
 enum sauna_stages {
   SAUNA_INTRO,
@@ -178,7 +179,7 @@ void sauna_init() {
   wav64_open(&sfx_loyly, "rom:/avanto/loyly.wav64");
   wav64_open(&sfx_door, "rom:/avanto/door.wav64");
 
-  particle_source_init(&kiuas_particle_source, 128, STEAM);
+  particle_source_init(&kiuas_particle_source, KIUAS_MAX_PARTICLES, STEAM);
   kiuas_particle_source.pos = (T3DVec3) {{100.f, 100.f+128.f, 0.f}};
   kiuas_particle_source.scale = 1.f;
   kiuas_particle_source.render = false;
@@ -188,7 +189,7 @@ void sauna_init() {
   kiuas_particle_source.particle_size = 4;
   kiuas_particle_source.time_to_rise = 1.f;
   kiuas_particle_source.movement_amplitude = 5.f;
-  kiuas_particle_source.max_particles = 128;
+  kiuas_particle_source.max_particles = KIUAS_MAX_PARTICLES;
   kiuas_particle_source.paused = true;
 
   min_time_before_exiting = 3.f;
@@ -658,7 +659,14 @@ void sauna_dynamic_loop_pre(float delta_time) {
     particle_source_reset_steam(&kiuas_particle_source);
     loyly_queued = false;
   }
-  kiuas_particle_source.max_particles = 128.f*loyly_strength;
+  int max_particles = (int) ((float) KIUAS_MAX_PARTICLES * loyly_strength);
+  max_particles = max_particles < 0? 0 : max_particles;
+  max_particles = max_particles > KIUAS_MAX_PARTICLES?
+    KIUAS_MAX_PARTICLES : max_particles;
+  kiuas_particle_source.max_particles = max_particles;
+  if (kiuas_particle_source.max_particles > KIUAS_MAX_PARTICLES) {
+    kiuas_particle_source.max_particles = KIUAS_MAX_PARTICLES;
+  }
   kiuas_particle_source.time_to_rise = 2.f-loyly_strength;
 
   for (size_t i = 0; i < 4; i++) {

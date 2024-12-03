@@ -235,7 +235,6 @@ void particle_source_init(struct particle_source *source,
     size_t num_particles,
     int type);
 void particle_source_free(struct particle_source *source);
-struct particle_source *particle_source_get_unused(size_t num_particles);
 void particle_source_iterate(struct particle_source *source,
     float delta_time);
 void particle_source_draw(const struct particle_source *source);
