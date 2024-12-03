@@ -31,7 +31,7 @@ T3DViewport viewport;
 surface_t background_surface;
 bool has_background;
 
-T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(5.0f), SCALE_FIXED_POINT(4.0f)}};
+T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(3.5f), SCALE_FIXED_POINT(4.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 
 rdpq_font_t* font;
@@ -88,10 +88,10 @@ static struct mesh_collider global_mesh_collider = {
 struct frame_malloc frame_mallocs[2];
 int next_frame_malloc;
 
-#define PROJECTION_RATIO    1.2f
+#define PROJECTION_RATIO    2.0f
 #define NEAR_PLANE          SCALE_FIXED_POINT(-1.0f)
 #define FAR_PLANE           SCALE_FIXED_POINT(20.0f)
-#define ORTHO_SCALE     5.5f
+#define ORTHO_SCALE         2.6f
 
 /**
  * Modify an ortho matrix to apply some perspective
@@ -617,12 +617,40 @@ enum PlayerType rampage_player_type(int index) {
     }
 }
 
-bool rampage_add_billboard(struct Rampage* rampage) {
+bool rampage_add_billboard(struct Rampage* rampage, int billboard) {
     int x = randomInRange(0, BUILDING_COUNT_X);
     int y = randomInRange(0, BUILDING_COUNT_Y);
-    int billboard = randomInRange(0, BILLBOARD_COUNT);
 
     return rampage_building_add_billboard(&rampage->buildings[y][x], 1 << billboard);
+}
+
+int ramapge_random_shuffle(const void*, const void*) {
+    return randomInRange(-10, 10);
+}
+
+void rampage_add_all_billboards(struct Rampage* rampage) {
+    int billboard_count = randomInRange(7, 10);
+
+    uint8_t billboard_deck[BILLBOARD_COUNT];
+
+    for (int i = 0; i < BILLBOARD_COUNT; i += 1) {
+        billboard_deck[i] = i;
+    }
+
+    int deck_index = BILLBOARD_COUNT;
+
+    while (billboard_count) {
+        if (deck_index == BILLBOARD_COUNT) {
+            qsort(billboard_deck, BILLBOARD_COUNT, 1, ramapge_random_shuffle);
+            deck_index = 0;
+        }
+
+        if (rampage_add_billboard(rampage, billboard_deck[deck_index])) {
+            billboard_count -= 1;
+            deck_index += 1;
+        }
+
+    }
 }
 
 static uint8_t min_building_height[BUILDING_COUNT_Y][BUILDING_COUNT_X] = {
@@ -662,12 +690,7 @@ void rampage_init(struct Rampage* rampage) {
         }
     }
 
-    int billboard_count = randomInRange(7, 10);
-    while (billboard_count) {
-        if (rampage_add_billboard(rampage)) {
-            billboard_count -= 1;
-        }
-    }
+    rampage_add_all_billboards(&gRampage);
 
     for (int i = 0; i < TANK_COUNT; i += 1) {
         rampage_tank_init(&gRampage.tanks[i], &gStartingTankPositions[i]);
