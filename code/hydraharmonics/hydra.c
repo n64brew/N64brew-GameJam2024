@@ -6,11 +6,12 @@
 #define HYDRA_HEAD_OFFSET_EACH 2
 #define HYDRA_MOVEMENT_SPEED 8
 #define HYDRA_SWAP_SPEED (HYDRA_MOVEMENT_SPEED / 2.0f)
+#define HYDRA_SHELL_Y (PADDING_TOP+4*HYDRA_ROW_HEIGHT)
 #define HYDRA_HAT_X_OFFSET 5
 #define HYDRA_HAT_SPEED 4
 #define HYDRA_HAT_WIDTH 14
 #define HYDRA_HAT_HEIGHT 8
-#define HYDRA_SHELL_Y PADDING_TOP+4*HYDRA_ROW_HEIGHT
+#define HYDRA_HAT_MAX_Y (HYDRA_SHELL_Y-HYDRA_HAT_HEIGHT)
 #define HYDRA_BOUNCE_PERIOD 20
 #define HYDRA_BOUNCE_AMPLITUDE 4
 #define HYDRA_SHELL_WIDTH HYDRA_HEAD_WIDTH
@@ -46,7 +47,6 @@
 hydra_t hydras[PLAYER_MAX];
 static const uint8_t collar_offsets[PLAYER_MAX] = {17, 13, 11, 7};
 static sprite_t* hat_sprite;
-static sprite_t* eye_sprite;
 static uint32_t shell_bounce = 0;
 static uint32_t shell_frame = 0;
 
@@ -111,14 +111,12 @@ void hydra_init (void) {
 		hydras[i].y = PADDING_TOP + hydras[i].state * HYDRA_ROW_HEIGHT;
 		hydras[i].hat_y = hydras[i].y + HYDRA_HEAD_HEIGHT/2;
 		hydras[i].leg_offset_y = 0;
-		hydras[i].ai = i < core_get_playercount() ? 0 : HYDRA_AI_SMART;//(rand()%(HYDRA_AI_COUNT-1) + 1);
 		hydras[i].animation = HYDRA_ANIMATION_NONE;
 		hydras[i].last_eaten = NOTES_TYPE_STANDARD;
 		hydras[i].frame = hydras[i].face_frame = 0;
 	}
 	// Common sprites
 	hat_sprite = sprite_load("rom:/hydraharmonics/hats.ci4.sprite");
-	eye_sprite = sprite_load("rom:/hydraharmonics/eyes.ci4.sprite");
 
 	// Shuffle starting positions
 	for (i=0; i<PLAYER_MAX; i++) {
@@ -147,6 +145,9 @@ int8_t hydra_get_hat_offset (PlyNum i) {
 }
 
 void hydra_adjust_hats (void) {
+	if (pause) {
+		return;
+	}
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		float min_y = hydras[i].y + hydra_get_hat_offset (i);
 		hydras[i].hat_y = min_y < hydras[i].hat_y + HYDRA_HAT_SPEED ? min_y : hydras[i].hat_y + HYDRA_HAT_SPEED;
@@ -165,6 +166,9 @@ bool hydra_get_all_animation_states (hydraharmonics_animations_t a) {
 }
 
 void hydra_swap_animation (hydraharmonics_animations_t stage, PlyNum i) {
+	if (pause) {
+		return;
+	}
 	if (stage == HYDRA_ANIMATION_SWAP_DOWN) {
 		UPDATE_LEG_OFFSET(i);
 		if (hydras[i].y + HYDRA_HEAD_HEIGHT >= HYDRA_SHELL_Y) {
@@ -233,6 +237,7 @@ void hydra_swap_animation (hydraharmonics_animations_t stage, PlyNum i) {
 }
 
 void hydra_move (void) {
+	static bool hold_check[PLAYER_MAX] = {false};
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		// Handle all the states
 		if (hydras[i].animation == HYDRA_ANIMATION_STUN) {
@@ -243,8 +248,22 @@ void hydra_move (void) {
 		}
 		if (i < core_get_playercount()) {
 			// Player character movement
-			joypad_inputs_t joypad;
-			joypad = joypad_get_inputs(core_get_playercontroller(i));
+			joypad_inputs_t joypad = joypad_get_inputs(core_get_playercontroller(i));
+
+			// Pause the game
+			if (joypad.btn.start) {
+				if (!hold_check[i] ) {
+					pause ^= 1;
+				}
+				hold_check[i] = true;
+			} else {
+				hold_check[i] = false;
+			}
+
+			if (pause) {
+				continue;
+			}
+
 			if (hydras[i].animation == HYDRA_ANIMATION_NONE) {
 				if (joypad.btn.a) {
 					hydra_animate (i, HYDRA_ANIMATION_OPEN);
@@ -253,13 +272,14 @@ void hydra_move (void) {
 					hydras[i].state = STATE_UP;
 				} else if (joypad.btn.d_down || joypad.stick_y < -HYDRA_STICK_THRESHOLD) {
 					hydras[i].state = STATE_DOWN;
-				} else if (joypad.btn.z) {
-					hydras[i].state = STATE_HIDE;
 				} else {
 					hydras[i].state = STATE_MID;
 				}
 			}
 		} else {
+			if (pause) {
+				return;
+			}
 			hydra_ai (i);
 		}
 		// Adjust the Y position by moving it towards the selected row
@@ -291,6 +311,9 @@ void hydra_swap_start (PlyNum swap_player, notes_types_t note_type) {
 			}
 		}
 		return;
+	} else if (note_type == NOTES_TYPE_SOUR) {
+		// Sour note, swap with the player in the parameter instead
+		player_b = swap_player;
 	} else {
 		return;
 	}
@@ -312,6 +335,10 @@ void hydra_shell_bounce (void) {
 }
 
 void hydra_handle_animation (PlyNum p) {
+	if (pause) {
+		return;
+	}
+
 	hydras[p].frame++;
 	uint8_t frame_cum = 0;
 	uint8_t skip = 0;
@@ -379,6 +406,7 @@ void hydra_draw (void) {
 	// Draw top layer
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		// Draw a hat
+		if (hydras[i].animation != HYDRA_ANIMATION_SWAP_WAIT || hydras[i].hat_y != HYDRA_HAT_MAX_Y)
 		rdpq_sprite_blit (
 			hat_sprite,
 			hydras[i].x + collar_offsets[hydras[i].pos] + HYDRA_HAT_X_OFFSET,
@@ -389,7 +417,7 @@ void hydra_draw (void) {
 			}
 		);
 
-		if (hydras[i].state != STATE_HIDE && hydras[i].animation != HYDRA_ANIMATION_SWAP_WAIT) {
+		if (hydras[i].animation != HYDRA_ANIMATION_SWAP_WAIT) {
 
 			// Draw the face
 			rdpq_sprite_blit (
@@ -447,12 +475,6 @@ void hydra_draw (void) {
 				NULL
 			);
 
-			assertf(animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].eyes_sprite<25,
-				"Eye draw %i, %i, %i",
-				hydras[i].animation,
-				hydras[i].face_frame,
-				animation_db[hydras[i].animation].frame_array[hydras[i].face_frame].eyes_sprite
-			);
 			// Draw the eye
 			rdpq_sprite_blit (
 				hydras[i].eyes_sprite,
@@ -489,21 +511,12 @@ void hydra_draw (void) {
 			// Handle the animation frame
 			hydra_handle_animation(i);
 
-		} else if (hydras[i].state == STATE_HIDE) {
-			// Hydra is hiding
-			// Draw the eyes
-			rdpq_sprite_blit (
-				eye_sprite,
-				hydras[i].x + collar_offsets[hydras[i].pos],
-				HYDRA_SHELL_Y,
-				NULL
-			);
 		}
 	}
 /*
 	for (uint8_t i=0; i<PLAYER_MAX; i++) {
 		rdpq_text_printf(NULL, FONT_DEFAULT, hydras[i].x, HYDRA_SHELL_Y,
-			"%i\n%i\n%i", hydras[i].animation, hydras[i].face_frame, hydras[i].frame
+			"%.0f : %i", hydras[i].hat_y, HYDRA_HAT_MAX_HEIGHT
 		);
 	}
 */
@@ -523,6 +536,5 @@ void hydra_clear (void) {
 		sprite_free(hydras[i].flair_sprite[FLAIR_EYELID]);
 
 	}
-	sprite_free(eye_sprite);
 	sprite_free(hat_sprite);
 }

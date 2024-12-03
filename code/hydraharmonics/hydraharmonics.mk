@@ -15,7 +15,6 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/shell-1.ci4.sprite \
 	filesystem/hydraharmonics/shell-2.ci4.sprite \
 	filesystem/hydraharmonics/shell-3.ci4.sprite \
-	filesystem/hydraharmonics/eyes.ci4.sprite \
 	filesystem/hydraharmonics/eyes-0.ci4.sprite \
 	filesystem/hydraharmonics/eyes-1.ci4.sprite \
 	filesystem/hydraharmonics/eyes-2.ci4.sprite \
@@ -32,6 +31,7 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/effects-1.ci4.sprite \
 	filesystem/hydraharmonics/effects-2.ci4.sprite \
 	filesystem/hydraharmonics/effects-3.ci4.sprite \
+	filesystem/hydraharmonics/effects-4.ci4.sprite \
 	filesystem/hydraharmonics/grin-0.ci4.sprite \
 	filesystem/hydraharmonics/grin-1.ci4.sprite \
 	filesystem/hydraharmonics/grin-2.ci4.sprite \
@@ -46,8 +46,6 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/note-2.ci4.sprite \
 	filesystem/hydraharmonics/note-3.ci4.sprite \
 	filesystem/hydraharmonics/note-4.ci4.sprite \
-	filesystem/hydraharmonics/note-5.ci4.sprite \
-	filesystem/hydraharmonics/note-6.ci4.sprite \
 	filesystem/hydraharmonics/signs.ci4.sprite \
 	filesystem/hydraharmonics/background.ci4.sprite \
 	filesystem/hydraharmonics/floor.ci4.sprite \

@@ -32,7 +32,7 @@ typedef enum {
 	STATE_UP,
     STATE_MID,
     STATE_DOWN,
-    STATE_HIDE,
+    STATE_COUNT,
 } hydraharmonics_state_t;
 
 typedef enum {
@@ -47,5 +47,6 @@ typedef enum {
 } notes_types_t;
 
 extern hydraharmonics_stage_t stage;
+extern bool pause;
 
 #endif

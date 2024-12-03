@@ -4,14 +4,7 @@
 #include "hydraharmonics.h"
 
 #define HYDRA_EATING_FRAMES 22/2
-#define HYDRA_STUN_DURATION 50
-
-typedef enum {
-	HYDRA_AI_NONE,
-	HYDRA_AI_RANDOM,
-	HYDRA_AI_SMART,
-	HYDRA_AI_COUNT,
-} hydraharmonics_ai_t;
+#define HYDRA_STUN_DURATION 60
 
 typedef enum {
 	HYDRA_ANIMATION_NONE,
@@ -81,7 +74,6 @@ typedef enum {
 typedef struct hydra_s {
 	float x, y, hat_y;
 	hydraharmonics_state_t state;
-    hydraharmonics_ai_t ai;
 	hydraharmonics_animations_t animation;
 	uint8_t frame;
 	uint16_t face_frame;

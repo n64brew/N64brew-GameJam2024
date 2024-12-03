@@ -35,12 +35,11 @@ void notes_init(void) {
 		// Load the note sprites
 		sprintf(temptext, "rom:/hydraharmonics/note-%i.ci4.sprite", i);
 		note_sprites[i] = sprite_load(temptext);
-		if (i < PLAYER_MAX) {
+		if (i < NOTES_TOTAL_COUNT) {
 			// Set how many notes are left per player
-			notes.notes_left[i] = NOTES_PER_PLAYER;
-		} else {
+			notes.notes_left[i].regular = NOTES_PER_PLAYER;
 			// Set the amount of special notes
-			notes.notes_left[i] = NOTES_PER_PLAYER_SPECIAL;
+			notes.notes_left[i].special = NOTES_PER_PLAYER_SPECIAL;
 		}
 	}
 	// Init notes
@@ -49,6 +48,13 @@ void notes_init(void) {
 
 notes_types_t note_get_random_type (PlyNum p) {
 	uint32_t random = rand();
+	// Check if we've run out of a particular type
+	if (notes.notes_left[p].regular == 0) {
+		return ((random % (NOTES_TYPE_COUNT-1)) + 1);
+	} else if (notes.notes_left[p].special == 0) {
+		return NOTES_TYPE_STANDARD;
+	}
+	// Check to see if the player is in 1st or last place (scorewise)
 	if (p == scores_get_extreme(SCORES_GET_FIRST)) {
 		// User is in first place, let's bring them down
 		if (random % NOTE_CHANCE_NON_STANDARD) {
@@ -97,14 +103,13 @@ PlyNum note_get_free(void) {
 		// Find out which group it belongs to
 		uint16_t notes_left_cum = 0;
 		for (i=0; i<NOTES_TOTAL_COUNT; i++) {
-			notes_left_cum += notes.notes_left[i];
+			notes_left_cum += notes.notes_left[i].regular + notes.notes_left[i].special;
 			if (random_note < notes_left_cum) {
 				// Check if this is a note used by the previous player
 				if (i == last_player && j++ < NOTE_PLAYER_MAX_RETRIES) {
 					break;
 				} else {
 					last_player = i;
-					notes.notes_left[i]--;
 					return i;
 				}
 			}
@@ -130,7 +135,7 @@ void notes_add (PlyNum player, notes_types_t type, hydraharmonics_state_t state)
 		note->state = state;
 		note->type = type;
 		note->sprite = note_sprites[player];
-		note->x = display_get_width();
+		note->x = display_get_width() + NOTE_WIDTH/2;
 		note->y = PADDING_TOP + (note->state+1) * HYDRA_ROW_HEIGHT + 8;
 		note->anim_offset = random % UINT8_MAX;
 		note->blitparms = (rdpq_blitparms_t){
@@ -146,9 +151,17 @@ void notes_add (PlyNum player, notes_types_t type, hydraharmonics_state_t state)
 		note->scale = 0;
 		note->y_offset = 0;
 		note->next = NULL;
+
+		// Decrease the counters
+		if (type == NOTES_TYPE_STANDARD) {
+			notes.notes_left[player].regular--;
+		} else {
+			notes.notes_left[player].special--;
+		}
 	}
 }
 
+// This function looks awful. Please forgive me
 void notes_check_and_add (void) {
 	AiDiff diff = core_get_aidifficulty();
 	// Spawn the first note
@@ -236,6 +249,11 @@ void notes_draw (void) {
 		);
 		current = current->next;
 	}
+	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
+		rdpq_text_printf(NULL, FONT_DEFAULT, 20, 20+i*20,
+			"%i, %i", notes.notes_left[i].regular, notes.notes_left[i].special
+		);
+	}
 }
 
 uint16_t notes_get_remaining (notes_remaining_t type) {
@@ -244,7 +262,7 @@ uint16_t notes_get_remaining (notes_remaining_t type) {
 	note_t* current = notes.start;
 	// Get unspawned notes
 	for (i=0; i<NOTES_TOTAL_COUNT && (type & NOTES_GET_REMAINING_UNSPAWNED); i++) {
-		remaining += notes.notes_left[i];
+		remaining += notes.notes_left[i].regular + notes.notes_left[i].special;
 	}
 	// Get spawned notes
 	while (current != NULL && (type & NOTES_GET_REMAINING_SPAWNED)) {
