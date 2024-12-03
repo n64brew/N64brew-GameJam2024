@@ -374,29 +374,21 @@ void draw_hud() {
   rdpq_mode_pop();
 }
 
-void particle_source_pre_init(struct particle_source *source) {
-  source->_particles = NULL;
-  source->_transform = NULL;
-  source->_in_use = false;
-  source->_meta = NULL;
-  source->_type = UNDEFINED;
-}
+void particle_source_init(struct particle_source *source,
+    size_t num_particles,
+    int type) {
+  source->_type = type;
 
-struct particle_source *particle_source_get_unused(size_t num_particles) {
-  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
-    if (!particle_sources[i]._in_use) {
-      particle_sources[i]._in_use = true;
-      particle_sources[i]._num_allocated_particles = num_particles;
-      particle_sources[i]._particles = malloc_uncached(
-          sizeof(TPXParticle) * num_particles/2);
-      particle_sources[i]._meta = malloc(
-          sizeof(struct particle_meta) * num_particles);
-      particle_sources[i]._transform = malloc_uncached(sizeof(T3DMat4FP));
-      return &particle_sources[i];
-    }
+  source->_num_allocated_particles = num_particles;
+  source->_particles = malloc_uncached(sizeof(TPXParticle) * num_particles/2);
+  source->_meta = malloc(sizeof(struct particle_meta) * num_particles);
+  source->_transform = malloc_uncached(sizeof(T3DMat4FP));
+
+  switch (type) {
+    case STEAM:
+      particle_source_init_steam(source);
+      break;
   }
-
-  return NULL;
 }
 
 void particle_source_reset_steam(struct particle_source *source) {
@@ -426,7 +418,6 @@ void particle_source_init_steam(struct particle_source *source) {
 }
 
 void particle_source_free(struct particle_source *source) {
-  source->_in_use = false;
   source->_num_allocated_particles = 0;
   source->_type = UNDEFINED;
   if (source->_particles) {
@@ -523,7 +514,7 @@ static void particle_source_iterate_steam(struct particle_source *source,
 
 void particle_source_iterate(struct particle_source *source,
     float delta_time) {
-  if (!source->_in_use || source->paused) {
+  if (source->paused) {
     return;
   }
   switch (source->_type) {
@@ -534,28 +525,9 @@ void particle_source_iterate(struct particle_source *source,
 }
 
 void particle_source_draw(const struct particle_source *source) {
-  if (source->_in_use && source->render) {
-    tpx_matrix_push(source->_transform);
-    tpx_particle_draw(source->_particles, source->_num_allocated_particles);
-    tpx_matrix_pop(1);
-  }
-}
-
-void particle_source_draw_all() {
-  rdpq_sync_pipe();
-  rdpq_sync_tile();
-
-  rdpq_mode_push();
-  rdpq_set_mode_standard();
-  rdpq_mode_zbuf(true, true);
-  rdpq_mode_zoverride(true, 0, 0);
-  rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-  tpx_state_from_t3d();
-
-  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
-    particle_source_draw(&particle_sources[i]);
-  }
-  rdpq_mode_pop();
+  tpx_matrix_push(source->_transform);
+  tpx_particle_draw(source->_particles, source->_num_allocated_particles);
+  tpx_matrix_pop(1);
 }
 
 float rand_float(float min, float max) {

@@ -208,7 +208,6 @@ struct particle_source {
   T3DMat4FP *_transform;
   TPXParticle *_particles;
   size_t _num_allocated_particles;
-  bool _in_use;
   size_t _type;
 };
 
@@ -232,7 +231,9 @@ void script_reset_signals();
 bool script_update(struct script_state *state, float delta_time);
 void draw_hud();
 rspq_block_t *build_empty_hud_block();
-void particle_source_pre_init(struct particle_source *source);
+void particle_source_init(struct particle_source *source,
+    size_t num_particles,
+    int type);
 void particle_source_free(struct particle_source *source);
 struct particle_source *particle_source_get_unused(size_t num_particles);
 void particle_source_iterate(struct particle_source *source,
@@ -240,5 +241,4 @@ void particle_source_iterate(struct particle_source *source,
 void particle_source_draw(const struct particle_source *source);
 void particle_source_reset_steam(struct particle_source *source);
 void particle_source_init_steam(struct particle_source *source);
-void particle_source_draw_all();
 float rand_float(float min, float max);

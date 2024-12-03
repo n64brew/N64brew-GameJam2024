@@ -101,8 +101,6 @@ wav64_t sfx_countdown;
 wav64_t sfx_stop;
 wav64_t sfx_winner;
 
-struct particle_source particle_sources[MAX_PARTICLE_SOURCES];
-
 static bool filter_player_hair_color(void *user_data, const T3DObject *obj) {
   color_t *color = (color_t *) user_data;
   if (!strcmp(obj->name, "hair")) {
@@ -110,12 +108,6 @@ static bool filter_player_hair_color(void *user_data, const T3DObject *obj) {
   }
 
   return true;
-}
-
-static void update_all_particles(float delta_time) {
-  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
-    particle_source_iterate(&particle_sources[i], delta_time);
-  }
 }
 
 void minigame_init() {
@@ -263,10 +255,6 @@ void minigame_init() {
 
   paused = false;
 
-  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
-    particle_source_pre_init(&particle_sources[i]);
-  }
-
   current_subgame = &subgames[0];
   current_subgame->init();
 }
@@ -284,8 +272,6 @@ void minigame_fixedloop(float delta_time) {
       }
     }
   }
-
-  update_all_particles(delta_time);
 }
 
 void minigame_loop(float delta_time) {
@@ -433,10 +419,6 @@ void minigame_cleanup() {
     skeleton_free(&players[i].s);
   }
   t3d_model_free(player_model);
-
-  for (size_t i = 0; i < MAX_PARTICLE_SOURCES; i++) {
-    particle_source_free(&particle_sources[i]);
-  }
 
   tpx_destroy();
   t3d_destroy();

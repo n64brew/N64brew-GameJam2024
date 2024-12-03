@@ -66,7 +66,7 @@ static wav64_t sfx_door;
 static int sauna_stage;
 static bool sauna_stage_inited[NUM_SAUNA_STAGES];
 static float upness[4];
-static struct particle_source *kiuas_particle_source;
+static struct particle_source kiuas_particle_source;
 
 static char banner_str[16];
 static float banner_time;
@@ -178,19 +178,18 @@ void sauna_init() {
   wav64_open(&sfx_loyly, "rom:/avanto/loyly.wav64");
   wav64_open(&sfx_door, "rom:/avanto/door.wav64");
 
-  kiuas_particle_source = particle_source_get_unused(128);
-  particle_source_init_steam(kiuas_particle_source);
-  kiuas_particle_source->pos = (T3DVec3) {{100.f, 100.f+128.f, 0.f}};
-  kiuas_particle_source->scale = 1.f;
-  kiuas_particle_source->render = false;
-  kiuas_particle_source->x_range = 25;
-  kiuas_particle_source->z_range = 30;
-  kiuas_particle_source->height = 100;
-  kiuas_particle_source->particle_size = 4;
-  kiuas_particle_source->time_to_rise = 1.f;
-  kiuas_particle_source->movement_amplitude = 5.f;
-  kiuas_particle_source->max_particles = 128;
-  kiuas_particle_source->paused = true;
+  particle_source_init(&kiuas_particle_source, 128, STEAM);
+  kiuas_particle_source.pos = (T3DVec3) {{100.f, 100.f+128.f, 0.f}};
+  kiuas_particle_source.scale = 1.f;
+  kiuas_particle_source.render = false;
+  kiuas_particle_source.x_range = 25;
+  kiuas_particle_source.z_range = 30;
+  kiuas_particle_source.height = 100;
+  kiuas_particle_source.particle_size = 4;
+  kiuas_particle_source.time_to_rise = 1.f;
+  kiuas_particle_source.movement_amplitude = 5.f;
+  kiuas_particle_source.max_particles = 128;
+  kiuas_particle_source.paused = true;
 
   min_time_before_exiting = 3.f;
 
@@ -633,6 +632,8 @@ bool sauna_fixed_loop(float delta_time) {
     }
   }
 
+  particle_source_iterate(&kiuas_particle_source, delta_time);
+
   return false;
 }
 
@@ -641,8 +642,8 @@ void sauna_dynamic_loop_pre(float delta_time) {
     loyly_strength -= delta_time/LOYLY_LENGTH;
     if (loyly_strength < EPS) {
       loyly_strength = 0.f;
-      kiuas_particle_source->render = false;
-      kiuas_particle_source->paused = true;
+      kiuas_particle_source.render = false;
+      kiuas_particle_source.paused = true;
     }
   }
   if (loyly_sound_queued
@@ -652,13 +653,13 @@ void sauna_dynamic_loop_pre(float delta_time) {
   }
   if (loyly_queued && ukko.s.anims[THROW].time + delta_time >= LOYLY_DELAY) {
     loyly_strength = 1.f;
-    kiuas_particle_source->render = true;
-    kiuas_particle_source->paused = false;
-    particle_source_reset_steam(kiuas_particle_source);
+    kiuas_particle_source.render = true;
+    kiuas_particle_source.paused = false;
+    particle_source_reset_steam(&kiuas_particle_source);
     loyly_queued = false;
   }
-  kiuas_particle_source->max_particles = 128.f*loyly_strength;
-  kiuas_particle_source->time_to_rise = 2.f-loyly_strength;
+  kiuas_particle_source.max_particles = 128.f*loyly_strength;
+  kiuas_particle_source.time_to_rise = 2.f-loyly_strength;
 
   for (size_t i = 0; i < 4; i++) {
     if (!players[i].out) {
@@ -717,6 +718,23 @@ void sauna_dynamic_loop_render(float delta_time) {
     rspq_block_run(ukko.e.display_block);
   }
 
+  // Particles
+  if (kiuas_particle_source.render) {
+    rdpq_sync_pipe();
+    rdpq_sync_tile();
+
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_zbuf(true, true);
+    rdpq_mode_zoverride(true, 0, 0);
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    tpx_state_from_t3d();
+
+    particle_source_draw(&kiuas_particle_source);
+
+    rdpq_mode_pop();
+  }
+
   // Sync after all t3d calls
   rdpq_sync_pipe();
   rdpq_sync_tile();
@@ -735,7 +753,6 @@ void sauna_dynamic_loop_render(float delta_time) {
     rdpq_mode_pop();
   }
 
-  particle_source_draw_all();
 
   // HUD
   if (sauna_stage >= SAUNA_COUNTDOWN) {
@@ -825,7 +842,7 @@ void sauna_dynamic_loop_post(float delta_time) {
 void sauna_cleanup() {
   rspq_wait();
 
-  particle_source_free(kiuas_particle_source);
+  particle_source_free(&kiuas_particle_source);
 
   sprite_free(sauna_scene.bg);
   sprite_free(sauna_scene.z);
