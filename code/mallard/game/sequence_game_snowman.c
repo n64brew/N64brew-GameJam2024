@@ -20,10 +20,10 @@ void display_snowmen()
     Snowman *current = snowmen;
     while (current != NULL)
     {
-        fprintf(stderr, "(%f ,%f)\n", current->x, current->y);
+        fprintf(stderr, "%f, ", current->y);
         current = current->next;
     }
-    fprintf(stderr, "NULL\n");
+    fprintf(stderr, "\n");
 }
 
 Vector2 get_snowman_spawn()
@@ -74,6 +74,8 @@ Snowman *create_snowman()
 
 void add_snowman()
 {
+    return;
+    
     Snowman *snowman = create_snowman();
 
     if (snowman->x == -1.0F && snowman->y == -1.0F)
@@ -102,7 +104,7 @@ void add_snowman()
     snowman->next = current->next;
     current->next = snowman;
 
-    // display_snowmen();
+    display_snowmen();
 }
 
 void free_snowmen()

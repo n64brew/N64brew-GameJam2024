@@ -56,6 +56,8 @@ extern sprite_t *sequence_game_mallard_four_run_sprite;
 
 void initialize_ducks();
 void free_ducks();
+void display_ducks();
+Duck *get_duck_by_id(int i);
 void initialize_controllers();
 void free_controllers();
 

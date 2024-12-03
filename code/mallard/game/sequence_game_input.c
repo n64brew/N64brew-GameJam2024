@@ -72,7 +72,7 @@ void update_ducks(float deltatime)
 {
     for (size_t i = 0; i < 4; i++)
     {
-        Duck *duck = &ducks[i];
+        Duck *duck = get_duck_by_id(i);
 
         // Update the frame counter for the duck; this is used by the animation when rendering.
         duck->frames++;
@@ -182,21 +182,19 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
 {
     Collision collision = (Collision){.x = false, .y = false};
 
-    Rect duck_rect = (Rect){
+    Rect duckPotentialCollisionBox = (Rect){
         .x1 = duck->collision_box_x1 + movement.x,
         .y1 = duck->collision_box_y1 + movement.y,
         .x2 = duck->collision_box_x2 + movement.x,
         .y2 = duck->collision_box_y2 + movement.y,
     };
-
-    Rect duck_rect_x = (Rect){
+    Rect duckPotentialCollisionBoxX = (Rect){
         .x1 = duck->collision_box_x1 + movement.x,
         .y1 = duck->collision_box_y1,
         .x2 = duck->collision_box_x2 + movement.x,
         .y2 = duck->collision_box_y2,
     };
-
-    Rect duck_rect_y = (Rect){
+    Rect duckPotentialCollisionBoxY = (Rect){
         .x1 = duck->collision_box_x1,
         .y1 = duck->collision_box_y1 + movement.y,
         .x2 = duck->collision_box_x2,
@@ -204,19 +202,19 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
     };
 
     // Check each snowman for collision.
-    Snowman *temporary = snowmen;
-    while (temporary != NULL)
+    Snowman *currentSnowman = snowmen;
+    while (currentSnowman != NULL)
     {
-        Rect temporary_rect = (Rect){.x1 = temporary->collision_box_x1, .y1 = temporary->collision_box_y1, .x2 = temporary->collision_box_x2, .y2 = temporary->collision_box_y2};
+        Rect currentSnowmanCollisionBox = (Rect){.x1 = currentSnowman->collision_box_x1, .y1 = currentSnowman->collision_box_y1, .x2 = currentSnowman->collision_box_x2, .y2 = currentSnowman->collision_box_y2};
 
-        if (detect_collision(duck_rect, temporary_rect))
+        if (detect_collision(duckPotentialCollisionBox, currentSnowmanCollisionBox))
         {
-            if (detect_collision(duck_rect_x, temporary_rect))
+            if (detect_collision(duckPotentialCollisionBoxX, currentSnowmanCollisionBox))
             {
                 collision.x = true;
             }
 
-            if (detect_collision(duck_rect_y, temporary_rect))
+            if (detect_collision(duckPotentialCollisionBoxY, currentSnowmanCollisionBox))
             {
                 collision.y = true;
             }
@@ -228,28 +226,32 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
             return collision;
         }
 
-        temporary = temporary->next;
+        currentSnowman = currentSnowman->next;
     }
 
     // Check each duck for collision.
-    for (size_t j = 0; j < 4; j++)
+    Duck *currentDuck = ducks;
+    while (currentDuck != NULL)
     {
-        if (j == i)
+        // Skip the duck we're testing. It will always be colliding with itself.
+        if (duck->id == currentDuck->id)
         {
+            // Next duck.
+            currentDuck = currentDuck->next;
+
             continue;
         }
 
-        Duck *temporary = &ducks[j];
-        Rect temporary_rect = (Rect){.x1 = temporary->collision_box_x1, .y1 = temporary->collision_box_y1, .x2 = temporary->collision_box_x2, .y2 = temporary->collision_box_y2};
+        Rect currentDuckCollisionBox = (Rect){.x1 = currentDuck->collision_box_x1, .y1 = currentDuck->collision_box_y1, .x2 = currentDuck->collision_box_x2, .y2 = currentDuck->collision_box_y2};
 
-        if (detect_collision(duck_rect, temporary_rect))
+        if (detect_collision(duckPotentialCollisionBox, currentDuckCollisionBox))
         {
-            if (detect_collision(duck_rect_x, temporary_rect))
+            if (detect_collision(duckPotentialCollisionBoxX, currentDuckCollisionBox))
             {
                 collision.x = true;
             }
 
-            if (detect_collision(duck_rect_y, temporary_rect))
+            if (detect_collision(duckPotentialCollisionBoxY, currentDuckCollisionBox))
             {
                 collision.y = true;
             }
@@ -260,6 +262,9 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
         {
             return collision;
         }
+
+        // Next duck.
+        currentDuck = currentDuck->next;
     }
 
     return collision;
@@ -600,7 +605,7 @@ void sequence_game_update(float deltatime)
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
         Controller *controller = &controllers[i];
-        Duck *duck = &ducks[i];
+        Duck *duck = get_duck_by_id(i);
 
         joypad_port_t controllerPort = core_get_playercontroller(i);
         if (!joypad_is_connected(controllerPort))
@@ -622,8 +627,7 @@ void sequence_game_update(float deltatime)
         // Set the collision box of the ducks based on their current action and frame.
         update_ducks(deltatime);
 
-        // Set the collision box of the snowmen based on their current action and frame.
-        // Also add new snowmen.
+        // Set the collision box of the snowmen based on their current action and frame. Also, add snowmen.
         update_snowmen(deltatime);
     }
 }

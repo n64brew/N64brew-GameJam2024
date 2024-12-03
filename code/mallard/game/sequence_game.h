@@ -24,6 +24,7 @@ typedef enum DuckActions
 
 typedef struct Duck
 {
+    int id;
     float x;
     float y;
     DuckActions action;
@@ -42,6 +43,7 @@ typedef struct Duck
     float slap_collision_box_y1;
     float slap_collision_box_x2;
     float slap_collision_box_y2;
+    struct Duck *next;
 } Duck;
 
 typedef enum SnowmanActions
