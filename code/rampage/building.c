@@ -321,7 +321,7 @@ void rampage_building_update(struct RampageBuilding* building, float delta_time)
     }
 }
 
-#define BUILDING_RADIUS (SCALE_FIXED_POINT(0.5f) + SHAKE_AMPLITUDE)
+#define BUILDING_RADIUS SCALE_FIXED_POINT(0.6f)
 
 void rampage_building_redraw_rect(T3DViewport* viewport, struct RampageBuilding* building) {
     if ((!building->shake_timer && !building->is_collapsing) || building->is_destroyed) {
@@ -329,6 +329,6 @@ void rampage_building_redraw_rect(T3DViewport* viewport, struct RampageBuilding*
     }
 
     struct RedrawRect rect;
-    redraw_get_screen_rect(viewport, &building->dynamic_object.position, BUILDING_RADIUS, 0.0f, SCALE_FIXED_POINT(building->height), &rect);
+    redraw_get_screen_rect(viewport, &building->dynamic_object.position, BUILDING_RADIUS, 0.0f, SCALE_FIXED_POINT(building->height + 0.1f), &rect);
     redraw_update_dirty(building->redraw_handle, &rect);
 }

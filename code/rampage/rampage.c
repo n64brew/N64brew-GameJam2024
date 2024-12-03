@@ -337,6 +337,9 @@ int get_winner_index(int index) {
 
 uint8_t clear_shade = 128;
 
+#define DESTROY_SIZE_X  71
+#define DESTROY_SIZE_Y  17
+
 void minigame_redraw_rects() {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_redraw_rect(&viewport, &gRampage.players[i]);
@@ -350,6 +353,22 @@ void minigame_redraw_rects() {
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_tank_redraw_rect(&viewport, &gRampage.tanks[i]);
+    }
+
+    if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
+        struct RedrawRect rect;
+        rect.min[0] = SCREEN_WIDTH / 2 - DESTROY_SIZE_X;
+        rect.min[1] = SCREEN_HEIGHT / 2 - DESTROY_SIZE_Y;
+        rect.max[0] = SCREEN_WIDTH / 2 + DESTROY_SIZE_X;
+        rect.max[1] = SCREEN_HEIGHT / 2 + DESTROY_SIZE_Y;
+        redraw_update_dirty(gRampage.center_text_redraw, &rect);
+    } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
+        struct RedrawRect rect;
+        rect.min[0] = SCREEN_WIDTH / 2 - DESTROY_SIZE_X;
+        rect.min[1] = SCREEN_HEIGHT / 2 - DESTROY_SIZE_Y;
+        rect.max[0] = SCREEN_WIDTH / 2 + DESTROY_SIZE_X;
+        rect.max[1] = SCREEN_HEIGHT / 2 + DESTROY_SIZE_Y;
+        redraw_update_dirty(gRampage.center_text_redraw, &rect);
     }
 
     struct RedrawRect rects[MAX_REDRAW_ENTITIES];
@@ -693,6 +712,7 @@ void rampage_init(struct Rampage* rampage) {
 
     rampage->state = RAMPAGE_STATE_START;
     rampage->delay_timer = START_DELAY;
+    rampage->center_text_redraw = redraw_aquire_handle();
 
     props_init(&rampage->props, "rom:/rampage/ground.layout");
     spark_effects_init();

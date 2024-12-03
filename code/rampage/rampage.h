@@ -6,6 +6,7 @@
 #include "./tank.h"
 #include "./props.h"
 #include "./spark_effect.h"
+#include "./redraw_manager.h"
 
 #define BUILDING_COUNT_X    5
 #define BUILDING_COUNT_Y    4
@@ -33,6 +34,7 @@ struct Rampage {
     float delay_timer;
     int winner_count;
     int winner_mask;
+    RedrawHandle center_text_redraw;
 };
 
 void rampage_init(struct Rampage* rampage);
