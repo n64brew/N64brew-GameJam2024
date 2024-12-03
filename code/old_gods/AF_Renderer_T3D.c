@@ -341,7 +341,6 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             }
             else{
                 color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, 0xFF};
-                
                 rdpq_set_prim_color(color);//RGBA32(0, 0, 0, 0xFF));
                 ///t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
                 //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));

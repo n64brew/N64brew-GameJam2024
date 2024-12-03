@@ -6,7 +6,7 @@ Contains paths to the assets to be loaded
 #define ASSETS_H
 
 // ================ MODELS ==============
-#define MODEL_COUNT 6
+#define MODEL_COUNT 8
 extern const char *model_paths[MODEL_COUNT];
 #define MODEL_BOX 0         //"rom:/old_gods/box.t3dm",        
 #define MODEL_FOOD 1        //"rom:/old_gods/food.t3dm",       
@@ -14,6 +14,8 @@ extern const char *model_paths[MODEL_COUNT];
 #define MODEL_SNAKE 3       //"rom:/old_gods/snake.t3dm",     
 #define MODEL_RAT 4
 #define MODEL_SHADOW 5
+#define MODEL_CYLINDER 6
+#define MODEL_TORUS 7
 
 
 // ================ TEXTURES ==============

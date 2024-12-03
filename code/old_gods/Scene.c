@@ -20,6 +20,7 @@ AF_Entity* camera = NULL;
 
 // God
 AF_Entity* godEntity = NULL;
+AF_Entity* godPedestalEntity = NULL;
 AF_Entity* godEye1 = NULL;
 AF_Entity* godEye2 = NULL;
 AF_Entity* godEye3 = NULL;
@@ -87,10 +88,10 @@ PlyNum winner;
 
 AF_Color WHITE_COLOR = {255, 255, 255, 255};
 AF_Color SAND_COLOR = {255, 245, 177};
-AF_Color PLAYER1_COLOR = {255, 0,0, 255};
-AF_Color PLAYER2_COLOR = {0, 255,0, 255};
-AF_Color PLAYER3_COLOR = {0, 0,255, 255};
-AF_Color PLAYER4_COLOR = {255, 255,0, 255};
+AF_Color PLAYER1_COLOR = {233, 82, 129, 255};
+AF_Color PLAYER2_COLOR = {200, 233, 82, 255};
+AF_Color PLAYER3_COLOR = {82, 200, 223, 255};
+AF_Color PLAYER4_COLOR = {255, 233, 0, 255};
 
 
 typedef struct
@@ -281,8 +282,6 @@ void Scene_Update(AppData* _appData){
 
 void Scene_LateUpdate(AppData* _appData){
 
-
-    
 }
 
 void Scene_Destroy(AF_ECS* _ecs){
@@ -316,6 +315,17 @@ void Scene_SetupEntities(AppData* _appData){
     godEntity->collider->showDebug = TRUE;
     *godEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
+    // god pedestal
+    Vec3 godPedistalPos = {0, 0.01f, 0};
+	Vec3 godPedistalScale = {3,0.1f,3};
+    Vec3 godPedistalBoundingScale = {1,1,1};
+    godPedestalEntity = Entity_Factory_CreatePrimative(_ecs, godPedistalPos, godPedistalScale, AF_MESH_TYPE_MESH, AABB);
+    //godPedestalEntity->collider->collision.callback = Scene_OnGodTrigger;
+    //godPedestalEntity->collider->boundingVolume = godPedistalBoundingScale;
+    godPedestalEntity->mesh->meshID = MODEL_CYLINDER;
+    godPedestalEntity->rigidbody->inverseMass = zeroInverseMass;
+    godPedestalEntity->rigidbody->isKinematic = TRUE;
+
     // setup animations
 	// ---------Create Player1------------------
 	Vec3 player1Pos = {2.0f, 1.5f, 1.0f};
@@ -323,7 +333,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
     player1Entity->mesh->meshID = MODEL_SNAKE;//MODEL_SNAKE2;
-    player1Entity->mesh->material.color = PLAYER1_COLOR;
+    player1Entity->mesh->material.color = WHITE_COLOR;
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
@@ -334,9 +344,8 @@ void Scene_SetupEntities(AppData* _appData){
 
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
-    /*
-    Vec3 player1HatPos = {0.0f, 1.5f, 1.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 player1HatScale = {0.5f, 0.5f, 0.5f};
+    Vec3 player1HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 player1HatScale = {1.5f, 1.5f, 1.5f};
     AF_Entity* player1Hat = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
 	player1Hat->transform->localPos = player1HatPos;
@@ -348,9 +357,8 @@ void Scene_SetupEntities(AppData* _appData){
     player1Hat->mesh->material.color = PLAYER1_COLOR;
 
     //player1Hat->parentTransform = player1Entity->transform;
-    player1Hat->mesh->meshID = MODEL_BOX;//MODEL_SNAKE2;
-    player1Hat->mesh->material.color = PLAYER1_COLOR;
-    */
+    player1Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
+    
 
 
     // Get AI Level
@@ -364,7 +372,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player2Entity = gameplayData->playerEntities[1];
     player2Entity->mesh->meshID = MODEL_SNAKE;
-    player2Entity->mesh->material.color = PLAYER2_COLOR;
+    player2Entity->mesh->material.color = WHITE_COLOR;
     player2Entity->rigidbody->inverseMass = 1.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
@@ -373,6 +381,20 @@ void Scene_SetupEntities(AppData* _appData){
     player2Entity->playerData->movementSpeed = aiReactionSpeed;
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
     
+    Vec3 player2HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 player2HatScale = {1.5f, 1.5f, 1.5f};
+    AF_Entity* player2Hat = AF_ECS_CreateEntity(_ecs);
+	//move the position up a little
+	player2Hat->transform->localPos = player2HatPos;
+    player2Hat->transform->localScale = player2HatScale;
+    player2Hat->parentTransform = player2Entity->transform;
+	// add a rigidbody to our cube
+	*player2Hat->mesh = AF_CMesh_ADD();
+	player2Hat->mesh->meshType = AF_MESH_TYPE_MESH;
+    player2Hat->mesh->material.color = PLAYER2_COLOR;
+
+    //player1Hat->parentTransform = player1Entity->transform;
+    player2Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
     
 
     // Create Player3
@@ -382,7 +404,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player3Entity = gameplayData->playerEntities[2];
     player3Entity->mesh->meshID = MODEL_SNAKE;
-    player3Entity->mesh->material.color = PLAYER3_COLOR;
+    player3Entity->mesh->material.color = WHITE_COLOR;
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = 1.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
@@ -390,6 +412,21 @@ void Scene_SetupEntities(AppData* _appData){
     player3Entity->playerData->startPosition = player3Pos;
     player3Entity->playerData->movementSpeed = aiReactionSpeed;
     *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+
+    Vec3 player3HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 player3HatScale = {1.5f, 1.5f, 1.5f};
+    AF_Entity* player3Hat = AF_ECS_CreateEntity(_ecs);
+	//move the position up a little
+	player3Hat->transform->localPos = player3HatPos;
+    player3Hat->transform->localScale = player3HatScale;
+    player3Hat->parentTransform = player3Entity->transform;
+	// add a rigidbody to our cube
+	*player3Hat->mesh = AF_CMesh_ADD();
+	player3Hat->mesh->meshType = AF_MESH_TYPE_MESH;
+    player3Hat->mesh->material.color = PLAYER3_COLOR;
+
+    //player1Hat->parentTransform = player1Entity->transform;
+    player3Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
     
 
     // Create Player4
@@ -399,7 +436,7 @@ void Scene_SetupEntities(AppData* _appData){
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
 	AF_Entity* player4Entity = gameplayData->playerEntities[3];
     player4Entity->mesh->meshID = MODEL_SNAKE;
-    player4Entity->mesh->material.color = PLAYER4_COLOR;
+    player4Entity->mesh->material.color = WHITE_COLOR;
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = 1.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
@@ -407,6 +444,21 @@ void Scene_SetupEntities(AppData* _appData){
     player4Entity->playerData->startPosition = player4Pos;
     player4Entity->playerData->movementSpeed = aiReactionSpeed;
     *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+
+    Vec3 player4HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 player4HatScale = {1.5f, 1.5f, 1.5f};
+    AF_Entity* player4Hat = AF_ECS_CreateEntity(_ecs);
+	//move the position up a little
+	player4Hat->transform->localPos = player4HatPos;
+    player4Hat->transform->localScale = player4HatScale;
+    player4Hat->parentTransform = player4Entity->transform;
+	// add a rigidbody to our cube
+	*player4Hat->mesh = AF_CMesh_ADD();
+	player4Hat->mesh->meshType = AF_MESH_TYPE_MESH;
+    player4Hat->mesh->material.color = PLAYER4_COLOR;
+
+    //player1Hat->parentTransform = player1Entity->transform;
+    player4Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
 
 
     // assign AI to other players based on the players choosen in the game jam menu
@@ -419,7 +471,10 @@ void Scene_SetupEntities(AppData* _appData){
     
 
 	//=========ENVIRONMENT========
+    Vec3 mapBoundingVolume = {15,.1, 7.5};
     Vec3 levelMapPos = {0, 0, 0};
+    /*
+    
 	Vec3 levelMapScale = {30,1,15};
     levelMapEntity = Entity_Factory_CreatePrimative(_ecs, levelMapPos, levelMapScale, AF_MESH_TYPE_MESH, AABB);
     levelMapEntity->mesh->meshID = MODEL_MAP;
@@ -428,21 +483,23 @@ void Scene_SetupEntities(AppData* _appData){
     AF_Component_SetHas(levelMapEntity->collider->enabled, FALSE);
 	levelMapEntity->rigidbody->inverseMass = zeroInverseMass;
     //levelMapEntity->rigidbody->isKinematic = TRUE;
-    Vec3 mapBoundingVolume = {15,.1, 7.5};
+    levelMapEntity->collider->boundingVolume = mapBoundingVolume;
+    
+    */
     _appData->gameplayData.levelPos = levelMapPos;
     _appData->gameplayData.levelBounds = mapBoundingVolume;
-    levelMapEntity->collider->boundingVolume = mapBoundingVolume;
+    
     // ============Buckets=============
     uint8_t offsetX = 4;
     uint8_t offsetZ = 2;
-    Vec3 bucketScale = {2,2,2};
-    float bucketY = 1.0f;
+    Vec3 bucketScale = {5,0.1f,5};
+    float bucketY = 0.01f;
     // Bucket 1
     // World pos and scale for bucket
 	Vec3 bucket1Pos = {-mapBoundingVolume.x + offsetX, bucketY, -mapBoundingVolume.z + offsetZ};
 	//Vec3 bucket1Scale = {1,1,1};
     bucket1 = Entity_Factory_CreatePrimative(_ecs, bucket1Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
-    bucket1->mesh->meshID = MODEL_BOX;
+    bucket1->mesh->meshID = MODEL_CYLINDER;
     //bucket1->mesh->material.color = WHITE_COLOR;
     bucket1->rigidbody->inverseMass = zeroInverseMass;
 
@@ -453,7 +510,7 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket2Pos =  {mapBoundingVolume.x - offsetX, bucketY, -mapBoundingVolume.z + offsetZ};
 	//Vec3 bucket2Scale = {1,1,1};
 	bucket2 = Entity_Factory_CreatePrimative(_ecs, bucket2Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
-    bucket2->mesh->meshID = MODEL_BOX;
+    bucket2->mesh->meshID = MODEL_CYLINDER;
     bucket2->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
     bucket2->collider->collision.callback = Scene_OnBucket2Trigger;
@@ -463,7 +520,7 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket3Pos =  {-mapBoundingVolume.x + offsetX, bucketY, mapBoundingVolume.z - offsetZ};
 	//Vec3 bucket3Scale = {1,1,1};
 	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
-    bucket3->mesh->meshID = MODEL_BOX;
+    bucket3->mesh->meshID = MODEL_CYLINDER;
     bucket3->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
     bucket3->collider->collision.callback = Scene_OnBucket3Trigger;
@@ -472,16 +529,16 @@ void Scene_SetupEntities(AppData* _appData){
 	Vec3 bucket4Pos =  {mapBoundingVolume.x - offsetX, bucketY, mapBoundingVolume.z - offsetZ};
 	//Vec3 bucket4Scale = {1,1,1};
 	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
-    bucket4->mesh->meshID = MODEL_BOX;
+    bucket4->mesh->meshID = MODEL_CYLINDER;
     bucket4->rigidbody->inverseMass = zeroInverseMass;
      // TODO: add details to scene_onBucketTrigger callback
     bucket4->collider->collision.callback = Scene_OnBucket4Trigger;
 
     /// Villages
 	Vec3 villager1Pos = {-1000.0f, 0, 0};
-	Vec3 villager1Scale = {1,1,1};
+	Vec3 villager1Scale = {0.5f,0.5f,0.5f};
     villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_MESH, AABB);
-    villager1->mesh->meshID = MODEL_FOOD;
+    villager1->mesh->meshID = MODEL_RAT;
 	villager1->rigidbody->inverseMass = zeroInverseMass;
 	villager1->rigidbody->isKinematic = TRUE;
     villager1->collider->collision.callback = Scene_OnCollision;
