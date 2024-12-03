@@ -31,7 +31,7 @@ void rampage_building_destroy(struct RampageBuilding* building);
 void rampage_building_render(struct RampageBuilding* building, int height_pass);
 void rampage_building_render_billboards(struct RampageBuilding* building);
 void rampage_building_update(struct RampageBuilding* building, float delta_time);
-bool rampage_building_add_billboard(struct RampageBuilding* building, int billboard_mask);
+bool rampage_building_add_billboard(struct RampageBuilding* building, int billboard_index);
 
 void rampage_building_redraw_rect(T3DViewport* viewport, struct RampageBuilding* building);
 

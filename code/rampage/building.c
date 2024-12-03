@@ -189,8 +189,38 @@ void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, 
     building->redraw_handle = redraw_aquire_handle();
 }
 
-bool rampage_building_add_billboard(struct RampageBuilding* building, int billboard_mask) {
-    if ((building->billboards & billboard_mask) || building->height <= 1) {
+static bool allowed_billboards_by_height[3][BILLBOARD_COUNT][4] = {
+    {
+        {false, false, false, false},
+        {false, false, false, false},
+        {false, false, false, false},
+        {false, false, false, false},
+        {false, false, false, false},
+        {false, false, false, false},
+    },
+    {
+        {true, false, true, true},
+        {true, true, false, true},
+        {true, true, true, false},
+        {false, true, true, true},
+        {true, true, false, true},
+        {false, true, true, true},
+    },
+    {
+        {true, false, true, true},
+        {true, true, false, true},
+        {true, true, true, false},
+        {false, false, true, true},
+        {true, true, false, false},
+        {false, true, true, true},
+    },
+};
+
+bool rampage_building_add_billboard(struct RampageBuilding* building, int billboard_index) {
+    int billboard_mask = 1 << billboard_index;
+    if ((building->billboards & billboard_mask) || 
+        building->height <= 1 || 
+        !allowed_billboards_by_height[building->height-1][billboard_index][building->rotation]) {
         // already has billboard
         return false;
     }

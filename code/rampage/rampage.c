@@ -31,7 +31,7 @@ T3DViewport viewport;
 surface_t background_surface;
 bool has_background;
 
-T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(3.5f), SCALE_FIXED_POINT(4.0f)}};
+T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(4.5f), SCALE_FIXED_POINT(4.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 
 rdpq_font_t* font;
@@ -325,7 +325,7 @@ int get_winner_index(int index) {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         if (gRampage.winner_mask & (1 << i)) {
             if (index == 0) {
-                return i + 1;
+                return i;
             }
 
             --index;
@@ -434,15 +434,10 @@ void minigame_loop(float deltatime) {
         );
     }
 
-    // rdpq_clear((color_t){0, 0, 0, 0xFF});
     t3d_screen_clear_depth();
 
     t3d_light_set_ambient(colorWhite);
     t3d_light_set_count(0);
-
-    // rdpq_set_scissor(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
-    // rspq_block_run(rampage_assets_get()->ground->userBlock);
-    // rdpq_set_scissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     minigame_redraw_rects();
 
@@ -621,7 +616,7 @@ bool rampage_add_billboard(struct Rampage* rampage, int billboard) {
     int x = randomInRange(0, BUILDING_COUNT_X);
     int y = randomInRange(0, BUILDING_COUNT_Y);
 
-    return rampage_building_add_billboard(&rampage->buildings[y][x], 1 << billboard);
+    return rampage_building_add_billboard(&rampage->buildings[y][x], billboard);
 }
 
 int ramapge_random_shuffle(const void*, const void*) {
