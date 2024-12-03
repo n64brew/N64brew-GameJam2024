@@ -3,11 +3,11 @@
 
 #include "hydraharmonics.h"
 
-#define NOTES_SPECIAL_TYPES 0
-#define NOTES_PER_PLAYER 10
-#define NOTES_PER_PLAYER_SPECIAL 3
+#define NOTES_SPECIAL_TYPES 1
+#define NOTES_PER_PLAYER 5
+#define NOTES_PER_PLAYER_SPECIAL 10
 #define NOTES_SPEED 2.5
-#define NOTES_TOTAL_COUNT (NOTES_SPECIAL_TYPES + PLAYER_MAX)
+#define NOTES_TOTAL_COUNT (PLAYER_MAX + NOTES_SPECIAL_TYPES)
 
 typedef enum {
 	NOTES_GET_REMAINING_UNSPAWNED = 1,
@@ -28,10 +28,15 @@ typedef struct note_s {
 	struct note_s* next;
 } note_t;
 
+typedef struct notes_left_s {
+	int8_t regular;
+	int8_t special;
+} notes_left_t;
+
 typedef struct note_ll_s {
 	note_t* start;
 	note_t* end;
-	uint8_t notes_left[NOTES_TOTAL_COUNT];
+	notes_left_t notes_left[NOTES_TOTAL_COUNT];
 } note_ll_t;
 
 void notes_init(void);

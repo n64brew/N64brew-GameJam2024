@@ -28,6 +28,7 @@ rdpq_font_t *font_clarendon;
 
 float timer;
 hydraharmonics_stage_t stage = STAGE_START;
+bool pause = false;
 
 /*==============================
 	minigame_init
@@ -68,6 +69,10 @@ void minigame_fixedloop(float deltatime)
 	if (stage == STAGE_START) {
 		intro_interact();
 	} else if (stage == STAGE_GAME) {
+		// Check if game is paused
+		if (pause) {
+			return;
+		}
 		// Add a new note every second
 		timer -= deltatime;
 		if ((int)timer != (int)(timer - deltatime) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
@@ -81,6 +86,7 @@ void minigame_fixedloop(float deltatime)
 			stage = STAGE_END;
 		}
 		// Do all the frame-by-frame tasks
+
 		notes_move();
 		note_hit_detection();
 		hydra_shell_bounce();

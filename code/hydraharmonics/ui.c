@@ -203,6 +203,22 @@ void ui_signs_draw (void) {
 			"P%i", i+1
 		);
 	}
+	// Pause text
+	if (pause) {
+		rdpq_text_printf(
+			&(rdpq_textparms_t){
+				.width = display_get_width(),
+				.height = display_get_height(),
+				.align = ALIGN_CENTER,
+				.valign = VALIGN_CENTER,
+				.char_spacing = 5,
+			},
+			FONT_CLARENDON,
+			0,
+			0,
+			"PAUSE"
+		);
+	}
 }
 
 static void ui_bars_draw (void) {

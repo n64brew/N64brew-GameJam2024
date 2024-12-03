@@ -8,6 +8,7 @@
 
 #define HYDRA_AI_DIFFICULTY_MODIFIER 3
 #define HYDRA_AI_DIFFICULTY_COUNT 3
+#define HYDRA_AI_WHITE_NOTE_MODIFIER 6
 
 #define HIT_DETECTION_LEFT_OFFSET (HYDRA_HEAD_WIDTH/2)
 #define HIT_DETECTION_RIGHT_OFFSET 0
@@ -92,8 +93,6 @@ void scores_clear (void) {
 	for (uint8_t i=0; i<winners->length; i++) {
 		core_set_winner(winners->winners[i]);
 	}
-
-	// Free memory
 	free(winners);
 }
 
@@ -113,9 +112,9 @@ void note_hit_detection(void) {
 				)
 			){
 				// Check if this note's colour matches the player'
-				add_score =
-					(HYDRA_EATING_FRAMES - abs(HYDRA_EATING_FRAMES-((hydras[i].animation-1)*HYDRA_EATING_FRAMES + hydras[i].frame))) / 5 + 1;
-				if (i == current->player) {
+				add_score = 1;
+					//(HYDRA_EATING_FRAMES - abs(HYDRA_EATING_FRAMES-((hydras[i].animation-1)*HYDRA_EATING_FRAMES + hydras[i].frame))) / 5 + 1;
+				if (current->player == i || current->player == PLAYER_MAX) {
 					// Check if the animation is correct
 					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
 						// Note is eaten
@@ -141,11 +140,20 @@ void note_hit_detection(void) {
 						} else if (
 							current->type == NOTES_TYPE_SOUR
 						) {
-							// Just ate a sweet note
+							// Just ate a sour note
 							add_score = -1;
 							hydras[i].animation += HYDRA_ANIMATION_TO_DIZZY_DIFF;
 						}
 						scores[i] += add_score;
+						notes_destroy (current);
+					}
+				} else if (
+					current->type == NOTES_TYPE_SOUR
+				) {
+					// Enemy sour note
+					if (hydras[i].animation == HYDRA_ANIMATION_OPEN || hydras[i].animation == HYDRA_ANIMATION_CLOSE) {
+						hydra_swap_start (current->player, current->type);
+						hydras[i].animation += HYDRA_ANIMATION_TO_SWAP_DIFF;
 						notes_destroy (current);
 					}
 				} else if (
@@ -174,53 +182,34 @@ void note_hit_detection(void) {
 }
 
 void hydra_ai (uint8_t hydra) {
-	static uint16_t ai_timer = 0;
-	ai_timer++;
-	note_t* current;
-	if (hydras[hydra].ai == HYDRA_AI_SMART) {
-		// Loop through all notes
-		current = notes_get_first();
-		while (current != NULL) {
-			// Check if there is a note in range
-			if (
-				current->x < hydras[hydra].x + HYDRA_HEAD_WIDTH + HYDRA_AI_SMART_X_OFFSET &&
-				current->x > hydras[hydra].x &&
-				hydras[hydra].animation == HYDRA_ANIMATION_NONE
-			){
-				// Check if we should do something smart
-				if (!(rand() % (HYDRA_AI_DIFFICULTY_MODIFIER * 3 - HYDRA_AI_DIFFICULTY_MODIFIER * core_get_aidifficulty()))) {
-					// Check if this is a note that we want to eat
-					if (current->player == hydra) {
-						// It's the hydra's note!
-						hydras[hydra].animation = HYDRA_ANIMATION_OPEN;
-						hydras[hydra].state = current->state;
-					} else if (hydras[hydra].state == current->state) {
-						// It's an enemy note! Move one row down
-						hydras[hydra].state = (hydras[hydra].state + 1) % HEAD_STATES_PLAYABLE;
-					}
+	// Loop through all notes
+	note_t* current = notes_get_first();
+	while (current != NULL) {
+		// Check if there is a note in range
+		if (
+			current->x < hydras[hydra].x + HYDRA_HEAD_WIDTH + HYDRA_AI_SMART_X_OFFSET &&
+			current->x > hydras[hydra].x &&
+			hydras[hydra].animation == HYDRA_ANIMATION_NONE
+		){
+			// Check if we should do something smart
+			if (!(rand() % (HYDRA_AI_DIFFICULTY_MODIFIER * 3 - HYDRA_AI_DIFFICULTY_MODIFIER * core_get_aidifficulty()))) {
+				// Chance to ignore white notes
+				if (current->player == PLAYER_MAX && (rand() % HYDRA_AI_WHITE_NOTE_MODIFIER)) {
+					return;
 				}
-			} else {
-				//hydras[hydra].state = STATE_MID;
+				// Check if this is a note that we want to eat
+				if (current->player == hydra || current->player == PLAYER_MAX) {
+					// It's the hydra's note!
+					hydras[hydra].animation = HYDRA_ANIMATION_OPEN;
+					hydras[hydra].state = current->state;
+				} else if (hydras[hydra].state == current->state) {
+					// It's an enemy note! Move one row down
+					hydras[hydra].state = (hydras[hydra].state + 1) % HEAD_STATES_PLAYABLE;
+				}
 			}
-			current = current->next;
+		} else {
+			//hydras[hydra].state = STATE_MID;
 		}
-	} else if (hydras[hydra].ai == HYDRA_AI_RANDOM) {
-		// Loop through all notes
-		current = notes_get_first();
-		while (current != NULL) {
-			if (
-				current->player == hydra &&
-				current->x < hydras[hydra].x + HYDRA_HEAD_WIDTH + HYDRA_AI_SMART_X_OFFSET &&
-				current->x > hydras[hydra].x &&
-				hydras[hydra].animation == HYDRA_ANIMATION_NONE &&
-				hydras[hydra].state == current->state
-			){
-				hydras[hydra].animation = HYDRA_ANIMATION_OPEN;
-			}
-			current = current->next;
-		}
-		if (!(ai_timer % HYDRA_AI_RANDOM_INTERVAL) && hydras[hydra].animation == HYDRA_ANIMATION_NONE) {
-			hydras[hydra].state = rand() % 3;
-		}
+		current = current->next;
 	}
 }

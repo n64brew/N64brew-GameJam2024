@@ -23,14 +23,14 @@
 #define EFFECTS_SPARKLE_X_DIVISOR 1.5
 
 static effect_ll_t effects_list;
-static sprite_t* effects_sprites[PLAYER_MAX];
+static sprite_t* effects_sprites[NOTES_TOTAL_COUNT];
 static uint8_t effects_duration[EFFECT_COUNT] = {
 	25, 75, 75, HYDRA_STUN_DURATION, 75
 };
 
 void effects_init (void) {
 	char temptext[64];
-	for (uint8_t i=0; i<PLAYER_MAX; i++) {
+	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
 		// Load the note sprites
 		sprintf(temptext, "rom:/hydraharmonics/effects-%i.ci4.sprite", i);
 		effects_sprites[i] = sprite_load(temptext);
@@ -123,6 +123,8 @@ void effects_animate (void) {
 
 void effects_draw (void) {
 	effect_t* current = effects_list.start;
+	rdpq_set_mode_standard();
+	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	while (current != NULL) {
 		rdpq_sprite_blit(
 			current->sprite,
@@ -169,7 +171,7 @@ void effects_destroy_all (void) {
 void effects_clear (void) {
 	uint8_t i;
 	effects_destroy_all();
-	for (i=0; i<PLAYER_MAX; i++) {
+	for (i=0; i<NOTES_TOTAL_COUNT; i++) {
 		sprite_free(effects_sprites[i]);
 	}
 }
