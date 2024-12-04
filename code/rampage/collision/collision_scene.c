@@ -7,7 +7,6 @@
 
 #include "mesh_collider.h"
 #include "collide.h"
-#include "collide_swept.h"
 #include "contact.h"
 #include "../util/hash_map.h"
 
@@ -217,31 +216,7 @@ void collision_scene_collide_dynamic() {
 #define MAX_SWEPT_ITERATIONS    5
 
 void collision_scene_collide_single(struct dynamic_object* object, struct Vector3* prev_pos) {
-    for (int i = 0; i < MAX_SWEPT_ITERATIONS; i += 1) {
-        struct Vector3 offset;
-        vector3Sub(&object->position, prev_pos, &offset);
-        struct Vector3 bbSize;
-        vector3Sub(&object->bounding_box.max, &object->bounding_box.min, &bbSize);
-        vector3Scale(&bbSize, &bbSize, 0.5f);
-
-        if (fabs(offset.x) > bbSize.x ||
-            fabs(offset.y) > bbSize.y ||
-            fabs(offset.z) > bbSize.z
-        ) {
-            if (!collide_object_to_mesh_swept(object, g_scene.mesh_collider, prev_pos)) {
-                return;
-            }
-        } else {
-            collide_object_to_mesh(object, g_scene.mesh_collider);
-            return;
-        }
-    }
-
-    // too many swept iterations
-    // to prevent tunneling just move 
-    // the object back to the previous known
-    // valid location
-    object->position = *prev_pos;
+    collide_object_to_mesh(object, g_scene.mesh_collider);
 }
 
 void collision_scene_collide(float fixed_time_step) {

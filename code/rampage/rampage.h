@@ -18,6 +18,11 @@
 
 #define BUILDING_SPACING    SCALE_FIXED_POINT(3.0f)
 
+#define MIN_X               SCALE_FIXED_POINT(-9.0f)
+#define MAX_X               SCALE_FIXED_POINT(8.5f)
+#define MIN_Z               SCALE_FIXED_POINT(-8.0f)
+#define MAX_Z               SCALE_FIXED_POINT(8.0f)
+
 enum RampageState {
     RAMPAGE_STATE_START,
     RAMPAGE_STATE_PLAYING,

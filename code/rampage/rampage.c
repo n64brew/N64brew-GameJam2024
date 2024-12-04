@@ -54,34 +54,17 @@ const MinigameDef minigame_def = {
 static struct mesh_triangle_indices global_mesh_collider_triangles[] = {
     {.indices = {0, 1, 2}},
     {.indices = {0, 2, 3}},
-
-    {.indices = {0, 4, 5}},
-    {.indices = {0, 5, 1}},
-
-    {.indices = {1, 5, 6}},
-    {.indices = {1, 6, 2}},
-
-    {.indices = {2, 6, 7}},
-    {.indices = {2, 7, 3}},
-
-    {.indices = {3, 7, 4}},
-    {.indices = {3, 4, 0}},
 };
 
 static struct Vector3 global_mesh_collider_vertices[] = {
-    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
-    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
-
-    {SCALE_FIXED_POINT(-8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(8.0f)},
-    {SCALE_FIXED_POINT(-8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(8.0f)},  
+    {SCALE_FIXED_POINT(-9.5f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(9.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(9.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
+    {SCALE_FIXED_POINT(-9.5f), 0.0f, SCALE_FIXED_POINT(8.0f)},
 };
 
 static struct mesh_collider global_mesh_collider = {
-    .triangle_count = 2,
+    .triangle_count = sizeof(global_mesh_collider_triangles) / sizeof(*global_mesh_collider_triangles),
     .triangles = global_mesh_collider_triangles,
     .vertices = global_mesh_collider_vertices,
 };

@@ -486,6 +486,18 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
 
     bool is_grounded = rampage_player_is_grounded(player);
 
+    if (player->dynamic_object.position.x < MIN_X) {
+        player->dynamic_object.position.x = MIN_X;
+    } else if (player->dynamic_object.position.x > MAX_X) {
+        player->dynamic_object.position.x = MAX_X;
+    }
+
+    if (player->dynamic_object.position.z < MIN_Z) {
+        player->dynamic_object.position.z = MIN_Z;
+    } else if (player->dynamic_object.position.z > MAX_Z) {
+        player->dynamic_object.position.z = MAX_Z;
+    }
+
     if (player->did_win) {
         t3d_anim_update(&player->animWin, delta_time);
         player->dynamic_object.velocity.x *= 0.5f;
