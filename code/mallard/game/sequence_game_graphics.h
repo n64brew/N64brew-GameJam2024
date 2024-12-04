@@ -34,7 +34,7 @@ extern Snowman *snowmen;
 
 void sequence_game_render_ducks();
 void sequence_game_render_snowmen();
-void sequence_game_draw_background_lakeview_terrace();
+void sequence_game_render_map();
 void sequence_game_draw_paused();
 void sequence_game_render(float deltatime);
 

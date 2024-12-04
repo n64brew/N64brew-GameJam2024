@@ -54,6 +54,11 @@ extern sprite_t *sequence_game_mallard_two_run_sprite;
 extern sprite_t *sequence_game_mallard_three_run_sprite;
 extern sprite_t *sequence_game_mallard_four_run_sprite;
 
+extern sprite_t *sequence_game_mallard_one_idle_sprite;
+extern sprite_t *sequence_game_mallard_two_idle_sprite;
+extern sprite_t *sequence_game_mallard_three_idle_sprite;
+extern sprite_t *sequence_game_mallard_four_idle_sprite;
+
 void initialize_ducks();
 void free_ducks();
 void display_ducks();

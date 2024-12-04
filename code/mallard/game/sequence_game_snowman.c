@@ -20,7 +20,7 @@ void display_snowmen()
     Snowman *current = snowmen;
     while (current != NULL)
     {
-        fprintf(stderr, "%f, ", current->y);
+        fprintf(stderr, "[Snowman #%i - %f], ", current->id, current->collision_box_y2);
         current = current->next;
     }
     fprintf(stderr, "\n");
@@ -67,6 +67,7 @@ Snowman *create_snowman()
 {
     Snowman *snowman = (Snowman *)malloc(sizeof(Snowman));
     Vector2 spawn = get_snowman_spawn();
+    snowman->id = count_snowmen() + 1;
     snowman->x = spawn.x;
     snowman->y = spawn.y;
     snowman->collision_box_x1 = spawn.x;
@@ -113,8 +114,6 @@ void add_snowman()
     // Insert the new snowman
     snowman->next = current->next;
     current->next = snowman;
-
-    display_snowmen();
 }
 
 void free_snowmen()

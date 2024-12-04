@@ -9,5 +9,6 @@ extern Duck *ducks;
 
 void add_snowman();
 void free_snowmen();
+void display_snowmen();
 
 #endif // SEQUENCE_GAME_SNOWMAN_H

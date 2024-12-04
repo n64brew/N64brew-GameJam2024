@@ -35,6 +35,11 @@ sprite_t *sequence_game_mallard_two_run_sprite;
 sprite_t *sequence_game_mallard_three_run_sprite;
 sprite_t *sequence_game_mallard_four_run_sprite;
 
+sprite_t *sequence_game_mallard_one_idle_sprite;
+sprite_t *sequence_game_mallard_two_idle_sprite;
+sprite_t *sequence_game_mallard_three_idle_sprite;
+sprite_t *sequence_game_mallard_four_idle_sprite;
+
 sprite_t *sequence_game_snowman_idle_sprite;
 sprite_t *sequence_game_snowman_jump_sprite;
 
@@ -92,6 +97,11 @@ void sequence_game_init()
     sequence_game_mallard_three_run_sprite = sprite_load("rom:/mallard/three/duck_run.rgba32.sprite");
     sequence_game_mallard_four_run_sprite = sprite_load("rom:/mallard/four/duck_run.rgba32.sprite");
 
+    sequence_game_mallard_one_idle_sprite = sprite_load("rom:/mallard/one/duck_idle.rgba32.sprite");
+    sequence_game_mallard_two_idle_sprite = sprite_load("rom:/mallard/two/duck_idle.rgba32.sprite");
+    sequence_game_mallard_three_idle_sprite = sprite_load("rom:/mallard/three/duck_idle.rgba32.sprite");
+    sequence_game_mallard_four_idle_sprite = sprite_load("rom:/mallard/four/duck_idle.rgba32.sprite");
+
     // Gmae - Background
     sequence_game_background_lakeview_terrace_sprite = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
 
@@ -135,6 +145,11 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_mallard_two_run_sprite);
     sprite_free(sequence_game_mallard_three_run_sprite);
     sprite_free(sequence_game_mallard_four_run_sprite);
+
+    sprite_free(sequence_game_mallard_one_idle_sprite);
+    sprite_free(sequence_game_mallard_two_idle_sprite);
+    sprite_free(sequence_game_mallard_three_idle_sprite);
+    sprite_free(sequence_game_mallard_four_idle_sprite);
 
     sprite_free(sequence_game_snowman_idle_sprite);
     sprite_free(sequence_game_snowman_jump_sprite);

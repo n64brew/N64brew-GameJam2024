@@ -8,7 +8,8 @@
 #include "sequence_game_snowman.h"
 
 #define BOOST 2.0
-#define SQRT_ONE_HALF 0.70710678118
+// #define SQRT_ONE_HALF 0.70710678118
+#define SQRT_ONE_HALF 1 // Yeah.... quick lazy fix for now. I was getting bothered by being able to squeeze through areas I shouldn't be able to, but COULD because i was going diagonal. I'll fix this later.
 #define SNOWMAN_SPAWN_FREQUENCY_ONE 3.0f
 #define SNOWMAN_SPAWN_FREQUENCY_TWO 2.0f
 #define SNOWMAN_SPAWN_FREQUENCY_THREE 1.0f
@@ -17,6 +18,33 @@
 float time_elapsed_since_last_snowman_spawn = 0.0f;
 float time_elapsed = 0.0f;
 float SNOWMAN_SPAWN_FREQUENCY;
+
+void snowmen_bubble_sort()
+{
+    bool swapped = true;
+
+    while (swapped)
+    {
+        Snowman **prev = &snowmen;
+        Snowman *curr;
+        Snowman *next;
+
+        swapped = false;
+        for (curr = snowmen; curr; prev = &curr->next, curr = curr->next)
+        {
+            next = curr->next;
+
+            if (next && curr->collision_box_y2 > next->collision_box_y2)
+            {
+                curr->next = next->next;
+                next->next = curr;
+                *prev = next;
+
+                swapped = true;
+            }
+        }
+    }
+}
 
 void update_snowmen(float deltatime)
 {
@@ -61,7 +89,11 @@ void update_snowmen(float deltatime)
     {
         add_snowman();
         time_elapsed_since_last_snowman_spawn = 0.0f;
+        // display_ducks();
+        // display_snowmen();
     }
+
+    snowmen_bubble_sort();
 
     time_elapsed += deltatime;
     time_elapsed_since_last_snowman_spawn += deltatime;
@@ -109,6 +141,21 @@ void update_ducks(float deltatime)
         duck->collision_box_y1 = duck->y + 16;
         duck->collision_box_x2 = duck->x + 24;
         duck->collision_box_y2 = duck->y + 24;
+
+        if (duck->direction == LEFT)
+        {
+            duck->slap_box_x1 = duck->x + 2;
+            duck->slap_box_y1 = duck->y + 6;
+            duck->slap_box_x2 = duck->x + 16;
+            duck->slap_box_y2 = duck->y + 18;
+        }
+        else if (duck->direction == RIGHT)
+        {
+            duck->slap_box_x1 = duck->x + 16;
+            duck->slap_box_y1 = duck->y + 6;
+            duck->slap_box_x2 = duck->x + 30;
+            duck->slap_box_y2 = duck->y + 18;
+        }
     }
 
     ducks_bubble_sort();
@@ -592,7 +639,7 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
 
     default:
         if (duck->locked_for_frames == 0)
-            duck->action = DUCK_BASE;
+            duck->action = DUCK_IDLE;
         break;
     }
 

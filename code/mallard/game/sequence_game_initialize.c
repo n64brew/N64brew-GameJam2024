@@ -14,7 +14,7 @@ void display_ducks()
     Duck *current = ducks;
     while (current != NULL)
     {
-        fprintf(stderr, "[Duck #%i]:%f, ", current->id, current->y);
+        fprintf(stderr, "[Duck #%i - %f], ", current->id, current->collision_box_y2);
         current = current->next;
     }
     fprintf(stderr, "\n");
@@ -101,24 +101,28 @@ Duck *create_duck(int i)
         duck->walk_sprite = sequence_game_mallard_one_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_one_slap_sprite;
         duck->run_sprite = sequence_game_mallard_one_run_sprite;
+        duck->idle_sprite = sequence_game_mallard_one_idle_sprite;
         break;
     case 1:
         duck->base_sprite = sequence_game_mallard_two_base_sprite;
         duck->walk_sprite = sequence_game_mallard_two_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_two_slap_sprite;
         duck->run_sprite = sequence_game_mallard_two_run_sprite;
+        duck->idle_sprite = sequence_game_mallard_two_idle_sprite;
         break;
     case 2:
         duck->base_sprite = sequence_game_mallard_three_base_sprite;
         duck->walk_sprite = sequence_game_mallard_three_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_three_slap_sprite;
         duck->run_sprite = sequence_game_mallard_three_run_sprite;
+        duck->idle_sprite = sequence_game_mallard_three_idle_sprite;
         break;
     case 3:
         duck->base_sprite = sequence_game_mallard_four_base_sprite;
         duck->walk_sprite = sequence_game_mallard_four_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_four_slap_sprite;
         duck->run_sprite = sequence_game_mallard_four_run_sprite;
+        duck->idle_sprite = sequence_game_mallard_four_idle_sprite;
         break;
     default:
         break;
