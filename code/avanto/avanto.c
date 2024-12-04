@@ -256,6 +256,7 @@ void minigame_init() {
   paused = false;
 
   current_subgame = &subgames[0];
+  current_subgame = &subgames[1];
   current_subgame->init();
 }
 
