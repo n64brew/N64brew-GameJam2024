@@ -28,29 +28,39 @@ void display_snowmen()
 
 Vector2 get_snowman_spawn()
 {
-    int x, y;
-    float x1, y1, x2, y2;
-
-    int attempts = 0;
-    while (attempts < 20)
+    int _x, _y;
+    float _x1, _y1, _x2, _y2;
+    bool _validSpawn;
+    Duck *currentDuck;
+    while (true)
     {
-        x = random_between(SNOWMAN_MIN_X, SNOWMAN_MAX_X);
-        y = random_between(SNOWMAN_MIN_Y, SNOWMAN_MAX_Y);
-        x1 = x;
-        y1 = y + 8;
-        x2 = x + 12;
-        y2 = y + 16;
+        _validSpawn = true;
+        _x = random_between(SNOWMAN_MIN_X, SNOWMAN_MAX_X);
+        _y = random_between(SNOWMAN_MIN_Y, SNOWMAN_MAX_Y);
+        _x1 = _x;
+        _y1 = _y + 8;
+        _x2 = _x + 12;
+        _y2 = _y + 16;
 
-        if (!detect_collision((Rect){.x1 = ducks[0].collision_box_x1, .y1 = ducks[0].collision_box_y1, .x2 = ducks[0].collision_box_x2, .y2 = ducks[0].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
-            !detect_collision((Rect){.x1 = ducks[1].collision_box_x1, .y1 = ducks[1].collision_box_y1, .x2 = ducks[1].collision_box_x2, .y2 = ducks[1].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
-            !detect_collision((Rect){.x1 = ducks[2].collision_box_x1, .y1 = ducks[2].collision_box_y1, .x2 = ducks[2].collision_box_x2, .y2 = ducks[2].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}) &&
-            !detect_collision((Rect){.x1 = ducks[3].collision_box_x1, .y1 = ducks[3].collision_box_y1, .x2 = ducks[3].collision_box_x2, .y2 = ducks[3].collision_box_y2}, (Rect){.x1 = x1, .y1 = y1, .x2 = x2, .y2 = y2}))
-            return (Vector2){.x = x, .y = y};
+        currentDuck = ducks;
+        while (currentDuck != NULL)
+        {
+            if (detect_collision(
+                    (Rect){.x1 = currentDuck->collision_box_x1, .y1 = currentDuck->collision_box_y1, .x2 = currentDuck->collision_box_x2, .y2 = currentDuck->collision_box_y2},
+                    (Rect){.x1 = _x1, .y1 = _y1, .x2 = _x2, .y2 = _y2}))
+            {
+                _validSpawn = false;
+                break;
+            }
 
-        attempts++;
+            currentDuck = currentDuck->next;
+        }
+
+        if (_validSpawn)
+        {
+            return (Vector2){.x = _x, .y = _y};
+        }
     }
-
-    return (Vector2){.x = -1.0F, .y = -1.0F};
 }
 
 Snowman *create_snowman()
@@ -75,7 +85,7 @@ Snowman *create_snowman()
 void add_snowman()
 {
     // return;
-    
+
     Snowman *snowman = create_snowman();
 
     if (snowman->x == -1.0F && snowman->y == -1.0F)

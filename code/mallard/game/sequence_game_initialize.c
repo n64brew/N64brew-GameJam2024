@@ -25,7 +25,7 @@ Vector2 get_duck_spawn(int x1, int y1, int x2, int y2)
     int _x, _y;
     float _x1, _y1, _x2, _y2;
     bool _validSpawn;
-    Duck *temporary;
+    Duck *currentDuck;
 
     while (true)
     {
@@ -37,17 +37,18 @@ Vector2 get_duck_spawn(int x1, int y1, int x2, int y2)
         _x2 = _x + 24;
         _y2 = _y + 24;
 
-        temporary = ducks;
-        while (temporary != NULL)
+        currentDuck = ducks;
+        while (currentDuck != NULL)
         {
             if (detect_collision(
-                    (Rect){.x1 = temporary->collision_box_x1, .y1 = temporary->collision_box_y1, .x2 = temporary->collision_box_x2, .y2 = temporary->collision_box_y2},
+                    (Rect){.x1 = currentDuck->collision_box_x1, .y1 = currentDuck->collision_box_y1, .x2 = currentDuck->collision_box_x2, .y2 = currentDuck->collision_box_y2},
                     (Rect){.x1 = _x1, .y1 = _y1, .x2 = _x2, .y2 = _y2}))
             {
                 _validSpawn = false;
+                break;
             }
 
-            temporary = temporary->next;
+            currentDuck = currentDuck->next;
         }
 
         if (_validSpawn)
