@@ -181,7 +181,8 @@ void sauna_init() {
 
   particle_source_init(&kiuas_particle_source, KIUAS_MAX_PARTICLES, STEAM);
   kiuas_particle_source.pos = (T3DVec3) {{100.f, 100.f+128.f, 0.f}};
-  kiuas_particle_source.scale = 1.f;
+  kiuas_particle_source.scale = (T3DVec3) {{1.f, 1.f, 1.f}};
+  kiuas_particle_source.rot = (T3DVec3) {{0.f, 0.f, 0.f}};
   kiuas_particle_source.render = false;
   kiuas_particle_source.x_range = 25;
   kiuas_particle_source.z_range = 30;
@@ -191,6 +192,7 @@ void sauna_init() {
   kiuas_particle_source.movement_amplitude = 5.f;
   kiuas_particle_source.max_particles = KIUAS_MAX_PARTICLES;
   kiuas_particle_source.paused = true;
+  particle_source_update_transform(&kiuas_particle_source);
 
   min_time_before_exiting = 3.f;
 

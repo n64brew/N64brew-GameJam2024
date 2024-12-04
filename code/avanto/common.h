@@ -125,7 +125,6 @@ enum script_actions {
   ACTION_SEND_SIGNAL,
   ACTION_ANIM_SET_PLAYING,
   ACTION_ANIM_UPDATE_TO_TS,
-  ACTION_READ_CAM_POS,
   ACTION_END,
 };
 
@@ -173,6 +172,7 @@ enum player_anims {
 enum particle_type {
   UNDEFINED,
   STEAM,
+  SNOW,
 };
 
 struct particle_meta {
@@ -186,8 +186,9 @@ struct particle_meta {
 
 struct particle_source {
   T3DVec3 pos;
+  T3DVec3 rot;
+  T3DVec3 scale;
   int8_t particle_size;
-  float scale;
   bool render;
   bool paused;
 
@@ -196,7 +197,10 @@ struct particle_source {
       int8_t x_range;
       int8_t z_range;
       int height;
-      float time_to_rise;
+      union {
+        float time_to_rise;
+        float time_to_fall;
+      };
       float movement_amplitude;
       float _y_move_error;
       size_t max_particles;
@@ -239,5 +243,5 @@ void particle_source_iterate(struct particle_source *source,
     float delta_time);
 void particle_source_draw(const struct particle_source *source);
 void particle_source_reset_steam(struct particle_source *source);
-void particle_source_init_steam(struct particle_source *source);
+void particle_source_update_transform(struct particle_source *source);
 float rand_float(float min, float max);

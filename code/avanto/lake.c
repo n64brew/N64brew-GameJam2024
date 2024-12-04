@@ -39,6 +39,7 @@
 #define INST_MAX_Y 170
 #define INST_Y_GAP 22
 #define SHADOW_SCALE .6f
+#define NUM_SNOW_PARTICLES 512
 
 enum lake_stages {
   LAKE_INTRO,
@@ -70,16 +71,13 @@ extern const char *const PLAYER_TITLES[];
 extern struct rdpq_textparms_s banner_params;
 extern struct rdpq_textparms_s timer_params;
 extern xm64player_t music;
+extern struct camera cam;
 
 static struct entity map;
 static T3DModel *map_model;
 static struct entity shadows[4];
 static T3DModel *shadow_model;
 static T3DObject *water_object;
-static struct camera cam = {
-  .target = (T3DVec3) {{FOCUS_X, FOCUS_Y, 0.f}},
-  .pos = (T3DVec3) {{CAMERA_X, CAMERA_Y, 0.f}},
-};
 static struct ground ground = {
   .num_changes = 6,
   .changes = {
@@ -107,6 +105,7 @@ static char banner_str[32];
 static float min_time_before_exiting;
 static struct lake_ai ais[4];
 static const T3DBone *leg_bones[4][2];
+static struct particle_source snow_particle_source;
 
 static void ai_standard(struct lake_ai *ai,
     joypad_buttons_t *pressed,
@@ -253,6 +252,9 @@ const struct button *get_next_button(const struct button *prev) {
 }
 
 void lake_init() {
+  cam.target = (T3DVec3) {{FOCUS_X, FOCUS_Y, 0.f}};
+  cam.pos = (T3DVec3) {{CAMERA_X, CAMERA_Y, 0.f}};
+
   T3DModelDrawConf map_draw_conf = {
     .userData = NULL,
     .tileCb = NULL,
@@ -341,6 +343,33 @@ void lake_init() {
   winners_mask = 0;
   banner_str[0] = 0;
   min_time_before_exiting = 3.f;
+
+  snow_particle_source.render = true;
+  snow_particle_source.time_to_fall = 5.f;
+  snow_particle_source.paused = false;
+  snow_particle_source.rot = (T3DVec3) {{0.f, 0.f, 0.f}};
+  // Hardcoded for map at scale 1
+  const float span[3][2] = {
+    {-10.305f*64.f, 4.6f*64.f},
+    {-1.5f*64.f, 10.f*64.f},
+    {-8.78f*64.f, 92.437f*64.f},
+  };
+  float longest = span[2][1] - span[2][0];
+  float scale = longest/255.f;
+  snow_particle_source.x_range = 127.f * ((span[0][1]-span[0][0])/longest);
+  snow_particle_source.z_range = 127.f * ((span[2][1]-span[2][0])/longest);
+  snow_particle_source.scale = (T3DVec3) {{
+    scale,
+    (span[1][1]-span[1][0])/256.f,
+    scale
+  }};
+  snow_particle_source.pos = (T3DVec3) {{
+    (span[0][1]+span[0][0])/2.f,
+    span[1][1]-128.f*snow_particle_source.scale.v[1],
+    (span[2][1]+span[2][0])/2.f,
+  }};
+  particle_source_init(&snow_particle_source, NUM_SNOW_PARTICLES, SNOW);
+  particle_source_update_transform(&snow_particle_source);
 
   for (size_t i = 0; i < NUM_LAKE_STAGES; i++) {
     lake_stage_inited[i] = false;
@@ -485,7 +514,7 @@ void lake_dynamic_loop_render(float delta_time) {
       (float[3]) {players[i].scale, players[i].scale, players[i].scale},
       (float[3]) {0, players[i].rotation, 0},
       players[i].pos.v);
-    t3d_mat4_to_fixed(players[i].e.transform, &player_matrix);
+    t3d_mat4_to_fixed_3x4(players[i].e.transform, &player_matrix);
     rspq_block_run(players[i].e.display_block);
 
     T3DVec3 tmp;
@@ -515,6 +544,22 @@ void lake_dynamic_loop_render(float delta_time) {
     rspq_block_run(shadows[i].display_block);
   }
 
+  // Particles
+  rdpq_sync_tile();
+  rdpq_sync_pipe();
+
+  rdpq_mode_push();
+  rdpq_set_mode_standard();
+  rdpq_mode_zbuf(true, true);
+  rdpq_mode_zoverride(true, 0, 0);
+  rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+  tpx_state_from_t3d();
+
+  particle_source_draw(&snow_particle_source);
+
+  rdpq_mode_pop();
+
+  // Sync before manual draws
   rdpq_sync_tile();
   rdpq_sync_pipe();
 
@@ -712,7 +757,6 @@ static void lake_intro_fixed_loop(float delta_time) {
 
 struct script_action outro_actions[][4] = {
   {
-    {.type = ACTION_READ_CAM_POS, .camera = &cam},
     {
       .type = ACTION_MOVE_CAMERA_TO,
       .pos = (T3DVec3) {{FOCUS_X-200, FOCUS_Y*1.5f, CELEB_Z-200.f}},
@@ -835,6 +879,8 @@ bool lake_fixed_loop(float delta_time) {
       lake_end_fixed_loop(delta_time);
       break;
   }
+
+  particle_source_iterate(&snow_particle_source, delta_time);
 
   for (size_t i = 0; i < 4; i++) {
     float expected_height = get_ground_height(players[i].pos.v[2], &ground);

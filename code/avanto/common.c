@@ -13,6 +13,7 @@ extern T3DViewport viewport;
 extern struct character players[];
 extern rspq_block_t *empty_hud_block;
 extern struct particle_source particle_sources[];
+extern struct camera cam;
 
 const char *const PLAYER_TITLES[] = {
   SW_PLAYER1_S "P1",
@@ -132,8 +133,6 @@ void script_reset_signals() {
 }
 
 bool script_update(struct script_state *state, float delta_time) {
-  static T3DVec3 cam_pos;
-  static T3DVec3 cam_target;
   while (delta_time > EPS) {
     if (state->action->type == ACTION_END) {
       return true;
@@ -242,41 +241,31 @@ bool script_update(struct script_state *state, float delta_time) {
 
       if (state->action->travel_time - new_time < EPS) {
         delta_time -= new_time - state->action->travel_time;
-        cam_pos = state->action->pos;
-        cam_target = state->action->target;
+        cam.pos = state->action->pos;
+        cam.target = state->action->target;
         t3d_viewport_look_at(&viewport,
-            &cam_pos,
-            &cam_target,
+            &cam.pos,
+            &cam.target,
             &(T3DVec3) {{0, 1, 0}});
       }
       else {
-        T3DVec3 end_angle = {{
-          state->action->target.v[0] - state->action->pos.v[0],
-          state->action->target.v[1] - state->action->pos.v[1],
-          state->action->target.v[2] - state->action->pos.v[2],
-        }};
-        T3DVec3 cam_angle = {{
-          cam_target.v[0] - cam_pos.v[0],
-          cam_target.v[1] - cam_pos.v[1],
-          cam_target.v[2] - cam_pos.v[2],
-        }};
+        T3DVec3 end_angle;
+        t3d_vec3_diff(&end_angle, &state->action->target, &state->action->pos);
+        T3DVec3 cam_angle;
+        t3d_vec3_diff(&cam_angle, &cam.target, &cam.pos);
         float time_left = state->action->travel_time - new_time;
         for (size_t i = 0; i < 3; i++) {
-          float d = state->action->pos.v[i] - cam_pos.v[i];
-          cam_pos.v[i] += d * (delta_time / time_left);
+          float d = state->action->pos.v[i] - cam.pos.v[i];
+          cam.pos.v[i] += d * (delta_time / time_left);
 
           d = end_angle.v[i] - cam_angle.v[i];
           cam_angle.v[i] += d * (delta_time / time_left);
         }
 
-        cam_target = (T3DVec3) {{
-          cam_pos.v[0] + cam_angle.v[0],
-          cam_pos.v[1] + cam_angle.v[1],
-          cam_pos.v[2] + cam_angle.v[2],
-        }};
+        t3d_vec3_add(&cam.target, &cam.pos, &cam_angle);
         t3d_viewport_look_at(&viewport,
-            &cam_pos,
-            &cam_target,
+            &cam.pos,
+            &cam.target,
             &(T3DVec3) {{0, 1, 0}});
 
         state->time = new_time;
@@ -300,10 +289,6 @@ bool script_update(struct script_state *state, float delta_time) {
       struct character *c = state->character;
       T3DAnim *anim = &c->s.anims[c->current_anim];
       t3d_anim_update(anim, state->action->time);
-    }
-    else if (state->action->type == ACTION_READ_CAM_POS) {
-      cam_pos = state->action->camera->pos;
-      cam_target = state->action->camera->target;
     }
 
     state->action++;
@@ -374,36 +359,7 @@ void draw_hud() {
   rdpq_mode_pop();
 }
 
-void particle_source_init(struct particle_source *source,
-    size_t num_particles,
-    int type) {
-  source->_type = type;
-
-  source->_num_allocated_particles = num_particles & 1?
-    num_particles + 1 : num_particles;
-  source->_particles = malloc_uncached(
-      sizeof(TPXParticle) * (source->_num_allocated_particles/2));
-  source->_meta = malloc(
-      sizeof(struct particle_meta) * source->_num_allocated_particles);
-  source->_transform = malloc_uncached(sizeof(T3DMat4FP));
-
-  switch (type) {
-    case STEAM:
-      particle_source_init_steam(source);
-      break;
-  }
-}
-
-void particle_source_reset_steam(struct particle_source *source) {
-  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
-      source->_particles[i].sizeA = 0;
-      source->_particles[i].sizeB = 0;
-  }
-  source->_y_move_error = 0.f;
-  source->_to_spawn = 0;
-}
-
-void particle_source_init_steam(struct particle_source *source) {
+static void particle_source_init_steam(struct particle_source *source) {
   particle_source_reset_steam(source);
   for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
       source->_particles[i].colorA[0] = 0xff;
@@ -417,7 +373,71 @@ void particle_source_init_steam(struct particle_source *source) {
       source->_particles[i].colorB[3] = 0xff;
   }
   source->max_particles = source->_num_allocated_particles;
-  source->_type = STEAM;
+}
+
+static void particle_source_spawn_snow(struct particle_source *source,
+    int8_t *pos) {
+  int8_t cx = (rand() % (source->x_range*2+1)) - source->x_range;
+  int8_t cz = (rand() % (source->z_range*2+1)) - source->z_range;
+  int8_t cy = rand() & 0xff;
+
+  pos[0] = cx;
+  pos[1] = cy;
+  pos[2] = cz;
+}
+
+static void particle_source_init_snow(struct particle_source *source) {
+  source->_y_move_error = 0.f;
+  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
+      source->_particles[i].colorA[0] = 0xff;
+      source->_particles[i].colorA[1] = 0xff;
+      source->_particles[i].colorA[2] = 0xff;
+      source->_particles[i].colorA[3] = 0xff;
+      source->_particles[i].sizeA = 1;
+      particle_source_spawn_snow(source, source->_particles[i].posA);
+
+      source->_particles[i].colorB[0] = 0xff;
+      source->_particles[i].colorB[1] = 0xff;
+      source->_particles[i].colorB[2] = 0xff;
+      source->_particles[i].colorB[3] = 0xff;
+      source->_particles[i].sizeB = 1;
+      particle_source_spawn_snow(source, source->_particles[i].posB);
+  }
+}
+
+void particle_source_init(struct particle_source *source,
+    size_t num_particles,
+    int type) {
+  source->_type = type;
+
+  source->_num_allocated_particles = num_particles & 1?
+    num_particles + 1 : num_particles;
+  source->_meta = NULL;
+  source->_particles = malloc_uncached(
+      sizeof(TPXParticle) * (source->_num_allocated_particles/2));
+  source->_transform = malloc_uncached(sizeof(T3DMat4FP));
+
+  source->_type = type;
+  switch (type) {
+    case STEAM:
+      source->_meta = malloc(
+          sizeof(struct particle_meta) * source->_num_allocated_particles);
+      particle_source_init_steam(source);
+      break;
+
+    case SNOW:
+      particle_source_init_snow(source);
+      break;
+  }
+}
+
+void particle_source_reset_steam(struct particle_source *source) {
+  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
+      source->_particles[i].sizeA = 0;
+      source->_particles[i].sizeB = 0;
+  }
+  source->_y_move_error = 0.f;
+  source->_to_spawn = 0;
 }
 
 void particle_source_free(struct particle_source *source) {
@@ -508,10 +528,25 @@ static void particle_source_iterate_steam(struct particle_source *source,
     }
   }
   source->_to_spawn -= (float) spawned;
+}
 
+static void particle_source_iterate_snow(struct particle_source *source,
+    float delta_time) {
+  source->_y_move_error += (256.f / source->time_to_fall) * delta_time;
+  int y_move = (int) source->_y_move_error;
+  source->_y_move_error -= (float) y_move;
+
+  TPXParticle *p = source->_particles;
+  for (int i = 0; i < source->_num_allocated_particles/2; i++, p++) {
+    p->posA[1] -= y_move;
+    p->posB[1] -= y_move;
+  }
+}
+
+void particle_source_update_transform(struct particle_source *source) {
   t3d_mat4fp_from_srt_euler(source->_transform,
-      (float[]) {source->scale, source->scale, source->scale},
-      (float[]) {0.f, 0.f, 0.f},
+      source->scale.v,
+      source->rot.v,
       source->pos.v);
 }
 
@@ -523,6 +558,10 @@ void particle_source_iterate(struct particle_source *source,
   switch (source->_type) {
     case STEAM:
       particle_source_iterate_steam(source, delta_time);
+      break;
+
+    case SNOW:
+      particle_source_iterate_snow(source, delta_time);
       break;
   }
 }
