@@ -39,6 +39,7 @@
 #define INST_Y_GAP 22
 #define SHADOW_SCALE .6f
 #define NUM_SNOW_PARTICLES 512
+#define NUM_STEAM_PARTICLES 32
 #define LAKE_TIME 90.f
 #define NUM_MOVES_TO_FINISH 64
 #define ADVANCE_PER_STROKE ((RACE_END_Z-RACE_START_Z)/NUM_MOVES_TO_FINISH)
@@ -110,6 +111,7 @@ static const T3DBone *leg_bones[4][2];
 static struct particle_source snow_particle_source;
 static float time_left;
 static float expected_zs[4];
+static struct particle_source steam_sources[4];
 
 static void ai_standard(struct lake_ai *ai,
     joypad_buttons_t *pressed,
@@ -327,6 +329,7 @@ void lake_init() {
     if (i >= core_get_playercount()) {
       ai_init(&ais[i], i, core_get_aidifficulty());
     }
+
     int bone_index;
     bone_index = t3d_skeleton_find_bone(&players[i].s.skeleton, "LeftLeg");
     leg_bones[i][0] = bone_index == -1?
@@ -334,6 +337,18 @@ void lake_init() {
     bone_index = t3d_skeleton_find_bone(&players[i].s.skeleton, "RightLeg");
     leg_bones[i][1] = bone_index == -1?
       NULL : &players[i].s.skeleton.bones[bone_index];
+
+    particle_source_init(&steam_sources[i], NUM_STEAM_PARTICLES, STEAM);
+    steam_sources[i].render = !players[i].out;
+    steam_sources[i].scale = (T3DVec3) {{1.f, 1.f, 1.f}};
+    steam_sources[i].rot = (T3DVec3) {{0.f, 0.f, 0.f}};
+    steam_sources[i].x_range = 15;
+    steam_sources[i].z_range = 20;
+    steam_sources[i].height = 64.f * 2.f;
+    steam_sources[i].particle_size = 1;
+    steam_sources[i].time_to_rise = 5.f;
+    steam_sources[i].movement_amplitude = 5.f;
+    steam_sources[i].paused = players[i].out;
   }
 
   wav64_open(&sfx_splash, "rom:/avanto/splash.wav64");
@@ -573,6 +588,18 @@ void lake_dynamic_loop_render(float delta_time) {
   tpx_state_from_t3d();
 
   particle_source_draw(&snow_particle_source);
+
+  for (size_t i = 0; i < 4; i++) {
+    if (!steam_sources[i].render) {
+      continue;
+    }
+
+    steam_sources[i].pos = players[i].pos;
+    steam_sources[i].pos.v[1] += 128.f + 1.3f*64.f;
+    steam_sources[i].rot.v[1] = players[i].rotation;
+    particle_source_update_transform(&steam_sources[i]);
+    particle_source_draw(&steam_sources[i]);
+  }
 
   rdpq_sync_pipe();
   rdpq_mode_pop();
@@ -923,10 +950,24 @@ bool lake_fixed_loop(float delta_time) {
   particle_source_iterate(&snow_particle_source, delta_time);
 
   for (size_t i = 0; i < 4; i++) {
+    if (players[i].out) {
+      continue;
+    }
+
     float expected_height = get_ground_height(players[i].pos.v[2], &ground);
     players[i].pos.v[1] -= delta_time * GRAVITY;
     players[i].pos.v[1] = expected_height > players[i].pos.v[1]?
       expected_height : players[i].pos.v[1];
+
+    if (players[i].temperature >= EPS) {
+      particle_source_iterate(&steam_sources[i], delta_time);
+      steam_sources[i].max_particles = ceilf(
+          (float) NUM_STEAM_PARTICLES * players[i].temperature);
+    }
+    else {
+      steam_sources[i].render = false;
+      steam_sources[i].paused = true;
+    }
   }
 
   return false;
