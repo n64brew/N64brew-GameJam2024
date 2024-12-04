@@ -40,7 +40,6 @@ class MapRenderer
         U::RSPQBlock renderModeBlock;
         U::RSPQBlock paintBlock;
         // U::RSPQBlock drawBlock;
-        U::Sprite sprite;
         U::Sprite footstep;
         U::Sprite splashSprites[SplashVariations];
 

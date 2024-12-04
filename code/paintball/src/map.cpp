@@ -5,7 +5,6 @@ MapRenderer::MapRenderer() :
     renderModeBlock {nullptr, rspq_block_free},
     paintBlock {nullptr, rspq_block_free},
     // drawBlock {nullptr, rspq_block_free},
-    sprite {sprite_load("rom:/paintball/splash.ia4.sprite"), sprite_free},
     footstep {sprite_load("rom:/paintball/step.ia4.sprite"), sprite_free},
     splashSprites {
         {sprite_load("rom:/paintball/splash1.ia4.sprite"), sprite_free},
