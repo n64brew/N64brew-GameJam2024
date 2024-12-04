@@ -731,7 +731,6 @@ void sauna_dynamic_loop_render(float delta_time) {
   // Particles
   if (kiuas_particle_source.render) {
     rdpq_sync_pipe();
-    rdpq_sync_tile();
 
     rdpq_mode_push();
     rdpq_set_mode_standard();
@@ -741,6 +740,8 @@ void sauna_dynamic_loop_render(float delta_time) {
     tpx_state_from_t3d();
 
     particle_source_draw(&kiuas_particle_source);
+
+    rdpq_sync_pipe();
 
     rdpq_mode_pop();
   }

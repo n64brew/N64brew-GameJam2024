@@ -545,7 +545,6 @@ void lake_dynamic_loop_render(float delta_time) {
   }
 
   // Particles
-  rdpq_sync_tile();
   rdpq_sync_pipe();
 
   rdpq_mode_push();
@@ -557,11 +556,13 @@ void lake_dynamic_loop_render(float delta_time) {
 
   particle_source_draw(&snow_particle_source);
 
+  rdpq_sync_pipe();
   rdpq_mode_pop();
 
   // Sync before manual draws
   rdpq_sync_tile();
   rdpq_sync_pipe();
+  rdpq_sync_load();
 
   if (lake_stage == LAKE_GAME) {
     rdpq_mode_push();

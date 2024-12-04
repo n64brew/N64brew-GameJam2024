@@ -62,6 +62,11 @@ $(FILESYSTEM_DIR)/avanto/%.sprite: $(ASSETS_DIR)/avanto/%.png
 	@echo "    [AVANTO SPRITE] $@"
 	$(N64_MKSPRITE) $(AVANTO MKSPRITE_FLAGS) -o $(dir $@) "$<"
 
+$(FILESYSTEM_DIR)/avanto/sauna-depth.sprite: $(ASSETS_DIR)/avanto/sauna-depth.png
+	@mkdir -p $(dir $@)
+	@echo "    [AVANTO SPRITE] $@"
+	$(N64_MKSPRITE) $(AVANTO MKSPRITE_FLAGS) -f RGBA16 -o $(dir $@) "$<"
+
 $(FILESYSTEM_DIR)/avanto/banner.font64: $(ASSETS_DIR)/squarewave.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [AVANTO FONT] $@"
