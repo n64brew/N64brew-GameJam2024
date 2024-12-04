@@ -67,6 +67,33 @@ void update_snowmen(float deltatime)
     time_elapsed_since_last_snowman_spawn += deltatime;
 }
 
+void ducks_bubble_sort()
+{
+    bool swapped = true;
+
+    while (swapped)
+    {
+        Duck **prev = &ducks;
+        Duck *curr;
+        Duck *next;
+
+        swapped = false;
+        for (curr = ducks; curr; prev = &curr->next, curr = curr->next)
+        {
+            next = curr->next;
+
+            if (next && curr->collision_box_y2 > next->collision_box_y2)
+            {
+                curr->next = next->next;
+                next->next = curr;
+                *prev = next;
+
+                swapped = true;
+            }
+        }
+    }
+}
+
 // Set the collision box of the ducks based on their current action and frame.
 void update_ducks(float deltatime)
 {
@@ -83,6 +110,8 @@ void update_ducks(float deltatime)
         duck->collision_box_x2 = duck->x + 24;
         duck->collision_box_y2 = duck->y + 24;
     }
+
+    ducks_bubble_sort();
 }
 
 void process_input_start_button(Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, size_t i, float deltatime)

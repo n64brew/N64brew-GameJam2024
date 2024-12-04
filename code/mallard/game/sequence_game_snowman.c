@@ -74,7 +74,7 @@ Snowman *create_snowman()
 
 void add_snowman()
 {
-    return;
+    // return;
     
     Snowman *snowman = create_snowman();
 
