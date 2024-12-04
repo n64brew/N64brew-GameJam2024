@@ -23,6 +23,9 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define FONT_DEBUG 1
 #define FONT_BILLBOARD 2
 
+#define RESOLUTION_WIDTH 320
+#define RESOLUTION_HEIGHT 240
+
 /*********************************
              Globals
 *********************************/
@@ -163,10 +166,10 @@ const MinigameDef minigame_def = {
 
 void debugInfoDraw(float deltaTime)
 {
-    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = 640, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+10, "Test Debug");
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+20, "FPS: %f", 1.0f/deltaTime);
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
+    /*rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
     joypad_port_t controllerPort = core_get_playercontroller(0);
     
     if(!joypad_is_connected(controllerPort))
@@ -177,7 +180,18 @@ void debugInfoDraw(float deltaTime)
     {
         joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "p1 stick x: %i, p1 stick y: %i", joypad.stick_x, joypad.stick_y);
-    }
+        
+        // TODO: remove
+        // linear algebra tests
+        T3DVec3 tempvec = {0};
+        tempvec = (T3DVec3){{0,0,1}};
+        tempvec.v[0] = -sinf(players[0].rotY);
+        tempvec.v[2] = cosf(players[0].rotY);
+
+        t3d_vec3_add(&tempvec, &tempvec, &players[0].playerPos);
+
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+50, "rotation of player: %f, vector position test X: %f, Z: %f",players[0].rotY,tempvec.x, tempvec.z);
+    }*/
 }
 
 /*==============================
@@ -201,8 +215,8 @@ void HUD_draw()
 {
     const T3DVec3 HUDOffsets[] = {
     (T3DVec3){{16.0f, 208.0f, 0.0f}},
-    (T3DVec3){{528.0f, 208.0f, 0.0f}},
-    (T3DVec3){{528.0f, 16.0f, 0.0f}},
+    (T3DVec3){{RESOLUTION_WIDTH - 96.0f, 208.0f, 0.0f}},
+    (T3DVec3){{RESOLUTION_WIDTH - 96.0f, 16.0f, 0.0f}},
     (T3DVec3){{16.0f, 16.0f, 0.0f}},
     };
 
@@ -213,7 +227,7 @@ void HUD_draw()
     PLAYERCOLOR_4,
     };
 
-    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
     // make sure the RDP is sync'd
@@ -256,7 +270,7 @@ void HUD_draw()
             rdpq_set_mode_standard();
             rdpq_mode_alphacompare(128);
             //rdpq_sync_load();
-            rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 8, &(rdpq_blitparms_t){ .scale_y = 0.5f});
+            rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 8, &(rdpq_blitparms_t){ .scale_x = 0.5f,  .scale_y = 0.5f});
             if(players[iDx].playerTeam == teamThief)
             {
                 rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Jump Wall");
@@ -755,6 +769,7 @@ void player_loop(float deltaTime, int playerNumber)
         if(btn.c_left) end_game(teamThief);
         if(btn.c_right) end_game(teamGuard);
 
+        // if A button pressed and player team is guard, then use guard ability
         if(btn.a && players[playerNumber].playerTeam == teamGuard)
         {
             // check to see if our ability cooldown is not active
@@ -781,6 +796,75 @@ void player_loop(float deltaTime, int playerNumber)
 
                 // play sound effect here
                 wav64_play(&sfx_guardStunAbility, 29);
+            }
+        }
+
+        // if A button pressed, and team is thief, then start up the thief ability
+        if(btn.a && players[playerNumber].playerTeam == teamThief)
+        {
+            // check to see if our ability cooldown is not active
+            if(!(players[playerNumber].abilityTimer > 0.0f))
+            {
+                T3DVec3 tempUnitisedRotatedVector = {0};
+                T3DVec3 tempvec = {0};
+                collisionresult_data tempResult;
+                bool hasHitAWall = false;
+                tempUnitisedRotatedVector = (T3DVec3){{0,0,1}};
+                tempUnitisedRotatedVector.v[0] = -sinf(players[playerNumber].rotY);
+                tempUnitisedRotatedVector.v[2] = cosf(players[playerNumber].rotY);
+
+                for(float fDx = 1.0f; fDx < 24; fDx+= 2.0)
+                {
+                    t3d_vec3_scale(&tempvec, &tempUnitisedRotatedVector, fDx);
+                    t3d_vec3_add(&tempvec, &tempvec, &players[playerNumber].playerPos);
+
+                    collision_check(&tempResult, &tempvec);
+                    if(tempResult.didCollide == true && tempResult.collisionType != collisionGuardOnly)
+                    {
+                        hasHitAWall = true;
+                        continue;
+                    }
+                    else if(hasHitAWall && (tempResult.didCollide == false || (tempResult.didCollide == true && tempResult.collisionType == collisionGuardOnly)))
+                    {
+                        // move the player
+                        // TODO: make it a destination and do an animation over to it
+                        players[playerNumber].playerPos = tempvec;
+                        // set a cooldown if ability worked
+                        players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+                        break;
+                    }
+                }
+
+
+                // take out current position
+                // Get current location
+                    //get a vector of 1,1
+                    // X = Cos(Th), Y = Sin(Th)
+                    // ex.  Cos(45) = 0.707, Sin(45) = 0.707
+                    // rotation Th in degrees (not rads)
+                    // result should be a unitised vector for direction
+                    // can use this to iterate
+		        // Get direction
+		        // loop like X amount of times with difference between current location and direction times length
+		        // see if the spot is open, if it is, set is as a destination and teleport to the other side
+                // if teleported, set abilitytimer
+
+                // scratchpad
+                // starting position: 45,10
+                // rotation of 45 degrees
+                // unitised rotated vector = 0.707, 0.707
+                // starting position += (URV * steps)
+                // 45.000, 10.000
+                // 45.707, 10.707
+                // 46.414, 11.414
+                // 47.121, 12.121
+                // 47.828, 12.828
+                // 48.535, 13.535
+                // 49.242, 14.242
+                // 49.949, 14.949
+                // 50.656, 15.656
+                // 51.363, 16.363
+                // 52.070, 17.070
             }
         }
     }
@@ -834,17 +918,21 @@ void objective_init()
     objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
 }
 
-void objective_draw()
+void objective_update()
 {
     // update matricies
     t3d_mat4fp_from_srt_euler(objectives[0].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, 0.0f, 0.0f},
         objectives[0].objectivePos.v);
-        t3d_mat4fp_from_srt_euler(objectives[1].modelMatFP,
+    t3d_mat4fp_from_srt_euler(objectives[1].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
         (float[3]){0.0f, 0.0f, 0.0f},
-        objectives[1].objectivePos.v);
+        objectives[1].objectivePos.v);  
+}
+
+void objective_draw()
+{
     // if objective is active, then go ahead and draw it
     if(objectives[0].isActive) rspq_block_run(objectives[0].dplObjective);
     if(objectives[1].isActive) rspq_block_run(objectives[1].dplObjective);
@@ -940,7 +1028,7 @@ void minigame_init()
     gameTimeRemaining = STARTING_GAME_TIME;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_640x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_DEDITHER);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS_DEDITHER);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -1093,6 +1181,9 @@ void minigame_loop(float deltatime)
         player_loop(deltatime, i);
     }
 
+    // run objective updates
+    objective_update();
+
     // Check for victory conditions
     if(!gameStarting && !gameEnding)
     {
@@ -1128,7 +1219,7 @@ void minigame_loop(float deltatime)
     uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
 
     // set the projection matrix for the viewport
-    float aspectRatio = (float)viewport.size[0] / ((float)viewport.size[1]*2);
+    float aspectRatio = (float)viewport.size[0] / ((float)viewport.size[1]);//*2);
     t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), aspectRatio, 20.0f, 260.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
@@ -1186,13 +1277,13 @@ void minigame_loop(float deltatime)
     // game starting countdown text draw
     if(gameStarting)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Starting in %i...", (int)countdownTimer);
     }
 
     if(gameEnding)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 640, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
         if(winningTeam == teamThief)
         {
             rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Thieves Win!");
