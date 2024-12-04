@@ -47,46 +47,52 @@ struct Rampage gRampage;
 const MinigameDef minigame_def = {
     .gamename = "Rampage",
     .developername = "Ultrarare",
-    .description = "Destroy the most buildings to win",
+    .description = "Destroy buildings for points. Most points wins.",
     .instructions = "Press B to attack."
 };
 
 static struct mesh_triangle_indices global_mesh_collider_triangles[] = {
     {.indices = {0, 1, 2}},
     {.indices = {0, 2, 3}},
+
+    {.indices = {0, 4, 5}},
+    {.indices = {0, 5, 1}},
+
+    {.indices = {1, 5, 6}},
+    {.indices = {1, 6, 2}},
+
+    {.indices = {2, 6, 7}},
+    {.indices = {2, 7, 3}},
+
+    {.indices = {3, 7, 4}},
+    {.indices = {3, 4, 0}},
 };
 
 static struct Vector3 global_mesh_collider_vertices[] = {
-    {SCALE_FIXED_POINT(-20.0f), 0.0f, SCALE_FIXED_POINT(-20.0f)},
-    {SCALE_FIXED_POINT(20.0f), 0.0f, SCALE_FIXED_POINT(-20.0f)},
-    {SCALE_FIXED_POINT(20.0f), 0.0f, SCALE_FIXED_POINT(20.0f)},
-    {SCALE_FIXED_POINT(-20.0f), 0.0f, SCALE_FIXED_POINT(20.0f)},  
-};
+    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
+    {SCALE_FIXED_POINT(-8.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
 
-static struct mesh_index_block global_mesh_collider_blocks[] = {
-    {.first_index = 0, .last_index = 2},
-};
-
-static uint16_t global_mesh_collider_indices[] = {
-    0, 1,
+    {SCALE_FIXED_POINT(-8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(-8.0f)},
+    {SCALE_FIXED_POINT(8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(8.0f)},
+    {SCALE_FIXED_POINT(-8.0f), SCALE_FIXED_POINT(-4.0f), SCALE_FIXED_POINT(8.0f)},  
 };
 
 static struct mesh_collider global_mesh_collider = {
     .triangle_count = 2,
     .triangles = global_mesh_collider_triangles,
     .vertices = global_mesh_collider_vertices,
-
-    .index = {
-        .block_count = {1, 1, 1},
-        .min = {SCALE_FIXED_POINT(-20.0f), 0.0f, SCALE_FIXED_POINT(-20.0f)},
-        .stride_inv = {1.0f / SCALE_FIXED_POINT(40.0f), 1.0f, 1.0f / SCALE_FIXED_POINT(40.0f)},
-        .blocks = global_mesh_collider_blocks,
-        .index_indices = global_mesh_collider_indices,
-    }
 };
 
 struct frame_malloc frame_mallocs[2];
 int next_frame_malloc;
+
+static float accum_time;
+static float last_frame_time;
+
+#define FIXED_DT    (1.0f / 30.0f)
 
 #define PROJECTION_RATIO    2.0f
 #define NEAR_PLANE          SCALE_FIXED_POINT(-1.0f)
@@ -152,6 +158,8 @@ void minigame_init() {
     wav64_play(&rampage_assets_get()->startJingle, 2);
 
     background_surface = surface_alloc(FMT_RGBA16, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    last_frame_time = get_ticks_ms() * (1.0f / 1000.0f);
 }
 
 void minigame_set_active(bool is_active) {
@@ -215,7 +223,11 @@ void minigame_find_winners() {
     }
 }
 
-void minigame_fixedloop(float deltatime) {
+void minigame_fixedloop(float delattime) {
+
+}
+
+void rampage_fixedloop(float deltatime) {
     if (gRampage.state == RAMPAGE_STATE_START) {
         float before = gRampage.delay_timer;
 
@@ -410,7 +422,29 @@ void minigame_redraw_rects() {
     t3d_frame_start();
 }
 
-void minigame_loop(float deltatime) {   
+void minigame_loop(float deltatime) {
+    float current_time = get_ticks_ms() * (1.0f / 1000.0f);
+    deltatime = current_time - last_frame_time;
+
+    if (deltatime > 0.25f) {
+        deltatime = 0.25f;
+    }
+
+    accum_time += deltatime;
+
+    while (accum_time > FIXED_DT) {
+        rampage_fixedloop(FIXED_DT);
+        accum_time -= FIXED_DT;
+    }
+
+    last_frame_time = current_time;
+
+    surface_t* display = display_try_get();
+
+    if (!display) {
+        return;
+    }
+
     uint8_t colorAmbient[4] = {0x60, 0x60, 0x60, 0xFF};
 
     struct frame_malloc* fm = &frame_mallocs[next_frame_malloc];
@@ -420,7 +454,6 @@ void minigame_loop(float deltatime) {
 
     minigame_init_viewport();
 
-    surface_t* display = display_get();
     rdpq_attach(display, depthBuffer);
 
     t3d_frame_start();

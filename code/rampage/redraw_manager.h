@@ -22,4 +22,6 @@ int redraw_retrieve_dirty_rects(struct RedrawRect rects[MAX_REDRAW_ENTITIES]);
 
 void redraw_get_screen_rect(T3DViewport* viewport, struct Vector3* world_pos, float radius, float min_y, float y_height, struct RedrawRect* result);
 
+bool rect_does_overlap(struct RedrawRect* a, struct RedrawRect* b);
+
 #endif

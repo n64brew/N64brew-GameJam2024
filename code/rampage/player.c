@@ -247,26 +247,32 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     T3DModel* model = rampage_assets_get()->player;
 
     player->skeleton = t3d_skeleton_create(model);
-    player->animWalk = t3d_anim_create(model, "Walk");
-    t3d_anim_attach(&player->animWalk, &player->skeleton);
-    player->animIdle = t3d_anim_create(model, "Idle");
-    t3d_anim_attach(&player->animIdle, &player->skeleton);
+
     player->animAttack = t3d_anim_create(model, "Left_Swipe");
     t3d_anim_attach(&player->animAttack, &player->skeleton);
     t3d_anim_set_looping(&player->animAttack, false);
     t3d_anim_set_playing(&player->animAttack, false);
+
     player->animStun = t3d_anim_create(model, "Stun");
     t3d_anim_attach(&player->animStun, &player->skeleton);
     t3d_anim_set_looping(&player->animStun, false);
     t3d_anim_set_playing(&player->animStun, false);
+
     player->animWin = t3d_anim_create(model, "Victory");
     t3d_anim_attach(&player->animWin, &player->skeleton);
     t3d_anim_set_looping(&player->animWin, false);
     t3d_anim_set_playing(&player->animWin, false);
+
     player->animLose = t3d_anim_create(model, "Defeat");
     t3d_anim_attach(&player->animLose, &player->skeleton);
     t3d_anim_set_looping(&player->animLose, false);
     t3d_anim_set_playing(&player->animLose, false);
+
+    player->animWalk = t3d_anim_create(model, "Walk");
+    t3d_anim_attach(&player->animWalk, &player->skeleton);
+
+    player->animIdle = t3d_anim_create(model, "Idle");
+    t3d_anim_attach(&player->animIdle, &player->skeleton);
 
     collision_scene_add(&player->damage_trigger);
 

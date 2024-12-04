@@ -23,6 +23,7 @@ struct RampageBuilding {
     float shake_timer;
 
     RedrawHandle redraw_handle;
+    struct RedrawRect redraw_rect;
 };
 
 void rampage_building_init(struct RampageBuilding* building, T3DVec3* position, int rotation, int building_height);

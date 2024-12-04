@@ -122,10 +122,13 @@ int redraw_retrieve_dirty_rects(struct RedrawRect rects[MAX_REDRAW_ENTITIES]) {
     if (fullscreen_count > 0) {
         rects[0] = screen_rect;
         fullscreen_count -= 1;
+        frame_parity = frame_parity ^ 1;
         return 1;
     }
 
-    return redraw_collect_rects(rects);
+    int result = redraw_collect_rects(rects);
+    frame_parity = frame_parity ^ 1;
+    return result;
 }
 
 static T3DVec3 box_corners[] = {
@@ -170,6 +173,4 @@ void redraw_get_screen_rect(T3DViewport* viewport, struct Vector3* world_pos, fl
             }
         }
     }
-
-    frame_parity = frame_parity ^ 1;
 }

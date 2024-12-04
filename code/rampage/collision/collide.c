@@ -36,7 +36,7 @@ struct object_mesh_collide_data {
     struct mesh_triangle triangle;
 };
 
-bool collide_object_to_triangle(struct mesh_index* index, void* data, int triangle_index) {
+bool collide_object_to_triangle(struct mesh_collider* collider, void* data, int triangle_index) {
     struct object_mesh_collide_data* collide_data = (struct object_mesh_collide_data*)data;
     collide_data->triangle.triangle = collide_data->mesh->triangles[triangle_index];
 
@@ -71,7 +71,7 @@ void collide_object_to_mesh(struct dynamic_object* object, struct mesh_collider*
     collide_data.mesh = mesh;
     collide_data.object = object;
     collide_data.triangle.vertices = mesh->vertices;
-    mesh_index_lookup_triangle_indices(&mesh->index, &object->bounding_box, collide_object_to_triangle, &collide_data);
+    mesh_collider_for_each(mesh, collide_object_to_triangle, &collide_data);
 }
 
 void collide_object_to_object(struct dynamic_object* a, struct dynamic_object* b) {

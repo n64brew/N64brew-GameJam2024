@@ -269,7 +269,7 @@ void collision_scene_collide(float fixed_time_step) {
 
         collision_scene_collide_single(element->object, &prev_pos[i]);
 
-        element->object->is_out_of_bounds = mesh_index_is_contained(&g_scene.mesh_collider->index, &element->object->position);
+        element->object->is_out_of_bounds = 0;
     }
 }
 

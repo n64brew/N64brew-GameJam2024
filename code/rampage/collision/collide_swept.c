@@ -33,7 +33,7 @@ void object_mesh_collide_data_init(
     data->object = object;
 }
 
-bool collide_object_swept_to_triangle(struct mesh_index* index, void* data, int triangle_index) {
+bool collide_object_swept_to_triangle(struct mesh_collider* collider, void* data, int triangle_index) {
     struct object_mesh_collide_data* collide_data = (struct object_mesh_collide_data*)data;
 
     struct swept_dynamic_object swept;
@@ -134,10 +134,8 @@ bool collide_object_to_mesh_swept(struct dynamic_object* object, struct mesh_col
         &offset
     );
 
-    if (!mesh_index_swept_lookup(
-        &mesh->index, 
-        &object->bounding_box, 
-        &offset, 
+    if (!mesh_collider_for_each(
+        mesh, 
         collide_object_swept_to_triangle, 
         &collide_data
     )) {
