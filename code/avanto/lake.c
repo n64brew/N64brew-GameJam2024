@@ -44,6 +44,14 @@
 #define NUM_MOVES_TO_FINISH 64
 #define ADVANCE_PER_STROKE ((RACE_END_Z-RACE_START_Z)/NUM_MOVES_TO_FINISH)
 #define SWIM_SPEED 100.f
+#define NUM_SPLASH_SOURCES (4*4)
+#define MIN_SPLASH_PARTICLES 8
+#define MAX_SPLASH_PARTICLES 16
+#define MINIGAME_CHANNEL 31
+#define FIRST_SPLASH_CHANNEL 8
+#define CHANCE_TO_SPLASH .1f
+#define SPLASH_INTERVAL .5f
+#define WATER_Y (-1.5f*64.f)
 
 enum lake_stages {
   LAKE_INTRO,
@@ -95,7 +103,7 @@ static struct ground ground = {
 };
 static bool lake_stage_inited[NUM_LAKE_STAGES];
 static size_t lake_stage;
-static wav64_t sfx_splash;
+static wav64_t sfx_splash[NUM_SPLASH_SOURCES];
 static float penalties[4];
 static const struct button *next_buttons[4];
 static struct button buttons[NUM_BUTTONS];
@@ -112,6 +120,42 @@ static struct particle_source snow_particle_source;
 static float time_left;
 static float expected_zs[4];
 static struct particle_source steam_sources[4];
+static struct particle_source splash_sources[NUM_SPLASH_SOURCES];
+static float splash_cooldown;
+
+static void generate_splash(T3DVec3 pos) {
+  struct particle_source *source = NULL;
+  size_t index;
+  for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
+    if (splash_sources[i].paused) {
+      source = &splash_sources[i];
+      index = i;
+      break;
+    }
+  }
+
+  if (!source) {
+    return;
+  }
+
+  size_t num_particles = rand() % (MAX_SPLASH_PARTICLES-MIN_SPLASH_PARTICLES);
+  num_particles += MIN_SPLASH_PARTICLES;
+
+  source->pos = pos;
+  particle_source_reset_splash(source, num_particles);
+  particle_source_update_transform(source);
+  wav64_play(&sfx_splash[index], FIRST_SPLASH_CHANNEL+index);
+}
+
+static void generate_one_splash_per_player() {
+  for (size_t i = 0; i < 4; i++) {
+    if (players[i].out) {
+      return;
+    }
+    generate_splash(
+        (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}});
+  }
+}
 
 static void ai_standard(struct lake_ai *ai,
     joypad_buttons_t *pressed,
@@ -351,7 +395,20 @@ void lake_init() {
     steam_sources[i].paused = players[i].out;
   }
 
-  wav64_open(&sfx_splash, "rom:/avanto/splash.wav64");
+  for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
+    particle_source_init(&splash_sources[i], MAX_SPLASH_PARTICLES, SPLASH);
+    splash_sources[i].render = false;
+    splash_sources[i].paused = true;
+    splash_sources[i].speed = 64.f;
+    splash_sources[i].min_dist = 8.f;
+    splash_sources[i].max_dist = 48.f;
+    splash_sources[i].min_height = 8.f;
+    splash_sources[i].max_height = 24.f;
+    splash_sources[i].particle_size = 4;
+    splash_sources[i].scale = (T3DVec3) {{1.f, 1.f, 1.f}};
+    splash_sources[i].rot = (T3DVec3) {{0.f, 0.f, 0.f}};
+    wav64_open(&sfx_splash[i], "rom:/avanto/splash.wav64");
+  }
 
   load_buttons();
   penalty_sprite = sprite_load("rom:/avanto/penalty.sprite");
@@ -391,6 +448,7 @@ void lake_init() {
   particle_source_update_transform(&snow_particle_source);
 
   time_left = INFINITY;
+  splash_cooldown = 0.f;
 
   for (size_t i = 0; i < NUM_LAKE_STAGES; i++) {
     lake_stage_inited[i] = false;
@@ -445,6 +503,9 @@ void lake_dynamic_loop_pre(float delta_time) {
   int num_in = 0;
   float avg_z = 0.f;
   float max_z = -INFINITY;
+  if (splash_cooldown >= EPS) {
+    splash_cooldown -= delta_time;
+  }
   for (size_t i = 0; i < 4; i++) {
     if (players[i].out) {
       continue;
@@ -452,6 +513,11 @@ void lake_dynamic_loop_pre(float delta_time) {
     num_in++;
 
     if (players[i].pos.v[2] < expected_zs[i]) {
+      if (splash_cooldown < EPS && rand_float(0, 1.f) < CHANCE_TO_SPLASH) {
+        generate_splash(
+            (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}});
+        splash_cooldown = SPLASH_INTERVAL;
+      }
       float nz = players[i].pos.v[2] + SWIM_SPEED*delta_time;
       if (nz > expected_zs[i]) {
         nz = expected_zs[i];
@@ -588,6 +654,13 @@ void lake_dynamic_loop_render(float delta_time) {
   tpx_state_from_t3d();
 
   particle_source_draw(&snow_particle_source);
+
+  for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
+    if (!splash_sources[i].render) {
+      continue;
+    }
+    particle_source_draw(&splash_sources[i]);
+  }
 
   for (size_t i = 0; i < 4; i++) {
     if (!steam_sources[i].render) {
@@ -727,7 +800,7 @@ struct script_action intro_actions[][9] = {
       .target = (T3DVec3) {{FOCUS_X, FOCUS_Y*1.5f, RACE_START_Z}},
       .travel_time = (RACE_START_Z-PLAYER_STARTING_Z)/LAKE_WALK_SPEED,
     },
-    {.type = ACTION_PLAY_SFX, .sfx = &sfx_splash},
+    {.type = ACTION_CALLBACK, .callback = generate_one_splash_per_player},
     {
       .type = ACTION_MOVE_CAMERA_TO,
       .pos = (T3DVec3) {{CAMERA_X, CAMERA_Y, RACE_START_Z}},
@@ -812,7 +885,7 @@ static void lake_intro_fixed_loop(float delta_time) {
   }
 
   if (done) {
-    wav64_play(&sfx_start, get_next_sfx_channel());
+    wav64_play(&sfx_start, MINIGAME_CHANNEL);
     lake_stage++;
   }
 }
@@ -929,7 +1002,7 @@ void lake_end_fixed_loop(float delta_time) {
     strcpy(banner_str, "DRAW");
   }
   xm64player_set_vol(&music, .5f);
-  wav64_play(&sfx_winner, get_next_sfx_channel());
+  wav64_play(&sfx_winner, MINIGAME_CHANNEL);
 }
 
 bool lake_fixed_loop(float delta_time) {
@@ -948,6 +1021,10 @@ bool lake_fixed_loop(float delta_time) {
   }
 
   particle_source_iterate(&snow_particle_source, delta_time);
+
+  for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
+    particle_source_iterate(&splash_sources[i], delta_time);
+  }
 
   for (size_t i = 0; i < 4; i++) {
     if (players[i].out) {
@@ -980,7 +1057,11 @@ void lake_cleanup() {
   for (size_t i = 0; i < NUM_BUTTONS; i++) {
     sprite_free(buttons[i].sprite);
   }
-  wav64_close(&sfx_splash);
+  for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
+    wav64_close(&sfx_splash[i]);
+    particle_source_free(&splash_sources[i]);
+  }
+  particle_source_free(&snow_particle_source);
   for (size_t i = 0; i < 4; i++) {
     entity_free(&shadows[i]);
   }

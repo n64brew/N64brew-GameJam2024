@@ -22,7 +22,6 @@ const char *const PLAYER_TITLES[] = {
   SW_PLAYER4_S "P4",
 };
 
-static int next_sfx_channel = FIRST_SFX_CHANNEL;
 static bool script_signals[SCRIPT_NUM_SIGNALS];
 
 float get_ground_height(float z, struct ground *ground) {
@@ -61,14 +60,6 @@ float get_ground_angle(float z, struct ground *ground) {
     }
   }
   return angle;
-}
-
-int get_next_sfx_channel() {
-  int r = next_sfx_channel++;
-  if (next_sfx_channel >= FIRST_SFX_CHANNEL + NUM_SFX_CHANNELS) {
-    next_sfx_channel = FIRST_SFX_CHANNEL;
-  }
-  return r;
 }
 
 void skeleton_init(struct skeleton *s,
@@ -231,7 +222,7 @@ bool script_update(struct script_state *state, float delta_time) {
       }
     }
     else if (state->action->type == ACTION_PLAY_SFX) {
-      wav64_play(state->action->sfx, get_next_sfx_channel());
+      wav64_play(state->action->sfx, state->action->channel);
     }
     else if (state->action->type == ACTION_START_XM64) {
       xm64player_play(state->action->xm64, state->action->first_channel);
@@ -289,6 +280,9 @@ bool script_update(struct script_state *state, float delta_time) {
       struct character *c = state->character;
       T3DAnim *anim = &c->s.anims[c->current_anim];
       t3d_anim_update(anim, state->action->time);
+    }
+    else if (state->action->type == ACTION_CALLBACK) {
+      state->action->callback();
     }
 
     state->action++;
@@ -405,6 +399,24 @@ static void particle_source_init_snow(struct particle_source *source) {
   }
 }
 
+static void particle_source_init_splash(struct particle_source *source) {
+  source->_time = 0.f;
+
+  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
+      source->_particles[i].colorA[0] = 0x0a;
+      source->_particles[i].colorA[1] = 0xa3;
+      source->_particles[i].colorA[2] = 0xcf;
+      source->_particles[i].colorA[3] = 0xff;
+      source->_particles[i].sizeA = 0;
+
+      source->_particles[i].colorB[0] = 0x0a;
+      source->_particles[i].colorB[1] = 0xa3;
+      source->_particles[i].colorB[2] = 0xcf;
+      source->_particles[i].colorB[3] = 0xff;
+      source->_particles[i].sizeB = 0;
+  }
+}
+
 void particle_source_init(struct particle_source *source,
     size_t num_particles,
     int type) {
@@ -417,27 +429,78 @@ void particle_source_init(struct particle_source *source,
       sizeof(TPXParticle) * (source->_num_allocated_particles/2));
   source->_transform = malloc_uncached(sizeof(T3DMat4FP));
 
+  if (type != SNOW) {
+    source->_meta = malloc(
+        sizeof(struct particle_meta) * source->_num_allocated_particles);
+  }
+
   source->_type = type;
   switch (type) {
     case STEAM:
-      source->_meta = malloc(
-          sizeof(struct particle_meta) * source->_num_allocated_particles);
       particle_source_init_steam(source);
       break;
 
     case SNOW:
       particle_source_init_snow(source);
       break;
+
+    case SPLASH:
+      particle_source_init_splash(source);
+      break;
   }
 }
 
 void particle_source_reset_steam(struct particle_source *source) {
   for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
-      source->_particles[i].sizeA = 0;
-      source->_particles[i].sizeB = 0;
+    source->_particles[i].sizeA = 0;
+    source->_particles[i].sizeB = 0;
   }
   source->_y_move_error = 0.f;
   source->_to_spawn = 0;
+}
+
+void particle_source_reset_splash(struct particle_source *source,
+    size_t num_particles) {
+  size_t in_use = 0;
+  for (size_t i = 0; i < source->_num_allocated_particles/2; i++) {
+    if (in_use < num_particles) {
+      source->_particles[i].sizeA = source->particle_size;
+      source->_particles[i].posA[0] = 0;
+      source->_particles[i].posA[1] = 0;
+      source->_particles[i].posA[2] = 0;
+      in_use++;
+    }
+    else {
+      source->_particles[i].sizeA = 0;
+    }
+
+    if (in_use < num_particles) {
+      source->_particles[i].sizeB = source->particle_size;
+      source->_particles[i].posB[0] = 0;
+      source->_particles[i].posB[1] = 0;
+      source->_particles[i].posB[2] = 0;
+      in_use++;
+    }
+    else {
+      source->_particles[i].sizeB = 0;
+    }
+  }
+
+  struct particle_meta *m = source->_meta;
+  for (size_t i = 0; i < num_particles; i++, m++) {
+    m->h = rand() % (source->max_height-source->min_height)
+      + source->min_height;
+    m->d = rand() % (source->max_dist-source->min_dist)
+      + source->min_dist;
+
+    float angle = rand_float(0.f, T3D_PI*2.f);
+    m->dir[0] = cosf(angle);
+    m->dir[1] = sinf(angle);
+  }
+
+  source->_time = 0.f;
+  source->paused = false;
+  source->render = true;
 }
 
 void particle_source_free(struct particle_source *source) {
@@ -543,6 +606,51 @@ static void particle_source_iterate_snow(struct particle_source *source,
   }
 }
 
+static void particle_source_iterate_splash(struct particle_source *source,
+    float delta_time) {
+  source->_time += delta_time;
+  float move = source->_time * source->speed;
+
+  TPXParticle *p = source->_particles;
+  struct particle_meta *m = source->_meta;
+  size_t num_active = 0;
+  for (int i = 0; i < source->_num_allocated_particles/2; i++, p++, m++) {
+    if (p->sizeA) {
+      if ((int8_t) move > m->d) {
+        p->sizeA = 0;
+      }
+      else {
+        p->posA[0] = roundf(move*m->dir[0]);
+        p->posA[1] = roundf((float) m->h * sinf(move/(float) m->d * T3D_PI));
+        p->posA[2] = roundf(move*m->dir[1]);
+      }
+    }
+    if (p->sizeA) {
+      num_active++;
+    }
+
+    m++;
+    if (p->sizeB) {
+      if ((int8_t) move > m->d) {
+        p->sizeB = 0;
+      }
+      else {
+        p->posB[0] = roundf(move*m->dir[0]);
+        p->posB[1] = roundf((float) m->h * sinf(move/(float) m->d * T3D_PI));
+        p->posB[2] = roundf(move*m->dir[1]);
+      }
+    }
+    if (p->sizeB) {
+      num_active++;
+    }
+  }
+
+  if (!num_active) {
+    source->paused = true;
+    source->render = false;
+  }
+}
+
 void particle_source_update_transform(struct particle_source *source) {
   t3d_mat4fp_from_srt_euler(source->_transform,
       source->scale.v,
@@ -562,6 +670,10 @@ void particle_source_iterate(struct particle_source *source,
 
     case SNOW:
       particle_source_iterate_snow(source, delta_time);
+      break;
+
+    case SPLASH:
+      particle_source_iterate_splash(source, delta_time);
       break;
   }
 }

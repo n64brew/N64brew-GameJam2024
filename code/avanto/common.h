@@ -1,6 +1,4 @@
 #define MAX_GROUND_CHANGES 6
-#define NUM_SFX_CHANNELS 4
-#define FIRST_SFX_CHANNEL (31-NUM_SFX_CHANNELS)
 #define EPS 1e-6
 #define TIMER_Y 220
 #define HUD_HORIZONTAL_BORDER 26
@@ -84,13 +82,17 @@ struct script_action {
     size_t anim;
     bool visibility;
     float time;
-    wav64_t *sfx;
+    struct {
+      wav64_t *sfx;
+      size_t channel;
+    };
     struct {
       xm64player_t *xm64;
       size_t first_channel;
     };
     size_t signal;
     const struct camera *camera;
+    void (*callback)();
   };
 };
 
@@ -125,6 +127,7 @@ enum script_actions {
   ACTION_SEND_SIGNAL,
   ACTION_ANIM_SET_PLAYING,
   ACTION_ANIM_UPDATE_TO_TS,
+  ACTION_CALLBACK,
   ACTION_END,
 };
 
@@ -173,6 +176,7 @@ enum particle_type {
   UNDEFINED,
   STEAM,
   SNOW,
+  SPLASH,
 };
 
 struct particle_meta {
@@ -180,6 +184,11 @@ struct particle_meta {
     struct {
       int8_t cx;
       int8_t cz;
+    };
+    struct {
+      float dir[2];
+      int8_t h;
+      int8_t d;
     };
   };
 };
@@ -206,6 +215,14 @@ struct particle_source {
       size_t max_particles;
       float _to_spawn;
     };
+    struct {
+      int8_t min_dist;
+      int8_t max_dist;
+      int8_t min_height;
+      int8_t max_height;
+      float speed;
+      float _time;
+    };
   };
 
   struct particle_meta *_meta;
@@ -217,7 +234,6 @@ struct particle_source {
 
 float get_ground_height(float z, struct ground *ground);
 float get_ground_angle(float z, struct ground *ground);
-int get_next_sfx_channel();
 void init_sfx();
 void skeleton_init(struct skeleton *s,
     const T3DModel *model,
@@ -243,5 +259,7 @@ void particle_source_iterate(struct particle_source *source,
     float delta_time);
 void particle_source_draw(const struct particle_source *source);
 void particle_source_reset_steam(struct particle_source *source);
+void particle_source_reset_splash(struct particle_source *source,
+    size_t num_particles);
 void particle_source_update_transform(struct particle_source *source);
 float rand_float(float min, float max);

@@ -18,6 +18,8 @@
 #define SAUNA_LEN 60.f
 #define BASE_HEAT (.2f / 60.f)
 #define LOYLY_CHANNEL 10
+#define DOOR_CHANNEL 11
+#define MINIGAME_CHANNEL 31
 #define SCALE 2.5f
 #define SAUNA_GRAVITY (GRAVITY*SCALE)
 #define SAUNA_WALK_SPEED 100.f
@@ -241,7 +243,7 @@ static void sauna_intro_fixed_loop(float delta_time) {
 
 struct script_action walk_in_actions[][14] = {
   {
-    {.type = ACTION_PLAY_SFX, .sfx = &sfx_door},
+    {.type = ACTION_PLAY_SFX, .sfx = &sfx_door, .channel = DOOR_CHANNEL},
     {.type = ACTION_WAIT, .time = 2.f},
     {.type = ACTION_START_XM64, .xm64 = &music, .first_channel = 0},
     {.type = ACTION_WARP_TO, .pos = (T3DVec3) {{-100, 0, 110}}},
@@ -376,12 +378,12 @@ static void sauna_countdown_fixed_loop(float delta_time) {
       sprintf(banner_str, "%d", count);
       count--;
       next_step += 1.f;
-      wav64_play(&sfx_countdown, get_next_sfx_channel());
+      wav64_play(&sfx_countdown, MINIGAME_CHANNEL);
     }
     else {
       strcpy(banner_str, "START");
       sauna_stage++;
-      wav64_play(&sfx_start, get_next_sfx_channel());
+      wav64_play(&sfx_start, MINIGAME_CHANNEL);
       xm64player_set_vol(&music, 1.f);
     }
     banner_time = 1.f;
@@ -441,7 +443,7 @@ static void sauna_game_fixed_loop(float delta_time) {
   }
 
   if (time_left < EPS || all_out) {
-    wav64_play(&sfx_stop, get_next_sfx_channel());
+    wav64_play(&sfx_stop, MINIGAME_CHANNEL);
     sauna_stage++;
   }
 }
@@ -571,7 +573,7 @@ static bool sauna_done_fixed_loop(float delta_time) {
   strcpy(banner_str, "DRAW");
   banner_time = INFINITY;
   xm64player_set_vol(&music, .5f);
-  wav64_play(&sfx_winner, get_next_sfx_channel());
+  wav64_play(&sfx_winner, MINIGAME_CHANNEL);
 
   return false;
 }
