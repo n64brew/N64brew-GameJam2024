@@ -44,10 +44,10 @@ static struct Vector3 move_direction[DIRECTION_COUNT] = {
 };
 
 static float max_bound[DIRECTION_COUNT] = {
-    2.1f * BUILDING_SPACING,
-    2.1f * BUILDING_SPACING,
-    2.6f * BUILDING_SPACING,
-    2.6f * BUILDING_SPACING,
+    MAX_Z,
+    -MIN_Z,
+    MAX_X,
+    -MIN_X,
 };
 
 bool rampage_is_valid_target(struct RampageTank* tank, int dir_index) {
@@ -174,6 +174,18 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
         tank->current_target.x - tank->dynamic_object.position.x,
         tank->current_target.z - tank->dynamic_object.position.z,
     };
+
+    if (tank->dynamic_object.position.x < MIN_X) {
+        tank->dynamic_object.position.x = MIN_X;
+    } else if (tank->dynamic_object.position.x > MAX_X) {
+        tank->dynamic_object.position.x = MAX_X;
+    }
+
+    if (tank->dynamic_object.position.z < MIN_Z) {
+        tank->dynamic_object.position.z = MIN_Z;
+    } else if (tank->dynamic_object.position.z > MAX_Z) {
+        tank->dynamic_object.position.z = MAX_Z;
+    }
 
     struct Vector2 dir;
     vector2Normalize(&offset, &dir);

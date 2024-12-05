@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <math.h>
 
-#include "mesh_collider.h"
 #include "collide.h"
 #include "contact.h"
 #include "../util/hash_map.h"
@@ -91,16 +90,6 @@ void collision_scene_remove(struct dynamic_object* object) {
     }
 
     hash_map_delete(&g_scene.entity_mapping, object->entity_id);
-}
-
-void collision_scene_use_static_collision(struct mesh_collider* collider) {
-    g_scene.mesh_collider = collider;
-}
-
-void collision_scene_remove_static_collision(struct mesh_collider* collider) {
-    if (collider == g_scene.mesh_collider) {
-        g_scene.mesh_collider = NULL;
-    }
 }
 
 struct collide_edge {
@@ -216,7 +205,7 @@ void collision_scene_collide_dynamic() {
 #define MAX_SWEPT_ITERATIONS    5
 
 void collision_scene_collide_single(struct dynamic_object* object, struct Vector3* prev_pos) {
-    collide_object_to_mesh(object, g_scene.mesh_collider);
+    collide_object_to_world(object);
 }
 
 void collision_scene_collide(float fixed_time_step) {
@@ -237,10 +226,6 @@ void collision_scene_collide(float fixed_time_step) {
 
     for (int i = 0; i < g_scene.count; ++i) {
         struct collision_scene_element* element = &g_scene.elements[i];
-
-        if (!g_scene.mesh_collider) {
-            continue;
-        }
 
         collision_scene_collide_single(element->object, &prev_pos[i]);
 

@@ -70,9 +70,13 @@ void bullet_update(struct Bullet* bullet, float delta_time) {
         return;
     }
 
-    if (bullet->dynamic_object.active_contacts || 
-        fabsf(bullet->dynamic_object.position.x) > SCALE_FIXED_POINT(15.0f) ||
-        fabsf(bullet->dynamic_object.position.z) > SCALE_FIXED_POINT(15.0f)) {
+    int is_outside_bounds = 
+        bullet->dynamic_object.position.x > MAX_X ||
+        bullet->dynamic_object.position.x < MIN_X ||
+        bullet->dynamic_object.position.z > MAX_Z ||
+        bullet->dynamic_object.position.z < MIN_Z;
+
+    if (bullet->dynamic_object.active_contacts || is_outside_bounds) {
         health_contact_damage(
             bullet->dynamic_object.active_contacts, 
             1, 

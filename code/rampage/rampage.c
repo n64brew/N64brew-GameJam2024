@@ -51,24 +51,6 @@ const MinigameDef minigame_def = {
     .instructions = "Press B to attack."
 };
 
-static struct mesh_triangle_indices global_mesh_collider_triangles[] = {
-    {.indices = {0, 1, 2}},
-    {.indices = {0, 2, 3}},
-};
-
-static struct Vector3 global_mesh_collider_vertices[] = {
-    {SCALE_FIXED_POINT(-9.5f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(9.0f), 0.0f, SCALE_FIXED_POINT(-8.0f)},
-    {SCALE_FIXED_POINT(9.0f), 0.0f, SCALE_FIXED_POINT(8.0f)},
-    {SCALE_FIXED_POINT(-9.5f), 0.0f, SCALE_FIXED_POINT(8.0f)},
-};
-
-static struct mesh_collider global_mesh_collider = {
-    .triangle_count = sizeof(global_mesh_collider_triangles) / sizeof(*global_mesh_collider_triangles),
-    .triangles = global_mesh_collider_triangles,
-    .vertices = global_mesh_collider_vertices,
-};
-
 struct frame_malloc frame_mallocs[2];
 int next_frame_malloc;
 
@@ -113,8 +95,7 @@ void minigame_init() {
 
     collision_scene_init();
     health_init();
-    collision_scene_use_static_collision(&global_mesh_collider);
-
+    
     depthBuffer = display_get_zbuf();
     viewport = t3d_viewport_create();
 

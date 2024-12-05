@@ -2,7 +2,6 @@
 #define __COLLISION_COLLISION_SCENE_H__
 
 #include "dynamic_object.h"
-#include "../collision/mesh_collider.h"
 #include "../util/hash_map.h"
 #include "contact.h"
 
@@ -22,8 +21,6 @@ struct collision_scene {
     struct hash_map entity_mapping;
     uint16_t count;
     uint16_t capacity;
-
-    struct mesh_collider* mesh_collider;
 };
 
 void collision_scene_init();
@@ -32,9 +29,6 @@ void collision_scene_remove(struct dynamic_object* object);
 void collision_scene_destroy();
 
 struct dynamic_object* collision_scene_find_object(int id);
-
-void collision_scene_use_static_collision(struct mesh_collider* collider);
-void collision_scene_remove_static_collision(struct mesh_collider* collider);
 
 void collision_scene_collide(float fixed_time_step);
 

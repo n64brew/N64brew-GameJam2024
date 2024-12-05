@@ -30,48 +30,28 @@ void correct_overlap(struct dynamic_object* object, struct EpaResult* result, fl
     correct_velocity(object, result, ratio, friction, bounce);
 }
 
-struct object_mesh_collide_data {
-    struct mesh_collider* mesh;
-    struct dynamic_object* object;
-    struct mesh_triangle triangle;
-};
-
-bool collide_object_to_triangle(struct mesh_collider* collider, void* data, int triangle_index) {
-    struct object_mesh_collide_data* collide_data = (struct object_mesh_collide_data*)data;
-    collide_data->triangle.triangle = collide_data->mesh->triangles[triangle_index];
-
-    struct Simplex simplex;
-    if (!gjkCheckForOverlap(&simplex, &collide_data->triangle, mesh_triangle_minkowski_sum, collide_data->object, dynamic_object_minkowski_sum, &gRight)) {
-        return false;
-    }
-
-    struct EpaResult result;
-
-    if (epaSolve(
-        &simplex, 
-        &collide_data->triangle, 
-        mesh_triangle_minkowski_sum, 
-        collide_data->object, 
-        dynamic_object_minkowski_sum, 
-        &result)) {
-        correct_overlap(collide_data->object, &result, -1.0f, collide_data->object->type->friction, collide_data->object->type->bounce);
-        collide_add_contact(collide_data->object, &result);
-        return true;
-    }
-
-    return false;
-}
-
-void collide_object_to_mesh(struct dynamic_object* object, struct mesh_collider* mesh) {   
+void collide_object_to_world(struct dynamic_object* object) {   
     if (object->is_trigger) {
         return;
     }
 
-    struct object_mesh_collide_data collide_data;
-    collide_data.mesh = mesh;
-    collide_data.object = object;
-    collide_data.triangle.vertices = mesh->vertices;
-    mesh_collider_for_each(mesh, collide_object_to_triangle, &collide_data);
+    struct Vector3 down;
+    vector3Negate(&gUp, &down);
+    struct Vector3 bottom_most;
+    dynamic_object_minkowski_sum(object, &down, &bottom_most);
+
+    if (bottom_most.y < 0.0f) {
+        struct EpaResult result;
+
+        result.contactA = bottom_most;
+        result.contactB = bottom_most;
+        result.contactB.y = 0.0f;
+        result.normal = gUp;
+        result.penetration = bottom_most.y;
+
+        correct_overlap(object, &result, -1.0f, object->type->friction, object->type->bounce);
+        collide_add_contact(object, &result);
+    }
 }
 
 void collide_object_to_object(struct dynamic_object* a, struct dynamic_object* b) {
