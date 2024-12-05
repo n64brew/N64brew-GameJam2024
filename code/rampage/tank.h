@@ -16,6 +16,7 @@ struct RampageTank {
     uint32_t is_active: 1;
     struct Bullet bullet;
     float fire_timer;
+    struct health health;
 
     RedrawHandle redraw_handle;
     RedrawHandle bullet_redraw_handle;

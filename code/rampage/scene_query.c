@@ -50,3 +50,13 @@ void give_player_score(int enity_id, int amount) {
         }
     }
 }
+
+bool is_player(int entity_id) {
+    for (int i = 0; i < PLAYER_COUNT; i += 1) {
+        if (gRampage.players[i].dynamic_object.entity_id == entity_id) {
+            return true;
+        }
+    }
+    
+    return false;
+}

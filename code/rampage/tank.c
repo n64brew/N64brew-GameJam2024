@@ -31,7 +31,7 @@ struct dynamic_object_type tank_collider = {
         },
     },
     .bounce = 0.0f,
-    .friction = 0.0f,
+    .friction = 0.1f,
 };
 
 #define DIRECTION_COUNT 4
@@ -118,6 +118,20 @@ void rampage_tank_fire(struct RampageTank* tank) {
     bullet_fire(&tank->bullet, &fire_from, rotation);
 }
 
+#define KNOCKBACK_VELOCITY  SCALE_FIXED_POINT(8.0f)
+
+void rampage_tank_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
+    struct RampageTank* tank = (struct RampageTank*)data;
+
+    if (!is_player(source_id)) {
+        return;
+    }
+
+    tank->dynamic_object.velocity = (struct Vector3){velocity->x, 0.0f, velocity->z};
+    vector3Normalize(&tank->dynamic_object.velocity, &tank->dynamic_object.velocity);
+    vector3Scale(&tank->dynamic_object.velocity, &tank->dynamic_object.velocity, KNOCKBACK_VELOCITY);
+}
+
 void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position) {
     int entity_id = entity_id_next();
     dynamic_object_init(
@@ -141,6 +155,8 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 
     collision_scene_add(&tank->dynamic_object);
 
+    health_register(entity_id, &tank->health, rampage_tank_damage, tank);
+
     vector2ComplexFromAngle(1.0f / 30.0f, &tank_rotate_speed);
     bullet_init(&tank->bullet, entity_id);
 
@@ -151,6 +167,7 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 void rampage_tank_destroy(struct RampageTank* tank) {
     collision_scene_remove(&tank->dynamic_object);
     bullet_destroy(&tank->bullet);
+    health_unregister(tank->dynamic_object.entity_id);
 }
 
 bool rampage_tank_has_forward_hit(struct RampageTank* tank, struct Vector2* offset, struct Vector2* current_dir) {
