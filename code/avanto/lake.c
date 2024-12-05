@@ -78,6 +78,7 @@ struct lake_ai {
 extern T3DViewport viewport;
 extern struct character players[];
 extern wav64_t sfx_start;
+extern wav64_t sfx_stop;
 extern wav64_t sfx_winner;
 extern const char *const PLAYER_TITLES[];
 extern struct rdpq_textparms_s banner_params;
@@ -959,6 +960,7 @@ static void lake_outro_fixed_loop(float delta_time) {
         {.character = &players[i], .action = outro_actions[i+1], .time = 0.f};
     }
     delta_time = 0.f;
+    wav64_play(&sfx_stop, MINIGAME_CHANNEL);
   }
 
   bool done = true;
