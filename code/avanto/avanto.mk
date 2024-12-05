@@ -18,9 +18,10 @@
 # penalty.sprite own
 # shadow.* own
 # map.t3dm own
+# unit-cube.t3dm own
+# kiuas.sprite own
 ASSETS_LIST += \
 	filesystem/avanto/sauna.sprite \
-	filesystem/avanto/sauna-depth.sprite \
 	filesystem/avanto/guy.t3dm \
 	filesystem/avanto/skin.sprite \
 	filesystem/avanto/ukko.t3dm \
@@ -48,7 +49,9 @@ ASSETS_LIST += \
 	filesystem/avanto/balloon.sprite \
 	filesystem/avanto/penalty.sprite \
 	filesystem/avanto/shadow.t3dm \
-	filesystem/avanto/shadow.sprite
+	filesystem/avanto/shadow.sprite \
+	filesystem/avanto/kiuas.sprite \
+	filesystem/avanto/unit-cube.t3dm
 
 AVANTO_AUDIOCONV_FLAGS += --wav-mono --wav-resample 22050 --wav-compress 3
 $(FILESYSTEM_DIR)/avanto/%.wav64: $(ASSETS_DIR)/avanto/%.mp3
@@ -61,11 +64,6 @@ $(FILESYSTEM_DIR)/avanto/%.sprite: $(ASSETS_DIR)/avanto/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [AVANTO SPRITE] $@"
 	$(N64_MKSPRITE) $(AVANTO MKSPRITE_FLAGS) -o $(dir $@) "$<"
-
-$(FILESYSTEM_DIR)/avanto/sauna-depth.sprite: $(ASSETS_DIR)/avanto/sauna-depth.png
-	@mkdir -p $(dir $@)
-	@echo "    [AVANTO SPRITE] $@"
-	$(N64_MKSPRITE) $(AVANTO MKSPRITE_FLAGS) -f RGBA16 -o $(dir $@) "$<"
 
 $(FILESYSTEM_DIR)/avanto/banner.font64: $(ASSETS_DIR)/squarewave.ttf
 	@mkdir -p $(dir $@)

@@ -77,6 +77,10 @@ static float time_left;
 static float min_time_before_exiting;
 static struct sauna_ai ais[4];
 
+static T3DModel *cube_model;
+static struct entity invisicubes[2];
+static sprite_t *kiuas;
+
 static void ai_coward(struct sauna_ai *ai, joypad_buttons_t *held) {
   held->raw = 0;
 }
@@ -125,7 +129,6 @@ static void sauna_do_light() {
 }
 static struct scene sauna_scene = {
   .bg_path = "rom:/avanto/sauna.sprite",
-  .z_path = "rom:/avanto/sauna-depth.sprite",
   .fov = T3D_DEG_TO_RAD(78.f),
   .starting_cam = {
     .pos = (T3DVec3) {{0, 100, 0}},
@@ -145,15 +148,15 @@ static struct scene sauna_scene = {
 
 void sauna_init() {
   ukko_model = t3d_model_load("rom:/avanto/ukko.t3dm");
-  ukko.rotation = T3D_DEG_TO_RAD(90);
-  ukko.scale = 3;
-  ukko.pos = (T3DVec3) {{400, 41, 150}};
+  ukko.rotation = T3D_DEG_TO_RAD(90.f);
+  ukko.scale = 3.f;
+  ukko.pos = (T3DVec3) {{400.f, 41.f, 150.f}};
   skeleton_init(&ukko.s, ukko_model, NUM_UKKO_ANIMS);
   ukko.s.anims[THROW] = t3d_anim_create(ukko_model, "throw");
   entity_init(&ukko.e,
       ukko_model,
       &(T3DVec3) {{ukko.scale, ukko.scale, ukko.scale}},
-      &(T3DVec3) {{0, ukko.rotation, 0}},
+      &(T3DVec3) {{0.f, ukko.rotation, 0.f}},
       &ukko.pos,
       &ukko.s.skeleton,
       NULL);
@@ -169,8 +172,24 @@ void sauna_init() {
   loyly_strength = 0.f;
   banner_time = 0.f;
 
+  cube_model = t3d_model_load("rom:/avanto/unit-cube.t3dm");
+  entity_init(&invisicubes[0],
+      cube_model,
+      &(T3DVec3) {{4.f*2.f, .55f*2.f, .6f*2.f}},
+      &(T3DVec3) {{0.f, 0.f, 0.f}},
+      &(T3DVec3) {{-40.f, 41.f, 330.f}},
+      NULL,
+      NULL);
+  entity_init(&invisicubes[1],
+      cube_model,
+      &(T3DVec3) {{.6f*2.f, .55f*2, 4.f*2.f}},
+      &(T3DVec3) {{0.f, 0.f, 0.f}},
+      &(T3DVec3) {{400.f, 41.f, 260.f}},
+      NULL,
+      NULL);
+  kiuas = sprite_load("rom:/avanto/kiuas.sprite");
+
   sauna_scene.bg = sprite_load(sauna_scene.bg_path);
-  sauna_scene.z = sprite_load(sauna_scene.z_path);
   const struct camera *cam = &sauna_scene.starting_cam;
   t3d_viewport_set_projection(&viewport, sauna_scene.fov, 10, 400);
   t3d_viewport_look_at(&viewport,
@@ -688,17 +707,25 @@ void sauna_dynamic_loop_pre(float delta_time) {
       sauna_change_anim_and_play_from(&players[i], PASS_OUT, 0.f);
     }
   }
-
-  // Reset Z buffer to match BG
-  rdpq_attach(z_buffer, NULL);
-  rdpq_mode_push();
-  rdpq_set_mode_copy(false);
-  rdpq_sprite_blit(sauna_scene.z, 0, 0, NULL);
-  rdpq_mode_pop();
-  rdpq_detach();
 }
 
 void sauna_dynamic_loop_render(float delta_time) {
+  t3d_screen_clear_depth();
+
+  // Cubes, rendered behind the BG to set the depth
+  rspq_block_run(invisicubes[0].display_block);
+  rspq_block_run(invisicubes[1].display_block);
+
+  // Kiuas mask, also only sets the depth
+  rdpq_sync_pipe();
+  rdpq_mode_push();
+  rdpq_set_mode_standard();
+  rdpq_mode_zbuf(false, true);
+  rdpq_mode_zoverride(true, 0.f, 0);
+  rdpq_mode_alphacompare(1);
+  rdpq_sprite_blit(kiuas, 0, 240-kiuas->height, NULL);
+  rdpq_mode_pop();
+
   // BG
   rdpq_mode_push();
   rdpq_set_mode_copy(false);
@@ -858,10 +885,14 @@ void sauna_cleanup() {
   particle_source_free(&kiuas_particle_source);
 
   sprite_free(sauna_scene.bg);
-  sprite_free(sauna_scene.z);
 
   wav64_close(&sfx_loyly);
   wav64_close(&sfx_door);
+
+  sprite_free(kiuas);
+  entity_free(&invisicubes[0]);
+  entity_free(&invisicubes[1]);
+  t3d_model_free(cube_model);
 
   entity_free(&ukko.e);
   skeleton_free(&ukko.s);

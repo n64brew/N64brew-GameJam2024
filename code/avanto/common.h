@@ -54,9 +54,7 @@ struct ground {
 
 struct scene {
   const char *bg_path;
-  const char *z_path;
   sprite_t *bg;
-  sprite_t *z;
   float fov;
   struct camera starting_cam;
   void (*do_light)();
