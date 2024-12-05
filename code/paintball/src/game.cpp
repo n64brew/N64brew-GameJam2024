@@ -8,7 +8,7 @@ Game::Game() :
     uiRenderer(std::make_shared<UIRenderer>()),
     gameplayController(mapRenderer, uiRenderer),
     state({
-        .state = STATE_COUNTDOWN,
+        .state = STATE_INTRO,
         .timeInState = 0.0f,
         .currentRound = 0,
         .scores = {0},
@@ -44,7 +44,7 @@ Game::~Game() {
 }
 
 void Game::render(float deltaTime) {
-    if (state.state == STATE_PAUSED) {
+    if (state.state == STATE_PAUSED || state.state == STATE_INTRO) {
         deltaTime = 0.0f;
     }
     assertf(mapRenderer.get(), "Map renderer is null");
@@ -86,7 +86,7 @@ void Game::render(float deltaTime) {
     // 3D
     mapRenderer->render(deltaTime, viewport.viewFrustum);
 
-    if (state.state != STATE_PAUSED) {
+    if (state.state != STATE_PAUSED && state.state != STATE_INTRO) {
         gameplayController.render(deltaTime, viewport, state);
 
         // 2D
@@ -103,7 +103,7 @@ void Game::render(float deltaTime) {
 }
 
 void Game::fixedUpdate(float deltaTime) {
-    if (state.state == STATE_PAUSED) {
+    if (state.state == STATE_PAUSED || state.state == STATE_INTRO) {
         return;
     }
 

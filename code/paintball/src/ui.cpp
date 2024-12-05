@@ -4,6 +4,9 @@ UIRenderer::UIRenderer() :
     mediumFont("rom:/paintball/FingerPaint-Regular-Medium.font64", MediumFont),
     bigFont("rom:/paintball/FingerPaint-Regular-Big.font64", BigFont),
     hitSprite {sprite_load("rom:/paintball/marker.ia4.sprite"), sprite_free},
+    // TODO: re-use existing one, this is a waste
+    splash1 {sprite_load("rom:/paintball/splash1.ia4.sprite"), sprite_free},
+    splash2 {sprite_load("rom:/paintball/splash2.ia4.sprite"), sprite_free},
     sfxCountdown("rom:/core/Countdown.wav64"),
     prevCountdown(0)
 {
@@ -40,12 +43,48 @@ State UIRenderer::renderMenu(const State &state) {
         .height = ScreenHeight,
         .align = ALIGN_CENTER,
         .valign = VALIGN_CENTER,
+        .wrap = WRAP_WORD,
         .disable_aa_fix = true
     };
 
     joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller(PLAYER_1));
 
-    if (state == STATE_PAUSED) {
+    if (state == STATE_INTRO) {
+        rdpq_sync_pipe();
+        rdpq_sync_tile();
+        rdpq_set_mode_standard();
+
+        rdpq_mode_zbuf(false, false);
+        rdpq_mode_alphacompare(1);
+        rdpq_mode_combiner(RDPQ_COMBINER1((ZERO, ZERO, ZERO, PRIM), (ZERO, ZERO, ZERO, TEX0)));
+
+        rdpq_blitparms_t params {
+            .cx = 16,
+            .cy = 16,
+            .scale_x = 5,
+            .scale_y = 5,
+        };
+
+        rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+        rdpq_sprite_blit(splash2.get(), ScreenWidth / 4.f, ScreenWidth / 4.f, &params);
+
+        rdpq_set_prim_color(RGBA32(255, 255, 0, 255));
+        rdpq_sprite_blit(splash1.get(), ScreenWidth / 4.f, ScreenWidth / 4.f, &params);
+
+        centerparms.width = ScreenWidth * 4.f/5.f;
+        rdpq_text_printf(&centerparms, BigFont, ScreenHeight / 10, - ScreenHeight / 4, "Paint^00b^01a^03l^02l");
+        rdpq_text_printf(&centerparms, SmallFont, ScreenHeight / 10, ScreenHeight / 8,
+            "Capture your enemies by painting them! "
+            "Capturing for the winning team grants you points. "
+            "\nWinning color gets an extra point and last one standing can choose to escape for a bonus."
+            "\nPress ^00START^04 to begin.");
+
+        if (pressed.start) {
+            return STATE_COUNTDOWN;
+        }
+
+        return STATE_INTRO;
+    } else if (state == STATE_PAUSED) {
         rdpq_text_printf(&centerparms, BigFont, 0, - ScreenHeight / 4, "Paused");
         rdpq_text_printf(&centerparms, selectedMenuItem == MENU_PLAY ? MediumFont : SmallFont, 0, 0, "Continue");
         rdpq_text_printf(&centerparms, selectedMenuItem == MENU_EXIT ? MediumFont : SmallFont, 0, ScreenHeight / 8, "Abandon");
@@ -139,7 +178,7 @@ void UIRenderer::render(GameState &state, T3DViewport &viewport, float deltaTime
         }
     }
 
-    if(state.state != STATE_WAIT_FOR_NEW_ROUND && state.state != STATE_FINISHED){
+    if(state.state != STATE_WAIT_FOR_NEW_ROUND && state.state != STATE_FINISHED && state.state != STATE_INTRO){
         rdpq_text_printf(&centerparms, SmallFont, -5 * ScreenWidth/16, 3 * ScreenHeight / 8, "%d/%d", state.currentRound + 1, RoundCount);
         for (int i = 0; i < MAXPLAYERS; i++) {
             centerparms.style_id = i;

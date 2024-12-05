@@ -28,6 +28,8 @@ class UIRenderer
         RDPQFont bigFont;
 
         U::Sprite hitSprite;
+        U::Sprite splash1;
+        U::Sprite splash2;
 
         List<HitMark, PlayerCount * 4> hits;
 

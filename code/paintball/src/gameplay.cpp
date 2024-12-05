@@ -155,7 +155,7 @@ void GameplayController::handleFire(Player &player, uint32_t id, Direction direc
 // TODO: remove viewport from here, move to UI
 void GameplayController::render(float deltaTime, T3DViewport &viewport, GameState &state)
 {
-    if (state.state == STATE_PAUSED) {
+    if (state.state == STATE_PAUSED || state.state == STATE_INTRO) {
         return;
     }
     state.avPos = {0};
