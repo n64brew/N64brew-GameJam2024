@@ -58,6 +58,7 @@ enum lake_stages {
   LAKE_GAME,
   LAKE_OUTRO,
   LAKE_END,
+  LAKE_FADE_OUT,
   NUM_LAKE_STAGES,
 };
 
@@ -123,6 +124,7 @@ static float expected_zs[4];
 static struct particle_source steam_sources[4];
 static struct particle_source splash_sources[NUM_SPLASH_SOURCES];
 static float splash_cooldown;
+static float fade;
 
 static void lake_intro_dynamic_loop(float delta_time);
 static void lake_outro_dynamic_loop(float delta_time);
@@ -453,6 +455,7 @@ void lake_init() {
 
   time_left = INFINITY;
   splash_cooldown = 0.f;
+  fade = 1.f;
 
   for (size_t i = 0; i < NUM_LAKE_STAGES; i++) {
     lake_stage_inited[i] = false;
@@ -488,9 +491,9 @@ void lake_dynamic_loop_pre(float delta_time) {
     }
     else {
       for (size_t i = 0; i < core_get_playercount(); i++) {
-        if (pressed[core_get_playercontroller(i)].a) {
-          minigame_end();
-          return;
+        size_t c = core_get_playercontroller(i);
+        if (pressed[c].a || pressed[c].b) {
+          lake_stage++;
         }
       }
     }
@@ -771,11 +774,15 @@ void lake_dynamic_loop_render(float delta_time) {
       ceilf(time_left));
   }
 
-  if (lake_stage == LAKE_END) {
+  if (lake_stage >= LAKE_END) {
     rdpq_mode_push();
     rdpq_mode_zbuf(false, false);
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
     rdpq_mode_pop();
+  }
+
+  if (fade >= EPS) {
+    draw_fade(fade);
   }
 }
 
@@ -790,7 +797,7 @@ struct script_action intro_actions[][9] = {
       .target = (T3DVec3) {{FOCUS_X, FOCUS_Y*1.5f, RACE_END_Z + 5.f*64.f}},
       .travel_time = 0.f,
     },
-    {.type = ACTION_WAIT, .time = 1.f},
+    {.type = ACTION_WAIT, .time = 2.f},
     {
       .type = ACTION_MOVE_CAMERA_TO,
       .pos = (T3DVec3) {{FOCUS_X-200.f, FOCUS_Y*1.5f, RACE_END_Z+4.5f*64.f}},
@@ -885,6 +892,10 @@ static void lake_intro_dynamic_loop(float delta_time) {
       {.character = &players[3], .action = intro_actions[4], .time = 0.f};
     delta_time = 0.f;
   }
+  else if (fade >= EPS) {
+    fade -= delta_time;
+  }
+
 
   bool done = true;
   for (size_t i = 0; i < 5; i++) {
@@ -1016,10 +1027,26 @@ void lake_end_fixed_loop(float delta_time) {
   wav64_play(&sfx_winner, MINIGAME_CHANNEL);
 }
 
+void lake_fade_out_fixed_loop(float delta_time) {
+  if (!lake_stage_inited[LAKE_FADE_OUT]) {
+    lake_stage_inited[LAKE_FADE_OUT] = true;
+    return;
+  }
+
+  fade += delta_time / FADE_TIME;
+  if (1.5f - fade < EPS) {
+    minigame_end();
+  }
+}
+
 bool lake_fixed_loop(float delta_time) {
   switch (lake_stage) {
     case LAKE_END:
       lake_end_fixed_loop(delta_time);
+      break;
+
+    case LAKE_FADE_OUT:
+      lake_fade_out_fixed_loop(delta_time);
       break;
   }
 

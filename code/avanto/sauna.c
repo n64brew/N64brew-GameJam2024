@@ -32,6 +32,7 @@ enum sauna_stages {
   SAUNA_GAME,
   SAUNA_WALK_OUT,
   SAUNA_DONE,
+  SAUNA_FADE_OUT,
   NUM_SAUNA_STAGES,
 };
 
@@ -80,6 +81,9 @@ static struct sauna_ai ais[4];
 static T3DModel *cube_model;
 static struct entity invisicubes[2];
 static sprite_t *kiuas;
+
+static bool end_when_over;
+static float fade;
 
 static void ai_coward(struct sauna_ai *ai, joypad_buttons_t *held) {
   held->raw = 0;
@@ -225,6 +229,8 @@ void sauna_init() {
     }
   }
 
+  end_when_over = false;
+  fade = 1.f;
   sauna_stage = SAUNA_INTRO;
 
   for (size_t i = 0; i < NUM_SAUNA_STAGES; i++) {
@@ -239,6 +245,11 @@ static void sauna_intro_fixed_loop(float delta_time) {
     sauna_stage_inited[SAUNA_INTRO] = true;
     delay = 1.f;
     thrown = false;
+  }
+
+  if (fade >= EPS) {
+    fade -= delta_time / FADE_TIME;
+    return;
   }
 
   if (delay > 0) {
@@ -570,9 +581,9 @@ static void sauna_walk_out_fixed_loop(float delta_time) {
   }
 }
 
-static bool sauna_done_fixed_loop(float delta_time) {
+static void sauna_done_fixed_loop(float delta_time) {
   if (sauna_stage_inited[SAUNA_DONE]) {
-    return false;
+    return;
   }
 
   sauna_stage_inited[SAUNA_DONE] = true;
@@ -586,13 +597,32 @@ static bool sauna_done_fixed_loop(float delta_time) {
   }
 
   if (!draw) {
-    return true;
+    sauna_stage++;
+    return;
   }
 
   strcpy(banner_str, "DRAW");
   banner_time = INFINITY;
+  end_when_over = true;
   xm64player_set_vol(&music, .5f);
   wav64_play(&sfx_winner, MINIGAME_CHANNEL);
+}
+
+static bool sauna_fade_out_fixed_loop(float delta_time) {
+  if (!sauna_stage_inited[SAUNA_FADE_OUT]) {
+    sauna_stage_inited[SAUNA_FADE_OUT] = true;
+    return false;
+  }
+
+  fade += delta_time / FADE_TIME;
+  if (1.5f - fade < EPS) {
+    if (end_when_over) {
+      minigame_end();
+    }
+    else {
+      return true;
+    }
+  }
 
   return false;
 }
@@ -640,7 +670,11 @@ bool sauna_fixed_loop(float delta_time) {
       break;
 
     case SAUNA_DONE:
-      if (sauna_done_fixed_loop(delta_time)) {
+      sauna_done_fixed_loop(delta_time);
+      break;
+
+    case SAUNA_FADE_OUT:
+      if (sauna_fade_out_fixed_loop(delta_time)) {
         return true;
       }
       break;
@@ -812,6 +846,10 @@ void sauna_dynamic_loop_render(float delta_time) {
     banner_time -= delta_time;
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
   }
+
+  if (fade >= EPS) {
+    draw_fade(fade);
+  }
 }
 
 void sauna_dynamic_loop_post(float delta_time) {
@@ -838,8 +876,7 @@ void sauna_dynamic_loop_post(float delta_time) {
     else {
       for (size_t i = 0; i < 4; i++) {
         if (pressed[i].a || pressed[i].b) {
-          minigame_end();
-          return;
+          sauna_stage++;
         }
       }
     }

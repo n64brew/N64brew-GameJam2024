@@ -689,3 +689,16 @@ float rand_float(float min, float max) {
   return r*(max-min) + min;
 }
 
+void draw_fade(float fade) {
+  int w = roundf(fade*320);
+  w = w > 320? 320 : w;
+  int h = roundf(fade*240);
+  h = h > 320? 320 : h;
+  int x = (320-w)/2;
+  int y = (240-h)/2;
+  rdpq_mode_push();
+  rdpq_mode_zbuf(false, false);
+  rdpq_set_mode_fill(RGBA32(0x0, 0x0, 0x0, 0xff));
+  rdpq_fill_rectangle(x, y, x+w, y+h);
+  rdpq_mode_pop();
+}

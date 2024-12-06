@@ -10,6 +10,7 @@
 #define GRAVITY 240.f
 #define MAX_PARTICLE_SOURCES 4
 #define SCRIPT_NUM_SIGNALS 4
+#define FADE_TIME 1.f
 
 struct entity {
   const T3DModel *model;
@@ -261,3 +262,4 @@ void particle_source_reset_splash(struct particle_source *source,
     size_t num_particles);
 void particle_source_update_transform(struct particle_source *source);
 float rand_float(float min, float max);
+void draw_fade(float fade);
