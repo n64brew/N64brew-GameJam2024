@@ -7,3 +7,5 @@ filesystem/
 # Blender backup files
 *.blend[0-9]
 
+# Cruft
+.DS_Store
