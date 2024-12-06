@@ -124,6 +124,9 @@ static struct particle_source steam_sources[4];
 static struct particle_source splash_sources[NUM_SPLASH_SOURCES];
 static float splash_cooldown;
 
+static void lake_intro_dynamic_loop(float delta_time);
+static void lake_outro_dynamic_loop(float delta_time);
+
 static void generate_splash(T3DVec3 pos) {
   struct particle_source *source = NULL;
   size_t index;
@@ -469,6 +472,14 @@ void lake_dynamic_loop_pre(float delta_time) {
     else {
       pressed[i].raw = 0;
     }
+  }
+
+  // Logic handling camera movement needs to follow framerate
+  if (lake_stage == LAKE_INTRO) {
+    lake_intro_dynamic_loop(delta_time);
+  }
+  else if (lake_stage == LAKE_OUTRO) {
+    lake_outro_dynamic_loop(delta_time);
   }
 
   if (lake_stage == LAKE_END) {
@@ -859,7 +870,7 @@ struct script_action intro_actions[][9] = {
     {.type = ACTION_END},
   },
 };
-static void lake_intro_fixed_loop(float delta_time) {
+static void lake_intro_dynamic_loop(float delta_time) {
   static struct script_state script_states[5];
   if (!lake_stage_inited[LAKE_INTRO]) {
     lake_stage_inited[LAKE_INTRO] = true;
@@ -942,7 +953,7 @@ struct script_action outro_actions[][4] = {
     {.type = ACTION_END},
   },
 };
-static void lake_outro_fixed_loop(float delta_time) {
+static void lake_outro_dynamic_loop(float delta_time) {
   static struct script_state script_states[5];
   static size_t num_active_scripts;
   if (!lake_stage_inited[LAKE_OUTRO]) {
@@ -1009,14 +1020,6 @@ void lake_end_fixed_loop(float delta_time) {
 
 bool lake_fixed_loop(float delta_time) {
   switch (lake_stage) {
-    case LAKE_INTRO:
-      lake_intro_fixed_loop(delta_time);
-      break;
-
-    case LAKE_OUTRO:
-      lake_outro_fixed_loop(delta_time);
-      break;
-
     case LAKE_END:
       lake_end_fixed_loop(delta_time);
       break;
