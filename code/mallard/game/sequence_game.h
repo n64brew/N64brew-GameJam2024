@@ -20,6 +20,7 @@ typedef enum DuckActions
     DUCK_WALK = 2,
     DUCK_SLAP = 3,
     DUCK_RUN = 4,
+    DUCK_DAMAGE = 5,
 } DuckActions;
 
 typedef struct Duck
@@ -36,8 +37,10 @@ typedef struct Duck
     sprite_t *slap_sprite;
     sprite_t *idle_sprite;
     sprite_t *run_sprite;
+    sprite_t *damage_sprite;
     int frames;
-    int locked_for_frames;
+    int frames_locked_for_slap;
+    int frames_locked_for_damage;
     float collision_box_x1;
     float collision_box_y1;
     float collision_box_x2;
@@ -57,6 +60,7 @@ typedef enum SnowmanActions
 {
     SNOWMAN_IDLE = 0,
     SNOWMAN_JUMP = 1,
+    SNOWMAN_DAMAGE = 2,
 } SnowmanActions;
 
 typedef struct Snowman
@@ -70,7 +74,7 @@ typedef struct Snowman
     sprite_t *idle_sprite;
     sprite_t *jump_sprite;
     int frames;
-    int locked_for_frames;
+    int frames_locked_for_slap;
     float collision_box_x1;
     float collision_box_y1;
     float collision_box_x2;

@@ -8,6 +8,7 @@
 #define SEQUENCE_GAME_MALLARD_IDLE_FRAMES 4
 #define SEQUENCE_GAME_MALLARD_SLAP_FRAMES 3
 #define SEQUENCE_GAME_MALLARD_RUN_FRAMES 8
+#define SEQUENCE_GAME_MALLARD_DAMAGE_FRAMES 3
 
 #define SEQUENCE_GAME_SNOWMAN_IDLE_FRAMES 4
 #define SEQUENCE_GAME_SNOWMAN_JUMP_FRAMES 7
@@ -25,7 +26,7 @@ extern sprite_t *sequence_game_mallard_two_walk_sprite;
 extern sprite_t *sequence_game_mallard_three_walk_sprite;
 extern sprite_t *sequence_game_mallard_four_walk_sprite;
 
-extern sprite_t *sequence_game_background_lakeview_terrace_sprite;
+extern sprite_t *sequence_game_map;
 extern sprite_t *sequence_game_start_button_sprite;
 extern sprite_t *sequence_game_paused_text_sprite;
 

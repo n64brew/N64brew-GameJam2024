@@ -46,6 +46,8 @@ sprite_t *get_sprite_from_duck(Duck *duck)
         return duck->walk_sprite;
     case DUCK_RUN:
         return duck->run_sprite;
+    case DUCK_DAMAGE:
+        return duck->damage_sprite;
     default:
         return duck->base_sprite;
     }
@@ -65,41 +67,10 @@ int get_frame_from_duck(Duck *duck)
         return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Update every 4 frames
     case DUCK_RUN:
         return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_RUN_FRAMES; // Update every 4 frames
+    case DUCK_DAMAGE:
+        return (duck->frames >> 2) % SEQUENCE_GAME_MALLARD_DAMAGE_FRAMES; // Update every 4 frames
     default:
         return 0;
-    }
-}
-
-void sequence_game_render_ducks()
-{
-    for (size_t i = 0; i < 4; i++)
-    {
-        Duck *duck = get_duck_by_id(i);
-
-        rdpq_blitparms_t blitparms = {
-            .s0 = get_frame_from_duck(duck) * 32,
-            .t0 = 0,
-            .width = 32,
-            .height = 32,
-            .flip_x = duck->direction == RIGHT ? true : false,
-        };
-
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_sprite_blit(get_sprite_from_duck(duck),
-                         duck->x,
-                         duck->y,
-                         &blitparms);
-        rdpq_mode_pop();
-
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
-        rdpq_fill_rectangle(duck->collision_box_x1, duck->collision_box_y1, duck->collision_box_x2, duck->collision_box_y2);
-        rdpq_mode_pop();
     }
 }
 
@@ -108,7 +79,7 @@ void sequence_game_render_map()
     rdpq_mode_push();
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_sprite_blit(sequence_game_background_lakeview_terrace_sprite,
+    rdpq_sprite_blit(sequence_game_map,
                      0,
                      0,
                      NULL);
@@ -126,13 +97,13 @@ void sequence_game_draw_press_start_to_pause()
         rdpq_set_fog_color(RGBA32(0, 0, 0, (int)(255.0f * 0.5f)));
         // Draw "Start" button
         rdpq_sprite_blit(sequence_game_start_button_sprite,
-                         RESOLUTION_320x240.width - sequence_game_start_button_sprite->width - 36,
+                         RESOLUTION_320x240.width / 2 - sequence_game_start_button_sprite->width - 36,
                          RESOLUTION_320x240.height - sequence_game_start_button_sprite->height - 1,
                          NULL);
         rdpq_mode_pop();
 
         // Draw "Pause" text
-        rdpq_text_print(NULL, FONT_HALODEK, RESOLUTION_320x240.width - 34, RESOLUTION_320x240.height - 5, "$01^01Pause");
+        rdpq_text_print(NULL, FONT_HALODEK, RESOLUTION_320x240.width / 2 - 34, RESOLUTION_320x240.height - 5, "$01^01Pause");
     }
 }
 
@@ -184,31 +155,6 @@ sprite_t *get_sprite_from_snowman(Snowman *snowman)
         return snowman->jump_sprite;
     default:
         return snowman->idle_sprite;
-    }
-}
-
-void sequence_game_render_snowmen()
-{
-    Snowman *temporary = snowmen;
-    while (temporary != NULL)
-    {
-        rdpq_blitparms_t blitparms = {
-            .s0 = get_frame_from_snowman(temporary) * 13,
-            .t0 = 0,
-            .width = 13,
-            .height = 17,
-        };
-
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_sprite_blit(get_sprite_from_snowman(temporary),
-                         temporary->x,
-                         temporary->y,
-                         &blitparms);
-        rdpq_mode_pop();
-
-        temporary = temporary->next;
     }
 }
 
@@ -267,78 +213,62 @@ void render_debug_duck_hit_box(Duck *duck)
     rdpq_mode_pop();
 }
 
+void sequence_game_render_duck(Duck *currentDuck)
+{
+    rdpq_blitparms_t blitparms = {
+        .s0 = get_frame_from_duck(currentDuck) * 32,
+        .t0 = 0,
+        .width = 32,
+        .height = 32,
+        .flip_x = currentDuck->direction == RIGHT ? true : false,
+    };
+
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_sprite_blit(get_sprite_from_duck(currentDuck), currentDuck->x, currentDuck->y, &blitparms);
+
+    //     render_debug_duck_slap_box(currentDuck);
+    //     render_debug_duck_collision_box(currentDuck);
+    //     render_debug_duck_hit_box(currentDuck);
+}
+
+void sequence_game_render_snowman(Snowman *currentSnowman)
+{
+    rdpq_blitparms_t blitparms = {
+        .s0 = get_frame_from_snowman(currentSnowman) * 13,
+        .t0 = 0,
+        .width = 13,
+        .height = 17,
+    };
+
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_sprite_blit(get_sprite_from_snowman(currentSnowman), currentSnowman->x, currentSnowman->y, &blitparms);
+
+    // render_debug_snowman_hit_box(currentSnowman);
+    // render_debug_snowman_collision_box(currentSnowman);
+}
+
 void sequence_game_render_snowmen_and_ducks()
 {
     Snowman *currentSnowman = snowmen;
     Duck *currentDuck = ducks;
 
-    // Render snowmen.
     while (currentSnowman != NULL)
     {
-        // Render ducks.
         while (currentDuck != NULL && currentDuck->collision_box_y2 < currentSnowman->collision_box_y2)
         {
-            // Render duck
-            rdpq_blitparms_t blitparms = {
-                .s0 = get_frame_from_duck(currentDuck) * 32,
-                .t0 = 0,
-                .width = 32,
-                .height = 32,
-                .flip_x = currentDuck->direction == RIGHT ? true : false,
-            };
-
-            rdpq_set_mode_standard();
-            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-            rdpq_sprite_blit(get_sprite_from_duck(currentDuck), currentDuck->x, currentDuck->y, &blitparms);
-
-            render_debug_duck_slap_box(currentDuck);
-            render_debug_duck_collision_box(currentDuck);
-            render_debug_duck_hit_box(currentDuck);
-
-            // Next duck.
+            sequence_game_render_duck(currentDuck);
             currentDuck = currentDuck->next;
         }
 
-        // Render snowman.
-        rdpq_blitparms_t blitparms = {
-            .s0 = get_frame_from_snowman(currentSnowman) * 13,
-            .t0 = 0,
-            .width = 13,
-            .height = 17,
-        };
-
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_sprite_blit(get_sprite_from_snowman(currentSnowman), currentSnowman->x, currentSnowman->y, &blitparms);
-
-        render_debug_snowman_hit_box(currentSnowman);
-        render_debug_snowman_collision_box(currentSnowman);
-
-        // Next snowman.
+        sequence_game_render_snowman(currentSnowman);
         currentSnowman = currentSnowman->next;
     }
 
-    // Render ducks.
     while (currentDuck != NULL)
     {
-        // Render duck
-        rdpq_blitparms_t blitparms = {
-            .s0 = get_frame_from_duck(currentDuck) * 32,
-            .t0 = 0,
-            .width = 32,
-            .height = 32,
-            .flip_x = currentDuck->direction == RIGHT ? true : false,
-        };
-
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_sprite_blit(get_sprite_from_duck(currentDuck), currentDuck->x, currentDuck->y, &blitparms);
-
-        render_debug_duck_slap_box(currentDuck);
-        render_debug_duck_collision_box(currentDuck);
-        render_debug_duck_hit_box(currentDuck);
-
-        // Next duck.
+        sequence_game_render_duck(currentDuck);
         currentDuck = currentDuck->next;
     }
 }

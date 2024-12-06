@@ -28,6 +28,10 @@ ASSETS_LIST += \
 	filesystem/mallard/two/duck_idle.rgba32.sprite \
 	filesystem/mallard/three/duck_idle.rgba32.sprite \
 	filesystem/mallard/four/duck_idle.rgba32.sprite \
+	filesystem/mallard/one/duck_damage.rgba32.sprite \
+	filesystem/mallard/two/duck_damage.rgba32.sprite \
+	filesystem/mallard/three/duck_damage.rgba32.sprite \
+	filesystem/mallard/four/duck_damage.rgba32.sprite \
 	filesystem/mallard/snowman/snowman_idle_evil.rgba32.sprite \
 	filesystem/mallard/snowman/snowman_jump_evil.rgba32.sprite \
 	filesystem/mallard/mallard_game_paused_text.rgba32.sprite \

@@ -18,6 +18,13 @@ float time_elapsed_since_last_snowman_spawn = 0.0f;
 float time_elapsed = 0.0f;
 float SNOWMAN_SPAWN_FREQUENCY;
 
+void duck_slap(Duck *duck)
+{
+    duck->frames_locked_for_slap = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
+    duck->action = DUCK_SLAP;
+    duck->frames = 0;
+}
+
 void snowmen_bubble_sort()
 {
     bool swapped = true;
@@ -100,88 +107,6 @@ void update_snowmen(float deltatime)
     time_elapsed_since_last_snowman_spawn += deltatime;
 }
 
-void process_input_start_button(Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, size_t i, float deltatime)
-{
-    if (!sequence_game_paused && pressed.start)
-    {
-        controller->start_down = 1;
-    }
-    if (!sequence_game_paused && controller->start_down && released.start)
-    {
-        controller->start_up = 1;
-    }
-    if (!sequence_game_paused && controller->start_down && controller->start_up)
-    {
-        sequence_game_paused = true;
-
-        for (size_t j = 0; j < core_get_playercount(); j++)
-        {
-            Controller *curr = &controllers[j];
-            curr->start_down = 0;
-            curr->start_up = 0;
-            curr->start_held_elapsed = 0.0f;
-        }
-    }
-
-    if (sequence_game_paused == true && pressed.start)
-    {
-        controller->start_down = 1;
-    }
-    if (sequence_game_paused && controller->start_down && released.start)
-    {
-        controller->start_up = 1;
-    }
-    if (sequence_game_paused && controller->start_down && controller->start_up)
-    {
-        // Unpauses the game because it wasn't held long enough.
-        if (sequence_game_start_held_elapsed == 0.0f)
-        {
-            sequence_game_paused = false;
-        }
-
-        // Reset the controller state for all controllers.
-        for (size_t j = 0; j < core_get_playercount(); j++)
-        {
-            Controller *curr = &controllers[j];
-            curr->start_down = 0;
-            curr->start_up = 0;
-            curr->start_held_elapsed = 0.0f;
-        }
-    }
-
-    if (sequence_game_paused)
-    {
-        if (held.start)
-        {
-            if (sequence_game_player_holding_start == -1)
-            {
-                sequence_game_player_holding_start = i;
-            }
-
-            if (sequence_game_player_holding_start == i)
-            {
-                if (sequence_game_start_held_elapsed >= GAME_EXIT_DURATION)
-                {
-                    sequence_game_should_cleanup = true;
-                }
-                if (controller->start_held_elapsed >= GAME_EXIT_THRESHOLD_DURATION)
-                {
-                    sequence_game_start_held_elapsed += deltatime;
-                }
-                controller->start_held_elapsed += deltatime;
-            }
-        }
-        else
-        {
-            if (sequence_game_player_holding_start == i)
-            {
-                sequence_game_player_holding_start = -1;
-                sequence_game_start_held_elapsed = 0.0f;
-            }
-        }
-    }
-}
-
 typedef struct ValidMovement
 {
     bool x;
@@ -193,7 +118,7 @@ bool detect_collision(Rect a, Rect b)
     return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
 }
 
-ValidMovement validate_movement(Duck *duck, size_t i, Vector2 movement)
+ValidMovement validate_movement(Duck *duck, Vector2 movement)
 {
     ValidMovement validMovement = (ValidMovement){.x = false, .y = false};
 
@@ -285,333 +210,607 @@ ValidMovement validate_movement(Duck *duck, size_t i, Vector2 movement)
     return validMovement;
 }
 
-void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, joypad_8way_t direction, size_t i, float deltatime)
+void process_input(Duck *duck, Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, joypad_8way_t direction, size_t i, float deltatime)
 {
+    if (!sequence_game_paused && pressed.start)
+    {
+        controller->start_down = 1;
+    }
+    if (!sequence_game_paused && controller->start_down && released.start)
+    {
+        controller->start_up = 1;
+    }
+    if (!sequence_game_paused && controller->start_down && controller->start_up)
+    {
+        sequence_game_paused = true;
+
+        for (size_t j = 0; j < core_get_playercount(); j++)
+        {
+            Controller *curr = &controllers[j];
+            curr->start_down = 0;
+            curr->start_up = 0;
+            curr->start_held_elapsed = 0.0f;
+        }
+    }
+
+    if (sequence_game_paused == true && pressed.start)
+    {
+        controller->start_down = 1;
+    }
+    if (sequence_game_paused && controller->start_down && released.start)
+    {
+        controller->start_up = 1;
+    }
+    if (sequence_game_paused && controller->start_down && controller->start_up)
+    {
+        // Unpauses the game because it wasn't held long enough.
+        if (sequence_game_start_held_elapsed == 0.0f)
+        {
+            sequence_game_paused = false;
+        }
+
+        // Reset the controller state for all controllers.
+        for (size_t j = 0; j < core_get_playercount(); j++)
+        {
+            Controller *curr = &controllers[j];
+            curr->start_down = 0;
+            curr->start_up = 0;
+            curr->start_held_elapsed = 0.0f;
+        }
+    }
+
+    if (sequence_game_paused)
+    {
+        if (held.start)
+        {
+            if (sequence_game_player_holding_start == -1)
+            {
+                sequence_game_player_holding_start = i;
+            }
+
+            if (sequence_game_player_holding_start == i)
+            {
+                if (sequence_game_start_held_elapsed >= GAME_EXIT_DURATION)
+                {
+                    sequence_game_should_cleanup = true;
+                }
+                if (controller->start_held_elapsed >= GAME_EXIT_THRESHOLD_DURATION)
+                {
+                    sequence_game_start_held_elapsed += deltatime;
+                }
+                controller->start_held_elapsed += deltatime;
+            }
+        }
+        else
+        {
+            if (sequence_game_player_holding_start == i)
+            {
+                sequence_game_player_holding_start = -1;
+                sequence_game_start_held_elapsed = 0.0f;
+            }
+        }
+    }
+
+    // If the game is paused, don't process input.
+    if (!sequence_game_paused)
+    {
+        Vector2 movement;
+        ValidMovement validMovement;
+
+        // Stun Lock.
+        if (duck->frames_locked_for_damage > 0)
+        {
+            duck->frames_locked_for_damage--;
+            return;
+        }
+
+        // Movement
+        switch (direction)
+        {
+        case JOYPAD_8WAY_UP:
+
+            // Position
+            movement = (Vector2){.x = 0, .y = -1};
+            if (held.b)
+                movement = (Vector2){.x = 0, .y = -1 * BOOST};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_UP_RIGHT:
+
+            // Direction
+            duck->direction = RIGHT;
+
+            // Position
+            movement = (Vector2){.x = 1, .y = -1};
+            if (held.b)
+                movement = (Vector2){.x = 1 * BOOST, .y = -1 * BOOST};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_RIGHT:
+
+            // Direction
+            duck->direction = RIGHT;
+
+            // Position
+            movement = (Vector2){.x = 1, .y = 0};
+            if (held.b)
+                movement = (Vector2){.x = 1 * BOOST, .y = 0};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_DOWN_RIGHT:
+
+            // Direction
+            duck->direction = RIGHT;
+
+            // Position
+            movement = (Vector2){.x = 1, .y = 1};
+            if (held.b)
+                movement = (Vector2){.x = 1 * BOOST, .y = 1 * BOOST};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_DOWN:
+
+            // Position
+            movement = (Vector2){.x = 0, .y = 1};
+            if (held.b)
+                movement = (Vector2){.x = 0, .y = 1 * BOOST};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_DOWN_LEFT:
+
+            // Direction
+            duck->direction = LEFT;
+
+            // Position
+            movement = (Vector2){.x = -1, .y = 1};
+            if (held.b)
+                movement = (Vector2){.x = -1 * BOOST, .y = 1 * BOOST};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_LEFT:
+
+            // Direction
+            duck->direction = LEFT;
+
+            // Position
+            movement = (Vector2){.x = -1, .y = 0};
+            if (held.b)
+                movement = (Vector2){.x = -1 * BOOST, .y = 0};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+            break;
+
+        case JOYPAD_8WAY_UP_LEFT:
+
+            // Direction
+            duck->direction = LEFT;
+
+            // Position
+            movement = (Vector2){.x = -1, .y = -1};
+            if (held.b)
+                movement = (Vector2){.x = -1 * BOOST, .y = -1 * BOOST};
+
+            validMovement = validate_movement(duck, movement);
+
+            if (!validMovement.x)
+            {
+                duck->x += movement.x;
+            }
+
+            if (!validMovement.y)
+            {
+                duck->y += movement.y;
+            }
+
+            // Action
+            if (duck->frames_locked_for_slap == 0)
+            {
+                if (held.b)
+                {
+                    duck->action = DUCK_RUN;
+                }
+                else
+                {
+                    duck->action = DUCK_WALK;
+                }
+            }
+
+            break;
+
+        default:
+            if (duck->frames_locked_for_slap == 0)
+                duck->action = DUCK_IDLE;
+            break;
+        }
+
+        if (duck->x > DUCK_MAX_X)
+        {
+            duck->x = DUCK_MAX_X;
+        }
+
+        if (duck->x < DUCK_MIN_X)
+        {
+            duck->x = DUCK_MIN_X;
+        }
+
+        if (duck->y > DUCK_MAX_Y)
+        {
+            duck->y = DUCK_MAX_Y;
+        }
+
+        if (duck->y < DUCK_MIN_Y)
+        {
+            duck->y = DUCK_MIN_Y;
+        }
+
+        if (pressed.a)
+        {
+            duck_slap(duck);
+        }
+
+        if (duck->frames_locked_for_slap > 0)
+        {
+            duck->frames_locked_for_slap--;
+        }
+    }
+}
+
+Snowman *find_nearest_snowman(Duck *duck)
+{
+    Snowman *nearestSnowman = NULL;
+    float nearestDistance = 999999.0f;
+
+    float duck_x = (duck->slap_box_x1 + duck->slap_box_x2) / 2;
+    float duck_y = (duck->slap_box_y1 + duck->slap_box_y2) / 2;
+
+    Snowman *currentSnowman = snowmen;
+    while (currentSnowman != NULL)
+    {
+        float snowman_x = (currentSnowman->hit_box_x1 + currentSnowman->hit_box_x2) / 2;
+        float snowman_y = (currentSnowman->hit_box_y1 + currentSnowman->hit_box_y2) / 2;
+        float distance = fmax(abs(duck_x - snowman_x), abs(duck_y - snowman_y));
+        if (distance < nearestDistance)
+        {
+            nearestDistance = distance;
+            nearestSnowman = currentSnowman;
+        }
+
+        currentSnowman = currentSnowman->next;
+    }
+
+    return nearestSnowman;
+}
+
+void set_duck_direction(Duck *duck, Snowman *snowman)
+{
+    if (snowman == NULL)
+    {
+        return;
+    }
+
+    float snowman_x = (snowman->hit_box_x1 + snowman->hit_box_x2) / 2;
+    float duck_x = (duck->slap_box_x1 + duck->slap_box_x2) / 2;
+
+    if (duck_x <= snowman_x)
+    {
+        duck->direction = RIGHT;
+    }
+    else
+    {
+        duck->direction = LEFT;
+    }
+}
+void set_duck_movement(Duck *duck, Snowman *snowman)
+{
+    if (snowman == NULL)
+    {
+        return;
+    }
+
     Vector2 movement;
     ValidMovement validMovement;
+    float snowman_x = (snowman->hit_box_x1 + snowman->hit_box_x2) / 2;
+    float snowman_y = (snowman->hit_box_y1 + snowman->hit_box_y2) / 2;
+    float duck_x = (duck->slap_box_x1 + duck->slap_box_x2) / 2;
+    float duck_y = (duck->slap_box_y1 + duck->slap_box_y2) / 2;
+    float dx = snowman_x - duck_x;
+    float dy = snowman_y - duck_y;
 
-    // Movement
-    switch (direction)
+    if (dx > 1 && dy > 1)
     {
-    case JOYPAD_8WAY_UP:
-
-        // Position
-        movement = (Vector2){.x = 0, .y = -1};
-        if (held.b)
-            movement = (Vector2){.x = 0, .y = -1 * BOOST};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_UP_RIGHT:
-
-        // Direction
-        duck->direction = RIGHT;
-
-        // Position
-        movement = (Vector2){.x = 1, .y = -1};
-        if (held.b)
-            movement = (Vector2){.x = 1 * BOOST, .y = -1 * BOOST};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_RIGHT:
-
-        // Direction
-        duck->direction = RIGHT;
-
-        // Position
-        movement = (Vector2){.x = 1, .y = 0};
-        if (held.b)
-            movement = (Vector2){.x = 1 * BOOST, .y = 0};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_DOWN_RIGHT:
-
-        // Direction
-        duck->direction = RIGHT;
-
-        // Position
         movement = (Vector2){.x = 1, .y = 1};
-        if (held.b)
-            movement = (Vector2){.x = 1 * BOOST, .y = 1 * BOOST};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_DOWN:
-
-        // Position
-        movement = (Vector2){.x = 0, .y = 1};
-        if (held.b)
-            movement = (Vector2){.x = 0, .y = 1 * BOOST};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_DOWN_LEFT:
-
-        // Direction
-        duck->direction = LEFT;
-
-        // Position
+    }
+    else if (dx > 1 && dy < -1)
+    {
+        movement = (Vector2){.x = 1, .y = -1};
+    }
+    else if (dx < -1 && dy > 1)
+    {
         movement = (Vector2){.x = -1, .y = 1};
-        if (held.b)
-            movement = (Vector2){.x = -1 * BOOST, .y = 1 * BOOST};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_LEFT:
-
-        // Direction
-        duck->direction = LEFT;
-
-        // Position
-        movement = (Vector2){.x = -1, .y = 0};
-        if (held.b)
-            movement = (Vector2){.x = -1 * BOOST, .y = 0};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-        break;
-
-    case JOYPAD_8WAY_UP_LEFT:
-
-        // Direction
-        duck->direction = LEFT;
-
-        // Position
+    }
+    else if (dx < -1 && dy < -1)
+    {
         movement = (Vector2){.x = -1, .y = -1};
-        if (held.b)
-            movement = (Vector2){.x = -1 * BOOST, .y = -1 * BOOST};
-
-        validMovement = validate_movement(duck, i, movement);
-
-        if (!validMovement.x)
-        {
-            duck->x += movement.x;
-        }
-
-        if (!validMovement.y)
-        {
-            duck->y += movement.y;
-        }
-
-        // Action
-        if (duck->locked_for_frames == 0)
-        {
-            if (held.b)
-            {
-                duck->action = DUCK_RUN;
-            }
-            else
-            {
-                duck->action = DUCK_WALK;
-            }
-        }
-
-        break;
-
-    default:
-        if (duck->locked_for_frames == 0)
-            duck->action = DUCK_IDLE;
-        break;
+    }
+    else if (dx > 1)
+    {
+        movement = (Vector2){.x = 1, .y = 0};
+    }
+    else if (dx < -1)
+    {
+        movement = (Vector2){.x = -1, .y = 0};
+    }
+    else if (dy > 1)
+    {
+        movement = (Vector2){.x = 0, .y = 1};
+    }
+    else if (dy < -1)
+    {
+        movement = (Vector2){.x = 0, .y = -1};
     }
 
-    if (duck->x > DUCK_MAX_X)
+    validMovement = validate_movement(duck, movement);
+
+    if (!validMovement.x)
     {
-        duck->x = DUCK_MAX_X;
+        duck->x += movement.x;
     }
 
-    if (duck->x < DUCK_MIN_X)
+    if (!validMovement.y)
     {
-        duck->x = DUCK_MIN_X;
+        duck->y += movement.y;
     }
+}
 
-    if (duck->y > DUCK_MAX_Y)
+void set_duck_action(Duck *duck, Snowman *snowman)
+{
+    if (duck->frames_locked_for_slap != 0)
     {
-        duck->y = DUCK_MAX_Y;
-    }
-
-    if (duck->y < DUCK_MIN_Y)
-    {
-        duck->y = DUCK_MIN_Y;
-    }
-
-    if (pressed.a)
-    {
-        duck->locked_for_frames = 4 * SEQUENCE_GAME_MALLARD_SLAP_FRAMES; // Lock for 12 frames.
         duck->action = DUCK_SLAP;
-        duck->frames = 0;
+        return;
     }
 
-    if (duck->locked_for_frames > 0)
+    if (snowman == NULL)
     {
-        duck->locked_for_frames--;
+        duck->action = DUCK_IDLE;
+        return;
+    }
+
+    Rect duckSlapBox = (Rect){.x1 = duck->slap_box_x1, .y1 = duck->slap_box_y1, .x2 = duck->slap_box_x2, .y2 = duck->slap_box_y2};
+    Rect snowmanHitBox = (Rect){.x1 = snowman->hit_box_x1, .y1 = snowman->hit_box_y1, .x2 = snowman->hit_box_x2, .y2 = snowman->hit_box_y2};
+
+    if (detect_collision(duckSlapBox, snowmanHitBox))
+    {
+        duck_slap(duck);
+    }
+    else
+    {
+        duck->action = DUCK_WALK;
+    }
+}
+
+void simulate_input(Duck *duck, float deltatime)
+{
+    // If the game is paused, don't simulate input.
+    if (!sequence_game_paused)
+    {
+        // Vector2 movement;
+        // ValidMovement validMovement;
+
+        // Stun Lock.
+        if (duck->frames_locked_for_damage > 0)
+        {
+            duck->frames_locked_for_damage--;
+            return;
+        }
+
+        Snowman *nearestSnowman = find_nearest_snowman(duck);
+
+        set_duck_direction(duck, nearestSnowman);
+
+        set_duck_movement(duck, nearestSnowman);
+
+        set_duck_action(duck, nearestSnowman);
+
+        /////////////////////////////////////////////
+
+        if (duck->x > DUCK_MAX_X)
+        {
+            duck->x = DUCK_MAX_X;
+        }
+
+        if (duck->x < DUCK_MIN_X)
+        {
+            duck->x = DUCK_MIN_X;
+        }
+
+        if (duck->y > DUCK_MAX_Y)
+        {
+            duck->y = DUCK_MAX_Y;
+        }
+
+        if (duck->y < DUCK_MIN_Y)
+        {
+            duck->y = DUCK_MIN_Y;
+        }
+
+        if (duck->frames_locked_for_slap > 0)
+        {
+            duck->frames_locked_for_slap--;
+        }
     }
 }
 
@@ -694,8 +893,13 @@ void evaluate_attack()
                     // TODO: temporaryDuck hurt animation.
                     // TODO: temporaryDuck movement  (plus stun lock?).
 
-                    if (temporaryDuck->time_since_last_hit > 0.5f)
+                    if (temporaryDuck->time_since_last_hit > 1.0f)
                     {
+                        // Set action to damage.
+                        temporaryDuck->action = DUCK_DAMAGE;
+                        temporaryDuck->frames = 0;
+                        temporaryDuck->frames_locked_for_damage = 4 * SEQUENCE_GAME_MALLARD_DAMAGE_FRAMES;
+
                         // Reset time since last hit.
                         temporaryDuck->time_since_last_hit = 0.0f;
 
@@ -719,10 +923,11 @@ void evaluate_attack()
 
 void sequence_game_update(float deltatime)
 {
+    // Human Players Input
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
-        Controller *controller = &controllers[i];
         Duck *duck = get_duck_by_id(i);
+        Controller *controller = &controllers[i];
 
         joypad_port_t controllerPort = core_get_playercontroller(i);
         if (!joypad_is_connected(controllerPort))
@@ -733,10 +938,14 @@ void sequence_game_update(float deltatime)
         joypad_buttons_t released = joypad_get_buttons_released(controllerPort);
         joypad_8way_t direction = joypad_get_direction(controllerPort, JOYPAD_2D_ANY);
 
-        process_input_start_button(controller, pressed, held, released, i, deltatime);
+        process_input(duck, controller, pressed, held, released, direction, i, deltatime);
+    }
 
-        if (!sequence_game_paused)
-            process_input_direction(duck, controller, pressed, held, released, direction, i, deltatime);
+    // Computer Players Input
+    for (size_t i = core_get_playercount(); i < 4; i++)
+    {
+        Duck *duck = get_duck_by_id(i);
+        simulate_input(duck, deltatime);
     }
 
     if (!sequence_game_paused)

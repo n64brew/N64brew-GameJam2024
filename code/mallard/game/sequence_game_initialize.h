@@ -59,6 +59,11 @@ extern sprite_t *sequence_game_mallard_two_idle_sprite;
 extern sprite_t *sequence_game_mallard_three_idle_sprite;
 extern sprite_t *sequence_game_mallard_four_idle_sprite;
 
+extern sprite_t *sequence_game_mallard_one_damage_sprite;
+extern sprite_t *sequence_game_mallard_two_damage_sprite;
+extern sprite_t *sequence_game_mallard_three_damage_sprite;
+extern sprite_t *sequence_game_mallard_four_damage_sprite;
+
 void initialize_controllers();
 void free_controllers();
 int random_between(int min, int max);

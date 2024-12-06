@@ -83,7 +83,7 @@ Snowman *create_snowman()
     snowman->hit_box_y2 = spawn.y + SNOWMAN_HIT_BOX_Y2_OFFSET;
     snowman->action = SNOWMAN_IDLE;
     snowman->frames = 0;
-    snowman->locked_for_frames = 0;
+    snowman->frames_locked_for_slap = 0;
     snowman->time = 0.0f;
     snowman->idle_sprite = sequence_game_snowman_idle_sprite;
     snowman->jump_sprite = sequence_game_snowman_jump_sprite;

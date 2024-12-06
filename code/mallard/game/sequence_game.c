@@ -41,10 +41,15 @@ sprite_t *sequence_game_mallard_two_idle_sprite;
 sprite_t *sequence_game_mallard_three_idle_sprite;
 sprite_t *sequence_game_mallard_four_idle_sprite;
 
+sprite_t *sequence_game_mallard_one_damage_sprite;
+sprite_t *sequence_game_mallard_two_damage_sprite;
+sprite_t *sequence_game_mallard_three_damage_sprite;
+sprite_t *sequence_game_mallard_four_damage_sprite;
+
 sprite_t *sequence_game_snowman_idle_sprite;
 sprite_t *sequence_game_snowman_jump_sprite;
 
-sprite_t *sequence_game_background_lakeview_terrace_sprite;
+sprite_t *sequence_game_map;
 
 sprite_t *sequence_game_start_button_sprite;
 sprite_t *sequence_game_paused_text_sprite;
@@ -103,8 +108,13 @@ void sequence_game_init()
     sequence_game_mallard_three_idle_sprite = sprite_load("rom:/mallard/three/duck_idle.rgba32.sprite");
     sequence_game_mallard_four_idle_sprite = sprite_load("rom:/mallard/four/duck_idle.rgba32.sprite");
 
+    sequence_game_mallard_one_damage_sprite = sprite_load("rom:/mallard/one/duck_damage.rgba32.sprite");
+    sequence_game_mallard_two_damage_sprite = sprite_load("rom:/mallard/two/duck_damage.rgba32.sprite");
+    sequence_game_mallard_three_damage_sprite = sprite_load("rom:/mallard/three/duck_damage.rgba32.sprite");
+    sequence_game_mallard_four_damage_sprite = sprite_load("rom:/mallard/four/duck_damage.rgba32.sprite");
+
     // Gmae - Background
-    sequence_game_background_lakeview_terrace_sprite = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
+    sequence_game_map = sprite_load("rom:/mallard/mallard_background_park.rgba32.sprite");
 
     sequence_game_start_button_sprite = sprite_load("rom:/core/StartButton.sprite");
 
@@ -155,7 +165,7 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_snowman_idle_sprite);
     sprite_free(sequence_game_snowman_jump_sprite);
 
-    sprite_free(sequence_game_background_lakeview_terrace_sprite);
+    sprite_free(sequence_game_map);
 
     sprite_free(sequence_game_start_button_sprite);
     sprite_free(sequence_game_paused_text_sprite);
