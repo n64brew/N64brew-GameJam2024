@@ -251,6 +251,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->animAttack = t3d_anim_create(model, "Left_Swipe");
     t3d_anim_attach(&player->animAttack, &player->skeleton);
     t3d_anim_set_looping(&player->animAttack, false);
+    t3d_anim_update(&player->animAttack, 0.1f);
     t3d_anim_set_playing(&player->animAttack, false);
 
     player->animStun = t3d_anim_create(model, "Stun");
@@ -273,6 +274,8 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
 
     player->animIdle = t3d_anim_create(model, "Idle");
     t3d_anim_attach(&player->animIdle, &player->skeleton);
+    t3d_anim_update(&player->animIdle, 0.1f);
+    t3d_anim_set_time(&player->animIdle, 0.0f);
 
     collision_scene_add(&player->damage_trigger);
 
