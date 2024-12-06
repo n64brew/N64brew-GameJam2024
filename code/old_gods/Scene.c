@@ -50,17 +50,14 @@ AF_Entity* villager1 = NULL;
 //AF_Entity* cannonSoundEntity = NULL;
 //AF_Entity* musicSoundEntity = NULL;
 
+
+
 // Gameplay Var
 uint8_t g_currentBucket = 0;
 
 
 #define VILLAGER_CARRY_HEIGHT 1
 
-// Minigame vars
-float countDownTimer;
-bool isEnding;
-float endTimer;
-PlyNum winner;
 
 
 
@@ -120,17 +117,6 @@ player_data players[MAXPLAYERS];
 
 
 
-// Player AI behaviours
-
-float countDownTimer;
-bool isEnding;
-float endTimer;
-PlyNum winner;
-
-wav64_t sfx_start;
-wav64_t sfx_countdown;
-wav64_t sfx_stop;
-wav64_t sfx_winner;
 
 
 
@@ -141,6 +127,7 @@ void Scene_AIStateMachine(AF_AI_Action* _aiAction);
 void OnRatCollision(AF_Collision* _collision);
 void RatAIBehaviourUpdate(AppData* _appData);
 void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state);
+
 
 void PlayerController_DamageHandler(AppData* _appData){
     for(int i = 0; i < PLAYER_COUNT; ++i){
@@ -184,7 +171,11 @@ void Scene_Start(AppData* _appData){
     // TODO: get rid of global state, current bucket
     debugf("Scene: Scene Start: TODO: get rid of global state, current bucket");
     Scene_SpawnBucket(&g_currentBucket);
+
+   
 }
+
+
 
 void Scene_Update(AppData* _appData){
     // handle restart/mainMenu
@@ -284,9 +275,7 @@ void Scene_LateUpdate(AppData* _appData){
 
 }
 
-void Scene_Destroy(AF_ECS* _ecs){
 
-}
 
 // Setup the games entities
 void Scene_SetupEntities(AppData* _appData){
@@ -318,7 +307,7 @@ void Scene_SetupEntities(AppData* _appData){
     // god pedestal
     Vec3 godPedistalPos = {0, 0.01f, 0};
 	Vec3 godPedistalScale = {3,0.1f,3};
-    Vec3 godPedistalBoundingScale = {1,1,1};
+    //Vec3 godPedistalBoundingScale = {1,1,1};
     godPedestalEntity = Entity_Factory_CreatePrimative(_ecs, godPedistalPos, godPedistalScale, AF_MESH_TYPE_MESH, AABB);
     //godPedestalEntity->collider->collision.callback = Scene_OnGodTrigger;
     //godPedestalEntity->collider->boundingVolume = godPedistalBoundingScale;

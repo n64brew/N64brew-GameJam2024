@@ -18,7 +18,9 @@ Tiny3D rendering functions
 #include <t3d/t3dskeleton.h>
 #include <t3d/t3danim.h>
 #include <t3d/t3ddebug.h>
+#include <t3d/tpx.h>
 #include "Assets.h"
+
 
 #define DEBUG_RDP 0
 #define DEBUG_CAM_ON 1
@@ -62,8 +64,24 @@ const char* attackPath = "Attack";//"Snake_Attack";
 // we need a seperate skelton anim for each skeleton
 T3DSkeleton skeletons[AF_ECS_TOTAL_ENTITIES];
 T3DSkeleton skeletonBlends[AF_ECS_TOTAL_ENTITIES];
-//AF_Animation animations[AF_ECS_TOTAL_ENTITIES];
 
+// ============ PARTICLES ===============
+// Allocate a particle buffer.
+// In contrast to triangles, there is no split between loading and drawing.
+// So later there will be only one command to draw all of them in one go.
+// Meaning you only have to allocate an buffer of arbitrary size here and fill it with data.
+//uint32_t particleCountMax = 100;//100'000;
+//uint32_t particleCount = 2000;
+//#define PARTICLE_COUNT 1000
+// NOTE: just like with vertices, particles are interleaved in pairs of 2.
+// So one TPXParticle struct always contains 2 particles.
+// If you need an odd number, just set the second particle size to 0.
+//uint32_t allocSize = sizeof(TPXParticle) * particleCountMax / 2;
+//TPXParticle *particles = malloc_uncached(allocSize);
+//uint32_t allocSize = 0;// = sizeof(TPXParticle) * particleCountMax / 2;
+//TPXParticle particles[PARTICLE_COUNT];// = malloc_uncached(allocSize);
+//AF_Animation animations[AF_ECS_TOTAL_ENTITIES];
+//T3DMat4FP matPartFP;// = malloc_uncached(sizeof(T3DMat4FP));
 
 
 // Holds our actor data, relevant for t3d is 'modelMat'.
@@ -73,7 +91,7 @@ T3DSkeleton skeletonBlends[AF_ECS_TOTAL_ENTITIES];
 float get_time_s()  { return (float)((double)get_ticks_ms() / 1000.0); }
 float get_time_ms() { return (float)((double)get_ticks_us() / 1000.0); }
 void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i);
-
+void AF_Renderer_DrawParticles(AF_Entity* entity);
 // Animation stuff
 // TODO: move to component
 //static T3DModel *modelMap;
@@ -410,11 +428,12 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(fov), 1.0f, 1000.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0, 1, 0}});
 
-
+    
     // ======== Update Animations, and collect data about the mesh ======== //
     rendererDebugData.totalTris = 0;
     rendererDebugData.totalMeshes = 0;
     for(int i = 0; i < _ecs->entitiesCount; ++i){
+       
        
         // show debug
         AF_CMesh* mesh = &_ecs->meshes[i];
@@ -464,7 +483,6 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
     
     // ======== Draw (3D) ======== //
-    
     // This is very expensive
     rdpq_attach(display_get(), display_get_zbuf());
 
@@ -478,6 +496,9 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_screen_clear_depth();
     // Tell the RSP to draw our command list
     rspq_block_run(bufferList);
+
+    // ======== DRAW PARTICLES ========
+    //AF_Renderer_DrawParticles(&_ecs->entities[0]);
     
     // sync the RSP
     syncPoint = rspq_syncpoint_new();
@@ -488,10 +509,6 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     rdpq_sync_pipe();
     rendererDebugData.totalEntityRenderTime = get_time_ms() - rendererDebugData.totalEntityRenderTime;
     rendererDebugData.totalRenderTime = get_time_ms() - rendererDebugData.totalRenderTime;
-
-    
-
-  
     
     // ======== DEBUG Editor =========
     joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_1);
@@ -821,4 +838,56 @@ void Renderer_DebugCam(RendererDebugData* _rendererDebugData){
     rdpq_text_printf(NULL, FONT2_ID, 50, 50, "Total Render: %.2fms", _rendererDebugData->totalRenderTime);
     rdpq_text_printf(NULL, FONT2_ID, 50, 60, "Entity Render: %.2fms", _rendererDebugData->totalEntityRenderTime);
     rdpq_text_printf(NULL, FONT2_ID, 50, 70, "FPS   : %.2f", display_get_fps());
+}
+
+void AF_Renderer_DrawParticles(AF_Entity* _entity){
+    //float partSizeX = 0;
+    //float partSizeY = 0;
+    
+    // ======== Draw (Particles) ======== //
+
+    // Prepare drawing particles.
+    // In contrast to t3d which draws triangles, tpx will emit screen-space rectangles.
+    // The color of each particle is set as prim. color, and shade is not defined.
+    // So we have to set up a few things via rdpq to make that work depending on the desired effect.
+    //
+    // In our case, we want to combine it with env. color in the CC.
+    // In order to have depth, you also need to enable `rdpq_mode_zoverride` so the ucode can set this correctly.
+    
+    rdpq_sync_pipe();
+    
+    rdpq_sync_tile();
+    rdpq_set_mode_standard();
+   
+    rdpq_mode_zbuf(true, true);
+    rdpq_mode_zoverride(true, 0, 0);
+   
+    rdpq_mode_combiner(RDPQ_COMBINER1((PRIM,0,ENV,0), (0,0,0,1)));
+   
+    // tpx is its own ucode, so nothing that was set up in t3d carries over automatically.
+    // For convenience, you can call 'tpx_state_from_t3d' which will copy over
+    // the current matrix, screen-size and w-normalization factor.
+    // Crash caused from this point onwards
+    tpx_state_from_t3d();
+     
+    // tpx also has the same matrix stack functions as t3d, Note that the stack itself is NOT shared
+    // so any push/pop here will not affect t3d and vice versa.
+    // Also make sure that the first stack operation you do after 'tpx_state_from_t3d' is a push and not a set.
+    
+    //====tpx_matrix_push(&matPartFP);
+    // While each particle has its own size, there is a global scaling factor that can be set.
+    // This can only scale particles down, so the range is 0.0 - 1.0.
+    //====tpx_state_set_scale(partSizeX, partSizeY);
+
+    // Now draw particles. internally this will load, transform and draw them in one go on the RSP.
+    // While the ucode can only handle a 344 at a time, this function will automatically batch them
+    // so you can specify an arbitrary amount of particles (as long as it's an even count)
+    //tpx_particle_draw(particles, PARTICLE_COUNT);
+
+    // Make sure end up at the same stack level as before.
+    //====tpx_matrix_pop(1);
+    /**/
+    // After all particles are drawn, there is nothing special to do.
+    // You can either continue with t3d (remember to revert rdpq settings again) or do other 2D draws.
+
 }

@@ -3,18 +3,18 @@
 [x] make corners sand island
 [x] make centre sand island
 [x] make rat simple non animation
-[] snakes have floaties
+[x] snakes have floaties
 [x] snakes pickup rat
-[] snake are colour coded
+[x] snake are colour coded
 [] player win number is correct
 
 [] snakes have water movement effect
 [] snakes can attack each other
 [] celebration at end
 
-[] background music
-[] count down visual at start
-[] count down audio
-[] end screen audio
+[x] background music
+[x] count down visual at start
+[x] count down audio
+[x] end screen audio
 [] pickup audio
 [] put down audio

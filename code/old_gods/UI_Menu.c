@@ -28,6 +28,9 @@ char mainMenuSubTitleCharBuffer[40] = "Press Start";
 // GameOverScreen
 char gameOverTitleCharBuffer[20] = "WINNER";
 char gameOverSubTitle[40] = "Player 1";
+
+// Start Countdown char
+char startCountdownCharBuffer[16] = "0";
 //char gameOverSubTitleLoseCharBuffer[80] = "You have failed to contain the the god\nPress Start to restart";
 //char gameOverSubTitleWinCharBuffer[80] = "You have succeded to contain the the god\nPress Start to restart";
 
@@ -58,6 +61,36 @@ AF_Entity* gameOverSubTitleEntity = NULL;
 AF_Entity* gameOverTitleBackground = NULL;
 AF_Entity* gameOverSubTitleBackground = NULL;
 
+// START COUNTDOWN
+AF_Entity* startCountdownUIBackgroundEntity = NULL;
+AF_Entity* startCountdownLabelEntity = NULL;
+
+// GAME DELAYS
+#define COUNTDOWN_DELAY     3.0f
+#define GO_DELAY            1.0f
+#define WIN_DELAY           5.0f
+#define WIN_SHOW_DELAY      2.0f
+
+
+float countDownTimer;
+//bool isEnding;
+//float endTimer;
+//PlyNum winner;
+
+// Gameplay Vars
+BOOL isDeclaredWinner = FALSE;
+BOOL isStartedPlaying = FALSE;
+
+
+// GAME SOUNDS
+xm64player_t music;
+wav64_t sfx_start;
+wav64_t sfx_countdown;
+wav64_t sfx_stop;
+wav64_t sfx_winner;
+
+
+
 
 // Forward decalred functions
 //void Game_UpdatePlayerScoreText();
@@ -71,6 +104,9 @@ void UI_Menu_RenderPlayingUI(AppData* _appData);
 void UI_Menu_MainMenuSetShowing(BOOL _state);
 void UI_Menu_GameOverUISetShowing(BOOL _state);
 void UI_Menu_PlayingSetState(BOOL _state);
+void UI_Menu_SetupAudio();
+void UI_Menu_RenderCountdown(AppData* _appData);
+void UI_Menu_CountdownState(BOOL _state);
 
 void UI_Menu_Awake(AppData* _appData){
 
@@ -187,7 +223,7 @@ void UI_Menu_Start(AppData* _appData){
     Vec2 titleSheetSpriteSize = {256, 256};//{64,64};
     
     Vec2 titleSpriteScale = {2.0f, 0.25f};//{7.0f, 1.0f};
-    uint8_t fontSize = 14;
+    //uint8_t fontSize = 14;
     //Vec2 mainMenutitleSpritePos = {titlePos.x - (titleSpriteSize.y*titleSpriteScale.y), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y) *titleSpriteScale.y) + fontSize};
     Vec2 mainMenutitleSpritePos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.5f), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
     
@@ -245,11 +281,11 @@ void UI_Menu_Start(AppData* _appData){
     // title background elements
 
     Vec2 gameOverTitleSize = {256,256};
-    Vec2 gameOverSpriteSize = {256, 256};//{64,64};
+    //Vec2 gameOverSpriteSize = {256, 256};//{64,64};
     Vec2 gameOverSpriteScale = {2.0f, 0.25f};
-    Vec2 gameOverTitlePos = mainMenuTitlePos;
+    //Vec2 gameOverTitlePos = mainMenuTitlePos;
     Vec2 gameOverSubTitlePos = mainMenuSubTitlePos;//{(screenHalfWidth) - (screenHalfWidth * 0.5f) + 64, screenHalfHeight};
-    Vec2 gameOverSubTitleSize = subTitleSize;
+    //Vec2 gameOverSubTitleSize = subTitleSize;
     //gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, mainMenuSubTitleTextPos, mainMenuTitleSize);
     //gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitle, FONT4_ID, fontPath4, pink, mainMenuSubTitleTextPos, mainMenuSubTitleSize);
 
@@ -281,7 +317,22 @@ void UI_Menu_Start(AppData* _appData){
     gameOverTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],gameOverTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSize,whiteColor,0,gameOverTitleSize);
     gameOverSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],gameOverSubTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSize,pink,0,gameOverTitleSize);
     
+
+    // Setup Start Countdown
+    Vec2 countdownSpriteSize = {256,256};
+    Vec2 startCountDownSpriteScale = {0.5f, 0.25f};
+    Vec2 startCountdownTitleBackgroundPos = {screenHalfWidth - (countdownSpriteSize.x * 0.25f), screenHalfHeight - 100};
+    Vec2 startCountdownTitleLabelPos = {startCountdownTitleBackgroundPos.x + 55,startCountdownTitleBackgroundPos.y + 40};
+    startCountdownLabelEntity = Entity_Factory_CreateUILabel(&_appData->ecs, startCountdownCharBuffer, FONT4_ID, fontPath4, whiteColor, startCountdownTitleLabelPos, mainMenuSubTitleSize);
+    startCountdownUIBackgroundEntity = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],startCountdownTitleBackgroundPos, startCountDownSpriteScale,gameOverTitleSize,pink,0,gameOverTitleSize);
     
+    // Setup gameplay vars
+    isDeclaredWinner = FALSE;
+    isStartedPlaying = FALSE;
+
+     // Setup the audio and countdown timer
+    countDownTimer = COUNTDOWN_DELAY;
+    UI_Menu_SetupAudio();
 }
 
 void UI_Menu_Update(AppData* _appData){
@@ -292,6 +343,10 @@ void UI_Menu_Update(AppData* _appData){
             // TODO
             //UI_Menu_RenderGameOverScreen(_appData);
             UI_Menu_RenderMainMenu(_appData);
+        break;
+
+        case GAME_STATE_COUNTDOWN:
+            UI_Menu_RenderCountdown(_appData);
         break;
 
         case GAME_STATE_PLAYING:
@@ -309,7 +364,8 @@ void UI_Menu_Update(AppData* _appData){
         break;
 
         case GAME_STATE_GAME_RESTART:
-            
+            countDownTimer = 0;
+            isDeclaredWinner = FALSE;
         break;
 
         case GAME_STATE_GAME_END:
@@ -317,17 +373,28 @@ void UI_Menu_Update(AppData* _appData){
         break;
 
     }
+
+   
     
 }
 
 
 
 void UI_Menu_Shutdown(AF_ECS* _ecs){
+    // Destroy Font
     debugf("UI Renderer Shutdow: Unregistering fonts \n");
     rdpq_text_unregister_font(FONT2_ID);
     rdpq_text_unregister_font(FONT3_ID);
     rdpq_text_unregister_font(FONT4_ID);
     rdpq_text_unregister_font(FONT5_ID);
+
+    // Destroy Audio
+    wav64_close(&sfx_start);
+    wav64_close(&sfx_countdown);
+    wav64_close(&sfx_stop);
+    wav64_close(&sfx_winner);
+    xm64player_stop(&music);
+    xm64player_close(&music);
 }
 
 // ===================== ===================== ===================== =====================
@@ -379,18 +446,24 @@ void UI_Menu_PlayingSetState(BOOL _state){
         player1ScoreBackground->sprite->enabled = AF_Component_SetEnabled(player1ScoreBackground->sprite->enabled, _state);
         player2ScoreBackground->sprite->enabled = AF_Component_SetEnabled(player2ScoreBackground->sprite->enabled, _state);
         player3ScoreBackground->sprite->enabled = AF_Component_SetEnabled(player3ScoreBackground->sprite->enabled, _state);
-        player4ScoreBackground->sprite->enabled = AF_Component_SetEnabled(player4ScoreBackground->sprite->enabled, _state);
-
-        //player 2 background
-        // player3 background
-        // player 4 background
-
-        
+        player4ScoreBackground->sprite->enabled = AF_Component_SetEnabled(player4ScoreBackground->sprite->enabled, _state);   
 }
+
+void UI_Menu_CountdownState(BOOL _state){
+    // Player Counts hid
+        startCountdownUIBackgroundEntity->text->isShowing = _state;
+        startCountdownLabelEntity->text->isShowing = _state;
+        
+
+        startCountdownUIBackgroundEntity->sprite->enabled = AF_Component_SetEnabled(startCountdownUIBackgroundEntity->sprite->enabled, _state);
+        startCountdownLabelEntity->sprite->enabled = AF_Component_SetEnabled(startCountdownLabelEntity->sprite->enabled, _state); 
+}
+
 void UI_Menu_RenderMainMenu(AppData* _appData){
         UI_Menu_MainMenuSetShowing(TRUE);
         UI_Menu_GameOverUISetShowing(FALSE);
         UI_Menu_PlayingSetState(FALSE);
+        UI_Menu_CountdownState(FALSE);
 
         // detect start button pressed
         if(_appData->input.keys[A_KEY]->pressed == TRUE){
@@ -400,9 +473,8 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
             // countdown Time
             gameplayData->countdownTimer = COUNT_DOWN_TIME;
 
-            gameplayData->gameState = GAME_STATE_PLAYING;
-            
-           
+            //gameplayData->gameState = GAME_STATE_PLAYING;
+            gameplayData->gameState = GAME_STATE_COUNTDOWN;
         }
 }
 
@@ -412,10 +484,16 @@ Game_UpdatePlayerScoreText
 Update the UI score elements
 */
 void UI_Menu_RenderPlayingUI(AppData* _appData){
+
+    
+   
+  //if (!controlbefore && player_has_control(&players[0]))
+    
     // TODO: dont run these commands every frame
     UI_Menu_MainMenuSetShowing(FALSE);
     UI_Menu_GameOverUISetShowing(FALSE);
     UI_Menu_PlayingSetState(TRUE);
+    UI_Menu_CountdownState(FALSE);
 
     GameplayData* gameplayData = &_appData->gameplayData; 
     sprintf(godsCountLabelText, "%i", gameplayData->godEatCount);
@@ -461,6 +539,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
 
     UI_Menu_MainMenuSetShowing(FALSE);
     UI_Menu_PlayingSetState(FALSE);
+    UI_Menu_CountdownState(FALSE);
     
 
     //gameOverTitleEntity->text->isShowing = TRUE;
@@ -485,6 +564,15 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
 
      UI_Menu_GameOverUISetShowing(TRUE);
 
+    // Game Jam CORE MINI GAME end game stuff
+    // only call this once
+    if(isDeclaredWinner == FALSE){
+        wav64_play(&sfx_winner, 31);
+        xm64player_stop(&music);
+        isDeclaredWinner = TRUE;
+    }
+   
+
     for(int i = 0; i < PLAYER_COUNT; ++i){
         // detect start button pressed to restart the game
         if(_appData->input.keys[i][A_KEY].pressed == TRUE){
@@ -495,8 +583,50 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
         if(_appData->input.keys[i][START_KEY].pressed == TRUE){
             debugf("End minigame\n");
             gameplayData->gameState = GAME_STATE_GAME_END;
+            core_set_winner(playerWithHighestScore);
+            minigame_end(); 
         }
     }
-    
+}
 
+void UI_Menu_RenderCountdown(AppData* _appData){
+    UI_Menu_MainMenuSetShowing(FALSE);
+    UI_Menu_GameOverUISetShowing(FALSE);
+    UI_Menu_PlayingSetState(FALSE);
+    UI_Menu_CountdownState(TRUE);
+    // this will loop 3 times then progress
+    if (countDownTimer > -GO_DELAY)
+    {
+        float prevCountDown = countDownTimer;
+        countDownTimer -= _appData->gameTime.timeSinceLastFrame;
+        if ((int)prevCountDown != (int)countDownTimer && countDownTimer >= 0){
+            wav64_play(&sfx_countdown, 31);
+            // update the char buffer that will be the onscreen text
+            sprintf(startCountdownCharBuffer, "%i", ((int)countDownTimer)+1);
+            startCountdownLabelEntity->text->text = startCountdownCharBuffer;
+            startCountdownLabelEntity->text->isDirty = TRUE;
+            
+        }
+        return;
+    }
+    // this will only play once
+    wav64_play(&sfx_start, 31);
+    isStartedPlaying = TRUE;
+   
+    sprintf(startCountdownCharBuffer, "%s", "GO !!!");
+    startCountdownLabelEntity->text->text = startCountdownCharBuffer;
+    startCountdownLabelEntity->text->isDirty = TRUE;
+    // TODO: add a final slight delay to allow the words GO!!! to be read
+     _appData->gameplayData.gameState = GAME_STATE_PLAYING;
+}
+
+// TODO: define in assets
+void UI_Menu_SetupAudio(){
+  wav64_open(&sfx_start, "rom:/core/Start.wav64");
+  wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
+  wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
+  wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
+  xm64player_open(&music, "rom:/old_gods/bottled_bubbles.xm64");
+  xm64player_play(&music, 0);
+  mixer_ch_set_vol(31, 0.5f, 0.5f);
 }

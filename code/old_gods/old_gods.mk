@@ -23,7 +23,8 @@ ASSETS_LIST += \
 	filesystem/old_gods/map2.t3dm \
 	filesystem/old_gods/snake.t3dm \
 	filesystem/old_gods/rat.t3dm \
-	filesystem/old_gods/torus.t3dm 
+	filesystem/old_gods/torus.t3dm \
+	filesystem/old_gods/bottled_bubbles.xm64 \
 
 filesystem/old_gods/Jumpman_H1.font64: MKFONT_FLAGS += --outline -1 --size 64 --char-spacing 2
 filesystem/old_gods/Jumpman_H2.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2

@@ -5,6 +5,11 @@ BUILD_DIR = build
 ASSETS_DIR = assets
 MINIGAME_DIR = code
 FILESYSTEM_DIR = filesystem
+#N64_INST = libdragon
+#T3D_INST = tiny3D
+
+#T3D_INST= tiny3d
+
 #-- ADDED
 MINIGAMEDSO_DIR = $(FILESYSTEM_DIR)/minigames
 
@@ -17,19 +22,22 @@ SRC = main.c core.c minigame.c menu.c $(DEBUGFILES:.c=.o)
 
 filesystem/squarewave.font64: MKFONT_FLAGS += --outline 1 --range all
 
-###
+#include $(N64_INST)/n64.mk
+include libdragon/n64.mk
+#include tiny3d/t3d.mk
+#include $(T3D_INST)/t3d.mk
+include tiny3D/t3d.mk
 
-include $(N64_INST)/include/n64.mk
-include $(N64_INST)/include/t3d.mk
+#include 
 
 MINIGAMES_LIST = $(notdir $(wildcard $(MINIGAME_DIR)/*))
 DSO_LIST = $(addprefix $(MINIGAMEDSO_DIR)/, $(addsuffix .dso, $(MINIGAMES_LIST)))
 
 IMAGE_LIST = $(wildcard $(ASSETS_DIR)/*.png) $(wildcard $(ASSETS_DIR)/core/*.png)
-FONT_LIST  = $(wildcard $(ASSETS_DIR)/*.ttf)
-MODEL_LIST  = $(wildcard $(ASSETS_DIR)/*.glb)
-SOUND_LIST  = $(wildcard $(ASSETS_DIR)/*.wav) $(wildcard $(ASSETS_DIR)/core/*.wav)
-MUSIC_LIST  = $(wildcard $(ASSETS_DIR)/*.xm)
+FONT_LIST = $(wildcard $(ASSETS_DIR)/*.ttf)
+MODEL_LIST = $(wildcard $(ASSETS_DIR)/*.glb)
+SOUND_LIST = $(wildcard $(ASSETS_DIR)/*.wav) $(wildcard $(ASSETS_DIR)/core/*.wav)
+MUSIC_LIST = $(wildcard $(ASSETS_DIR)/*.xm)
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(IMAGE_LIST:%.png=%.sprite))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(FONT_LIST:%.ttf=%.font64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MODEL_LIST:%.glb=%.t3dm))
@@ -43,6 +51,8 @@ ifeq ($(DEBUG), 1)
 else
 	N64_CFLAGS += -O2
 endif
+
+
 
 all: $(ROMNAME).z64
 
@@ -103,3 +113,5 @@ clean:
 -include $(wildcard $(BUILD_DIR)/*.d)
 
 .PHONY: all clean
+
+
