@@ -15,6 +15,7 @@ ASSETS_LIST += \
 	filesystem/rampage/winner-2.sprite \
 	filesystem/rampage/winner-3.sprite \
 	filesystem/rampage/destroy.sprite \
+	filesystem/rampage/tie.sprite \
 	filesystem/rampage/finish.sprite \
 	filesystem/rampage/spark_blob.i8.sprite \
 	filesystem/rampage/player.t3dm \

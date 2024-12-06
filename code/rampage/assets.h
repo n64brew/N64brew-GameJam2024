@@ -33,6 +33,7 @@ struct RampageAssets {
     sprite_t* score_digits[4];
     sprite_t* winner_screen[4];
     sprite_t* destroy_image;
+    sprite_t* tie_image;
     sprite_t* finish_image;
 
     wav64_t music;

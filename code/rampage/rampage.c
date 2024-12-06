@@ -313,8 +313,8 @@ int get_winner_index(int index) {
 
 uint8_t clear_shade = 128;
 
-#define DESTROY_SIZE_X  71
-#define DESTROY_SIZE_Y  17
+#define DESTROY_SIZE_X  (348 / 2 + 2)
+#define DESTROY_SIZE_Y  (66 / 2 + 2)
 
 void minigame_redraw_rects() {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
@@ -542,8 +542,8 @@ void minigame_loop(float deltatime) {
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
         rdpq_sprite_blit(
             rampage_assets_get()->destroy_image,
-            (SCREEN_WIDTH - 137) / 2,
-            SCREEN_HEIGHT / 2 - 16,
+            (SCREEN_WIDTH - 348) / 2 + randomInRange(-2, 3),
+            (SCREEN_HEIGHT - 64) / 2 + randomInRange(-2, 3),
             &(rdpq_blitparms_t) {
                 .scale_y = 1.0f / HEIGHT_SCALE,
             }
@@ -559,9 +559,9 @@ void minigame_loop(float deltatime) {
         );
     } else if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
         for (int i = 0; i < gRampage.winner_count; i += 1) {
-            int x = SCREEN_WIDTH / 2 - 60;
-            int y = SCREEN_HEIGHT / 2 - gRampage.winner_count * 16 +
-                i * 32;
+            int x = (SCREEN_WIDTH - 288) / 2;
+            int y = SCREEN_HEIGHT / 2 - gRampage.winner_count * 32 +
+                i * 64;
 
             rdpq_sprite_blit(
                 rampage_assets_get()->winner_screen[get_winner_index(i)],
@@ -574,14 +574,13 @@ void minigame_loop(float deltatime) {
         }
 
         if (gRampage.winner_count == 0) {
-            rdpq_text_printf(
-                &(rdpq_textparms_t){
-                    .width = SCREEN_WIDTH, 
-                    .align = ALIGN_CENTER,
-                    .style_id = 0,
-                }, FONT_TEXT, 
-                0.0f, SCREEN_HEIGHT / 2, 
-                "Draw"
+            rdpq_sprite_blit(
+                rampage_assets_get()->tie_image,
+                (SCREEN_WIDTH - 124) / 2,
+                (SCREEN_HEIGHT - 64) / 2,
+                &(rdpq_blitparms_t) {
+                    .scale_y = 1.0f / HEIGHT_SCALE,
+                }
             );
         }
     }

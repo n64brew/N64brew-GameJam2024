@@ -93,6 +93,7 @@ void rampage_assets_init() {
     }
 
     gRampageAssets.destroy_image = sprite_load("rom:/rampage/destroy.sprite");
+    gRampageAssets.tie_image = sprite_load("rom:/rampage/tie.sprite");
     gRampageAssets.finish_image = sprite_load("rom:/rampage/finish.sprite");
 
     wav64_open(&gRampageAssets.music, "rom:/rampage/stompin.wav64");
@@ -141,6 +142,7 @@ void rampage_assets_destroy() {
     }
 
     sprite_free(gRampageAssets.destroy_image);
+    sprite_free(gRampageAssets.tie_image);
     sprite_free(gRampageAssets.finish_image);
 
     wav64_close(&gRampageAssets.music);
