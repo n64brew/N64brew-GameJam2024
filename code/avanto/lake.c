@@ -44,7 +44,7 @@
 #define NUM_MOVES_TO_FINISH 64
 #define ADVANCE_PER_STROKE ((RACE_END_Z-RACE_START_Z)/NUM_MOVES_TO_FINISH)
 #define SWIM_SPEED 100.f
-#define NUM_SPLASH_SOURCES (4*4)
+#define NUM_SPLASH_SOURCES (4*2)
 #define MIN_SPLASH_PARTICLES 8
 #define MAX_SPLASH_PARTICLES 16
 #define MINIGAME_CHANNEL 31
@@ -1067,6 +1067,7 @@ void lake_cleanup() {
   particle_source_free(&snow_particle_source);
   for (size_t i = 0; i < 4; i++) {
     entity_free(&shadows[i]);
+    particle_source_free(&steam_sources[i]);
   }
   t3d_model_free(shadow_model);
   entity_free(&map);
