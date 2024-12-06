@@ -3,6 +3,9 @@
 #include "sequence_game_snowman.h"
 #include "sequence_game_input.h"
 
+#define MAX_SNOWMEN 100
+int snowman_uuid = 0;
+
 int count_snowmen()
 {
     int count = 0;
@@ -67,36 +70,38 @@ Snowman *create_snowman()
 {
     Snowman *snowman = (Snowman *)malloc(sizeof(Snowman));
     Vector2 spawn = get_snowman_spawn();
-    snowman->id = count_snowmen() + 1;
+    snowman->id = snowman_uuid;
     snowman->x = spawn.x;
     snowman->y = spawn.y;
-    snowman->collision_box_x1 = spawn.x;
-    snowman->collision_box_y1 = spawn.y + 8;
-    snowman->collision_box_x2 = spawn.x + 12;
-    snowman->collision_box_y2 = spawn.y + 16;
+    snowman->collision_box_x1 = spawn.x + SNOWMAN_COLLISION_BOX_X1_OFFSET;
+    snowman->collision_box_y1 = spawn.y + SNOWMAN_COLLISION_BOX_Y1_OFFSET;
+    snowman->collision_box_x2 = spawn.x + SNOWMAN_COLLISION_BOX_X2_OFFSET;
+    snowman->collision_box_y2 = spawn.y + SNOWMAN_COLLISION_BOX_Y2_OFFSET;
+    snowman->hit_box_x1 = spawn.x + SNOWMAN_HIT_BOX_X1_OFFSET;
+    snowman->hit_box_y1 = spawn.y + SNOWMAN_HIT_BOX_Y1_OFFSET;
+    snowman->hit_box_x2 = spawn.x + SNOWMAN_HIT_BOX_X2_OFFSET;
+    snowman->hit_box_y2 = spawn.y + SNOWMAN_HIT_BOX_Y2_OFFSET;
     snowman->action = SNOWMAN_IDLE;
     snowman->frames = 0;
     snowman->locked_for_frames = 0;
     snowman->time = 0.0f;
     snowman->idle_sprite = sequence_game_snowman_idle_sprite;
     snowman->jump_sprite = sequence_game_snowman_jump_sprite;
+    snowman_uuid++;
     return snowman;
 }
 
 void add_snowman()
 {
-    // return;
-
-    Snowman *snowman = create_snowman();
-
-    if (snowman->x == -1.0F && snowman->y == -1.0F)
+    if (count_snowmen() >= MAX_SNOWMEN)
     {
-        fprintf(stderr, "Failed to spawn snowman\n");
-        free(snowman);
         return;
     }
 
-    // Insert at the head if the list is empty or the new value is smaller
+    Snowman *snowman = create_snowman();
+
+    // Insert at the head if the list is empty.
+    // Insert at the head if the new value is smaller.
     if (snowmen == NULL || snowmen->y >= snowman->y)
     {
         snowman->next = snowmen;
@@ -104,7 +109,7 @@ void add_snowman()
         return;
     }
 
-    // Traverse to find the insertion point
+    // Otherwise, Traverse the snowmen to find the correct insertion point.
     Snowman *current = snowmen;
     while (current->next != NULL && current->next->y < snowman->y)
     {

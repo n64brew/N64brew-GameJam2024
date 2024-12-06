@@ -13,6 +13,7 @@ const MinigameDef minigame_def = {
 };
 
 rdpq_font_t *font_halo_dek;
+rdpq_font_t *font_halo_dek_medium;
 rdpq_font_t *font_halo_dek_big;
 rdpq_font_t *font_celtic_garamond_the_second;
 
@@ -36,16 +37,13 @@ void minigame_init()
     rdpq_fontstyle_t fontstyle_white = {
         .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),
     };
-
     rdpq_fontstyle_t fontstyle_white_transparent = {
         .color = RGBA32(0xFF, 0xFF, 0xFF, (int)(255.0f * 0.5f)),
     };
-
     rdpq_fontstyle_t fontstyle_white_outlined = {
         .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),
         .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
     };
-
     rdpq_fontstyle_t fontstyle_player1_outlined = {
         .color = PLAYERCOLOR_1,
         .outline_color = RGBA32(0x00, 0x00, 0x00, 0xFF),
@@ -64,11 +62,18 @@ void minigame_init()
     };
 
     font_halo_dek = rdpq_font_load("rom:/mallard/HaloDek.font64");
+    font_halo_dek_medium = rdpq_font_load("rom:/mallard/HaloDekMedium.font64");
     font_halo_dek_big = rdpq_font_load("rom:/mallard/HaloDekBig.font64");
     font_celtic_garamond_the_second = rdpq_font_load("rom:/mallard/CelticGaramondTheSecond.font64");
 
     rdpq_font_style(font_halo_dek, 0, &fontstyle_white);
     rdpq_font_style(font_halo_dek, 1, &fontstyle_white_transparent);
+
+    rdpq_font_style(font_halo_dek_medium, 0, &fontstyle_white_outlined);
+    rdpq_font_style(font_halo_dek_medium, 1, &fontstyle_player1_outlined);
+    rdpq_font_style(font_halo_dek_medium, 2, &fontstyle_player2_outlined);
+    rdpq_font_style(font_halo_dek_medium, 3, &fontstyle_player3_outlined);
+    rdpq_font_style(font_halo_dek_medium, 4, &fontstyle_player4_outlined);
 
     rdpq_font_style(font_halo_dek_big, 0, &fontstyle_white_outlined);
     rdpq_font_style(font_halo_dek_big, 1, &fontstyle_player1_outlined);
@@ -79,6 +84,7 @@ void minigame_init()
     rdpq_font_style(font_celtic_garamond_the_second, 0, &fontstyle_white);
 
     rdpq_text_register_font(FONT_HALODEK, font_halo_dek);
+    rdpq_text_register_font(FONT_HALODEK_MEDIUM, font_halo_dek_medium);
     rdpq_text_register_font(FONT_HALODEK_BIG, font_halo_dek_big);
     rdpq_text_register_font(FONT_CELTICGARMONDTHESECOND, font_celtic_garamond_the_second);
 }
@@ -158,6 +164,8 @@ void minigame_cleanup()
     rdpq_font_free(font_halo_dek);
     rdpq_text_unregister_font(FONT_HALODEK_BIG);
     rdpq_font_free(font_halo_dek_big);
+    rdpq_text_unregister_font(FONT_HALODEK_MEDIUM);
+    rdpq_font_free(font_halo_dek_medium);
     rdpq_text_unregister_font(FONT_CELTICGARMONDTHESECOND);
     rdpq_font_free(font_celtic_garamond_the_second);
 }

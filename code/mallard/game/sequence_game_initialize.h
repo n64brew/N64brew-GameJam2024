@@ -59,13 +59,8 @@ extern sprite_t *sequence_game_mallard_two_idle_sprite;
 extern sprite_t *sequence_game_mallard_three_idle_sprite;
 extern sprite_t *sequence_game_mallard_four_idle_sprite;
 
-void initialize_ducks();
-void free_ducks();
-void display_ducks();
-Duck *get_duck_by_id(int i);
 void initialize_controllers();
 void free_controllers();
-
 int random_between(int min, int max);
 
 #endif // SEQUENCE_GAME_INITIALIZE_H

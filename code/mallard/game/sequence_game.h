@@ -27,6 +27,8 @@ typedef struct Duck
     int id;
     float x;
     float y;
+    float score;
+    float time_since_last_hit;
     DuckActions action;
     Directions direction;
     sprite_t *base_sprite;
@@ -44,6 +46,10 @@ typedef struct Duck
     float slap_box_y1;
     float slap_box_x2;
     float slap_box_y2;
+    float hit_box_x1;
+    float hit_box_y1;
+    float hit_box_x2;
+    float hit_box_y2;
     struct Duck *next;
 } Duck;
 
@@ -59,6 +65,7 @@ typedef struct Snowman
     float x;
     float y;
     float time;
+    float time_since_last_jump;
     SnowmanActions action;
     sprite_t *idle_sprite;
     sprite_t *jump_sprite;
@@ -68,6 +75,10 @@ typedef struct Snowman
     float collision_box_y1;
     float collision_box_x2;
     float collision_box_y2;
+    float hit_box_x1;
+    float hit_box_y1;
+    float hit_box_x2;
+    float hit_box_y2;
     struct Snowman *next;
 } Snowman;
 

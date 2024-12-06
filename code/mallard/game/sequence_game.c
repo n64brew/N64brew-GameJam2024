@@ -6,6 +6,7 @@
 #include "sequence_game_graphics.h"
 #include "sequence_game_initialize.h"
 #include "sequence_game_snowman.h"
+#include "sequence_game_duck.h"
 
 ///////////////////////////////////////////////////////////
 //                  Globals                              //

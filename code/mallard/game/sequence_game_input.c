@@ -6,14 +6,13 @@
 #include "sequence_game_initialize.h"
 #include "sequence_game_graphics.h"
 #include "sequence_game_snowman.h"
+#include "sequence_game_duck.h"
 
 #define BOOST 2.0
-// #define SQRT_ONE_HALF 0.70710678118
-#define SQRT_ONE_HALF 1 // Yeah.... quick lazy fix for now. I was getting bothered by being able to squeeze through areas I shouldn't be able to, but COULD because i was going diagonal. I'll fix this later.
-#define SNOWMAN_SPAWN_FREQUENCY_ONE 3.0f
+#define SNOWMAN_SPAWN_FREQUENCY_ONE 2.0f
 #define SNOWMAN_SPAWN_FREQUENCY_TWO 2.0f
-#define SNOWMAN_SPAWN_FREQUENCY_THREE 1.0f
-#define SNOWMAN_SPAWN_FREQUENCY_FOUR 0.5f
+#define SNOWMAN_SPAWN_FREQUENCY_THREE 2.0f
+#define SNOWMAN_SPAWN_FREQUENCY_FOUR 2.0f
 
 float time_elapsed_since_last_snowman_spawn = 0.0f;
 float time_elapsed = 0.0f;
@@ -46,6 +45,8 @@ void snowmen_bubble_sort()
     }
 }
 
+// Monitor and update spawn frequency.
+// Update each snowman's frame, time existed, collision box, and hit box.
 void update_snowmen(float deltatime)
 {
     if (time_elapsed >= 0.0f && time_elapsed < 15.0f)
@@ -66,22 +67,24 @@ void update_snowmen(float deltatime)
     }
 
     // Update snowmen.
-    Snowman *temporary = snowmen;
-    while (temporary != NULL)
+    Snowman *currentSnowman = snowmen;
+    while (currentSnowman != NULL)
     {
-        // Update the frame counter for the snowman; this is used by the animation when rendering.
-        temporary->frames++;
+        currentSnowman->frames++;
 
-        // Update the time counter for the snowman; this is will be used to render frost/ice/snow around the snowmen that've been around for a while.
-        temporary->time += deltatime;
+        currentSnowman->time += deltatime;
 
-        // Update the collision box for the snowman. Don't do this for each frame, because when it moves around it can get "caught" on other entities, and feels bad.
-        temporary->collision_box_x1 = temporary->x;
-        temporary->collision_box_y1 = temporary->y + 8;
-        temporary->collision_box_x2 = temporary->x + 12;
-        temporary->collision_box_y2 = temporary->y + 16;
+        currentSnowman->collision_box_x1 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X1_OFFSET;
+        currentSnowman->collision_box_y1 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y1_OFFSET;
+        currentSnowman->collision_box_x2 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X2_OFFSET;
+        currentSnowman->collision_box_y2 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y2_OFFSET;
 
-        temporary = temporary->next;
+        currentSnowman->hit_box_x1 = currentSnowman->x + SNOWMAN_HIT_BOX_X1_OFFSET;
+        currentSnowman->hit_box_y1 = currentSnowman->y + SNOWMAN_HIT_BOX_Y1_OFFSET;
+        currentSnowman->hit_box_x2 = currentSnowman->x + SNOWMAN_HIT_BOX_X2_OFFSET;
+        currentSnowman->hit_box_y2 = currentSnowman->y + SNOWMAN_HIT_BOX_Y2_OFFSET;
+
+        currentSnowman = currentSnowman->next;
     }
 
     // Add snowman.
@@ -89,76 +92,12 @@ void update_snowmen(float deltatime)
     {
         add_snowman();
         time_elapsed_since_last_snowman_spawn = 0.0f;
-        // display_ducks();
-        // display_snowmen();
     }
 
     snowmen_bubble_sort();
 
     time_elapsed += deltatime;
     time_elapsed_since_last_snowman_spawn += deltatime;
-}
-
-void ducks_bubble_sort()
-{
-    bool swapped = true;
-
-    while (swapped)
-    {
-        Duck **prev = &ducks;
-        Duck *curr;
-        Duck *next;
-
-        swapped = false;
-        for (curr = ducks; curr; prev = &curr->next, curr = curr->next)
-        {
-            next = curr->next;
-
-            if (next && curr->collision_box_y2 > next->collision_box_y2)
-            {
-                curr->next = next->next;
-                next->next = curr;
-                *prev = next;
-
-                swapped = true;
-            }
-        }
-    }
-}
-
-// Set the collision box of the ducks based on their current action and frame.
-void update_ducks(float deltatime)
-{
-    for (size_t i = 0; i < 4; i++)
-    {
-        Duck *duck = get_duck_by_id(i);
-
-        // Update the frame counter for the duck; this is used by the animation when rendering.
-        duck->frames++;
-
-        // Update the collision box for the duck. Don't do this for each frame, because when it moves around it can get "caught" on other entities, and feels bad.
-        duck->collision_box_x1 = duck->x + 8;
-        duck->collision_box_y1 = duck->y + 16;
-        duck->collision_box_x2 = duck->x + 24;
-        duck->collision_box_y2 = duck->y + 24;
-
-        if (duck->direction == LEFT)
-        {
-            duck->slap_box_x1 = duck->x + 2;
-            duck->slap_box_y1 = duck->y + 6;
-            duck->slap_box_x2 = duck->x + 16;
-            duck->slap_box_y2 = duck->y + 18;
-        }
-        else if (duck->direction == RIGHT)
-        {
-            duck->slap_box_x1 = duck->x + 16;
-            duck->slap_box_y1 = duck->y + 6;
-            duck->slap_box_x2 = duck->x + 30;
-            duck->slap_box_y2 = duck->y + 18;
-        }
-    }
-
-    ducks_bubble_sort();
 }
 
 void process_input_start_button(Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, size_t i, float deltatime)
@@ -243,20 +182,20 @@ void process_input_start_button(Controller *controller, joypad_buttons_t pressed
     }
 }
 
-typedef struct Collision
+typedef struct ValidMovement
 {
     bool x;
     bool y;
-} Collision;
+} ValidMovement;
 
 bool detect_collision(Rect a, Rect b)
 {
     return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
 }
 
-Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
+ValidMovement validate_movement(Duck *duck, size_t i, Vector2 movement)
 {
-    Collision collision = (Collision){.x = false, .y = false};
+    ValidMovement validMovement = (ValidMovement){.x = false, .y = false};
 
     Rect duckPotentialCollisionBox = (Rect){
         .x1 = duck->collision_box_x1 + movement.x,
@@ -287,19 +226,19 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
         {
             if (detect_collision(duckPotentialCollisionBoxX, currentSnowmanCollisionBox))
             {
-                collision.x = true;
+                validMovement.x = true;
             }
 
             if (detect_collision(duckPotentialCollisionBoxY, currentSnowmanCollisionBox))
             {
-                collision.y = true;
+                validMovement.y = true;
             }
         }
 
         // Stop checking if we've already collided in both directions.
-        if (collision.x && collision.y)
+        if (validMovement.x && validMovement.y)
         {
-            return collision;
+            return validMovement;
         }
 
         currentSnowman = currentSnowman->next;
@@ -324,32 +263,32 @@ Collision check_for_duck_collisions(Duck *duck, size_t i, Vector2 movement)
         {
             if (detect_collision(duckPotentialCollisionBoxX, currentDuckCollisionBox))
             {
-                collision.x = true;
+                validMovement.x = true;
             }
 
             if (detect_collision(duckPotentialCollisionBoxY, currentDuckCollisionBox))
             {
-                collision.y = true;
+                validMovement.y = true;
             }
         }
 
         // Stop checking if we've already collided in both directions.
-        if (collision.x && collision.y)
+        if (validMovement.x && validMovement.y)
         {
-            return collision;
+            return validMovement;
         }
 
         // Next duck.
         currentDuck = currentDuck->next;
     }
 
-    return collision;
+    return validMovement;
 }
 
 void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_t pressed, joypad_buttons_t held, joypad_buttons_t released, joypad_8way_t direction, size_t i, float deltatime)
 {
     Vector2 movement;
-    Collision collision;
+    ValidMovement validMovement;
 
     // Movement
     switch (direction)
@@ -361,14 +300,14 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = 0, .y = -1 * BOOST};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -393,18 +332,18 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         duck->direction = RIGHT;
 
         // Position
-        movement = (Vector2){.x = SQRT_ONE_HALF, .y = -SQRT_ONE_HALF};
+        movement = (Vector2){.x = 1, .y = -1};
         if (held.b)
-            movement = (Vector2){.x = SQRT_ONE_HALF * BOOST, .y = -SQRT_ONE_HALF * BOOST};
+            movement = (Vector2){.x = 1 * BOOST, .y = -1 * BOOST};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -433,14 +372,14 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = 1 * BOOST, .y = 0};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -465,18 +404,18 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         duck->direction = RIGHT;
 
         // Position
-        movement = (Vector2){.x = SQRT_ONE_HALF, .y = SQRT_ONE_HALF};
+        movement = (Vector2){.x = 1, .y = 1};
         if (held.b)
-            movement = (Vector2){.x = SQRT_ONE_HALF * BOOST, .y = SQRT_ONE_HALF * BOOST};
+            movement = (Vector2){.x = 1 * BOOST, .y = 1 * BOOST};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -502,14 +441,14 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = 0, .y = 1 * BOOST};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -534,18 +473,18 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         duck->direction = LEFT;
 
         // Position
-        movement = (Vector2){.x = -SQRT_ONE_HALF, .y = SQRT_ONE_HALF};
+        movement = (Vector2){.x = -1, .y = 1};
         if (held.b)
-            movement = (Vector2){.x = -SQRT_ONE_HALF * BOOST, .y = SQRT_ONE_HALF * BOOST};
+            movement = (Vector2){.x = -1 * BOOST, .y = 1 * BOOST};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -574,14 +513,14 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         if (held.b)
             movement = (Vector2){.x = -1 * BOOST, .y = 0};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -606,18 +545,18 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
         duck->direction = LEFT;
 
         // Position
-        movement = (Vector2){.x = -SQRT_ONE_HALF, .y = -SQRT_ONE_HALF};
+        movement = (Vector2){.x = -1, .y = -1};
         if (held.b)
-            movement = (Vector2){.x = -SQRT_ONE_HALF * BOOST, .y = -SQRT_ONE_HALF * BOOST};
+            movement = (Vector2){.x = -1 * BOOST, .y = -1 * BOOST};
 
-        collision = check_for_duck_collisions(duck, i, movement);
+        validMovement = validate_movement(duck, i, movement);
 
-        if (!collision.x)
+        if (!validMovement.x)
         {
             duck->x += movement.x;
         }
 
-        if (!collision.y)
+        if (!validMovement.y)
         {
             duck->y += movement.y;
         }
@@ -676,6 +615,108 @@ void process_input_direction(Duck *duck, Controller *controller, joypad_buttons_
     }
 }
 
+void remove_snowman(int id)
+{
+    // Remove snowman from the snowmen linked list
+    Snowman *currentSnowman = snowmen;
+    Snowman *previousSnowman = NULL;
+    while (currentSnowman != NULL)
+    {
+        if (currentSnowman->id == id)
+        {
+            if (previousSnowman == NULL)
+            {
+                snowmen = currentSnowman->next;
+            }
+            else
+            {
+                previousSnowman->next = currentSnowman->next;
+            }
+
+            free(currentSnowman);
+            break;
+        }
+
+        previousSnowman = currentSnowman;
+        currentSnowman = currentSnowman->next;
+    }
+}
+
+void evaluate_attack()
+{
+    Duck *currentDuck = ducks;
+
+    while (currentDuck != NULL)
+    {
+        if (currentDuck->action == DUCK_SLAP)
+        {
+            Rect currentDuckSlapBox = (Rect){.x1 = currentDuck->slap_box_x1, .y1 = currentDuck->slap_box_y1, .x2 = currentDuck->slap_box_x2, .y2 = currentDuck->slap_box_y2};
+
+            Snowman *currentSnowman = snowmen;
+            Snowman *temporarySnowman = NULL;
+            while (currentSnowman != NULL)
+            {
+                Rect currentSnowmanHitBox = (Rect){.x1 = currentSnowman->hit_box_x1, .y1 = currentSnowman->hit_box_y1, .x2 = currentSnowman->hit_box_x2, .y2 = currentSnowman->hit_box_y2};
+
+                if (detect_collision(currentDuckSlapBox, currentSnowmanHitBox))
+                {
+                    // TODO: Sound Effect.
+                    // TODO: Snowman hurt animation.
+                    // TODO: Snowman health decrease.
+                    // TODO: Have snowmen die when health gone.
+
+                    currentDuck->score += 1.0f;
+
+                    temporarySnowman = currentSnowman;
+                    currentSnowman = currentSnowman->next;
+                    remove_snowman(temporarySnowman->id);
+                }
+                else
+                {
+                    currentSnowman = currentSnowman->next;
+                }
+            }
+
+            Duck *temporaryDuck = ducks;
+            while (temporaryDuck != NULL)
+            {
+                if (currentDuck->id == temporaryDuck->id)
+                {
+                    temporaryDuck = temporaryDuck->next;
+                    continue;
+                }
+
+                Rect temporaryDuckHitBox = (Rect){.x1 = temporaryDuck->hit_box_x1, .y1 = temporaryDuck->hit_box_y1, .x2 = temporaryDuck->hit_box_x2, .y2 = temporaryDuck->hit_box_y2};
+
+                if (detect_collision(currentDuckSlapBox, temporaryDuckHitBox))
+                {
+                    // TODO: Sound Effect.
+                    // TODO: temporaryDuck hurt animation.
+                    // TODO: temporaryDuck movement  (plus stun lock?).
+
+                    if (temporaryDuck->time_since_last_hit > 0.5f)
+                    {
+                        // Reset time since last hit.
+                        temporaryDuck->time_since_last_hit = 0.0f;
+
+                        // Reward Duck
+                        currentDuck->score += 0.1f;
+
+                        // Damage Duck
+                        temporaryDuck->score -= 0.1f;
+                        if (temporaryDuck->score < 0.0f)
+                        {
+                            temporaryDuck->score = 0.0f;
+                        }
+                    }
+                }
+                temporaryDuck = temporaryDuck->next;
+            }
+        }
+        currentDuck = currentDuck->next;
+    }
+}
+
 void sequence_game_update(float deltatime)
 {
     for (size_t i = 0; i < core_get_playercount(); i++)
@@ -700,10 +741,8 @@ void sequence_game_update(float deltatime)
 
     if (!sequence_game_paused)
     {
-        // Set the collision box of the ducks based on their current action and frame.
         update_ducks(deltatime);
-
-        // Set the collision box of the snowmen based on their current action and frame. Also, add snowmen.
         update_snowmen(deltatime);
+        evaluate_attack();
     }
 }

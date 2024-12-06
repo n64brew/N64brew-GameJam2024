@@ -3,9 +3,9 @@
 #include "../../../minigame.h"
 #include "../mallard.h"
 #include "sequence_game.h"
-#include "sequence_game_graphics.h"
-
 #include "sequence_game_initialize.h"
+#include "sequence_game_graphics.h"
+#include "sequence_game_duck.h"
 
 // These player boxes are just used for visualizing the boxes and spawn points while developing.
 #define PLAYER_1_BOX_X1 16
@@ -143,22 +143,22 @@ void sequence_game_draw_paused()
     float percentage = sequence_game_start_held_elapsed / GAME_EXIT_DURATION > 1.0 ? 1.0 : sequence_game_start_held_elapsed / GAME_EXIT_DURATION;
 
     // COLOR
-    char *utf8_text = "$02^01PAUSED";
+    char *utf8_text = "$03^01PAUSED";
     if (sequence_game_player_holding_start == 0)
-        utf8_text = "$02^01PAUSED";
+        utf8_text = "$03^01PAUSED";
     else if (sequence_game_player_holding_start == 1)
-        utf8_text = "$02^02PAUSED";
+        utf8_text = "$03^02PAUSED";
     else if (sequence_game_player_holding_start == 2)
-        utf8_text = "$02^03PAUSED";
+        utf8_text = "$03^03PAUSED";
     else if (sequence_game_player_holding_start == 3)
-        utf8_text = "$02^04PAUSED";
+        utf8_text = "$03^04PAUSED";
 
     rdpq_set_scissor(0, 0, 70 + x + (180.0f * percentage), 240);
     rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, utf8_text);
 
     // WHITE
     rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 320, 240);
-    rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$02^00PAUSED");
+    rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$03^00PAUSED");
 }
 
 int get_frame_from_snowman(Snowman *snowman)
@@ -212,7 +212,18 @@ void sequence_game_render_snowmen()
     }
 }
 
-void render_snowman_collision_box(Snowman *snowman)
+void render_debug_snowman_hit_box(Snowman *snowman)
+{
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
+    rdpq_fill_rectangle(snowman->hit_box_x1, snowman->hit_box_y1, snowman->hit_box_x2, snowman->hit_box_y2);
+    rdpq_mode_pop();
+}
+
+void render_debug_snowman_collision_box(Snowman *snowman)
 {
     rdpq_mode_push();
     rdpq_set_mode_standard();
@@ -223,14 +234,36 @@ void render_snowman_collision_box(Snowman *snowman)
     rdpq_mode_pop();
 }
 
-void render_duck_slap_box(Duck *duck)
+void render_debug_duck_slap_box(Duck *duck)
 {
     rdpq_mode_push();
     rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_set_prim_color(RGBA32(255, 0, 0, 128));
+    rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
     rdpq_fill_rectangle(duck->slap_box_x1, duck->slap_box_y1, duck->slap_box_x2, duck->slap_box_y2);
+    rdpq_mode_pop();
+}
+
+void render_debug_duck_collision_box(Duck *duck)
+{
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(RGBA32(0, 0, 255, 128));
+    rdpq_fill_rectangle(duck->collision_box_x1, duck->collision_box_y1, duck->collision_box_x2, duck->collision_box_y2);
+    rdpq_mode_pop();
+}
+
+void render_debug_duck_hit_box(Duck *duck)
+{
+    rdpq_mode_push();
+    rdpq_set_mode_standard();
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(RGBA32(0, 255, 0, 128));
+    rdpq_fill_rectangle(duck->hit_box_x1, duck->hit_box_y1, duck->hit_box_x2, duck->hit_box_y2);
     rdpq_mode_pop();
 }
 
@@ -258,10 +291,9 @@ void sequence_game_render_snowmen_and_ducks()
             rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
             rdpq_sprite_blit(get_sprite_from_duck(currentDuck), currentDuck->x, currentDuck->y, &blitparms);
 
-            if (currentDuck->action == DUCK_SLAP)
-            {
-                render_duck_slap_box(currentDuck);
-            }
+            render_debug_duck_slap_box(currentDuck);
+            render_debug_duck_collision_box(currentDuck);
+            render_debug_duck_hit_box(currentDuck);
 
             // Next duck.
             currentDuck = currentDuck->next;
@@ -279,7 +311,8 @@ void sequence_game_render_snowmen_and_ducks()
         rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         rdpq_sprite_blit(get_sprite_from_snowman(currentSnowman), currentSnowman->x, currentSnowman->y, &blitparms);
 
-        render_snowman_collision_box(currentSnowman);
+        render_debug_snowman_hit_box(currentSnowman);
+        render_debug_snowman_collision_box(currentSnowman);
 
         // Next snowman.
         currentSnowman = currentSnowman->next;
@@ -301,12 +334,60 @@ void sequence_game_render_snowmen_and_ducks()
         rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         rdpq_sprite_blit(get_sprite_from_duck(currentDuck), currentDuck->x, currentDuck->y, &blitparms);
 
-        if (currentDuck->action == DUCK_SLAP)
-        {
-            render_duck_slap_box(currentDuck);
-        }
+        render_debug_duck_slap_box(currentDuck);
+        render_debug_duck_collision_box(currentDuck);
+        render_debug_duck_hit_box(currentDuck);
 
         // Next duck.
+        currentDuck = currentDuck->next;
+    }
+}
+
+void sequence_game_render_scores()
+{
+    Duck *currentDuck = ducks;
+    while (currentDuck != NULL)
+    {
+        char utf8_text[10];
+        float x, y;
+
+        // TODO: Look at how many characters exist in utf8_text and determine the width accordingly for positioning x-value for player #2 & #4.
+
+        switch (currentDuck->id)
+        {
+        case 0:
+            snprintf(utf8_text, 10, "$02^01%i", (int)roundf(currentDuck->score));
+            x = 10;
+            y = 240;
+            break;
+        case 1:
+            snprintf(utf8_text, 10, "$02^02%i", (int)roundf(currentDuck->score));
+            x = 290;
+            y = 240;
+            break;
+        case 2:
+            snprintf(utf8_text, 10, "$02^03%i", (int)roundf(currentDuck->score));
+            x = 10;
+            y = 30;
+            break;
+        case 3:
+            snprintf(utf8_text, 10, "$02^04%i", (int)roundf(currentDuck->score));
+            x = 290;
+            y = 30;
+            break;
+        default:
+            snprintf(utf8_text, 10, "$02^00%i", (int)roundf(currentDuck->score));
+            x = 10;
+            y = 240;
+            break;
+        }
+
+        rdpq_text_print(NULL, FONT_HALODEK_MEDIUM, x, y, utf8_text);
+
+        // WHITE
+        // rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 320, 240);
+        // rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$03^00PAUSED");
+
         currentDuck = currentDuck->next;
     }
 }
@@ -321,6 +402,8 @@ void sequence_game_render(float deltatime)
         sequence_game_render_map();
 
         sequence_game_render_snowmen_and_ducks();
+
+        sequence_game_render_scores();
 
         if (sequence_game_paused == false)
             sequence_game_draw_press_start_to_pause();
