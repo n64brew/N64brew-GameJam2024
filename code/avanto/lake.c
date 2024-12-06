@@ -154,7 +154,7 @@ static void generate_splash(T3DVec3 pos) {
 static void generate_one_splash_per_player() {
   for (size_t i = 0; i < 4; i++) {
     if (players[i].out) {
-      return;
+      continue;
     }
     generate_splash(
         (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}});
@@ -690,8 +690,6 @@ void lake_dynamic_loop_render(float delta_time) {
   rdpq_mode_pop();
 
   // Sync before manual draws
-  rdpq_sync_tile();
-  rdpq_sync_pipe();
   rdpq_sync_load();
 
   if (lake_stage == LAKE_GAME) {

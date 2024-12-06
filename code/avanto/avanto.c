@@ -321,7 +321,6 @@ void minigame_loop(float delta_time) {
   }
 
   rdpq_sync_pipe();
-  rdpq_sync_tile();
   rdpq_mode_push();
   rdpq_mode_zbuf(false, false);
 

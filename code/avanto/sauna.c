@@ -775,9 +775,7 @@ void sauna_dynamic_loop_render(float delta_time) {
     rdpq_mode_pop();
   }
 
-  // Sync after all t3d calls
   rdpq_sync_pipe();
-  rdpq_sync_tile();
 
   if (loyly_strength >= EPS) {
     rdpq_mode_push();
