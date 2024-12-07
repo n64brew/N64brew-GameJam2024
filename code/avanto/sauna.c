@@ -30,6 +30,7 @@ enum sauna_stages {
   SAUNA_WALK_IN,
   SAUNA_COUNTDOWN,
   SAUNA_GAME,
+  SAUNA_UNBEND,
   SAUNA_WALK_OUT,
   SAUNA_DONE,
   SAUNA_FADE_OUT,
@@ -478,10 +479,9 @@ static void sauna_game_fixed_loop(float delta_time) {
   }
 }
 
-struct script_action walk_out_actions[][10] = {
+struct script_action walk_out_actions[][9] = {
   {
-    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
-    {.type = ACTION_WAIT, .time = 2.f+3.f},
+    {.type = ACTION_WAIT, .time = 3.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {.type = ACTION_ROTATE_TO, .rot = T3D_DEG_TO_RAD(90.f), .speed = -T3D_PI},
     {
@@ -504,8 +504,7 @@ struct script_action walk_out_actions[][10] = {
     {.type = ACTION_END},
   },
   {
-    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
-    {.type = ACTION_WAIT, .time = 2.f+2.f},
+    {.type = ACTION_WAIT, .time = 2.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {
       .type = ACTION_WALK_TO,
@@ -521,8 +520,7 @@ struct script_action walk_out_actions[][10] = {
     {.type = ACTION_END},
   },
   {
-    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
-    {.type = ACTION_WAIT, .time = 2.f+1.f},
+    {.type = ACTION_WAIT, .time = 1.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {
       .type = ACTION_WALK_TO,
@@ -538,8 +536,6 @@ struct script_action walk_out_actions[][10] = {
     {.type = ACTION_END},
   },
   {
-    {.type = ACTION_DO_WHOLE_ANIM, .anim = UNBEND},
-    {.type = ACTION_WAIT, .time = 2.f},
     {.type = ACTION_DO_WHOLE_ANIM, .anim = STAND_UP},
     {
       .type = ACTION_WALK_TO,
@@ -647,6 +643,20 @@ static float sauna_get_anim_normal_time(const T3DAnim *anim) {
   return anim->time / anim->animRef->duration;
 }
 
+static void sauna_unbend_fixed_loop(float delta_time) {
+  static float delay;
+  if (!sauna_stage_inited[SAUNA_UNBEND]) {
+    sauna_stage_inited[SAUNA_UNBEND] = true;
+    delay = 2.f;
+    return;
+  }
+
+  delay -= delta_time;
+  if (delay < EPS) {
+    sauna_stage++;
+  }
+}
+
 bool sauna_fixed_loop(float delta_time) {
   switch (sauna_stage) {
     case SAUNA_INTRO:
@@ -663,6 +673,10 @@ bool sauna_fixed_loop(float delta_time) {
 
     case SAUNA_GAME:
       sauna_game_fixed_loop(delta_time);
+      break;
+
+    case SAUNA_UNBEND:
+      sauna_unbend_fixed_loop(delta_time);
       break;
 
     case SAUNA_WALK_OUT:
@@ -882,13 +896,17 @@ void sauna_dynamic_loop_post(float delta_time) {
     }
   }
 
-  if (sauna_stage != SAUNA_GAME || !sauna_stage_inited[SAUNA_GAME]) {
+  if ((sauna_stage != SAUNA_GAME && sauna_stage != SAUNA_UNBEND)
+      || !sauna_stage_inited[SAUNA_GAME]) {
     return;
   }
 
   for (size_t i = 0; i < 4; i++) {
     if (players[i].out) {
       continue;
+    }
+    if (sauna_stage == SAUNA_UNBEND) {
+      held[i].raw = 0;
     }
 
     // If the player is not out, animation will always be BEND or UNBEND
