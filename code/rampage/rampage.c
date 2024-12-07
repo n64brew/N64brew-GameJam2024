@@ -331,7 +331,14 @@ void minigame_redraw_rects() {
         rampage_tank_redraw_rect(&viewport, &gRampage.tanks[i]);
     }
 
-    if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
+    if (gRampage.state == RAMPAGE_STATE_START) {
+        struct RedrawRect rect;
+        rect.min[0] = SCREEN_WIDTH / 2 - 30;
+        rect.min[1] = SCREEN_HEIGHT / 2 - 32;
+        rect.max[0] = SCREEN_WIDTH / 2 + 30;
+        rect.max[1] = SCREEN_HEIGHT / 2 + 32;
+        redraw_update_dirty(gRampage.center_text_redraw, &rect);
+    } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
         struct RedrawRect rect;
         rect.min[0] = SCREEN_WIDTH / 2 - DESTROY_SIZE_X;
         rect.min[1] = SCREEN_HEIGHT / 2 - DESTROY_SIZE_Y;
@@ -532,8 +539,8 @@ void minigame_loop(float deltatime) {
         if (countdown_number <= 3) {
             rdpq_sprite_blit(
                 rampage_assets_get()->countdown_numbers[countdown_number],
-                SCREEN_WIDTH / 2 - 9,
-                SCREEN_HEIGHT / 2 - 16,
+                SCREEN_WIDTH / 2 - 24,
+                SCREEN_HEIGHT / 2 - 30,
                 &(rdpq_blitparms_t) {
                     .scale_y = 1.0f / HEIGHT_SCALE,
                 }
@@ -551,8 +558,8 @@ void minigame_loop(float deltatime) {
     } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
         rdpq_sprite_blit(
             rampage_assets_get()->finish_image,
-            (SCREEN_WIDTH - 118) / 2,
-            SCREEN_HEIGHT / 2 - 16,
+            (SCREEN_WIDTH - 237) / 2,
+            (SCREEN_HEIGHT - 62) / 2,
             &(rdpq_blitparms_t) {
                 .scale_y = 1.0f / HEIGHT_SCALE,
             }
