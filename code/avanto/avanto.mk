@@ -1,25 +1,3 @@
-# sauna.sprite https://www.rawpixel.com/image/5923005
-# loyly.wav64 https://freesound.org/people/Nakhas/sounds/522882/
-# sj-polkka.xm64 https://musescore.com/user/179734/scores/5907389
-#                samples from https://freewavesamples.com/
-# door.wav64 https://opengameart.org/content/creaky-door-hinge-spooky
-# pine-64-*.sprite https://opengameart.org/content/freebies-mundo-commissions
-# cabin model and cabin.sprite https://opengameart.org/content/low-poly-log-cabin
-# snow.sprite https://opengameart.org/content/terrain-textures-pack-from-stunt-rally-23
-# ice-gs.sprite https://opengameart.org/content/terrain-textures-pack-from-stunt-rally-23
-# planks-gs.sprite https://opengameart.org/content/handpainted-wood
-# metsa-4-bit-* based on https://opengameart.org/content/freebies-mundo-commissions
-#        and https://opengameart.org/content/jkms-tree-set
-# water-bg.sprite https://opengameart.org/content/water-texture-pack
-# finish.sprite own
-# splash.wav64 https://opengameart.org/content/40-cc0-water-splash-slime-sfx
-# tail.sprite own
-# balloon.sprite own
-# penalty.sprite own
-# shadow.* own
-# map.t3dm own
-# unit-cube.t3dm own
-# kiuas.sprite own
 ASSETS_LIST += \
 	filesystem/avanto/sauna.sprite \
 	filesystem/avanto/guy.t3dm \
