@@ -111,6 +111,16 @@ sprite_t* player_right_attack_anim[10];
 // font
 rdpq_font_t *font;
 
+// lighting vars
+// int rotateLightCounter;
+// int lightCoordIndex;
+// float lightCoordArrayX[4];
+// float lightCoordArrayY[4];
+// float lightCoordArrayZ[4];
+float lightCoordX;
+float lightCoordY;
+float lightCoordZ;
+
 // T3D stuff
 surface_t *depthBuffer;
 rspq_block_t *dplMap;
@@ -361,6 +371,28 @@ void minigame_init(){
     // initialize display
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE);
 
+    // lighting animation vars -> can't get working. T3D + blender = hard :(
+    // rotateLightCounter = 10;
+    // lightCoordIndex = 0;
+    // lightCoordArrayX[0] = 5.0f;
+    // lightCoordArrayX[1] = 5.0f;
+    // lightCoordArrayX[2] = 5.0f;
+    // lightCoordArrayX[3] = 5.0f;
+    // lightCoordArrayY[0] = 100.0f;
+    // lightCoordArrayY[1] = 100.0f;
+    // lightCoordArrayY[2] = 100.0f; // setting to 0 changes 2 / 5 face colors? looks bad
+    // lightCoordArrayY[3] = 100.0f; // setting to 0 changes 2 / 5 face colors? looks bad
+    // lightCoordArrayZ[0] = 5.0f;
+    // lightCoordArrayZ[1] = 5.0f;
+    // lightCoordArrayZ[2] = 5.0f;
+    // lightCoordArrayZ[3] = 5.0f;
+    // lightCoordX = lightCoordArrayX[0];
+    // lightCoordY = lightCoordArrayY[0];
+    // lightCoordZ = lightCoordArrayZ[0];
+    lightCoordX = 5.0f;
+    lightCoordY = 100.0f;
+    lightCoordZ = 0.0f;
+
     // t3d init
     depthBuffer = display_get_zbuf();
     t3d_init((T3DInitParams){});
@@ -372,11 +404,12 @@ void minigame_init(){
     camPos = (T3DVec3){{0, 150.0f, 5.0f}};
     camTarget = (T3DVec3){{0, 0, 0}};
 
-    lightDirVec = (T3DVec3){{0, 0, 5.0f}};
+    lightDirVec = (T3DVec3){{lightCoordX, lightCoordY, lightCoordZ}};
     t3d_vec3_norm(&lightDirVec);
 
-    // modelMap = t3d_model_load("rom:/swordstrike/background_texture_test.t3dm");
-    modelMap = t3d_model_load("rom:/swordstrike/background_no_textures.t3dm");
+    // modelMap = t3d_model_load("rom:/swordstrike/bg_sphere.t3dm");
+    // modelMap = t3d_model_load("rom:/swordstrike/background_cube_no_tex.t3dm");
+    modelMap = t3d_model_load("rom:/swordstrike/background_cube_sand.t3dm");
 
     rspq_block_begin();
     t3d_matrix_push(mapMatFP);
@@ -430,6 +463,20 @@ void minigame_fixedloop(float deltatime){
             wav64_play(&sfx_scream, CHANNEL_SFX);
             playDeathSound = false;
         }
+
+        // update light animation for bg every 10 ticks
+        // if(rotateLightCounter <= 0){
+        //     rotateLightCounter = 10;
+        //     if(lightCoordIndex > 3){
+        //         lightCoordIndex = 0;
+        //     }
+        //     lightCoordX = lightCoordArrayX[lightCoordIndex];
+        //     lightCoordY = lightCoordArrayY[lightCoordIndex];
+        //     lightCoordZ = lightCoordArrayZ[lightCoordIndex];
+        //     lightCoordIndex++;
+        // } else {
+        //     rotateLightCounter -= 1;
+        // }
 
         // PHYSICS
         uint32_t playercount = core_get_playercount();
@@ -577,13 +624,17 @@ void minigame_loop(float deltatime){
     // get display
     surface_t *disp = display_get();
 
-    // draw background cube
+    // draw background
     rdpq_attach(disp, depthBuffer);
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
     t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
     t3d_screen_clear_depth();
+
+    // get lighting animation for frame
+    // lightDirVec = (T3DVec3){{lightCoordX, lightCoordY, lightCoordZ}};
+    // t3d_vec3_norm(&lightDirVec);
 
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
@@ -618,7 +669,7 @@ void minigame_loop(float deltatime){
 
     // DISPLAY WINNER NAME 
     if(game_state == 2 && playedWinnerSound){
-        rdpq_text_printf(NULL, FONT_TEXT, 125, 140, "%s %i %s", "PLAYER", winnerIndex, "WINS");
+        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (winnerIndex) }, FONT_TEXT, 125, 140, "%s %i %s", "PLAYER", winnerIndex, "WINS");
     }
 
     // PAUSE
@@ -626,9 +677,6 @@ void minigame_loop(float deltatime){
         rdpq_text_printf(NULL, FONT_TEXT, 145, 140,  "%s", "PAUSE");
         rdpq_text_printf(NULL, FONT_TEXT, 110, 230, "%s", "HOLD Z + UP TO QUIT");
     }
-
-    // DEBUG DATA ---- REMOVE LATER
-    // rdpq_text_printf(NULL, FONT_TEXT, 10, 10, "%s, %i", "P1 ATT TIMER: ", players[0]->attackTimer);
 
     // detach rdp before updating display
     rdpq_detach_show();

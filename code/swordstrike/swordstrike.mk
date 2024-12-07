@@ -25,6 +25,9 @@ ASSETS_LIST += \
 	filesystem/swordstrike/fighter_right_attack_8.sprite \
 	filesystem/swordstrike/fighter_right_attack_9.sprite \
 	filesystem/swordstrike/fighter_right_attack_10.sprite \
-	filesystem/swordstrike/background_no_textures.t3dm \
 	filesystem/swordstrike/wilhelm_scream.wav64 \
-	filesystem/swordstrike/challengers.wav64
+	filesystem/swordstrike/challengers.wav64 \
+	filesystem/swordstrike/background_cube_sand.t3dm \
+	filesystem/swordstrike/background_cube_no_tex.t3dm \
+	filesystem/swordstrike/bg_sphere.t3dm \
+	filesystem/swordstrike/sand12.ci4.sprite

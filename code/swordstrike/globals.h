@@ -12,7 +12,7 @@
 #define SLIDE_VERT_STRENGTH 1
 #define TOLERANCE 2 // general tolerance for bounding box detection
 #define FLOOR_TOLERANCE 5 // tolerance for floor detection
-#define SLIDE_COOLDOWN 15
+#define SLIDE_COOLDOWN 10
 
 // SCREEN EDGES
 #define RIGHT_EDGE 315
