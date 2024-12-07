@@ -44,7 +44,7 @@
 #define NUM_MOVES_TO_FINISH 64
 #define ADVANCE_PER_STROKE ((RACE_END_Z-RACE_START_Z)/NUM_MOVES_TO_FINISH)
 #define SWIM_SPEED 150.f
-#define NUM_SPLASH_SOURCES (4*2)
+#define NUM_SPLASH_SOURCES 4
 #define MIN_SPLASH_PARTICLES 8
 #define MAX_SPLASH_PARTICLES 16
 #define MINIGAME_CHANNEL 31
@@ -129,7 +129,7 @@ static float fade;
 static void lake_intro_dynamic_loop(float delta_time);
 static void lake_outro_dynamic_loop(float delta_time);
 
-static void generate_splash(T3DVec3 pos) {
+static void generate_splash(T3DVec3 pos, bool silent) {
   struct particle_source *source = NULL;
   size_t index;
   for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
@@ -150,16 +150,21 @@ static void generate_splash(T3DVec3 pos) {
   source->pos = pos;
   particle_source_reset_splash(source, num_particles);
   particle_source_update_transform(source);
-  wav64_play(&sfx_splash[index], FIRST_SPLASH_CHANNEL+index);
+  if (!silent) {
+    wav64_play(&sfx_splash[index], FIRST_SPLASH_CHANNEL+index);
+  }
 }
 
 static void generate_one_splash_per_player() {
+  bool silent = false;
   for (size_t i = 0; i < 4; i++) {
     if (players[i].out) {
       continue;
     }
     generate_splash(
-        (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}});
+        (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}},
+        silent);
+    silent = true;
   }
 }
 
@@ -531,7 +536,8 @@ void lake_dynamic_loop_pre(float delta_time) {
     if (players[i].pos.v[2] < expected_zs[i]) {
       if (splash_cooldown < EPS && rand_float(0, 1.f) < CHANCE_TO_SPLASH) {
         generate_splash(
-            (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}});
+            (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}},
+            false);
         splash_cooldown = SPLASH_INTERVAL;
       }
       float nz = players[i].pos.v[2] + SWIM_SPEED*bonus_mul*delta_time;
