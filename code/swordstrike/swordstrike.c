@@ -647,53 +647,33 @@ void minigame_loop(float deltatime){
     // }
 
     if(game_state == 0){
-        // rdpq_sync_pipe(); // Hardware crashes otherwise
-        // rdpq_sync_tile(); // Hardware crashes otherwise
-        // rdpq_text_print(&(rdpq_textparms_t){ .style_id = 1}, FONT_TEXT, 
-        //                 players[0]->direction == 0 ? players[0]->xPos+8
-        //                                             : players[0]->xPos+4, 
-        //                 players[0]->yPos-5, "P1");
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_print(&(rdpq_textparms_t){ .style_id = 1}, FONT_TEXT, 
+                        players[0]->direction == 0 ? players[0]->xPos+8
+                                                    : players[0]->xPos+4, 
+                        players[0]->yPos-5, "P1");
 
-        // rdpq_sync_pipe(); // Hardware crashes otherwise
-        // rdpq_sync_tile(); // Hardware crashes otherwise
-        // rdpq_text_print(&(rdpq_textparms_t){ .style_id = 2}, FONT_TEXT, 
-        //                 players[1]->direction == 0 ? players[1]->xPos+8
-        //                                             : players[1]->xPos+4, 
-        //                 players[1]->yPos-5, "P2");
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_print(&(rdpq_textparms_t){ .style_id = 2}, FONT_TEXT, 
+                        players[1]->direction == 0 ? players[1]->xPos+8
+                                                    : players[1]->xPos+4, 
+                        players[1]->yPos-5, "P2");
 
-        // rdpq_sync_pipe(); // Hardware crashes otherwise
-        // rdpq_sync_tile(); // Hardware crashes otherwise
-        // rdpq_text_print(&(rdpq_textparms_t){ .style_id = 3}, FONT_TEXT, 
-        //                 players[2]->direction == 0 ? players[2]->xPos+8
-        //                                             : players[2]->xPos+4, 
-        //                 players[2]->yPos-5, "P3");
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_print(&(rdpq_textparms_t){ .style_id = 3}, FONT_TEXT, 
+                        players[2]->direction == 0 ? players[2]->xPos+8
+                                                    : players[2]->xPos+4, 
+                        players[2]->yPos-5, "P3");
 
-        // rdpq_sync_pipe(); // Hardware crashes otherwise
-        // rdpq_sync_tile(); // Hardware crashes otherwise
-        // rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, FONT_TEXT, 
-        //                 players[3]->direction == 0 ? players[3]->xPos+8
-        //                                             : players[3]->xPos+4, 
-        //                 players[3]->yPos-5, "P4");
-
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        graphics_draw_text(disp, players[0]->direction == 0 ? players[0]->xPos+8
-                                                            : players[0]->xPos+4, 
-                                 players[0]->yPos-5, "P1");
-
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        graphics_draw_text(disp, players[1]->direction == 0 ? players[1]->xPos+8
-                                                            : players[1]->xPos+4, 
-                                 players[1]->yPos-5, "P2");
-
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        graphics_draw_text(disp, players[2]->direction == 0 ? players[2]->xPos+8
-                                                            : players[2]->xPos+4, 
-                                 players[2]->yPos-5, "P3");
-
-        graphics_set_color(graphics_make_color(0xff, 0xa5, 0x00, 0xff), 0);
-        graphics_draw_text(disp, players[3]->direction == 0 ? players[3]->xPos+8
-                                                            : players[3]->xPos+4, 
-                                 players[3]->yPos-5, "P4");
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, FONT_TEXT, 
+                        players[3]->direction == 0 ? players[3]->xPos+8
+                                                    : players[3]->xPos+4, 
+                        players[3]->yPos-5, "P4");
     }
 
     // COUNT DOWN
