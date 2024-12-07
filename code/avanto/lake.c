@@ -69,7 +69,10 @@ struct button {
 
 struct lake_ai {
   size_t pid;
-  void (*handler) (struct lake_ai *, joypad_buttons_t *, float);
+  void (*handler) (struct lake_ai *,
+      joypad_buttons_t *,
+      joypad_buttons_t *,
+      float);
   float miss_chance;
   float min_delay;
   float max_delay;
@@ -125,6 +128,7 @@ static struct particle_source steam_sources[4];
 static struct particle_source splash_sources[NUM_SPLASH_SOURCES];
 static float splash_cooldown;
 static float fade;
+static bool last_held_was_clean[4];
 
 static void lake_intro_dynamic_loop(float delta_time);
 static void lake_outro_dynamic_loop(float delta_time);
@@ -170,8 +174,10 @@ static void generate_one_splash_per_player() {
 
 static void ai_standard(struct lake_ai *ai,
     joypad_buttons_t *pressed,
+    joypad_buttons_t *held,
     float delta_time) {
   pressed->raw = 0;
+  held->raw = 0;
 
   float time_error = 0.f;
   if (ai->time_to_next > 1000.f) {
@@ -381,6 +387,7 @@ void lake_init() {
     penalties[i] = 0.f;
     expected_zs[i] = RACE_START_Z;
     next_buttons[i] = get_next_button(NULL);
+    last_held_was_clean[i] = false;
     if (i >= core_get_playercount()) {
       ai_init(&ais[i], i, core_get_aidifficulty());
     }
@@ -470,12 +477,14 @@ void lake_init() {
 
 void lake_dynamic_loop_pre(float delta_time) {
   joypad_buttons_t pressed[4];
+  joypad_buttons_t held[4];
   for (size_t i = 0; i < core_get_playercount(); i++) {
     pressed[i] = joypad_get_buttons_pressed(core_get_playercontroller(i));
+    held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
   }
   for (size_t i = core_get_playercount(); i < 4; i++) {
     if (lake_stage == LAKE_GAME) {
-      ais[i].handler(&ais[i], &pressed[i], delta_time);
+      ais[i].handler(&ais[i], &pressed[i], &held[i], delta_time);
     }
     else {
       pressed[i].raw = 0;
@@ -565,7 +574,7 @@ void lake_dynamic_loop_pre(float delta_time) {
     if (penalties[i] >= EPS) {
       penalties[i] -= delta_time;
     }
-    else {
+    else if (last_held_was_clean[i]) {
       if (pressed[i].raw == next_buttons[i]->mask) {
         expected_zs[i] += ADVANCE_PER_STROKE*bonus_mul;
         next_buttons[i] = get_next_button(next_buttons[i]);
@@ -578,6 +587,8 @@ void lake_dynamic_loop_pre(float delta_time) {
     if (players[i].temperature >= EPS) {
       players[i].temperature -= delta_time / TEMP_LOSS_TIME;
     }
+
+    last_held_was_clean[i] = !held[i].raw;
   }
   avg_z /= (float) num_in;
 
