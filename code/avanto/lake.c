@@ -43,7 +43,7 @@
 #define LAKE_TIME 90.f
 #define NUM_MOVES_TO_FINISH 64
 #define ADVANCE_PER_STROKE ((RACE_END_Z-RACE_START_Z)/NUM_MOVES_TO_FINISH)
-#define SWIM_SPEED 100.f
+#define SWIM_SPEED 150.f
 #define NUM_SPLASH_SOURCES (4*2)
 #define MIN_SPLASH_PARTICLES 8
 #define MAX_SPLASH_PARTICLES 16
@@ -526,6 +526,7 @@ void lake_dynamic_loop_pre(float delta_time) {
       continue;
     }
     num_in++;
+    float bonus_mul = players[i].temperature >= EPS? HEAT_BONUS : 1.f;
 
     if (players[i].pos.v[2] < expected_zs[i]) {
       if (splash_cooldown < EPS && rand_float(0, 1.f) < CHANCE_TO_SPLASH) {
@@ -533,7 +534,7 @@ void lake_dynamic_loop_pre(float delta_time) {
             (T3DVec3) {{players[i].pos.v[0], WATER_Y, players[i].pos.v[2]}});
         splash_cooldown = SPLASH_INTERVAL;
       }
-      float nz = players[i].pos.v[2] + SWIM_SPEED*delta_time;
+      float nz = players[i].pos.v[2] + SWIM_SPEED*bonus_mul*delta_time;
       if (nz > expected_zs[i]) {
         nz = expected_zs[i];
       }
@@ -560,8 +561,7 @@ void lake_dynamic_loop_pre(float delta_time) {
     }
     else {
       if (pressed[i].raw == next_buttons[i]->mask) {
-        expected_zs[i] += ADVANCE_PER_STROKE
-          * (players[i].temperature >= EPS? HEAT_BONUS : 1.f);
+        expected_zs[i] += ADVANCE_PER_STROKE*bonus_mul;
         next_buttons[i] = get_next_button(next_buttons[i]);
       }
       else if (pressed[i].raw && !pressed[i].start) {
@@ -775,7 +775,7 @@ void lake_dynamic_loop_render(float delta_time) {
       ceilf(time_left));
   }
 
-  if (lake_stage >= LAKE_END) {
+  if (banner_str[0]) {
     rdpq_mode_push();
     rdpq_mode_zbuf(false, false);
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
