@@ -817,6 +817,7 @@ void sauna_dynamic_loop_render(float delta_time) {
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     tpx_state_from_t3d();
 
+    tpx_state_set_scale(1.f, 1.f);
     particle_source_draw(&kiuas_particle_source);
 
     rdpq_sync_pipe();

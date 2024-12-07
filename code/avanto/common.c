@@ -561,6 +561,8 @@ static void particle_source_iterate_steam(struct particle_source *source,
         p->posA[2] = m->cz
           + cosf((float) p->posA[1] / T3D_PI)
           * source->movement_amplitude;
+        float progress = (float) (p->posA[1] + 128) / (float) source->height;
+        p->colorA[3] = roundf((1.f - progress) * 255.f);
       }
     }
     if (!p->sizeA && actual_to_spawn) {
@@ -582,6 +584,8 @@ static void particle_source_iterate_steam(struct particle_source *source,
         p->posB[2] = (float) m->cz
           + cosf((float) p->posB[1] / T3D_PI)
           * (float) source->movement_amplitude;
+        float progress = (float) (p->posB[1] + 128) / (float) source->height;
+        p->colorB[3] = roundf((1.f - progress) * 255.f);
       }
     }
     if (!p->sizeB && actual_to_spawn) {

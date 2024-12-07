@@ -686,6 +686,7 @@ void lake_dynamic_loop_render(float delta_time) {
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
   tpx_state_from_t3d();
 
+  tpx_state_set_scale(1.f, 1.f);
   particle_source_draw(&snow_particle_source);
 
   for (size_t i = 0; i < NUM_SPLASH_SOURCES; i++) {
@@ -695,6 +696,7 @@ void lake_dynamic_loop_render(float delta_time) {
     particle_source_draw(&splash_sources[i]);
   }
 
+  tpx_state_set_scale(.5f, 1.f);
   for (size_t i = 0; i < 4; i++) {
     if (!steam_sources[i].render) {
       continue;
@@ -706,6 +708,7 @@ void lake_dynamic_loop_render(float delta_time) {
     particle_source_update_transform(&steam_sources[i]);
     particle_source_draw(&steam_sources[i]);
   }
+  tpx_state_set_scale(1.f, 1.f);
 
   rdpq_sync_pipe();
   rdpq_mode_pop();
