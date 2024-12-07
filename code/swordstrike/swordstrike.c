@@ -145,7 +145,7 @@ void minigame_init(){
         PLAYERCOLOR_4,
     };
 
-    for (size_t i = 0; i < MAXPLAYERS; i++)
+    for (size_t i = 0; i < 4; i++)
     {
         rdpq_font_style(font, i+1, &(rdpq_fontstyle_t){ .color = colors[i] });
     }
@@ -408,8 +408,8 @@ void minigame_init(){
     t3d_vec3_norm(&lightDirVec);
 
     // modelMap = t3d_model_load("rom:/swordstrike/bg_sphere.t3dm");
-    // modelMap = t3d_model_load("rom:/swordstrike/background_cube_no_tex.t3dm");
-    modelMap = t3d_model_load("rom:/swordstrike/background_cube_sand.t3dm");
+    modelMap = t3d_model_load("rom:/swordstrike/background_cube_color.t3dm");
+    // modelMap = t3d_model_load("rom:/swordstrike/background_cube_sand.t3dm");
 
     rspq_block_begin();
     t3d_matrix_push(mapMatFP);
@@ -459,10 +459,10 @@ void minigame_fixedloop(float deltatime){
         }
 
         // play death sound
-        // if(alive > 1 && playDeathSound){
-        //     wav64_play(&sfx_scream, CHANNEL_SFX);
-        //     playDeathSound = false;
-        // }
+        if(alive > 1 && playDeathSound){
+            wav64_play(&sfx_scream, CHANNEL_SFX);
+            playDeathSound = false;
+        }
 
         // update light animation for bg every 10 ticks
         // if(rotateLightCounter <= 0){
@@ -480,7 +480,7 @@ void minigame_fixedloop(float deltatime){
 
         // PHYSICS
         uint32_t playercount = core_get_playercount();
-        for (size_t i = 0; i < MAXPLAYERS; i++)
+        for (size_t i = 0; i < 4; i++)
         {
             bool isHuman = i < playercount;
             if(players[i]->isAlive){
@@ -495,7 +495,7 @@ void minigame_fixedloop(float deltatime){
 
                 // CHECK ATTACK COLLISIONS WITH OTHER PLAYERS IF ATTACKING
                 if(players[i]->attackTimer > 0){
-                    for(int j=0; j < MAXPLAYERS; j++){
+                    for(int j=0; j < 4; j++){
                         if(players[i]->id != players[j]->id && players[j]->isAlive){
                             checkPlayerWeaponCollision(players[i], players[j]);
                             if(!players[j]->isAlive && !playDeathSound){
@@ -542,20 +542,12 @@ void minigame_fixedloop(float deltatime){
 }
 
 void minigame_loop(float deltatime){
-    // BASIC COLORS
-    color_t RED = RGBA16(255, 0, 0, 0);
+    // floor color
     color_t WHITE = RGBA16(255, 255, 255, 0);
-    color_t BLACK = RGBA16(0, 0, 0, 0);
-
-    color_t GREEN = RGBA16(0, 255, 0, 0);
-    color_t BLUE = RGBA16(0, 0, 255, 0);
-    color_t PURPLE = RGBA16(128, 0, 128, 0);
-    color_t DARK_GREEN = RGBA16(256, 165, 0, 0);
-    color_t DARK_GREY = RGBA16(128, 128, 128, 0);
 
     if(game_state == 1){
         uint32_t playercount = core_get_playercount();
-        for (size_t i = 0; i < MAXPLAYERS; i++)
+        for (size_t i = 0; i < 4; i++)
         {
             bool isHuman = i < playercount;
             joypad_port_t port = core_get_playercontroller(i);
@@ -571,15 +563,6 @@ void minigame_loop(float deltatime){
                     // POLL ATTACK INPUT
                     pollAttackInput(players[i], &joypad_pressed);
                 }
-            }
-
-             // PLAYER 2 IS DEAD; RESET THEM ============> REMOVE LATER
-            if(joypad_pressed.z){
-                player2.xPos = 160;
-                player2.yPos = 120;
-                player2.isAlive = true;
-                player2.verticalVelocity = 0.0;
-                updatePlayerBoundingBox(&player2);
             }
 
             // PAUSE GAME
@@ -618,7 +601,7 @@ void minigame_loop(float deltatime){
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 1.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     // get display
@@ -642,8 +625,8 @@ void minigame_loop(float deltatime){
 
     rspq_block_run(dplMap);
 
-    rdpq_sync_tile();
     rdpq_sync_pipe(); // Hardware crashes otherwise
+    rdpq_sync_tile(); // Hardware crashes otherwise
 
     // draw player sprites and floors
     draw_players_and_level(players, player_sprites, player_left_attack_anim, player_right_attack_anim, floors, &numFloors, WHITE);
@@ -651,29 +634,66 @@ void minigame_loop(float deltatime){
     // set rdpq for drawing text
     rdpq_set_mode_standard();
 
-    // DRAW PLAYER LABELS
-    for (size_t i = 0; i < MAXPLAYERS; i++) {
-        if(players[i]->isAlive){
-            if(players[i]->direction == 0){
-                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (i+1) }, FONT_TEXT, players[i]->xPos+8, players[i]->yPos-5, "P%d", i+1);
-            } else {
-                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (i+1) }, FONT_TEXT, players[i]->xPos+4, players[i]->yPos-5, "P%d", i+1);
-            }
-        }
+    // DRAW PLAYER LABELS -> this crashes on console??? cannot draw player 1 label either
+    // for (size_t i = 0; i < 4; i++) {
+    //     if(players[i]->isAlive){
+    //         rdpq_sync_pipe(); // Hardware crashes otherwise
+    //         rdpq_sync_tile(); // Hardware crashes otherwise
+    //         rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (i+1)}, FONT_TEXT, 
+    //                         players[i]->direction == 0 ? players[i]->xPos+8
+    //                                                    : players[i]->xPos+4, 
+    //                         players[i]->yPos-5, "P%d", i+1);
+    //     }
+    // }
+
+    if(game_state == 0){
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_print(&(rdpq_textparms_t){ .style_id = 1}, FONT_TEXT, 
+                        players[0]->direction == 0 ? players[0]->xPos+8
+                                                    : players[0]->xPos+4, 
+                        players[0]->yPos-5, "P1");
+
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_print(&(rdpq_textparms_t){ .style_id = 2}, FONT_TEXT, 
+                        players[1]->direction == 0 ? players[1]->xPos+8
+                                                    : players[1]->xPos+4, 
+                        players[1]->yPos-5, "P2");
+
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_print(&(rdpq_textparms_t){ .style_id = 3}, FONT_TEXT, 
+                        players[2]->direction == 0 ? players[2]->xPos+8
+                                                    : players[2]->xPos+4, 
+                        players[2]->yPos-5, "P3");
+
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, FONT_TEXT, 
+                        players[3]->direction == 0 ? players[3]->xPos+8
+                                                    : players[3]->xPos+4, 
+                        players[3]->yPos-5, "P4");
     }
 
     // COUNT DOWN
     if(game_state == 0){
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(NULL, FONT_TEXT, 155, 140, "%i", (int)countdown_timer);
     }
 
     // DISPLAY WINNER NAME 
     if(game_state == 2 && playedWinnerSound){
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){ .style_id = (winnerIndex) }, FONT_TEXT, 125, 140, "%s %i %s", "PLAYER", winnerIndex, "WINS");
     }
 
     // PAUSE
     if(game_state == 3){
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(NULL, FONT_TEXT, 145, 140,  "%s", "PAUSE");
         rdpq_text_printf(NULL, FONT_TEXT, 110, 230, "%s", "HOLD Z + UP TO QUIT");
     }

@@ -512,9 +512,11 @@ void draw_players_and_level(struct player** players, sprite_t** player_sprites, 
     sprite_t* fighter_right_jump = player_sprites[3];
     sprite_t* fighter_left_slide = player_sprites[4];
     sprite_t* fighter_right_slide = player_sprites[5];
-    for(int i = 0; i < MAXPLAYERS; i++){
+    for(int i = 0; i < 4; i++){
         // draw player if alive
         if(players[i]->isAlive){
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
             rdpq_set_mode_standard();
             rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
             if(players[i]->attackTimer > 0){
