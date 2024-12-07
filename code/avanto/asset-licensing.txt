@@ -76,3 +76,8 @@
 
 - kiuas.sprite
   CC0 by Flávio Zavan
+
+- guy.t3dm
+  CC0 by Flávio Zavan
+  Made with makehuman, using CC0 assets. Some animation are edits from the CMU
+  BVH dataset (license here http://mocap.cs.cmu.edu/faqs.php)
