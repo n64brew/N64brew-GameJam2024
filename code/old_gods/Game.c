@@ -76,7 +76,7 @@ void Game_Update(AppData* _appData)
 	// add velocity to cube component
 
     // if gamestate is playing, then accept player inputs
-    Scene_Update(_appData);
+    
     
 }
 
@@ -87,7 +87,7 @@ Good for rendering debug data.
 ================*/
 void Game_LateUpdate(AppData* _appData){
 	assert(_appData != NULL && "Game_LateUpdate: passed null ecs reference \n");
-	Scene_LateUpdate(_appData);
+	
 }
 
 /*================

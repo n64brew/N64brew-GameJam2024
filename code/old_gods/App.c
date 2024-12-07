@@ -124,7 +124,8 @@ void App_Update(AppData* _appData){
     //AF_Physics_EarlyUpdate(&ecs);
 
     // TODO: pass input and ECS structs to the game to apply game logic
-    Game_Update(_appData);
+    //Game_Update(_appData);
+    Scene_Update(_appData);
     AF_ECS* ecs = &_appData->ecs;
     AF_Time* time = &_appData->gameTime;
     // Physics
@@ -133,8 +134,8 @@ void App_Update(AppData* _appData){
     // late update for physics
     AF_Physics_LateUpdate(ecs);
 
-    Game_LateUpdate(_appData);
-
+    //Game_LateUpdate(_appData);
+    Scene_LateUpdate(_appData);
     // TODO: Pass ECS entities to renderer to render them
     //AF_Renderer_Update(&ecs);
     //AF_Renderer_Debug();

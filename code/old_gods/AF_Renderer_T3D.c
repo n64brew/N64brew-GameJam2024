@@ -25,7 +25,7 @@ Tiny3D rendering functions
 #define DEBUG_RDP 0
 #define DEBUG_CAM_ON 1
 #define DEBUG_CAM_OFF 0
-uint8_t debugCam = DEBUG_CAM_OFF;
+uint8_t debugCam = DEBUG_CAM_ON;
 
 
 // T3D variables and defines
@@ -100,7 +100,8 @@ float lastTime;
 
 
 rspq_syncpoint_t syncPoint;
-rspq_block_t* bufferList;
+rspq_block_t* skinnedBufferList;
+rspq_block_t* staticBufferList;
 
 typedef struct RendererDebugData {
     //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
@@ -309,7 +310,12 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
 
     // TODO: render this based off the entities with models.
     // Render a model based on the model loaded by referencing its ID found in the mesh->modelID
+    int totalSkinnedMeshCommands = 0;
+    int totalNormalMeshCommands = 0;
+    int totalDrawCommands = 0;
+
     rspq_block_begin();
+   
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
         
@@ -324,56 +330,107 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             if(hasSkeletalComponent == TRUE && isEnabled == TRUE){
                 skeletalAnimation->model = (void*)models[mesh->meshID];
                 AF_Renderer_LoadAnimation(skeletalAnimation, i);
-            }
-
-            // ============ MESH ==============
-            // Only process the entities that have mesh componets with a mesh
-            // initialise modelsMat
-            // TODO: i don't like this
-            //modelsMat[i] = malloc_uncached(sizeof(T3DMat4FP));
-            T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
-            //debugf("AF_Renderer_T3D: AF_RenderInit modelsMat address: %p \n",meshMat);
-            mesh->modelMatrix = (void*)meshMat;
-            //mesh->modelMatrix = (Mat4FP*)(sizeof(T3DMat4FP));
+                // ============ MESH ==============
+                // Only process the entities that have mesh componets with a mesh
+                // initialise modelsMat
+                // TODO: i don't like this
+                //modelsMat[i] = malloc_uncached(sizeof(T3DMat4FP));
+                T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
+                //debugf("AF_Renderer_T3D: AF_RenderInit modelsMat address: %p \n",meshMat);
+                mesh->modelMatrix = (void*)meshMat;
+                //mesh->modelMatrix = (Mat4FP*)(sizeof(T3DMat4FP));
+                
+                /*if(mesh->modelMatrix == NULL){
+                    debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
+                    //continue;
+                }*/
+                //rspq_block_begin();
             
-            /*if(mesh->modelMatrix == NULL){
-                debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
-                //continue;
-            }*/
-            //rspq_block_begin();
-           
-            t3d_matrix_push(mesh->modelMatrix);
-             
-            // TODO: put a flag in that can signal a mesh is skinned
-            // The snake model needs special color and call to skinned command
-            
-            if(hasSkeletalComponent == TRUE){
-                color_t color ={mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
-                rdpq_set_prim_color(color); //RGBA32(255, 255, 255, 255));
-                //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-                t3d_model_draw_skinned(models[mesh->meshID], &skeletons[i]);//animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
-                //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
+               
+                
+                // TODO: put a flag in that can signal a mesh is skinned
+                // The snake model needs special color and call to skinned command
+                
+                if(hasSkeletalComponent == TRUE){
+                    t3d_matrix_push(mesh->modelMatrix);
+                    color_t color ={mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
+                    //rdpq_set_prim_color(color); //RGBA32(255, 255, 255, 255));
+                    // draw white / existing vertex color for main mesh
+                    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+                    //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+                    t3d_model_draw_skinned(models[mesh->meshID], &skeletons[i]);//animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
+                    //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
 
-                //t3d_model_draw(models[MODEL_SHADOW]);
-                //rdpq_set_depth_write(TRUE); // Do not overwrite depth
+                    //t3d_model_draw(models[MODEL_SHADOW]);
+                    // draw floaties with player color
+                    rdpq_set_prim_color(color);
+                    t3d_model_draw(models[MODEL_TORUS]);
+                    //rdpq_set_depth_write(TRUE); // Do not overwrite depth
+                    totalSkinnedMeshCommands += 1;
+                    t3d_matrix_pop(1);
+                    totalDrawCommands ++;
+                }
+                
             }
-            else{
+            
+        }
+    }
+    skinnedBufferList = rspq_block_end();
+
+    // ==== STATIC MESH DRAWING ====
+    rspq_block_begin();
+    for(int i=0; i<_ecs->entitiesCount; ++i) {
+        AF_CMesh* mesh = &_ecs->meshes[i];
+        
+        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+            
+            // ========== ANIMATIONS =========
+            // Process objects that have skeletal animations
+            AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+            BOOL hasSkeletalComponent = AF_Component_GetHas(skeletalAnimation->enabled);
+            BOOL isEnabled = AF_Component_GetEnabled(skeletalAnimation->enabled);
+        
+            if(hasSkeletalComponent == FALSE){
+                // ============ MESH ==============
+                // Only process the entities that have mesh componets with a mesh
+                // initialise modelsMat
+                // TODO: i don't like this
+                //modelsMat[i] = malloc_uncached(sizeof(T3DMat4FP));
+                T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
+                //debugf("AF_Renderer_T3D: AF_RenderInit modelsMat address: %p \n",meshMat);
+                mesh->modelMatrix = (void*)meshMat;
+                //mesh->modelMatrix = (Mat4FP*)(sizeof(T3DMat4FP));
+                
+                /*if(mesh->modelMatrix == NULL){
+                    debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
+                    //continue;
+                }*/
+                //rspq_block_begin();
+            
+                t3d_matrix_push(mesh->modelMatrix);
                 color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, 0xFF};
-                rdpq_set_prim_color(color);//RGBA32(0, 0, 0, 0xFF));
+                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));//color);//RGBA32(0, 0, 0, 0xFF));
                 ///t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
                 //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                 t3d_model_draw(models[mesh->meshID]);
+
+                // draw a torus around the snake
+                if(mesh->meshID == MODEL_SNAKE){
+                    rdpq_set_prim_color(color);
+                    t3d_model_draw(models[MODEL_TORUS]);
+                }
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
+                totalNormalMeshCommands++;
+                t3d_matrix_pop(1);
+                totalDrawCommands ++;
             }
-            
-            t3d_matrix_pop(1);
-            // cast to void pointer to store in our mesh data, which knows nothing about T3D
-            
-            //mesh->displayListBuffer = (void*)rspq_block_end();
+                // cast to void pointer to store in our mesh data, which knows nothing about T3D
+                //mesh->displayListBuffer = (void*)rspq_block_end();
         }
     }
-    bufferList = rspq_block_end();
+    debugf("TotalDraw Commands: %i\nTotal Skinned mesh commands: %i\nTotal normal Mesh commands: %i\n", totalDrawCommands, totalSkinnedMeshCommands, totalNormalMeshCommands);
+    staticBufferList = rspq_block_end();
 
 }
 
@@ -395,34 +452,6 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     deltaTime = newTime - lastTime;
     lastTime = newTime;
 
-    
-    /*
-    // position the camera behind the player
-    T3DVec3 vec3Zero = {{0.0f,0.0f,0.0f}};
-    camTarget = vec3Zero;//playerPos;
-    float zDist = 2.5;
-    camTarget.v[2] += zDist;//40;
-    camPos.v[0] = camTarget.v[0];
-    camPos.v[1] = camTarget.v[1] +8;// + 45;
-    camPos.v[2] = camTarget.v[2] + 8;//65;
-
-    //
-    joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_2);
-	joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_2);
-
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(60.0f), 1.0f, 1000.0f);
-    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
-    */
-    // Initialize the camera position, target, and FOV
-    //T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
-    //T3DVec3 camPos = {{0.0f, 8.0f, 10.5f}};
-    
-
-    
-    //camTarget.v[2] += zDist;//40;
-    //camTarget.v[0] = playerPos.v[0];
-    //camTarget.v[1] = playerPos.v[1];
-    //camTarget.v[2] = playerPos.v[2];
 
     // Set the viewport with the updated FOV and camera position
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(fov), 1.0f, 1000.0f);
@@ -432,6 +461,8 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     // ======== Update Animations, and collect data about the mesh ======== //
     rendererDebugData.totalTris = 0;
     rendererDebugData.totalMeshes = 0;
+    
+   
     for(int i = 0; i < _ecs->entitiesCount; ++i){
        
        
@@ -451,6 +482,8 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
                 skeletalAnimation->animationSpeed = Vec3_MAGNITUDE(_ecs->rigidbodies[i].velocity);
                 
                 Renderer_UpdateAnimations( skeletalAnimation, _time->timeSinceLastFrame);
+                // this is expensive.
+                t3d_skeleton_update(skeletalAnimation->skeleton);
             }
    
             // ======== MODELS ========
@@ -470,32 +503,27 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
         
         }
     }
-    
-    // do this part seperate. as its expensive
-    for(int i = 0; i < _ecs->entitiesCount; ++i){
-        AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
-            assert(skeletalAnimation != NULL);
-            
-            if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
-                t3d_skeleton_update(skeletalAnimation->skeleton);
-            }
-    }
+     /**/
+   
     if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
     
     // ======== Draw (3D) ======== //
+   
     // This is very expensive
+    
     rdpq_attach(display_get(), display_get_zbuf());
-
+    
     // Start counting the true render time
+    
     rendererDebugData.totalEntityRenderTime = get_time_ms();
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
     t3d_screen_clear_color(RGBA32(skyColor[0], skyColor[1], skyColor[2], 0xFF));
-    
     t3d_screen_clear_depth();
     // Tell the RSP to draw our command list
-    rspq_block_run(bufferList);
+    rspq_block_run(skinnedBufferList);
+    rspq_block_run(staticBufferList);
 
     // ======== DRAW PARTICLES ========
     //AF_Renderer_DrawParticles(&_ecs->entities[0]);
@@ -524,11 +552,12 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     if(debugCam == DEBUG_CAM_ON){
         Renderer_DebugCam(&rendererDebugData);
     }
+     
 
 }
 
 void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
-    if(AF_Component_GetHas(_animation->enabled) == FALSE){
+    if(AF_Component_GetHas(_animation->enabled) == FALSE && AF_Component_GetEnabled(_animation->enabled) == FALSE){
       return;
     }
     // ========== ANIM BLEND =========
