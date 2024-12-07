@@ -74,11 +74,11 @@ State UIRenderer::renderMenu(const State &state) {
         centerparms.width = ScreenWidth * 9.f/10.f;
         rdpq_text_printf(&centerparms, BigFont, 4 + ScreenHeight / 20.f, - ScreenHeight / 4.f, "Paint^00b^01a^03l^02l");
         rdpq_text_printf(&centerparms, SmallFont, 4 + ScreenHeight / 20.f, ScreenHeight / 10.f,
-            "Capture enemies by painting them!"
-            "\nEach capture for the winning team = points. "
-            "\nWinning color gets an extra point and last one standing can try to escape to prevent this for a bonus."
-            "\nAnalog stick to move & C/D pad to shoot."
-            "\nPress ^00START^04");
+            "- Analog stick to move & C/D pad to shoot"
+            "\n- Capture enemies by painting them!"
+            "\n- A capture for the winning team = 1 point"
+            "\n- Winning color gets +1 and last one standing can escape to prevent this for +2"
+            "\n\nPress ^00START^04");
 
         if (pressed.start) {
             return STATE_COUNTDOWN;
