@@ -1014,11 +1014,19 @@ static void lake_outro_dynamic_loop(float delta_time) {
 }
 
 void lake_end_fixed_loop(float delta_time) {
+  static float winner_sfx_time_left;
   if (lake_stage_inited[LAKE_END]) {
+    if (winner_sfx_time_left >= EPS) {
+      winner_sfx_time_left -= delta_time;
+      if (winner_sfx_time_left < EPS) {
+        xm64player_set_vol(&music, 1.f);
+      }
+    }
     return;
   }
 
   lake_stage_inited[LAKE_END] = true;
+  winner_sfx_time_left = 2.3f;
 
   size_t num_winners = 0;
   size_t o = 0;
