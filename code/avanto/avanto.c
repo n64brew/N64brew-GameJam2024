@@ -375,12 +375,14 @@ void minigame_loop(float delta_time) {
         !paused_selection? SW_NORMAL_S : SW_SELECTED_S);
   }
 
+  /*
   rdpq_text_printf(NULL,
     FONT_NORMAL,
     10,
     235,
     SW_NORMAL_S "FPS: %.2f",
     display_get_fps());
+  */
   rdpq_mode_pop();
 
   rdpq_detach_show();
