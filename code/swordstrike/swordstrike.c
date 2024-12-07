@@ -459,10 +459,10 @@ void minigame_fixedloop(float deltatime){
         }
 
         // play death sound
-        if(alive > 1 && playDeathSound){
-            wav64_play(&sfx_scream, CHANNEL_SFX);
-            playDeathSound = false;
-        }
+        // if(alive > 1 && playDeathSound){
+        //     wav64_play(&sfx_scream, CHANNEL_SFX);
+        //     playDeathSound = false;
+        // }
 
         // update light animation for bg every 10 ticks
         // if(rotateLightCounter <= 0){
