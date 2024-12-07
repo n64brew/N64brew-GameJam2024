@@ -359,12 +359,12 @@ static void particle_source_init_steam(struct particle_source *source) {
       source->_particles[i].colorA[0] = 0xff;
       source->_particles[i].colorA[1] = 0xff;
       source->_particles[i].colorA[2] = 0xff;
-      source->_particles[i].colorA[3] = 0xff;
+      source->_particles[i].colorA[3] = 0x80;
 
       source->_particles[i].colorB[0] = 0xff;
       source->_particles[i].colorB[1] = 0xff;
       source->_particles[i].colorB[2] = 0xff;
-      source->_particles[i].colorB[3] = 0xff;
+      source->_particles[i].colorB[3] = 0x80;
   }
   source->max_particles = source->_num_allocated_particles;
 }

@@ -666,6 +666,7 @@ void lake_dynamic_loop_render(float delta_time) {
   rdpq_mode_zbuf(true, true);
   rdpq_mode_zoverride(true, 0, 0);
   rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+  rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
   tpx_state_from_t3d();
 
   particle_source_draw(&snow_particle_source);
