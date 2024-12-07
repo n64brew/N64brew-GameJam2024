@@ -4,9 +4,8 @@
 #include "hydraharmonics.h"
 
 #define NOTES_SPECIAL_TYPES 1
-#define NOTES_PER_PLAYER 5
+#define NOTES_PER_PLAYER 1
 #define NOTES_PER_PLAYER_SPECIAL 10
-#define NOTES_SPEED 2.5
 #define NOTES_TOTAL_COUNT (PLAYER_MAX + NOTES_SPECIAL_TYPES)
 
 typedef enum {
@@ -38,6 +37,9 @@ typedef struct note_ll_s {
 	note_t* end;
 	notes_left_t notes_left[NOTES_TOTAL_COUNT];
 } note_ll_t;
+
+extern const float note_speeds[NOTE_SPEED_COUNT];
+extern const float note_spawn[NOTE_SPEED_COUNT];
 
 void notes_init(void);
 void notes_check_and_add (void);

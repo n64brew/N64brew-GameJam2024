@@ -2,6 +2,7 @@
 #include "notes.h"
 #include "logic.h"
 #include "effects.h"
+#include "audio.h"
 
 #define HYDRA_AI_RANDOM_INTERVAL 60
 #define HYDRA_AI_SMART_X_OFFSET (HYDRA_EATING_FRAMES + 4)
@@ -164,6 +165,7 @@ void note_hit_detection(void) {
 				) {
 					// It's someone else's note. Stun them.
 					if (hydras[i].animation != HYDRA_ANIMATION_STUN) {
+						audio_sfx_play(SFX_OW);
 						effects_add(
 							i,
 							EFFECT_SHOCK,
@@ -200,11 +202,12 @@ void hydra_ai (uint8_t hydra) {
 				// Check if this is a note that we want to eat
 				if (current->player == hydra || current->player == PLAYER_MAX) {
 					// It's the hydra's note!
+					audio_sfx_play(SFX_AAH_MIN + hydra);
 					hydras[hydra].animation = HYDRA_ANIMATION_OPEN;
 					hydras[hydra].state = current->state;
 				} else if (hydras[hydra].state == current->state) {
 					// It's an enemy note! Move one row down
-					hydras[hydra].state = (hydras[hydra].state + 1) % HEAD_STATES_PLAYABLE;
+					hydras[hydra].state = (hydras[hydra].state + 1) % HEAD_STATES_MAX;
 				}
 			}
 		} else {

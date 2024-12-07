@@ -7,8 +7,6 @@
 #define SIGN_TEXT_X_OFFSET 2
 #define SIGN_TEXT_Y_OFFSET 26
 
-#define BG_MOVE_SPEED 1
-
 #define BAR_INITIAL_HEIGHT (29 + PADDING_TOP)
 
 #define FLOOR_BOARDS_COUNT 10
@@ -38,6 +36,12 @@ static surface_t floor_light_surf;
 static float floor_boards_vertices[FLOOR_BOARDS_COUNT];
 static uint16_t bg_offset = 0;
 
+const float bg_speeds[NOTE_SPEED_COUNT] = {
+	1.0,
+	1.5,
+	2.0,
+};
+
 void ui_init (void) {
 	score_sprite = sprite_load("rom:/hydraharmonics/signs.ci4.sprite");
 	bg_sprite = sprite_load("rom:/hydraharmonics/background.ci4.sprite");
@@ -57,9 +61,9 @@ void ui_init (void) {
 void ui_animate (void) {
 	// Shift them along
 	for (uint8_t i=0; i<FLOOR_BOARDS_COUNT; i++) {
-		floor_boards_vertices[i] -= BG_MOVE_SPEED;
+		floor_boards_vertices[i] -= bg_speeds[game_speed];
 	}
-	bg_offset = (uint16_t)(bg_offset + BG_MOVE_SPEED) % (display_get_width());
+	bg_offset = (uint16_t)(bg_offset + bg_speeds[game_speed]) % (display_get_width());
 	// Check if they need to be moved to the right
 	if (floor_boards_vertices[0] <= FLOOR_BOARDS_LIMIT_LEFT) {
 		for (uint8_t i=1; i<FLOOR_BOARDS_COUNT; i++) {

@@ -1,10 +1,11 @@
 #include "outro.h"
 #include "hydra.h"
+#include "audio.h"
 
 #define HYDRA_OUTRO_SHUFFLE_TIME 100
 #define HYDRA_OUTRO_WINNER_DROP_TIME 25
 #define HYDRA_OUTRO_ANNOUNCE_TIME 80
-#define HYDRA_OUTRO_CHOMP_ANIMATION_TIME 50
+#define HYDRA_OUTRO_CHOMP_ANIMATION_TIME 40
 
 #define SIGN_SPEED_X 2
 #define SIGN_SPEED_Y 2
@@ -52,6 +53,9 @@ void outro_interact (void) {
 			hydra_animate (i, HYDRA_ANIMATION_STUN_LOOP);
 		}
 	} else {
+		if (outro_timer == HYDRA_OUTRO_SHUFFLE_TIME) {
+			audio_sfx_play(SFX_WINNER);
+		}
 		for (uint8_t i=0; i<PLAYER_MAX; i++) {
 			if (score_is_winner(i)) {
 				if (outro_timer < HYDRA_OUTRO_SHUFFLE_TIME + HYDRA_OUTRO_CHOMP_ANIMATION_TIME && hydras[i].animation != HYDRA_ANIMATION_OPEN) {

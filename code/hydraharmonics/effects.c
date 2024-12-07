@@ -104,7 +104,7 @@ void effects_animate (void) {
 				// Move it down
 				current->accel += EFFECTS_SPARKLE_ACCEL;
 				current->y += current->accel;
-				current->x -= NOTES_SPEED/EFFECTS_SPARKLE_X_DIVISOR;
+				current->x -= note_speeds[game_speed]/EFFECTS_SPARKLE_X_DIVISOR;
 				// Grow then shrink the sparkle
 				temp = -(EFFECTS_SPARKLE_TEMP*EFFECTS_SPARKLE_TEMP/2) + EFFECTS_SPARKLE_TEMP + 0.5;
 				current->blitparms.scale_x = current->blitparms.scale_y = temp > 0 ? temp : current->blitparms.scale_x;
