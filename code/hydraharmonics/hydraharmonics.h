@@ -4,8 +4,7 @@
 #include <libdragon.h>
 #include "../../core.h"
 
-#define HEAD_STATES_MAX 4
-#define HEAD_STATES_PLAYABLE (HEAD_STATES_MAX - 1)
+#define HEAD_STATES_MAX 3
 #define PLAYER_MAX MAXPLAYERS
 
 #define HYDRA_HEAD_WIDTH 48
@@ -20,6 +19,13 @@
 
 #define STATES_TOTAL 4
 #define STATES_USABLE 3
+
+typedef enum {
+	NOTE_SPEED_SLOW,
+	NOTE_SPEED_MID,
+	NOTE_SPEED_FAST,
+	NOTE_SPEED_COUNT,
+} hydraharmonics_speed_t;
 
 typedef enum {
 	STAGE_START,
@@ -48,5 +54,6 @@ typedef enum {
 
 extern hydraharmonics_stage_t stage;
 extern bool pause;
+extern hydraharmonics_speed_t game_speed;
 
 #endif

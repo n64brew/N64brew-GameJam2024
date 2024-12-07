@@ -9,12 +9,13 @@
 #include "outro.h"
 #include "ui.h"
 #include "effects.h"
+#include "audio.h"
 
 const MinigameDef minigame_def = {
 	.gamename = "A Hydra Harmonics",
 	.developername = "Catch-64",
 	.description = "Taste the music! Eat the most notes to win!",
-	.instructions = "Use A to eat, Z to duck, and up or down to move."
+	.instructions = "Use A to eat and up or down to move."
 };
 
 #define TIMER_GAME (NOTES_PER_PLAYER * PLAYER_MAX) + (NOTES_PER_PLAYER_SPECIAL * NOTES_SPECIAL_TYPES) + (13 / NOTES_SPEED)
@@ -26,9 +27,10 @@ const MinigameDef minigame_def = {
 rdpq_font_t *font_default;
 rdpq_font_t *font_clarendon;
 
-float timer;
+float timer = 0;
 hydraharmonics_stage_t stage = STAGE_START;
 bool pause = false;
+hydraharmonics_speed_t game_speed = NOTE_SPEED_SLOW;
 
 /*==============================
 	minigame_init
@@ -40,7 +42,6 @@ void minigame_init()
 	display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
 
 	// Define some variables
-	timer = TIMER_GAME + TIMER_END_TOTAL;
 	font_default = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
 	font_clarendon = rdpq_font_load("rom:/hydraharmonics/Superclarendon-Regular-01.font64");
 	rdpq_text_register_font(FONT_DEFAULT, font_default);
@@ -53,6 +54,7 @@ void minigame_init()
 	intro_init();
 	outro_init();
 	effects_init();
+	audio_sfx_init();
 }
 
 /*==============================
@@ -64,7 +66,6 @@ void minigame_init()
 ==============================*/
 void minigame_fixedloop(float deltatime)
 {
-
 	// Handle the stages
 	if (stage == STAGE_START) {
 		intro_interact();
@@ -74,12 +75,22 @@ void minigame_fixedloop(float deltatime)
 			return;
 		}
 		// Add a new note every second
-		timer -= deltatime;
-		if ((int)timer != (int)(timer - deltatime) && notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED)) {
+		float last_timer = timer;
+		timer += deltatime;
+		if (
+			(int)(timer*note_spawn[game_speed]) != (int)(last_timer*note_spawn[game_speed]) &&
+			notes_get_remaining(NOTES_GET_REMAINING_UNSPAWNED) &&
+			audio_music_get_pattern() < 17
+		) {
 			notes_check_and_add();
 		}
 		// Skip to the end if there are no notes left
-		if (!notes_get_remaining(NOTES_GET_REMAINING_ALL) && hydra_get_all_animation_states (HYDRA_ANIMATION_NONE)) {
+		if (
+			audio_music_get_pattern() == 18 &&
+			notes_get_remaining(NOTES_GET_REMAINING_SPAWNED) == 0 &&
+			hydra_get_all_animation_states (HYDRA_ANIMATION_NONE)
+		) {
+			audio_sfx_play(SFX_DRUMROLL);
 			notes_destroy_all();
 			effects_destroy_all();
 			scores_get_winner();
@@ -92,6 +103,7 @@ void minigame_fixedloop(float deltatime)
 		hydra_shell_bounce();
 		ui_animate();
 		effects_animate();
+		audio_music_monitor();
 	} else if (stage == STAGE_END) {
 		outro_interact();
 	} else if (stage == STAGE_RETURN_TO_MENU) {
@@ -120,6 +132,7 @@ void minigame_loop(float deltatime)
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	notes_draw();
 	effects_draw();
+	audio_music_print();
 
 	// Things that should only be drawn at particular stages
 	if (stage == STAGE_GAME) {
@@ -153,6 +166,7 @@ void minigame_cleanup()
 	outro_clear();
 	ui_clear();
 	effects_clear();
+	audio_sfx_close();
 
 	// Free the fonts
 	rdpq_text_unregister_font(FONT_DEFAULT);
@@ -160,6 +174,6 @@ void minigame_cleanup()
 	rdpq_text_unregister_font(FONT_CLARENDON);
 	rdpq_font_free(font_clarendon);
 
-	// Close the display
+	// Close the subsystems
 	display_close();
 }

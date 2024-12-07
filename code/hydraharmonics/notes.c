@@ -29,6 +29,18 @@ static note_ll_t notes;
 static sprite_t* note_sprites[NOTES_TOTAL_COUNT];
 static uint8_t sparkle_timer = 0;
 
+const float note_speeds[NOTE_SPEED_COUNT] = {
+	2.5,
+	3.0,
+	4.0,
+};
+
+const float note_spawn[NOTE_SPEED_COUNT] = {
+	1.0,
+	0.0,
+	1.75,
+};
+
 void notes_init(void) {
 	char temptext[64];
 	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
@@ -118,6 +130,21 @@ PlyNum note_get_free(void) {
 	return 0;
 }
 
+void notes_add_more (void) {
+	// Check to see if anyone is left with zero notes
+	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
+		if (notes.notes_left[i].regular + notes.notes_left[i].special) {
+			continue;
+		}
+		// Give everyone some notes
+		for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
+			notes.notes_left[i].regular++;
+			notes.notes_left[i].special++;
+		}
+		return;
+	}
+}
+
 void notes_add (PlyNum player, notes_types_t type, hydraharmonics_state_t state) {
 	note_t* note = malloc(sizeof(note_t));
 	uint32_t random = rand();
@@ -202,6 +229,7 @@ void notes_check_and_add (void) {
 			);
 		}
 	}
+	notes_add_more();
 }
 
 note_t* notes_get_first(void) {
@@ -213,7 +241,7 @@ void notes_move (void) {
 	sparkle_timer++;
 	while (current != NULL) {
 		// Move and animate the note
-		current->x -= NOTES_SPEED;
+		current->x -= note_speeds[game_speed];
 		current->y_offset = sin(current->x / NOTE_Y_OFFSET_PERIOD) * NOTE_Y_OFFSET_AMPLITUDE;
 		current->blitparms.theta = sin((current->x - current->anim_offset) / NOTE_THETA_PERIOD) * NOTE_THETA_AMPLITUDE;
 		current->blitparms.scale_x = 1 + sin((current->x + current->anim_offset) / NOTE_SCALE_PERIOD) * NOTE_SCALE_AMPLITUDE;
@@ -249,11 +277,13 @@ void notes_draw (void) {
 		);
 		current = current->next;
 	}
+	/*
 	for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
 		rdpq_text_printf(NULL, FONT_DEFAULT, 20, 20+i*20,
 			"%i, %i", notes.notes_left[i].regular, notes.notes_left[i].special
 		);
 	}
+	*/
 }
 
 uint16_t notes_get_remaining (notes_remaining_t type) {

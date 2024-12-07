@@ -1,4 +1,5 @@
 #include "intro.h"
+#include "audio.h"
 
 #define INSTRUCTION_MOVE_SPEED 8
 #define CURTAIN_MOVE_SPEED 1
@@ -44,6 +45,7 @@ void intro_interact (void) {
 		// Check to see if the instructions have flown off screen
 		if (display_get_height() - INSTRUCTIONS_PADDING_Y < instructions_offset) {
 			intro_state = INTRO_CURTAINS_UP;
+			audio_music_play();
 		}
 	} else if (intro_state == INTRO_CURTAINS_UP) {
 		// Move the curtains out of the way

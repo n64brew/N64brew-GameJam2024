@@ -1,6 +1,7 @@
 #include "hydra.h"
 #include "logic.h"
 #include "effects.h"
+#include "audio.h"
 
 #define HYDRA_HEAD_OFFSET_FIRST 10
 #define HYDRA_HEAD_OFFSET_EACH 2
@@ -77,7 +78,7 @@ PlyNum hydra_get_from_pos (uint8_t pos) {
 }
 
 void hydra_init (void) {
-    char temptext[64];
+	char temptext[64];
 	uint8_t i, random, temp;
 	for (i=0; i<PLAYER_MAX; i++) {
 		// Load the sprites
@@ -222,6 +223,7 @@ void hydra_swap_animation (hydraharmonics_animations_t stage, PlyNum i) {
 				hydra_calculate_x();
 				free(temp_hyd);
 				free(temp_pos);
+				audio_sfx_play(SFX_SLIDE_WHISTLE_UP);
 				break;
 			}
 		}
@@ -253,6 +255,11 @@ void hydra_move (void) {
 			// Pause the game
 			if (joypad.btn.start) {
 				if (!hold_check[i] ) {
+					if (pause) {
+						audio_music_play();
+					} else {
+						audio_music_stop();
+					}
 					pause ^= 1;
 				}
 				hold_check[i] = true;
@@ -266,6 +273,7 @@ void hydra_move (void) {
 
 			if (hydras[i].animation == HYDRA_ANIMATION_NONE) {
 				if (joypad.btn.a) {
+					audio_sfx_play(SFX_AAH_MIN + i);
 					hydra_animate (i, HYDRA_ANIMATION_OPEN);
 				}
 				if (joypad.btn.d_up || joypad.stick_y > HYDRA_STICK_THRESHOLD) {
@@ -310,6 +318,7 @@ void hydra_swap_start (PlyNum swap_player, notes_types_t note_type) {
 				hydra_animate (i, HYDRA_ANIMATION_SWAP_DOWN);
 			}
 		}
+		audio_sfx_play(SFX_SLIDE_WHISTLE_DOWN);
 		return;
 	} else if (note_type == NOTES_TYPE_SOUR) {
 		// Sour note, swap with the player in the parameter instead
@@ -317,6 +326,8 @@ void hydra_swap_start (PlyNum swap_player, notes_types_t note_type) {
 	} else {
 		return;
 	}
+
+	audio_sfx_play(SFX_SLIDE_WHISTLE_DOWN);
 	hydra_animate (player_b, HYDRA_ANIMATION_SWAP_DOWN);
 }
 
@@ -331,7 +342,7 @@ void hydra_shell_bounce (void) {
 	// Create a pattern with abs() that causes both an upward and downward movement for the bounce
 	shell_bounce = abs((shell_timer % 32) / 4 - 4);
 	shell_frame = (shell_timer % 32) / 4;
-	shell_timer++;
+	shell_timer += 1 + game_speed/2;
 }
 
 void hydra_handle_animation (PlyNum p) {
@@ -343,15 +354,33 @@ void hydra_handle_animation (PlyNum p) {
 	uint8_t frame_cum = 0;
 	uint8_t skip = 0;
 
-	// Check if we need to add an effect
-	if (hydras[p].animation == HYDRA_ANIMATION_CHEW && hydras[p].frame == 1) {
-		effects_add(
-			p,
-			hydras[p].last_eaten == NOTES_TYPE_SWEET ? EFFECT_FLOWER :
-				(shell_frame%2 ? EFFECT_NOTE_BIG : EFFECT_NOTE_SMALL),
-			hydras[p].x + HYDRA_CHEW_EFFECT_OFFSET_X,
-			hydras[p].y + hydra_get_hat_offset(p) + HYDRA_CHEW_EFFECT_OFFSET_Y
-		);
+	if (hydras[p].frame == 1) {
+		// Check if we need to add an effect
+		if (hydras[p].animation == HYDRA_ANIMATION_CHEW) {
+			effects_add(
+				p,
+				hydras[p].last_eaten == NOTES_TYPE_SWEET ? EFFECT_FLOWER :
+					(shell_frame%2 ? EFFECT_NOTE_BIG : EFFECT_NOTE_SMALL),
+				hydras[p].x + HYDRA_CHEW_EFFECT_OFFSET_X,
+				hydras[p].y + hydra_get_hat_offset(p) + HYDRA_CHEW_EFFECT_OFFSET_Y
+			);
+		}
+
+		// Check if we need the gulp sfx
+		if (
+			hydras[p].animation == HYDRA_ANIMATION_CLOSE_SUCCESS ||
+			hydras[p].animation == HYDRA_ANIMATION_CLOSE_TO_SWAP ||
+			hydras[p].animation == HYDRA_ANIMATION_CLOSE_TO_DIZZY
+		) {
+			audio_sfx_play(SFX_GULP_MIN + p);
+		}
+
+		// Check if we need the eww sfx
+		if (
+			hydras[p].animation == HYDRA_ANIMATION_DIZZY
+		) {
+			audio_sfx_play(SFX_EWW_MIN + p);
+		}
 	}
 
 	// Count to see if we've reached the end of the animation cycle
@@ -364,7 +393,6 @@ void hydra_handle_animation (PlyNum p) {
 		}
 	}
 
-	assertf(hydras[p].face_frame < animation_db[hydras[p].animation].animation_length, "Face frame fail\n%i/%i (%i)", hydras[p].face_frame, animation_db[hydras[p].animation].animation_length, hydras[p].animation);
 	if (hydras[p].frame == frame_cum) {
 		hydras[p].animation = animation_db[hydras[p].animation].next;
 		hydras[p].frame = hydras[p].face_frame = 0;

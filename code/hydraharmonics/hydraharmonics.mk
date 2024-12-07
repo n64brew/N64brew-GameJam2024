@@ -55,6 +55,18 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/curtain.ci4.sprite \
 	filesystem/hydraharmonics/sign-big.ci4.sprite \
 	filesystem/hydraharmonics/sign-small.ci4.sprite \
-	filesystem/hydraharmonics/Superclarendon-Regular-01.font64
+	filesystem/hydraharmonics/Superclarendon-Regular-01.font64 \
+	filesystem/hydraharmonics/slide-whistle-up.wav64 \
+	filesystem/hydraharmonics/slide-whistle-down.wav64 \
+	filesystem/hydraharmonics/drumroll.wav64 \
+	filesystem/hydraharmonics/hit-0.wav64 \
+	filesystem/hydraharmonics/hit-1.wav64 \
+	filesystem/hydraharmonics/hit-2.wav64 \
+	filesystem/hydraharmonics/hit-3.wav64 \
+	filesystem/hydraharmonics/gulp.wav64 \
+	filesystem/hydraharmonics/aah.wav64 \
+	filesystem/hydraharmonics/eww.wav64 \
+	filesystem/hydraharmonics/ow.wav64 \
+	filesystem/hydraharmonics/hydraharmonics.xm64 \
 
 filesystem/hydraharmonics/Superclarendon-Regular-01.font64: MKFONT_FLAGS += --outline 1 --size 12
