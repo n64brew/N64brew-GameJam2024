@@ -555,7 +555,8 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
         playerWithHighestScore = i;
        }
     }
-    sprintf(gameOverSubTitle, "Player %i ",playerWithHighestScore);
+    // count is from 0, but for UX we add 1
+    sprintf(gameOverSubTitle, "Player %i ",playerWithHighestScore+1);
      if(gameplayData->gameState == GAME_STATE_GAME_OVER_WIN){
         gameOverSubTitleEntity->text->text = gameOverSubTitle;
      }else if(gameplayData->gameState == GAME_STATE_GAME_OVER_LOSE){

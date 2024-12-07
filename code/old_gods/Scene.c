@@ -20,6 +20,7 @@ AF_Entity* camera = NULL;
 
 // God
 AF_Entity* godEntity = NULL;
+AF_Entity* godSeaFoamEntity;
 //AF_Entity* godPedestalEntity = NULL;
 /*
 AF_Entity* godEye1 = NULL;
@@ -270,6 +271,14 @@ void Scene_Update(AppData* _appData){
             }
         }
 	}
+
+    // update sea foams
+    /*
+    float sinScaleValue = (sin(_appData->gameTime.currentFrame* 0.05f) + 1) * 0.01f;
+    Vec3 seaFoamSize = {1,1,1};
+
+    godSeaFoamEntity->transform->scale = Vec3_MULT_SCALAR(seaFoamSize, sinScaleValue);
+    */
 }
 
 void Scene_LateUpdate(AppData* _appData){
@@ -305,6 +314,25 @@ void Scene_SetupEntities(AppData* _appData){
     godEntity->collider->collision.callback = Scene_OnGodTrigger;
     godEntity->collider->boundingVolume = godBoundingScale;
     godEntity->collider->showDebug = TRUE;
+
+    // Create Player1 Hat
+    // position needs to be thought of as local to the parent it will be inherited by
+    /*
+    Vec3 godSeaFoamPos = {0.0f, -.01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 godSeaFoamScale = {3.5f, 1.0f, 3.5f};
+    godSeaFoamEntity = AF_ECS_CreateEntity(_ecs);
+	//move the position up a little
+	godSeaFoamEntity->transform->localPos = godSeaFoamPos;
+    godSeaFoamEntity->transform->localScale = godSeaFoamScale;
+    godSeaFoamEntity->parentTransform = godSeaFoamEntity->transform;
+	// add a rigidbody to our cube
+	*godSeaFoamEntity->mesh = AF_CMesh_ADD();
+	godSeaFoamEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    godSeaFoamEntity->mesh->material.color = PLAYER1_COLOR;
+
+    //player1Hat->parentTransform = player1Entity->transform;
+    godSeaFoamEntity->mesh->meshID = MODEL_FOAM;//MODEL_SNAKE2;
+    */
     //*godEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // god pedestal
@@ -336,7 +364,7 @@ void Scene_SetupEntities(AppData* _appData){
     player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
-    /*
+    
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
     Vec3 player1HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
@@ -352,8 +380,8 @@ void Scene_SetupEntities(AppData* _appData){
     player1Hat->mesh->material.color = PLAYER1_COLOR;
 
     //player1Hat->parentTransform = player1Entity->transform;
-    player1Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
-    */
+    player1Hat->mesh->meshID = MODEL_FOAM;//MODEL_SNAKE2;
+    
 
 
     // Get AI Level

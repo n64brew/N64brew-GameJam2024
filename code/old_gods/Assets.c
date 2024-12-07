@@ -18,7 +18,7 @@ const char *model_paths[MODEL_COUNT] = {
     "rom:/old_gods/map2.t3dm",           // MODEL_MAP
     "rom:/old_gods/snake.t3dm",         // MODEL_SNAKE
     "rom:/old_gods/rat.t3dm",           // MODEL_RAT
-    "rom:/old_gods/shadow.t3dm",
+    "rom:/old_gods/sea_foam.t3dm",
     "rom:/old_gods/cylinder.t3dm",
     "rom:/old_gods/torus.t3dm"
 };

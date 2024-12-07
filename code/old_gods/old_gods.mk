@@ -3,6 +3,7 @@ ASSETS_LIST += \
 	filesystem/old_gods/sand12.ci4.sprite \
 	filesystem/old_gods/checker.sprite \
 	filesystem/old_gods/shadow.i8.sprite \
+	filesystem/old_gods/sea_foam.sprite \
 	filesystem/old_gods/player1_panel_64_64.sprite \
 	filesystem/old_gods/player2_panel_64_64.sprite \
 	filesystem/old_gods/player3_panel_64_64.sprite \
@@ -19,7 +20,7 @@ ASSETS_LIST += \
 	filesystem/old_gods/box.t3dm \
 	filesystem/old_gods/cylinder.t3dm \
 	filesystem/old_gods/food.t3dm \
-	filesystem/old_gods/shadow.t3dm \
+	filesystem/old_gods/sea_foam.t3dm \
 	filesystem/old_gods/map2.t3dm \
 	filesystem/old_gods/snake.t3dm \
 	filesystem/old_gods/rat.t3dm \
@@ -29,3 +30,5 @@ ASSETS_LIST += \
 filesystem/old_gods/Jumpman_H1.font64: MKFONT_FLAGS += --outline -1 --size 64 --char-spacing 2
 filesystem/old_gods/Jumpman_H2.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2
 filesystem/old_gods/Jumpman_P.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2
+
+# Palm Tree https://sketchfab.com/3d-models/palm-tree-e7677eb753ce4c16bc3c5dbaa8aefa27

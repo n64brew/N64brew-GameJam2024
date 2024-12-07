@@ -359,8 +359,9 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                     rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                     //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                     t3d_model_draw_skinned(models[mesh->meshID], &skeletons[i]);//animations[MODEL_SNAKE].skeleton); // as in the last example, draw skinned with the main skeleton
+                    
+                    // draw the shadow
                     //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
-
                     //t3d_model_draw(models[MODEL_SHADOW]);
                     // draw floaties with player color
                     rdpq_set_prim_color(color);
@@ -413,12 +414,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 ///t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
                 //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                 t3d_model_draw(models[mesh->meshID]);
-
-                // draw a torus around the snake
-                if(mesh->meshID == MODEL_SNAKE){
-                    rdpq_set_prim_color(color);
-                    t3d_model_draw(models[MODEL_TORUS]);
-                }
+                
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
                 totalNormalMeshCommands++;

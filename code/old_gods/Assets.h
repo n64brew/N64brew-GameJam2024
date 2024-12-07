@@ -13,7 +13,7 @@ extern const char *model_paths[MODEL_COUNT];
 #define MODEL_MAP 2         //"rom:/old_gods/map.t3dm",       
 #define MODEL_SNAKE 3       //"rom:/old_gods/snake.t3dm",     
 #define MODEL_RAT 4
-#define MODEL_SHADOW 5
+#define MODEL_FOAM 5
 #define MODEL_CYLINDER 6
 #define MODEL_TORUS 7
 
