@@ -9,6 +9,7 @@
 int32_t songTime = -10000;
 int16_t songBPM = 125;
 int points[4];
+int multi[4];
 
 xm64player_t music;
 
@@ -59,6 +60,8 @@ typedef struct {
     void minigame_cleanup();
     
 #endif
+
+int getMulti(uint8_t player);
 int calculateXForArrow(uint8_t playerNum, uint8_t dir);
 int calculateYForArrow(int time);
 int calculateDeltaTime(int arrowIndex);

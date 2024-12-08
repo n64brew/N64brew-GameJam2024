@@ -233,13 +233,14 @@ void checkInputs()
                 continue;
             }
             const int addScore = ACCURACY - abs(deltaTime);
-            points[i] += addScore;
-            debugf("P%d: scored %d points for a total of %d (DT: %d)\n", i, addScore, points[i], deltaTime);
+            multi[i]++;
+            points[i] += addScore * getMulti(i);
+            debugf("P%d: scored %d points for a total of %d (DT: %d, Multi: %d)\n", i, addScore, points[i], deltaTime, getMulti(i));
             myTrack.arrows[currentArrow].hit[i] = true;
             directionsPressed[myTrack.arrows[currentArrow].direction] = false;
         }
         if (directionsPressed[0] + directionsPressed[1] + directionsPressed[2] + directionsPressed[3] > 0) {
-
+            multi[i] = 0;
             debugf("P%dDPressed: %d %d %d %d\n", i, directionsPressed[0], directionsPressed[1], directionsPressed[2], directionsPressed[3]);
         }
     }
@@ -370,6 +371,11 @@ void drawArrows()
         }
     }
 }
+int getMulti(uint8_t player) {
+    int multiFactor = 1 + (multi[player] / 8 <= 4 ? multi[player] / 8 : 4);
+    
+    return multiFactor;
+}
 void drawUI()
 {
     for (uint8_t thisPlayer = 0; thisPlayer < 4; thisPlayer++)
@@ -378,7 +384,7 @@ void drawUI()
         {
             drawUIForPlayer(thisPlayer, thisDirection);
         }
-        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, (int32_t)(calculateXForArrow(thisPlayer, 1)), 220, "%d", points[thisPlayer]);
+        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, (int32_t)(calculateXForArrow(thisPlayer, 1)), 220, "%dx / %d", getMulti(thisPlayer), points[thisPlayer]);
 
     
     }
