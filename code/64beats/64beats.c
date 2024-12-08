@@ -43,7 +43,7 @@ const MinigameDef minigame_def = {
     .gamename = "64Beats",
     .developername = "JvPeek",
     .description = "Beat saber but for boomers", // thanks to rieckz
-    .instructions = "Push A to win."};
+    .instructions = "Press the C-Buttons to match the arrows in time with the music."};
 
 rdpq_font_t *font;
 
@@ -219,7 +219,9 @@ void checkInputs()
             continue;
         }
         bool directionsPressed[4] = {btn.c_left, btn.c_up, btn.c_down, btn.c_right};
-
+        if (currentTargetArrow > myTrack.arrowNum) {
+            continue;
+        }
         for (int currentArrow = currentTargetArrow; currentArrow < currentTargetArrow + 16; currentArrow++)
         {
             if (!directionsPressed[myTrack.arrows[currentArrow].direction])
@@ -235,6 +237,10 @@ void checkInputs()
             debugf("P%d: scored %d points for a total of %d (DT: %d)\n", i, addScore, points[i], deltaTime);
             myTrack.arrows[currentArrow].hit[i] = true;
             directionsPressed[myTrack.arrows[currentArrow].direction] = false;
+        }
+        if (directionsPressed[0] + directionsPressed[1] + directionsPressed[2] + directionsPressed[3] > 0) {
+
+            debugf("P%dDPressed: %d %d %d %d\n", i, directionsPressed[0], directionsPressed[1], directionsPressed[2], directionsPressed[3]);
         }
     }
 
@@ -264,15 +270,21 @@ track defloration() {
     thisTrack.introLength = 4929;
 
     
-    for (int i = 0; i < MAX_ARROWS; i++)
+    for (int i = 0; i < 68; i++)
     {
         float random = (float)rand() / (RAND_MAX / 4.0);
         thisTrack.arrows[arrowCounter].time         = i * 60000/thisTrack.bpm;
         thisTrack.arrows[arrowCounter].direction    = random;
         thisTrack.arrows[arrowCounter++].difficulty = 1;
     }
-
     thisTrack.trackLength = thisTrack.arrows[arrowCounter-1].time;
+    thisTrack.arrowNum = arrowCounter;
+    for (int i = arrowCounter; i<MAX_ARROWS;i++) {
+        thisTrack.arrows[arrowCounter].time         = 9000000;
+        thisTrack.arrows[arrowCounter].direction    = 1;
+        thisTrack.arrows[arrowCounter++].difficulty = 1;
+    }
+
     return thisTrack;
 }
 void loadSong()
@@ -287,10 +299,6 @@ void loadSong()
         myTrack.arrows[i].difficulty = 1;
     }*/
     myTrack = defloration();
-    for (int i = 0; i < 10; i++)
-    {
-        debugf("Arrow %d: %d\n", i, myTrack.arrows[i].direction);
-    }
 }
 int calculateXForArrow(uint8_t playerNum, uint8_t dir)
 {
@@ -380,6 +388,9 @@ void drawUI()
 void drawUIForPlayer(uint8_t playerNum, uint8_t dir)
 {
     const uint8_t rotationLookup[4] = {1, 0, 2, 3};
+
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_sprite_blit(arrow_sprite,
                      (int32_t)(calculateXForArrow(playerNum, dir)),
                      (int32_t)(SCREEN_MARGIN_TOP),

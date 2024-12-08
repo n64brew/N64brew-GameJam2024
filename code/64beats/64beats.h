@@ -44,6 +44,7 @@ typedef struct {
 typedef struct {
     arrowOnTrack arrows[MAX_ARROWS];
     int trackLength;
+    int arrowNum;
     int bpm;
     int introLength;
     
