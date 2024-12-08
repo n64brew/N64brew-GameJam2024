@@ -20,8 +20,12 @@ const char *model_paths[MODEL_COUNT] = {
     "rom:/old_gods/rat.t3dm",           // MODEL_RAT
     "rom:/old_gods/sea_foam.t3dm",
     "rom:/old_gods/cylinder.t3dm",
-    "rom:/old_gods/torus.t3dm"
+    "rom:/old_gods/torus.t3dm",
+    "rom:/old_gods/sea_trail.t3dm"
 };
+
+const char* feedGodSoundFXPath = "rom:/old_gods/Ability_Learn.wav64";
+const char* pickupSoundFXPath = "rom:/old_gods/paper_crush.wav64";
 
 const char* fontPath2 = "rom:/old_gods/ZenDots-Regular.font64";
 const char* fontPath3 = "rom:/old_gods/Jumpman_H1.font64"; //"rom:/old_gods/Electrolize-Regular.font64";

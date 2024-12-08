@@ -16,11 +16,10 @@
 
 // ECS system
 AF_Entity* camera = NULL;
-//AF_Entity* playerEntities[PLAYER_COUNT] = {NULL};  // Initialize all elements to NULL
 
 // God
 AF_Entity* godEntity = NULL;
-AF_Entity* godSeaFoamEntity;
+AF_Entity* mapSeaFoamEntity;
 //AF_Entity* godPedestalEntity = NULL;
 /*
 AF_Entity* godEye1 = NULL;
@@ -43,6 +42,9 @@ AF_Entity* bucket4 = NULL;
 
 // Villagers
 AF_Entity* villager1 = NULL;
+
+// player trails
+AF_Entity* player1Trail;
 
 // Rates
 
@@ -118,7 +120,9 @@ typedef struct
 player_data players[MAXPLAYERS];
 
 
-
+// ======== AUDIO ========
+wav64_t feedGodSoundFX;
+wav64_t pickupSoundFX;
 
 
 
@@ -200,6 +204,14 @@ void Scene_Update(AppData* _appData){
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
         
         PlayerController_UpdateAllPlayerMovements(&_appData->input, *_appData->gameplayData.playerEntities, PLAYER_COUNT);
+        // adjust the transparency of trails for each player based on their speed.
+        AF_C3DRigidbody* player1Rigidbody = _appData->gameplayData.playerEntities[0]->rigidbody;
+        AF_CMesh* player1TrailMesh = player1Trail->mesh; 
+        
+        float hat1Transparency = Vec3_MAGNITUDE(player1Rigidbody->velocity) / 25;
+        //debugf("hat transparency %f \n", hat1Transparency);
+        // normalised 0-1 will mult against color range of alpha value
+        player1TrailMesh->material.color.a = hat1Transparency * 255;
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
 
@@ -271,14 +283,6 @@ void Scene_Update(AppData* _appData){
             }
         }
 	}
-
-    // update sea foams
-    /*
-    float sinScaleValue = (sin(_appData->gameTime.currentFrame* 0.05f) + 1) * 0.01f;
-    Vec3 seaFoamSize = {1,1,1};
-
-    godSeaFoamEntity->transform->scale = Vec3_MULT_SCALAR(seaFoamSize, sinScaleValue);
-    */
 }
 
 void Scene_LateUpdate(AppData* _appData){
@@ -317,22 +321,25 @@ void Scene_SetupEntities(AppData* _appData){
 
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
-    /*
-    Vec3 godSeaFoamPos = {0.0f, -.01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 godSeaFoamScale = {3.5f, 1.0f, 3.5f};
-    godSeaFoamEntity = AF_ECS_CreateEntity(_ecs);
+    
+    Vec3 godSeaFoamPos = {0.0f, -0.0001f, -0.15f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 godSeaFoamScale = {30.0f, 1.0f, 15.0f};
+    mapSeaFoamEntity = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
-	godSeaFoamEntity->transform->localPos = godSeaFoamPos;
-    godSeaFoamEntity->transform->localScale = godSeaFoamScale;
-    godSeaFoamEntity->parentTransform = godSeaFoamEntity->transform;
+    mapSeaFoamEntity->transform->pos = godSeaFoamPos;
+    mapSeaFoamEntity->transform->scale = godSeaFoamScale;
+	//mapSeaFoamEntity->transform->localPos = godSeaFoamPos;
+    //mapSeaFoamEntity->transform->localScale = godSeaFoamScale;
+    //mapSeaFoamEntity->parentTransform = mapSeaFoamEntity->transform;
 	// add a rigidbody to our cube
-	*godSeaFoamEntity->mesh = AF_CMesh_ADD();
-	godSeaFoamEntity->mesh->meshType = AF_MESH_TYPE_MESH;
-    godSeaFoamEntity->mesh->material.color = PLAYER1_COLOR;
+	*mapSeaFoamEntity->mesh = AF_CMesh_ADD();
+	mapSeaFoamEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    mapSeaFoamEntity->mesh->material.color = WHITE_COLOR;
+    mapSeaFoamEntity->mesh->material.color.a = 100;
 
-    //player1Hat->parentTransform = player1Entity->transform;
-    godSeaFoamEntity->mesh->meshID = MODEL_FOAM;//MODEL_SNAKE2;
-    */
+    //player1Trail->parentTransform = player1Entity->transform;
+    mapSeaFoamEntity->mesh->meshID = MODEL_FOAM;//MODEL_SNAKE2;
+    
     //*godEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     // god pedestal
@@ -367,20 +374,21 @@ void Scene_SetupEntities(AppData* _appData){
     
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
-    Vec3 player1HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 player1HatScale = {1.5f, 1.5f, 1.5f};
-    AF_Entity* player1Hat = AF_ECS_CreateEntity(_ecs);
+    Vec3 player1TrailPos = {0.0f, -.01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 player1TrailScale = {1.5f, 1.0f, 1.5f};//{0.5f, 1.5f, 0.25f};
+    player1Trail = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
-	player1Hat->transform->localPos = player1HatPos;
-    player1Hat->transform->localScale = player1HatScale;
-    player1Hat->parentTransform = player1Entity->transform;
+	player1Trail->transform->localPos = player1TrailPos;
+    player1Trail->transform->localScale = player1TrailScale;
+    player1Trail->parentTransform = player1Entity->transform;
 	// add a rigidbody to our cube
-	*player1Hat->mesh = AF_CMesh_ADD();
-	player1Hat->mesh->meshType = AF_MESH_TYPE_MESH;
-    player1Hat->mesh->material.color = PLAYER1_COLOR;
+	*player1Trail->mesh = AF_CMesh_ADD();
+	player1Trail->mesh->meshType = AF_MESH_TYPE_MESH;
+    player1Trail->mesh->material.color = WHITE_COLOR;
+    player1Trail->mesh->material.color.a = 0;
 
-    //player1Hat->parentTransform = player1Entity->transform;
-    player1Hat->mesh->meshID = MODEL_FOAM;//MODEL_SNAKE2;
+    //player1Trail->parentTransform = player1Entity->transform;
+    player1Trail->mesh->meshID = MODEL_TRAIL;//MODEL_SNAKE2;
     
 
 
@@ -417,7 +425,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player2Hat->mesh->meshType = AF_MESH_TYPE_MESH;
     player2Hat->mesh->material.color = PLAYER2_COLOR;
 
-    //player1Hat->parentTransform = player1Entity->transform;
+    //player1Trail->parentTransform = player1Entity->transform;
     player2Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
     */
     
@@ -452,7 +460,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player3Hat->mesh->meshType = AF_MESH_TYPE_MESH;
     player3Hat->mesh->material.color = PLAYER3_COLOR;
 
-    //player1Hat->parentTransform = player1Entity->transform;
+    //player1Trail->parentTransform = player1Entity->transform;
     player3Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
     */
 
@@ -485,7 +493,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player4Hat->mesh->meshType = AF_MESH_TYPE_MESH;
     player4Hat->mesh->material.color = PLAYER4_COLOR;
 
-    //player1Hat->parentTransform = player1Entity->transform;
+    //player1Trail->parentTransform = player1Entity->transform;
     player4Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
     */
 
@@ -604,6 +612,10 @@ void Scene_SetupEntities(AppData* _appData){
         // scale everything
         _ecs->transforms[i].scale = Vec3_MULT_SCALAR(_ecs->transforms[i].scale, .0075f);//0.075f);
     }
+
+    // ======== AUDIO ========
+    wav64_open(&feedGodSoundFX,feedGodSoundFXPath);
+    wav64_open(&pickupSoundFX, pickupSoundFXPath);
 }
 
 
@@ -706,7 +718,10 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         villager1->playerData->isCarried = FALSE;
         // randomly call for a colour bucket
         Scene_SpawnBucket(&g_currentBucket);
+
+
         // play sound
+        wav64_play(&feedGodSoundFX, 16);
         // clear the players from carrying
     }
 }
@@ -742,6 +757,9 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
             debugf("carry villager \n");
             playerData2->isCarrying = TRUE;
             _villager->playerData->isCarried = TRUE;
+
+            // play sound
+             wav64_play(&pickupSoundFX, 16);
         }
 }
 
@@ -1023,4 +1041,9 @@ AF_Entity* GetBucket3(){
 
 AF_Entity* GetBucket4(){
     return bucket4;
+}
+
+void Scene_Destroy(AF_ECS* _ecs){
+    wav64_close(&feedGodSoundFX);
+    wav64_close(&pickupSoundFX);
 }

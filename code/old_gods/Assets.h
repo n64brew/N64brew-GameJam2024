@@ -6,7 +6,7 @@ Contains paths to the assets to be loaded
 #define ASSETS_H
 
 // ================ MODELS ==============
-#define MODEL_COUNT 8
+#define MODEL_COUNT 9
 extern const char *model_paths[MODEL_COUNT];
 #define MODEL_BOX 0         //"rom:/old_gods/box.t3dm",        
 #define MODEL_FOOD 1        //"rom:/old_gods/food.t3dm",       
@@ -16,6 +16,7 @@ extern const char *model_paths[MODEL_COUNT];
 #define MODEL_FOAM 5
 #define MODEL_CYLINDER 6
 #define MODEL_TORUS 7
+#define MODEL_TRAIL 8
 
 
 // ================ TEXTURES ==============
@@ -33,9 +34,11 @@ extern const char *texture_path[TEXTURE_COUNT];
 extern const char* animatedSpritePath;
 
 // ================ AUDIO ==============
-extern const char* cannonFXPath;
-extern const char* laserFXPath;
-extern const char* musicFXPath;
+//extern const char* cannonFXPath;
+//extern const char* laserFXPath;
+//extern const char* musicFXPath;
+extern const char* feedGodSoundFXPath;
+extern const char* pickupSoundFXPath;
 
 // ================ FONT ==============
 extern const char* fontPath2;

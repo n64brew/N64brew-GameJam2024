@@ -15,8 +15,8 @@ AppData g_appData;
 const MinigameDef minigame_def = {
     .gamename = "Old Gods",
     .developername = "mr_J05H",
-    .description = "Work with or against your villager friends to feed the old gods to keep them contained.",
-    .instructions = "Collect the sacrifices and feed them to the gods. Try not to kill each other along the way."
+    .description = "The old god snek must be fed.",
+    .instructions = "Gather the rats and offer them to the god to ascend as an Exalted Snek Acolyte"
 };
 
     

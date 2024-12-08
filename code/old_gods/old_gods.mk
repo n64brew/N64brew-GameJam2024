@@ -21,14 +21,26 @@ ASSETS_LIST += \
 	filesystem/old_gods/cylinder.t3dm \
 	filesystem/old_gods/food.t3dm \
 	filesystem/old_gods/sea_foam.t3dm \
+	filesystem/old_gods/sea_trail.t3dm \
+	filesystem/old_gods/shadow.t3dm \
 	filesystem/old_gods/map2.t3dm \
 	filesystem/old_gods/snake.t3dm \
 	filesystem/old_gods/rat.t3dm \
 	filesystem/old_gods/torus.t3dm \
 	filesystem/old_gods/bottled_bubbles.xm64 \
+	filesystem/old_gods/Item2A.wav64 \
+	filesystem/old_gods/sandy_seaside.wav64 \
+	filesystem/old_gods/Ability_Learn.wav64 \
+	filesystem/old_gods/paper_crush.wav64 \
 
 filesystem/old_gods/Jumpman_H1.font64: MKFONT_FLAGS += --outline -1 --size 64 --char-spacing 2
 filesystem/old_gods/Jumpman_H2.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2
 filesystem/old_gods/Jumpman_P.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2
 
+#pikcup rat https://opengameart.org/content/paper-crush-sounds
+# god eat sound effect https://opengameart.org/content/7-assorted-sound-effects-menu-level-up
+#ui and othe effect sounds https://opengameart.org/content/ui-and-item-sounds-sample-1
+# jumpman font https://fontmeme.com/fonts/jumpman-font/
 # Palm Tree https://sketchfab.com/3d-models/palm-tree-e7677eb753ce4c16bc3c5dbaa8aefa27
+# tune https://opengameart.org/content/sandy-seaside-2
+# sound effects https://opengameart.org/content/ui-and-item-sound-effect-jingles-sample-2

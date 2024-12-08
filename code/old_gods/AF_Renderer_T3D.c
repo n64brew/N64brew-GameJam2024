@@ -34,7 +34,6 @@ uint8_t debugCam = DEBUG_CAM_ON;
  * Each actor has a scale, rotation, translation (knows as SRT) and a model matrix.
  */
 #define RAD_360 6.28318530718f
-#define MODEL_SCALE_FACTOR 1.0f
 static T3DViewport viewport;
 
 //static T3DVec3 rotAxis;
@@ -92,6 +91,7 @@ float get_time_s()  { return (float)((double)get_ticks_ms() / 1000.0); }
 float get_time_ms() { return (float)((double)get_ticks_us() / 1000.0); }
 void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i);
 void AF_Renderer_DrawParticles(AF_Entity* entity);
+void Tile_Scroll(void* userData, rdpq_texparms_t *tileParams, rdpq_tile_t tile);
 // Animation stuff
 // TODO: move to component
 //static T3DModel *modelMap;
@@ -117,6 +117,9 @@ RendererDebugData rendererDebugData;
 float newTime;
 float deltaTime;
 
+
+// temp for scrolling
+float tileOffset = 0.0f;
 // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
 //static T3DModel *snakeModel;// = t3d_model_load("rom:/snake.t3dm");
 
@@ -389,7 +392,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             // Process objects that have skeletal animations
             AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
             BOOL hasSkeletalComponent = AF_Component_GetHas(skeletalAnimation->enabled);
-            BOOL isEnabled = AF_Component_GetEnabled(skeletalAnimation->enabled);
+            //BOOL isEnabled = AF_Component_GetEnabled(skeletalAnimation->enabled);
         
             if(hasSkeletalComponent == FALSE){
                 // ============ MESH ==============
@@ -409,11 +412,19 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 //rspq_block_begin();
             
                 t3d_matrix_push(mesh->modelMatrix);
-                color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, 0xFF};
+                //color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, 0xFF};
                 rdpq_set_prim_color(RGBA32(255, 255, 255, 255));//color);//RGBA32(0, 0, 0, 0xFF));
                 ///t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
                 //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-                t3d_model_draw(models[mesh->meshID]);
+                // Scroll the foam
+                
+                
+                if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL){
+                    // skip drawing foam, as we do it another way.
+                }else{
+                    t3d_model_draw(models[mesh->meshID]);
+                }
+                
                 
                 //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
                 //t3d_model_draw(models[MODEL_SHADOW]);
@@ -436,7 +447,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
 // TODO: take in an array of entities 
 void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 	assert(_ecs != NULL && "AF_Renderer_T3D: AF_Renderer_Update has null ecs referenced passed in \n");
-  
+    tileOffset += 0.1f;
     float newTime = get_time_s();
     rendererDebugData.totalRenderTime = get_time_ms();
 
@@ -487,7 +498,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
             AF_CTransform3D* entityTransform = &_ecs->transforms[i];
             float pos[3] = {entityTransform->pos.x, entityTransform->pos.y, entityTransform->pos.z};
             float rot[3]= {entityTransform->rot.x, entityTransform->rot.y, entityTransform->rot.z};
-            float scale[3] = {entityTransform->scale.x * MODEL_SCALE_FACTOR, entityTransform->scale.y * MODEL_SCALE_FACTOR, entityTransform->scale.z * MODEL_SCALE_FACTOR};
+            float scale[3] = {entityTransform->scale.x, entityTransform->scale.y, entityTransform->scale.z};
 
             T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
             
@@ -517,9 +528,42 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 
     t3d_screen_clear_color(RGBA32(skyColor[0], skyColor[1], skyColor[2], 0xFF));
     t3d_screen_clear_depth();
-    // Tell the RSP to draw our command list
+    
+     // Tell the RSP to draw our command list
     rspq_block_run(skinnedBufferList);
     rspq_block_run(staticBufferList);
+
+    // only way to make the foam scroll is force it.
+    for(int i  = 0; i < _ecs->entitiesCount; ++i){
+        AF_CMesh* mesh = _ecs->entities[i].mesh;
+        BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
+        if(hasMesh){
+            if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL){
+                // do special drawing for foam.
+                T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
+                t3d_matrix_push(meshMat);
+                
+                // make the trail speed based
+                float adjustedTileOffset = tileOffset;
+                if(mesh->meshID == MODEL_TRAIL){
+                    adjustedTileOffset  = adjustedTileOffset * 2;
+                }
+
+                color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
+                rdpq_set_prim_color(color);
+                t3d_model_draw_custom(models[mesh->meshID], (T3DModelDrawConf){
+                                .userData = &adjustedTileOffset,
+                                //.matrices = meshMat,
+                                .tileCb = Tile_Scroll,
+                                });
+                t3d_matrix_pop(1);
+            }
+        }
+    }
+
+   
+    
+                
 
     // ======== DRAW PARTICLES ========
     //AF_Renderer_DrawParticles(&_ecs->entities[0]);
@@ -914,5 +958,21 @@ void AF_Renderer_DrawParticles(AF_Entity* _entity){
     /**/
     // After all particles are drawn, there is nothing special to do.
     // You can either continue with t3d (remember to revert rdpq settings again) or do other 2D draws.
+
+}
+
+// Hook/callback to modify tile settings set by t3d_model_draw
+void Tile_Scroll(void* userData, rdpq_texparms_t *tileParams, rdpq_tile_t tile) {
+
+  float offset = *(float*)userData;
+  if(tile == TILE0) {
+    tileParams->s.translate = 0.0f;//offset * 0.5f;
+    tileParams->t.translate = offset *2.0f;
+    //tileParams->s.translate = offset * 0.5f;
+    //tileParams->t.translate = offset * 0.8f;
+    tileParams->s.translate = fm_fmodf(tileParams->s.translate, 32.0f);
+    tileParams->t.translate = fm_fmodf(tileParams->t.translate, 32.0f);
+  }
+  
 
 }
