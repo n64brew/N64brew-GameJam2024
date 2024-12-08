@@ -84,8 +84,6 @@ void minigame_init()
     arrow_right_sprite = sprite_load("rom:/64beats/right.rgba32.sprite");
     arrow_sprite = sprite_load("rom:/64beats/arrow.sprite");
 
-    xm64player_open(&music, "rom:/64beats/defloration.xm64");
-    xm64player_set_loop(&music, false);
     arrow_sprites[0] = arrow_left_sprite;
     arrow_sprites[1] = arrow_up_sprite;
     arrow_sprites[2] = arrow_down_sprite;
@@ -93,6 +91,9 @@ void minigame_init()
     ui.scale_factor_x = UI_SCALE;
     ui.scale_factor_y = UI_SCALE;
     loadSong();
+
+    xm64player_open(&music, myTrack.songPath);
+    xm64player_set_loop(&music, false);
     xm64player_play(&music, 0);
     
 
@@ -143,54 +144,49 @@ void minigame_loop(float deltatime)
     }
     if (songTime < 0) {
         gameState = INTRO;
-    } else if (!music.playing) 
-    {
+    } else if (!music.playing) {
         gameState = OUTRO;
-
     } else {
         gameState = RUNNING;
     }
-    // Render the UI
+
+
+    // Render the Background
     rdpq_attach(display_get(), NULL);
     //rdpq_clear(color_from_packed32(GAME_BACKGROUND));
     rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_set_prim_color(color_from_packed32((songTime % (60000/songBPM) < 60) ? 0x00000080 : 0x00000009));
+    rdpq_set_prim_color(color_from_packed32((songTime % (60000/myTrack.bpm) < 60) ? 0x00000080 : 0x00000009));
     rdpq_fill_rectangle(0, 0, 320, 240);
     
-
-    // if (is_countdown())
-    // {
-    //     // Draw countdown
-    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 155, 100, "%d", (int)ceilf(countdown_timer));
-    // }
-    // else if (countdown_timer > -GO_DELAY)
-    // {
-    //     // For a short time after countdown is over, draw "GO!"
-    //     rdpq_text_print(NULL, FONT_BUILTIN_DEBUG_MONO, 150, 100, "GO!");
-    // }
-    // else if (is_ending && end_timer >= WIN_SHOW_DELAY)
-    // {
-    //     // Draw winner announcement (There might be multiple winners)
-    //     int ycur = 100;
-    //     for (size_t i = 0; i < MAXPLAYERS; i++)
-    //     {
-    //         if (!has_player_won(i))
-    //             continue;
-    //         ycur += rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 120, ycur, "Player %d wins!\n", i + 1).advance_y;
-    //     }
-    // }
 
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     
-    if (gameState == RUNNING) {
+    switch (gameState)
+    {
+    case INTRO:
         checkInputs();  
-    }
+        drawArrows();
+        drawUI();
+        break;
+    case RUNNING:
 
-    drawArrows();
-    drawUI();
+        checkInputs();  
+        drawArrows();
+        drawUI();
+        break;
+    case OUTRO:
+        renderOutro();
+        break;
+    case ENDED:
+        minigame_end();
+        break;
+
+    default:
+        break;
+    }
 
     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 10, "FPS: %f", 1.0 / deltatime);
@@ -201,6 +197,28 @@ void minigame_loop(float deltatime)
     
     rdpq_detach_show();
 }
+void renderOutro() {
+    int currentHighest = 0;
+    static uint32_t endTicks = 0;
+    if (endTicks == 0) {
+        // Get the current tick count
+        endTicks = TICKS_READ();
+    }
+
+    uint32_t outroRuntime = TICKS_READ() - endTicks;
+    if (TIMER_MICROS(outroRuntime) / 1000 > 5000) {
+        gameState = ENDED;
+        return;
+    }
+    for (int players=0; players < 4; players++) {
+        if (points[currentHighest] <= points[players]) {
+            currentHighest = players;
+        }
+    }
+
+    debugf("Player %d wins", currentHighest+1);
+    
+}
 void checkInputs()
 {
 
@@ -208,41 +226,52 @@ void checkInputs()
     int buttonSum = 0;
     for (size_t i = 0; i < playercount; i++)
     {
-
         joypad_buttons_t btn = joypad_get_buttons_pressed(core_get_playercontroller(i));
-        buttonSum += btn.c_left + btn.c_up + btn.c_down + btn.c_right;
-        if (btn.r) {
-            songTime = 0;
+        
+        
+        if (btn.start) {
+            if (music.playing) {
+                //xm64player_stop(&music);
+            } else {
+                //xm64player_play(&music, 0);
+            }
+            
         }
-        if (buttonSum == 0)
-        {
-            continue;
-        }
-        bool directionsPressed[4] = {btn.c_left, btn.c_up, btn.c_down, btn.c_right};
-        if (currentTargetArrow > myTrack.arrowNum) {
-            continue;
-        }
-        for (int currentArrow = currentTargetArrow; currentArrow < currentTargetArrow + 16; currentArrow++)
-        {
-            if (!directionsPressed[myTrack.arrows[currentArrow].direction])
+
+        if(music.playing) {
+            buttonSum += btn.c_left + btn.c_up + btn.c_down + btn.c_right;
+        
+            if (buttonSum == 0)
             {
                 continue;
             }
-            int deltaTime = calculateDeltaTime(currentArrow);
-            if (deltaTime > ACCURACY || deltaTime < 0-ACCURACY ) {
+            bool directionsPressed[4] = {btn.c_left, btn.c_up, btn.c_down, btn.c_right};
+            if (currentTargetArrow > myTrack.arrowNum) {
                 continue;
             }
-            const int addScore = ACCURACY - abs(deltaTime);
-            multi[i]++;
-            points[i] += addScore * getMulti(i);
-            debugf("P%d: scored %d points for a total of %d (DT: %d, Multi: %d)\n", i, addScore, points[i], deltaTime, getMulti(i));
-            myTrack.arrows[currentArrow].hit[i] = true;
-            directionsPressed[myTrack.arrows[currentArrow].direction] = false;
+            for (int currentArrow = currentTargetArrow; currentArrow < currentTargetArrow + 16; currentArrow++)
+            {
+                if (!directionsPressed[myTrack.arrows[currentArrow].direction])
+                {
+                    continue;
+                }
+                int deltaTime = calculateDeltaTime(currentArrow);
+                if (deltaTime > ACCURACY || deltaTime < 0-ACCURACY ) {
+                    continue;
+                }
+                const int addScore = ACCURACY - abs(deltaTime);
+                multi[i]++;
+                points[i] += addScore * getMulti(i);
+                debugf("P%d: scored %d points for a total of %d (DT: %d, Multi: %d)\n", i, addScore, points[i], deltaTime, getMulti(i));
+                myTrack.arrows[currentArrow].hit[i] = true;
+                directionsPressed[myTrack.arrows[currentArrow].direction] = false;
+            }
+            if (directionsPressed[0] + directionsPressed[1] + directionsPressed[2] + directionsPressed[3] > 0) {
+                multi[i] = 0;
+                debugf("P%dDPressed: %d %d %d %d\n", i, directionsPressed[0], directionsPressed[1], directionsPressed[2], directionsPressed[3]);
+            }
         }
-        if (directionsPressed[0] + directionsPressed[1] + directionsPressed[2] + directionsPressed[3] > 0) {
-            multi[i] = 0;
-            debugf("P%dDPressed: %d %d %d %d\n", i, directionsPressed[0], directionsPressed[1], directionsPressed[2], directionsPressed[3]);
-        }
+        
     }
 
     // iteration über alle aktuellen pfeile (currentTargetArrow + 30)
@@ -269,8 +298,8 @@ track defloration() {
     int arrowCounter = 0;
     thisTrack.bpm = 125;
     thisTrack.introLength = 4929;
-
-    
+    thisTrack.songPath = "rom:/64beats/defloration.xm64";
+    // yes, i lied. it's 68 beats.
     for (int i = 0; i < 68; i++)
     {
         float random = (float)rand() / (RAND_MAX / 4.0);
@@ -278,6 +307,7 @@ track defloration() {
         thisTrack.arrows[arrowCounter].direction    = random;
         thisTrack.arrows[arrowCounter++].difficulty = 1;
     }
+    // fill up the rest of the array.
     thisTrack.trackLength = thisTrack.arrows[arrowCounter-1].time;
     thisTrack.arrowNum = arrowCounter;
     for (int i = arrowCounter; i<MAX_ARROWS;i++) {
@@ -426,4 +456,5 @@ void minigame_cleanup()
     display_close();
     rdpq_text_unregister_font(FONT_TEXT);
     rdpq_font_free(font);
+    
 }

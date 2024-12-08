@@ -16,7 +16,8 @@ xm64player_t music;
 typedef enum {
     INTRO,
     RUNNING,
-    OUTRO
+    OUTRO,
+    ENDED
 } gamestate;
 
 
@@ -48,6 +49,7 @@ typedef struct {
     int arrowNum;
     int bpm;
     int introLength;
+    char *songPath;
     
 } track;
 
@@ -74,6 +76,7 @@ int countValidEntries();
 void updateArrowList();
 void loadSong();
 
+void renderOutro();
 void drawArrows();
 void drawArrowForPlayer(uint8_t playerNum, int yPos, uint8_t dir);
 

@@ -130,6 +130,7 @@ void minigame_play(char* name)
 
 void minigame_end()
 {
+    debugf("Minigame ending\n");
     global_minigame_ending = true;
 }
 
