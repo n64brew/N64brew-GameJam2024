@@ -15,7 +15,6 @@ typedef enum
 
 typedef enum DuckActions
 {
-    DUCK_BASE = 0,
     DUCK_IDLE = 1,
     DUCK_WALK = 2,
     DUCK_SLAP = 3,
@@ -32,7 +31,6 @@ typedef struct Duck
     float time_since_last_hit;
     DuckActions action;
     Directions direction;
-    sprite_t *base_sprite;
     sprite_t *walk_sprite;
     sprite_t *slap_sprite;
     sprite_t *idle_sprite;
@@ -68,14 +66,14 @@ typedef struct Snowman
     int id;
     float x;
     float y;
-    float time;
-    float time_since_last_jump;
+    float time_since_last_hit;
+    int health;
     SnowmanActions action;
     sprite_t *idle_sprite;
     sprite_t *damage_sprite;
     sprite_t *jump_sprite;
     int frames;
-    int frames_locked_for_slap;
+    int frames_locked_for_damage;
     float collision_box_x1;
     float collision_box_y1;
     float collision_box_x2;

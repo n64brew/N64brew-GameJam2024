@@ -8,10 +8,6 @@ ASSETS_LIST += \
 	filesystem/mallard/libdragon.rgba32.sprite \
 	filesystem/mallard/mallard_logo_white.rgba32.sprite \
 	filesystem/mallard/mallard_logo_black.rgba32.sprite \
-	filesystem/mallard/one/duck_base.rgba32.sprite \
-	filesystem/mallard/two/duck_base.rgba32.sprite \
-	filesystem/mallard/three/duck_base.rgba32.sprite \
-	filesystem/mallard/four/duck_base.rgba32.sprite \
 	filesystem/mallard/one/duck_walk_1.rgba32.sprite \
 	filesystem/mallard/two/duck_walk_1.rgba32.sprite \
 	filesystem/mallard/three/duck_walk_1.rgba32.sprite \

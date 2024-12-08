@@ -37,8 +37,6 @@ sprite_t *get_sprite_from_duck(Duck *duck)
 {
     switch (duck->action)
     {
-    case DUCK_BASE:
-        return duck->base_sprite;
     case DUCK_IDLE:
         return duck->idle_sprite;
     case DUCK_SLAP:
@@ -50,7 +48,7 @@ sprite_t *get_sprite_from_duck(Duck *duck)
     case DUCK_DAMAGE:
         return duck->damage_sprite;
     default:
-        return duck->base_sprite;
+        return duck->idle_sprite;
     }
 }
 
@@ -58,8 +56,6 @@ int get_frame_from_duck(Duck *duck)
 {
     switch (duck->action)
     {
-    case DUCK_BASE:
-        return 0;
     case DUCK_IDLE:
         return (duck->frames >> 3) % SEQUENCE_GAME_MALLARD_IDLE_FRAMES; // Update every 8 frames
     case DUCK_WALK:
@@ -154,6 +150,8 @@ sprite_t *get_sprite_from_snowman(Snowman *snowman)
     {
     case SNOWMAN_IDLE:
         return snowman->idle_sprite;
+    case SNOWMAN_DAMAGE:
+        return snowman->damage_sprite;
     case SNOWMAN_JUMP:
         return snowman->jump_sprite;
     default:

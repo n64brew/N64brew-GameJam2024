@@ -73,6 +73,14 @@ Snowman *create_snowman()
     snowman->id = snowman_uuid;
     snowman->x = spawn.x;
     snowman->y = spawn.y;
+    snowman->time_since_last_hit = 0.0f;
+    snowman->health = 2;
+    snowman->action = SNOWMAN_IDLE;
+    snowman->idle_sprite = sequence_game_snowman_idle_sprite;
+    snowman->damage_sprite = sequence_game_snowman_damage_sprite;
+    snowman->jump_sprite = sequence_game_snowman_jump_sprite;
+    snowman->frames = 0;
+    snowman->frames_locked_for_damage = 0;
     snowman->collision_box_x1 = spawn.x + SNOWMAN_COLLISION_BOX_X1_OFFSET;
     snowman->collision_box_y1 = spawn.y + SNOWMAN_COLLISION_BOX_Y1_OFFSET;
     snowman->collision_box_x2 = spawn.x + SNOWMAN_COLLISION_BOX_X2_OFFSET;
@@ -81,13 +89,6 @@ Snowman *create_snowman()
     snowman->hit_box_y1 = spawn.y + SNOWMAN_HIT_BOX_Y1_OFFSET;
     snowman->hit_box_x2 = spawn.x + SNOWMAN_HIT_BOX_X2_OFFSET;
     snowman->hit_box_y2 = spawn.y + SNOWMAN_HIT_BOX_Y2_OFFSET;
-    snowman->action = SNOWMAN_IDLE;
-    snowman->frames = 0;
-    snowman->frames_locked_for_slap = 0;
-    snowman->time = 0.0f;
-    snowman->idle_sprite = sequence_game_snowman_idle_sprite;
-    snowman->damage_sprite = sequence_game_snowman_damage_sprite;
-    snowman->jump_sprite = sequence_game_snowman_jump_sprite;
     snowman_uuid++;
     return snowman;
 }

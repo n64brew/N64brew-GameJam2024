@@ -52,6 +52,33 @@ void snowmen_bubble_sort()
     }
 }
 
+void remove_snowman(int id)
+{
+    // Remove snowman from the snowmen linked list
+    Snowman *currentSnowman = snowmen;
+    Snowman *previousSnowman = NULL;
+    while (currentSnowman != NULL)
+    {
+        if (currentSnowman->id == id)
+        {
+            if (previousSnowman == NULL)
+            {
+                snowmen = currentSnowman->next;
+            }
+            else
+            {
+                previousSnowman->next = currentSnowman->next;
+            }
+
+            free(currentSnowman);
+            break;
+        }
+
+        previousSnowman = currentSnowman;
+        currentSnowman = currentSnowman->next;
+    }
+}
+
 // Monitor and update spawn frequency.
 // Update each snowman's frame, time existed, collision box, and hit box.
 void update_snowmen(float deltatime)
@@ -78,8 +105,7 @@ void update_snowmen(float deltatime)
     while (currentSnowman != NULL)
     {
         currentSnowman->frames++;
-
-        currentSnowman->time += deltatime;
+        currentSnowman->time_since_last_hit += deltatime;
 
         currentSnowman->collision_box_x1 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X1_OFFSET;
         currentSnowman->collision_box_y1 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y1_OFFSET;
@@ -90,6 +116,24 @@ void update_snowmen(float deltatime)
         currentSnowman->hit_box_y1 = currentSnowman->y + SNOWMAN_HIT_BOX_Y1_OFFSET;
         currentSnowman->hit_box_x2 = currentSnowman->x + SNOWMAN_HIT_BOX_X2_OFFSET;
         currentSnowman->hit_box_y2 = currentSnowman->y + SNOWMAN_HIT_BOX_Y2_OFFSET;
+
+        if (currentSnowman->frames_locked_for_damage > 0)
+        {
+            currentSnowman->frames_locked_for_damage--;
+        }
+
+        if (currentSnowman->frames_locked_for_damage == 0)
+        {
+            currentSnowman->action = SNOWMAN_IDLE;
+
+            if (currentSnowman->health <= 0)
+            {
+                Snowman *temporary = currentSnowman;
+                currentSnowman = currentSnowman->next;
+                remove_snowman(temporary->id);
+                continue;
+            }
+        }
 
         currentSnowman = currentSnowman->next;
     }
@@ -814,33 +858,6 @@ void simulate_input(Duck *duck, float deltatime)
     }
 }
 
-void remove_snowman(int id)
-{
-    // Remove snowman from the snowmen linked list
-    Snowman *currentSnowman = snowmen;
-    Snowman *previousSnowman = NULL;
-    while (currentSnowman != NULL)
-    {
-        if (currentSnowman->id == id)
-        {
-            if (previousSnowman == NULL)
-            {
-                snowmen = currentSnowman->next;
-            }
-            else
-            {
-                previousSnowman->next = currentSnowman->next;
-            }
-
-            free(currentSnowman);
-            break;
-        }
-
-        previousSnowman = currentSnowman;
-        currentSnowman = currentSnowman->next;
-    }
-}
-
 void evaluate_attack()
 {
     Duck *currentDuck = ducks;
@@ -852,26 +869,46 @@ void evaluate_attack()
             Rect currentDuckSlapBox = (Rect){.x1 = currentDuck->slap_box_x1, .y1 = currentDuck->slap_box_y1, .x2 = currentDuck->slap_box_x2, .y2 = currentDuck->slap_box_y2};
 
             Snowman *currentSnowman = snowmen;
-            Snowman *temporarySnowman = NULL;
             while (currentSnowman != NULL)
             {
                 Rect currentSnowmanHitBox = (Rect){.x1 = currentSnowman->hit_box_x1, .y1 = currentSnowman->hit_box_y1, .x2 = currentSnowman->hit_box_x2, .y2 = currentSnowman->hit_box_y2};
 
                 if (detect_collision(currentDuckSlapBox, currentSnowmanHitBox))
                 {
-                    // TODO: Sound Effect.
-                    // TODO: Snowman hurt animation.
-                    // TODO: Snowman health decrease.
-                    // TODO: Have snowmen die when health gone.
+                    if (currentSnowman->time_since_last_hit > SNOWMAN_TIME_BETWEEN_DAMAGE)
+                    {
+                        // Set action to damage.
+                        currentSnowman->action = SNOWMAN_DAMAGE;
+                        currentSnowman->frames = 0;
+                        currentSnowman->frames_locked_for_damage = 4 * SEQUENCE_GAME_SNOWMAN_DAMAGE_FRAMES;
 
-                    currentDuck->score += 1.0f;
+                        // Reset time since last hit.
+                        currentSnowman->time_since_last_hit = 0.0f;
 
-                    temporarySnowman = currentSnowman;
-                    currentSnowman = currentSnowman->next;
-                    remove_snowman(temporarySnowman->id);
+                        // TODO: Sound Effect.
+
+                        // Damage Snowman. If health is 0, remove snowman and reward duck.
+                        currentSnowman->health -= 1;
+
+                        // Evaluate if snowman is dead.
+                        if (currentSnowman->health <= 0)
+                        {
+                            // Reward Duck
+                            currentDuck->score += 1;
+                        }
+
+                        // Next Snowman.
+                        currentSnowman = currentSnowman->next;
+                    }
+                    else
+                    {
+                        // Next Snowman.
+                        currentSnowman = currentSnowman->next;
+                    }
                 }
                 else
                 {
+                    // Next Snowman.
                     currentSnowman = currentSnowman->next;
                 }
             }
@@ -890,10 +927,8 @@ void evaluate_attack()
                 if (detect_collision(currentDuckSlapBox, temporaryDuckHitBox))
                 {
                     // TODO: Sound Effect.
-                    // TODO: temporaryDuck hurt animation.
-                    // TODO: temporaryDuck movement  (plus stun lock?).
 
-                    if (temporaryDuck->time_since_last_hit > 1.0f)
+                    if (temporaryDuck->time_since_last_hit > DUCK_TIME_BETWEEN_DAMAGE)
                     {
                         // Set action to damage.
                         temporaryDuck->action = DUCK_DAMAGE;

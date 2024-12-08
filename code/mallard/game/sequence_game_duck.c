@@ -80,10 +80,11 @@ Duck *create_duck(int i)
     }
 
     duck->id = i;
-    duck->score = 0.0f;
-    duck->time_since_last_hit = 0.0f;
     duck->x = spawn.x;
     duck->y = spawn.y;
+    duck->score = 0.0f;
+    duck->action = DUCK_IDLE;
+    duck->time_since_last_hit = 0.0f;
     duck->direction = (i == 0 || i == 2) ? RIGHT : LEFT;
     duck->collision_box_x1 = spawn.x + DUCK_COLLISION_BOX_X1_OFFSET;
     duck->collision_box_y1 = spawn.y + DUCK_COLLISION_BOX_Y1_OFFSET;
@@ -97,7 +98,6 @@ Duck *create_duck(int i)
     duck->hit_box_y1 = spawn.y + (duck->direction == RIGHT ? DUCK_HIT_BOX_Y1_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_Y1_OFFSET_FACING_LEFT);
     duck->hit_box_x2 = spawn.x + (duck->direction == RIGHT ? DUCK_HIT_BOX_X2_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_X2_OFFSET_FACING_LEFT);
     duck->hit_box_y2 = spawn.y + (duck->direction == RIGHT ? DUCK_HIT_BOX_Y2_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_Y2_OFFSET_FACING_LEFT);
-    duck->action = DUCK_BASE;
     duck->frames = 0;
     duck->frames_locked_for_slap = 0;
     duck->frames_locked_for_damage = 0;
@@ -105,7 +105,6 @@ Duck *create_duck(int i)
     switch (i)
     {
     case 0:
-        duck->base_sprite = sequence_game_mallard_one_base_sprite;
         duck->walk_sprite = sequence_game_mallard_one_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_one_slap_sprite;
         duck->run_sprite = sequence_game_mallard_one_run_sprite;
@@ -113,7 +112,6 @@ Duck *create_duck(int i)
         duck->damage_sprite = sequence_game_mallard_one_damage_sprite;
         break;
     case 1:
-        duck->base_sprite = sequence_game_mallard_two_base_sprite;
         duck->walk_sprite = sequence_game_mallard_two_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_two_slap_sprite;
         duck->run_sprite = sequence_game_mallard_two_run_sprite;
@@ -121,7 +119,6 @@ Duck *create_duck(int i)
         duck->damage_sprite = sequence_game_mallard_two_damage_sprite;
         break;
     case 2:
-        duck->base_sprite = sequence_game_mallard_three_base_sprite;
         duck->walk_sprite = sequence_game_mallard_three_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_three_slap_sprite;
         duck->run_sprite = sequence_game_mallard_three_run_sprite;
@@ -129,7 +126,6 @@ Duck *create_duck(int i)
         duck->damage_sprite = sequence_game_mallard_three_damage_sprite;
         break;
     case 3:
-        duck->base_sprite = sequence_game_mallard_four_base_sprite;
         duck->walk_sprite = sequence_game_mallard_four_walk_sprite;
         duck->slap_sprite = sequence_game_mallard_four_slap_sprite;
         duck->run_sprite = sequence_game_mallard_four_run_sprite;
