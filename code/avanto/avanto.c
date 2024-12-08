@@ -279,33 +279,6 @@ void minigame_loop(float delta_time) {
   static int paused_selection = 0;
   static surface_t *first_paused = NULL;
 
-  if (!paused) {
-    for (size_t i = 0; i < core_get_playercount(); i++) {
-      joypad_buttons_t pressed = joypad_get_buttons_pressed(
-          core_get_playercontroller(i));
-      if (pressed.start) {
-        first_paused = NULL;
-        paused_controller = core_get_playercontroller(i);
-        paused_selection = 0;
-        paused = true;
-        mixer_set_vol(.2f);
-        break;
-      }
-    }
-  }
-  else {
-    joypad_buttons_t pressed = joypad_get_buttons_pressed(paused_controller);
-    int axis = joypad_get_axis_pressed(paused_controller, JOYPAD_AXIS_STICK_X);
-    if (pressed.start || pressed.b || (pressed.a && !paused_selection)) {
-      paused = false;
-      mixer_set_vol(1.f);
-    } else if (pressed.a) {
-      minigame_end();
-    } else if (pressed.d_left || axis || pressed.d_right) {
-      paused_selection ^= 1;
-    }
-  }
-
   if (current_subgame->dynamic_loop_pre && !paused) {
     current_subgame->dynamic_loop_pre(delta_time);
   }
@@ -389,6 +362,33 @@ void minigame_loop(float delta_time) {
 
   if (current_subgame->dynamic_loop_post && !paused) {
     current_subgame->dynamic_loop_post(delta_time);
+  }
+
+  if (!paused) {
+    for (size_t i = 0; i < core_get_playercount(); i++) {
+      joypad_buttons_t pressed = joypad_get_buttons_pressed(
+          core_get_playercontroller(i));
+      if (pressed.start) {
+        first_paused = NULL;
+        paused_controller = core_get_playercontroller(i);
+        paused_selection = 0;
+        paused = true;
+        mixer_set_vol(.2f);
+        break;
+      }
+    }
+  }
+  else {
+    joypad_buttons_t pressed = joypad_get_buttons_pressed(paused_controller);
+    int axis = joypad_get_axis_pressed(paused_controller, JOYPAD_AXIS_STICK_X);
+    if (pressed.start || pressed.b || (pressed.a && !paused_selection)) {
+      paused = false;
+      mixer_set_vol(1.f);
+    } else if (pressed.a) {
+      minigame_end();
+    } else if (pressed.d_left || axis || pressed.d_right) {
+      paused_selection ^= 1;
+    }
   }
 }
 
