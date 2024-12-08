@@ -667,9 +667,9 @@ void game_init()
         players[i].dpl = rspq_block_end();
         // FIXME use correct sfx files
         wav64_open(&players[i].sfx_rummage, "rom:/rummage/rummage.wav64");
-        wav64_open(&players[i].sfx_open, "rom:/rummage/rummage.wav64");
-        wav64_open(&players[i].sfx_attack, "rom:/core/Countdown.wav64");
-        wav64_open(&players[i].sfx_hurt, "rom:/core/Countdown.wav64");
+        wav64_open(&players[i].sfx_open, "rom:/rummage/open.wav64");
+        wav64_open(&players[i].sfx_attack, "rom:/rummage/attack.wav64");
+        wav64_open(&players[i].sfx_hurt, "rom:/rummage/hurt.wav64");
         players[i].sfx_channel = 20 + i;
         players[i].plynum = i;
         players[i].is_human = (i < playercount);

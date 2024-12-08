@@ -13,6 +13,9 @@ ASSETS_LIST += \
 	filesystem/rummage/key.t3dm \
 	filesystem/rummage/key.wav64 \
 	filesystem/rummage/rummage.wav64 \
+	filesystem/rummage/open.wav64 \
+	filesystem/rummage/attack.wav64 \
+	filesystem/rummage/hurt.wav64 \
 	filesystem/rummage/music.wav64 \
 	filesystem/rummage/thickhead.font64
 
