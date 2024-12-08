@@ -86,6 +86,7 @@ Snowman *create_snowman()
     snowman->frames_locked_for_slap = 0;
     snowman->time = 0.0f;
     snowman->idle_sprite = sequence_game_snowman_idle_sprite;
+    snowman->damage_sprite = sequence_game_snowman_damage_sprite;
     snowman->jump_sprite = sequence_game_snowman_jump_sprite;
     snowman_uuid++;
     return snowman;

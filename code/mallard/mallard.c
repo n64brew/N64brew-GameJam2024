@@ -8,8 +8,8 @@
 const MinigameDef minigame_def = {
     .gamename = "Mallard",
     .developername = "Josh Kautz",
-    .description = "",
-    .instructions = "",
+    .description = "Don't migrate - fight off winter!",
+    .instructions = "A to slap, B to run. Highest score wins!",
 };
 
 rdpq_font_t *font_halo_dek;
@@ -121,36 +121,6 @@ void minigame_loop(float deltatime)
 
     minigame_end();
     return;
-
-    // ///////////////////////////////////////////////////////////
-    // //                  Render UI - Quitting                 //
-    // ///////////////////////////////////////////////////////////
-
-    // if (b_btn_held)
-    // {
-    //     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, SCREEN_WIDTH - 100, 30, "Quitting in %.2f", 3.0f - sequence_3_b_btn_held_duration);
-
-    //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 30, 37);
-
-    //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 43, SCREEN_WIDTH - 30, 45);
-
-    //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 128, 45);
-
-    //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     rdpq_fill_rectangle(SCREEN_WIDTH - 32, 35, SCREEN_WIDTH - 30, 45);
-
-    //     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    //     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    //     int width = (int)(50 * (sequence_3_b_btn_held_duration / 3.0f));
-    //     rdpq_fill_rectangle(SCREEN_WIDTH - 100, 35, SCREEN_WIDTH - 100 + width, 45);
-    // }
 }
 
 /*==============================
@@ -162,10 +132,10 @@ void minigame_cleanup()
     // Unregister the font and free the allocated memory.
     rdpq_text_unregister_font(FONT_HALODEK);
     rdpq_font_free(font_halo_dek);
-    rdpq_text_unregister_font(FONT_HALODEK_BIG);
-    rdpq_font_free(font_halo_dek_big);
     rdpq_text_unregister_font(FONT_HALODEK_MEDIUM);
     rdpq_font_free(font_halo_dek_medium);
+    rdpq_text_unregister_font(FONT_HALODEK_BIG);
+    rdpq_font_free(font_halo_dek_big);
     rdpq_text_unregister_font(FONT_CELTICGARMONDTHESECOND);
     rdpq_font_free(font_celtic_garamond_the_second);
 }

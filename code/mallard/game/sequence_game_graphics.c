@@ -6,6 +6,7 @@
 #include "sequence_game_initialize.h"
 #include "sequence_game_graphics.h"
 #include "sequence_game_duck.h"
+#include "sequence_game_snowman.h"
 
 // These player boxes are just used for visualizing the boxes and spawn points while developing.
 #define PLAYER_1_BOX_X1 16
@@ -138,6 +139,8 @@ int get_frame_from_snowman(Snowman *snowman)
     {
     case SNOWMAN_IDLE:
         return (snowman->frames >> 3) % SEQUENCE_GAME_SNOWMAN_IDLE_FRAMES; // Update every 8 frames
+    case SNOWMAN_DAMAGE:
+        return (snowman->frames >> 3) % SEQUENCE_GAME_SNOWMAN_DAMAGE_FRAMES; // Update every 8 frames
     case SNOWMAN_JUMP:
         return (snowman->frames >> 3) % SEQUENCE_GAME_SNOWMAN_JUMP_FRAMES; // Update every 8 frames
     default:
@@ -216,10 +219,10 @@ void render_debug_duck_hit_box(Duck *duck)
 void sequence_game_render_duck(Duck *currentDuck)
 {
     rdpq_blitparms_t blitparms = {
-        .s0 = get_frame_from_duck(currentDuck) * 32,
+        .s0 = get_frame_from_duck(currentDuck) * DUCK_SPRITE_WIDTH,
         .t0 = 0,
-        .width = 32,
-        .height = 32,
+        .width = DUCK_SPRITE_WIDTH,
+        .height = DUCK_SPRITE_HEIGHT,
         .flip_x = currentDuck->direction == RIGHT ? true : false,
     };
 
@@ -235,10 +238,10 @@ void sequence_game_render_duck(Duck *currentDuck)
 void sequence_game_render_snowman(Snowman *currentSnowman)
 {
     rdpq_blitparms_t blitparms = {
-        .s0 = get_frame_from_snowman(currentSnowman) * 13,
+        .s0 = get_frame_from_snowman(currentSnowman) * SNOWMAN_SPRITE_WIDTH,
         .t0 = 0,
-        .width = 13,
-        .height = 17,
+        .width = SNOWMAN_SPRITE_WIDTH,
+        .height = SNOWMAN_SPRITE_HEIGHT,
     };
 
     rdpq_set_mode_standard();

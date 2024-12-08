@@ -72,6 +72,7 @@ typedef struct Snowman
     float time_since_last_jump;
     SnowmanActions action;
     sprite_t *idle_sprite;
+    sprite_t *damage_sprite;
     sprite_t *jump_sprite;
     int frames;
     int frames_locked_for_slap;

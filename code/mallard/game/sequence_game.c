@@ -47,6 +47,7 @@ sprite_t *sequence_game_mallard_three_damage_sprite;
 sprite_t *sequence_game_mallard_four_damage_sprite;
 
 sprite_t *sequence_game_snowman_idle_sprite;
+sprite_t *sequence_game_snowman_damage_sprite;
 sprite_t *sequence_game_snowman_jump_sprite;
 
 sprite_t *sequence_game_map;
@@ -80,9 +81,9 @@ void sequence_game_init()
     ///////////////////////////////////////////////////////////
 
     sequence_game_snowman_idle_sprite = sprite_load("rom:/mallard/snowman/snowman_idle_evil.rgba32.sprite");
+    sequence_game_snowman_damage_sprite = sprite_load("rom:/mallard/snowman/snowman_damage_evil.rgba32.sprite");
     sequence_game_snowman_jump_sprite = sprite_load("rom:/mallard/snowman/snowman_jump_evil.rgba32.sprite");
 
-    // Game - Mallard
     sequence_game_mallard_one_base_sprite = sprite_load("rom:/mallard/one/duck_base.rgba32.sprite");
     sequence_game_mallard_two_base_sprite = sprite_load("rom:/mallard/two/duck_base.rgba32.sprite");
     sequence_game_mallard_three_base_sprite = sprite_load("rom:/mallard/three/duck_base.rgba32.sprite");
@@ -163,6 +164,7 @@ void sequence_game_cleanup()
     sprite_free(sequence_game_mallard_four_idle_sprite);
 
     sprite_free(sequence_game_snowman_idle_sprite);
+    sprite_free(sequence_game_snowman_damage_sprite);
     sprite_free(sequence_game_snowman_jump_sprite);
 
     sprite_free(sequence_game_map);
