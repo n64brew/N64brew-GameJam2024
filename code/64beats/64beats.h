@@ -1,9 +1,24 @@
 
+
+
 #define UI_SCALE 1.0
 #define SCREEN_MARGIN_TOP 24
-#define MAX_ARROWS 174 * 4 / 2
+#define MAX_ARROWS 125 * 4 / 2
 #define SPEED_MULTI 1.0
-int32_t songTime = -3000;
+#define ACCURACY 200
+int32_t songTime = -10000;
+int16_t songBPM = 125;
+int points[4];
+
+xm64player_t music;
+
+typedef enum {
+    INTRO,
+    RUNNING,
+    OUTRO
+} gamestate;
+
+
 typedef struct
 {
     float x;
@@ -28,12 +43,11 @@ typedef struct {
 
 typedef struct {
     arrowOnTrack arrows[MAX_ARROWS];
+    int trackLength;
+    int bpm;
+    int introLength;
     
 } track;
-
-track myTrack;
-
-int currentTargetArrow;
 
 #ifndef GAMEJAM2024_MINIGAME_H
 #define GAMEJAM2024_MINIGAME_H 
