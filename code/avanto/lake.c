@@ -102,7 +102,7 @@ static struct ground ground = {
     {450.f, 10.f, false},
     {970.f, -64.f, false},
     {RACE_START_Z, -64.f*2.5f, false},
-    {RACE_END_Z, -64.f*2.5f, true},
+    {RACE_END_Z, -64.f*2.f, true},
     {83.4f*64.f, 0.f, false},
   },
 };
