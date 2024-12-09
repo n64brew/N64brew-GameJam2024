@@ -81,6 +81,8 @@ float countDownTimer;
 BOOL isDeclaredWinner = FALSE;
 BOOL isStartedPlaying = FALSE;
 
+BOOL isMusicPlaying = FALSE;
+
 
 // GAME SOUNDS
 //xm64player_t music;
@@ -494,6 +496,17 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
         UI_Menu_PlayingSetState(FALSE);
         UI_Menu_CountdownState(FALSE);
 
+        // TODO: tidy this up
+        if(isMusicPlaying == FALSE){
+            // TODO: make this read from assets
+            wav64_open(&music_2, "rom:/old_gods/sandy_seaside.wav64");
+            // set sound to loop
+            wav64_set_loop(&music_2, true);
+            wav64_play(&music_2, 0);
+            isMusicPlaying = TRUE;
+        }
+        
+
         // detect start button pressed
         if(_appData->input.keys[A_KEY]->pressed == TRUE){
             wav64_play(&sfx_startButton, 31);
@@ -599,11 +612,13 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     
     // Game Jam CORE MINI GAME end game stuff
     // only call this once
+    // TODO: tidy this up
     if(isDeclaredWinner == FALSE){
-        wav64_play(&sfx_winner, 31);
         wav64_close(&music_2);
+        wav64_play(&sfx_winner, 31);
         //xm64player_stop(&music);
         isDeclaredWinner = TRUE;
+        isMusicPlaying = FALSE;
     }
    
     
@@ -664,9 +679,9 @@ void UI_Menu_SetupAudio(){
   wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
   wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
   wav64_open(&sfx_startButton, "rom:/old_gods/Item2A.wav64");
-  wav64_open(&music_2, "rom:/old_gods/sandy_seaside.wav64");
+  
   //xm64player_open(&music, "rom:/old_gods/bottled_bubbles.xm64");
-  wav64_play(&music_2, 0);
+  
   //xm64player_play(&music, 0);
   mixer_ch_set_vol(31, 0.5f, 0.5f);
 }
