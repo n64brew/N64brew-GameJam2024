@@ -49,6 +49,7 @@ extern const char* fontPath5;
 #define FONT3_ID 3
 #define FONT4_ID 4
 #define FONT5_ID 5
+#define FONT6_ID 6
 
 
 

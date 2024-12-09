@@ -26,7 +26,7 @@ char mainMenuTitleCharBuffer[20] = " OLD GODS";
 char mainMenuSubTitleCharBuffer[40] = " Press A";
 
 // GameOverScreen
-char gameOverTitleCharBuffer[20] = "WINNER";
+char gameOverTitleCharBuffer[40] = "WINNER";
 char gameOverSubTitle[40] = "Player 1";
 
 // Start Countdown char
@@ -151,6 +151,10 @@ void UI_Menu_Start(AppData* _appData){
     AF_LoadFont(FONT3_ID, fontPath3, whiteColor);
     AF_LoadFont(FONT4_ID, fontPath4, pink); // title font
     AF_LoadFont(FONT5_ID, fontPath5, whiteColor);
+
+    //TODO: hack to fix font 3 breaking on game over screen. unsure why
+    AF_LoadFont(FONT6_ID, fontPath4, whiteColor);
+
 	gameTitleEntity = AF_ECS_CreateEntity(&_appData->ecs);
 	*gameTitleEntity->text = AF_CText_ADD();
 
@@ -306,10 +310,12 @@ void UI_Menu_Start(AppData* _appData){
     Vec2 gameOverSubTitleBackgroundPos = {gameOverTitleBackgroundPos.x+32, gameOverSubTitlePos.y - 32};
     
 
-    Vec2 gameOverTitleTextPos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.2f ), titlePos.y };//- ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
+    Vec2 gameOverTitleTextPos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.1f ), titlePos.y -8};//- ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
     Vec2 gameOverSubTitleTextPos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.15f ), subTitlePos.y};
     
-    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, gameOverTitleTextPos, mainMenuTitleSize);
+    //gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, gameOverTitleTextPos, mainMenuTitleSize);
+    // TODO: setting the colour here does nothing
+    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT6_ID, fontPath4, whiteColor, gameOverTitleTextPos, mainMenuTitleSize);
     gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitle, FONT4_ID, fontPath4, whiteColor, gameOverSubTitleTextPos, mainMenuSubTitleSize);
 
     gameOverTitleEntity->text->isShowing = FALSE;
@@ -391,6 +397,7 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
     rdpq_text_unregister_font(FONT3_ID);
     rdpq_text_unregister_font(FONT4_ID);
     rdpq_text_unregister_font(FONT5_ID);
+    rdpq_text_unregister_font(FONT6_ID);
 
     // Free the loaded sprites in memory
     for(int i = 0; i < _ecs->entitiesCount; ++i){
@@ -445,14 +452,17 @@ void UI_Menu_MainMenuSetShowing(BOOL _state){
 }
 
 void UI_Menu_GameOverUISetShowing(BOOL _state){
-     // Game Over
-        gameOverTitleEntity->text->isShowing = _state;
-        gameOverSubTitleEntity->text->isShowing = _state;
-        gameOverTitleEntity->text->isShowing = _state;
-        gameOverSubTitleEntity->text->isShowing = _state;
-
-        gameOverTitleBackground->sprite->enabled= AF_Component_SetEnabled(gameOverTitleBackground->sprite->enabled, _state);
-        gameOverSubTitleBackground->sprite->enabled =AF_Component_SetEnabled(gameOverSubTitleBackground->sprite->enabled, _state);
+    
+    // Game Over
+    gameOverTitleEntity->text->isShowing = _state;
+    gameOverSubTitleEntity->text->isShowing = _state;
+    
+    //gameOverTitleEntity->text->isShowing = _state;
+    //gameOverSubTitleEntity->text->isShowing = _state;
+    /**/ 
+    gameOverTitleBackground->sprite->enabled= AF_Component_SetEnabled(gameOverTitleBackground->sprite->enabled, _state);
+    gameOverSubTitleBackground->sprite->enabled =AF_Component_SetEnabled(gameOverSubTitleBackground->sprite->enabled, _state);
+    
 }
 
 void UI_Menu_PlayingSetState(BOOL _state){
@@ -557,11 +567,12 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
 
 void UI_Menu_RenderGameOverScreen(AppData* _appData ){
 
+   
     UI_Menu_MainMenuSetShowing(FALSE);
     UI_Menu_PlayingSetState(FALSE);
     UI_Menu_CountdownState(FALSE);
     
-
+    
     //gameOverTitleEntity->text->isShowing = TRUE;
     //gameOverSubTitleEntity->text->isShowing = TRUE;
 
@@ -583,8 +594,9 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
         gameOverSubTitleEntity->text->text = gameOverSubTitle;
      }
 
+    
      UI_Menu_GameOverUISetShowing(TRUE);
-
+    
     // Game Jam CORE MINI GAME end game stuff
     // only call this once
     if(isDeclaredWinner == FALSE){
@@ -594,7 +606,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
         isDeclaredWinner = TRUE;
     }
    
-
+    
     for(int i = 0; i < PLAYER_COUNT; ++i){
         // detect start button pressed to restart the game
         if(_appData->input.keys[i][A_KEY].pressed == TRUE){
@@ -609,6 +621,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
             minigame_end(); 
         }
     }
+    /**/
 }
 
 void UI_Menu_RenderCountdown(AppData* _appData){
