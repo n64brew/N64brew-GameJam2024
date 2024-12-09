@@ -1,5 +1,5 @@
-#ifndef GAMEJAM2024_LANDGRAB_CONSTANTS_H
-#define GAMEJAM2024_LANDGRAB_CONSTANTS_H
+#ifndef GAMEJAM2024_LANDGRAB_GLOBAL_H
+#define GAMEJAM2024_LANDGRAB_GLOBAL_H
 
 #include <libdragon.h>
 
@@ -17,6 +17,9 @@
 #undef RGBA32
 #define RGBA32(r, g, b, a) ((color_t){ r, g, b, a })
 
+#define COLOR_WHITE RGBA32 (255, 255, 255, 255)
+#define COLOR_BLACK RGBA32 (0, 0, 0, 255)
+
 static const color_t PLAYER_COLORS[] = {
   PLAYERCOLOR_1,
   PLAYERCOLOR_2,
@@ -27,10 +30,12 @@ static const color_t PLAYER_COLORS[] = {
 // clang-format off
 #define PLAYER_FOREACH(iterator_token) \
     for (\
-        size_t iterator_token = PLAYER_1; \
+        PlyNum iterator_token = PLAYER_1; \
         iterator_token < MAXPLAYERS; \
         iterator_token += 1 \
     )
+
+typedef struct { int x0; int y0; int x1; int y1; } Rect;
 // clang-format on
 
-#endif
+#endif //GAMEJAM2024_LANDGRAB_GLOBAL_H

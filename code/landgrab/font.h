@@ -1,11 +1,11 @@
 #ifndef GAMEJAM2024_LANDGRAB_FONT_H
 #define GAMEJAM2024_LANDGRAB_FONT_H
 
-#include "constants.h"
+#include "global.h"
 
-#define FONT_BILLBOARD 2
+#define FONT_SQUAREWAVE 1
 
-extern rdpq_font_t *font_billboard;
+extern rdpq_font_t *font_squarewave;
 
 void font_init (void);
 

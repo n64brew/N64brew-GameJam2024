@@ -1,17 +1,29 @@
 #ifndef GAMEJAM2024_LANDGRAB_PIECE_H
 #define GAMEJAM2024_LANDGRAB_PIECE_H
 
-#include "constants.h"
+#include "global.h"
 
 #define PIECE_ROWS 5
 #define PIECE_COLS 5
 #define PIECE_SIZE (PIECE_ROWS * PIECE_COLS)
 
-// MAKE SURE YOU UPDATE THIS IF YOU CHANGE PIECES IN `piece.c`!
+// MAKE SURE YOU UPDATE THESE IF YOU CHANGE PIECES IN `piece.c`!
+#define PIECE_MIN_VALUE 1
+#define PIECE_MAX_VALUE 5
 #define PIECE_COUNT 21
 
-extern const int PIECES[PIECE_COUNT][PIECE_SIZE];
+typedef enum
+{
+  CELL_EMPTY = 0,
+  CELL_FILLED = 1,
+} Cell;
 
-int piece_value (int piece[PIECE_SIZE]);
+typedef struct
+{
+    int value;
+    Cell cells[PIECE_SIZE];
+} Piece;
+
+extern const Piece PIECES[PIECE_COUNT];
 
 #endif

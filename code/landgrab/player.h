@@ -2,36 +2,46 @@
 #define GAMEJAM2024_LANDGRAB_PLAYER_H
 
 #include "board.h"
-#include "constants.h"
+#include "global.h"
 #include "piece.h"
 
-typedef struct
+typedef struct Player
 {
   PlyNum plynum;
+  int score;
   color_t color;
-  int cursor_x;
-  int cursor_y;
+  sprite_t *cursor_sprite;
+  int cursor_col;
+  int cursor_row;
   int piece_index;
-  int piece_buffer[PIECE_SIZE];
-  int pieces_used[PIECE_COUNT];
-} PlayerState;
+  Cell piece_buffer[PIECE_SIZE];
+  bool pieces_used[PIECE_COUNT];
+  float pulse_sine_x;
+  float pulse_sine_y;
+} Player;
 
-void player_init (PlayerState *player, PlyNum plynum);
+void player_init (Player *player, PlyNum plynum);
 
-void player_cleanup (PlayerState *player);
+void player_cleanup (Player *player);
 
-void player_draw (PlayerState *player);
+bool player_loop (Player *player, bool active);
 
-void player_set_cursor (PlayerState *player, int x, int y);
+bool player_loop_ai (Player *player, bool active);
 
-int player_remaining_pieces (PlayerState *player);
+void player_render (Player *player, bool active);
 
-bool player_change_piece (PlayerState *player, int piece_index);
+bool player_set_cursor (Player *player, int col, int row);
 
-void player_next_piece (PlayerState *player, int incr);
+int player_remaining_pieces (Player *player);
 
-void player_rotate_piece_right (PlayerState *player);
+bool player_change_piece (Player *player, int piece_index);
 
-void player_rotate_piece_left (PlayerState *player);
+void player_incr_piece (Player *player, int incr);
+
+void player_incr_value (Player *player, int incr);
+
+void player_flip_piece_right (Player *player);
+
+void player_flip_piece_left (Player *player);
 
 #endif
