@@ -5,13 +5,15 @@
 #include "AF_Util.h"
 
 
-void AF_LoadFont(int _id, const char* _path, uint8_t _color[4]){
+void* AF_LoadFont(int _id, const char* _path, uint8_t _color[4]){
     rdpq_font_t *fnt1 = rdpq_font_load(_path);
-        rdpq_font_style(fnt1, 0, &(rdpq_fontstyle_t){
-            .color = RGBA32(_color[0],_color[1], _color[2], 0xFF),//text->textColor[0],text->textColor[1], text->textColor[2], text->textColor[3]), //0xED, 0xAE, 0x49, 0xFF),
-        });
-       
-        rdpq_text_register_font(_id, fnt1);
+    rdpq_font_style(fnt1, 0, &(rdpq_fontstyle_t){
+        .color = RGBA32(_color[0],_color[1], _color[2], 0xFF),//text->textColor[0],text->textColor[1], text->textColor[2], text->textColor[3]), //0xED, 0xAE, 0x49, 0xFF),
+    });
+    
+    rdpq_text_register_font(_id, fnt1);
+
+    return (void*)fnt1;
 }
 
 

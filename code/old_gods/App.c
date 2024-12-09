@@ -197,7 +197,8 @@ void App_Shutdown(AppData* _appData){
     PrintHeapStatus("Input Shutdown: ");
 
     // Timer Shutdown
-    PrintHeapStatus("Timer ShutDown TODO: ");
+    timer_close();
+    PrintHeapStatus("Timer ShutDown: ");
 
     // debug shutdown
     PrintHeapStatus("Debug Shutdown TODO: ");

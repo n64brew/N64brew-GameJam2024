@@ -93,7 +93,13 @@ wav64_t sfx_stop;
 wav64_t sfx_winner;
 wav64_t sfx_startButton;
 
-
+// font ptrs
+// TODO: tidy this up
+rdpq_font_t* font2Ptr = NULL;
+rdpq_font_t* font3Ptr = NULL;
+rdpq_font_t* font4Ptr = NULL;
+rdpq_font_t* font5Ptr = NULL;
+rdpq_font_t* font6Ptr = NULL;
 
 
 // Forward decalred functions
@@ -149,13 +155,13 @@ void UI_Menu_Start(AppData* _appData){
     uint16_t padding = 32;
     uint16_t margin = 32;
 
-    AF_LoadFont(FONT2_ID, fontPath2, pink);
-    AF_LoadFont(FONT3_ID, fontPath3, whiteColor);
-    AF_LoadFont(FONT4_ID, fontPath4, pink); // title font
-    AF_LoadFont(FONT5_ID, fontPath5, whiteColor);
+    font2Ptr = (rdpq_font_t*)AF_LoadFont(FONT2_ID, fontPath2, pink);
+    font3Ptr = (rdpq_font_t*)AF_LoadFont(FONT3_ID, fontPath3, whiteColor);
+    font4Ptr = (rdpq_font_t*)AF_LoadFont(FONT4_ID, fontPath4, pink); // title font
+    font5Ptr = (rdpq_font_t*)AF_LoadFont(FONT5_ID, fontPath5, whiteColor);
 
     //TODO: hack to fix font 3 breaking on game over screen. unsure why
-    AF_LoadFont(FONT6_ID, fontPath4, whiteColor);
+    font6Ptr = (rdpq_font_t*)AF_LoadFont(FONT6_ID, fontPath4, whiteColor);
 
 	gameTitleEntity = AF_ECS_CreateEntity(&_appData->ecs);
 	*gameTitleEntity->text = AF_CText_ADD();
@@ -394,12 +400,20 @@ void UI_Menu_Update(AppData* _appData){
 
 void UI_Menu_Shutdown(AF_ECS* _ecs){
     // Destroy Font
-    debugf("UI Renderer Shutdow: Unregistering fonts \n");
+    debugf("UI Renderer Shutdown: Unregistering fonts \n");
     rdpq_text_unregister_font(FONT2_ID);
     rdpq_text_unregister_font(FONT3_ID);
     rdpq_text_unregister_font(FONT4_ID);
     rdpq_text_unregister_font(FONT5_ID);
     rdpq_text_unregister_font(FONT6_ID);
+
+    
+    // free the font
+    rdpq_font_free(font2Ptr);
+    rdpq_font_free(font3Ptr);
+    rdpq_font_free(font4Ptr);
+    rdpq_font_free(font5Ptr);
+    rdpq_font_free(font6Ptr);
 
     // Free the loaded sprites in memory
     for(int i = 0; i < _ecs->entitiesCount; ++i){
@@ -409,10 +423,16 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
             AF_CSprite* sprite = entity->sprite;
             sprite_t* spriteData = (sprite_t*)sprite->spriteData;
             if(spriteData != NULL){
+                debugf("UI Renderer Shutdown: freeing sprites %i \n", i);
                 sprite_free(spriteData);
             }
         }
+
+        // free the fot
+        //AF_C
     }
+
+
 
 
     // Destroy Audio
