@@ -392,6 +392,20 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
     rdpq_text_unregister_font(FONT4_ID);
     rdpq_text_unregister_font(FONT5_ID);
 
+    // Free the loaded sprites in memory
+    for(int i = 0; i < _ecs->entitiesCount; ++i){
+        AF_Entity* entity = &_ecs->entities[i];
+        BOOL hasSprite = AF_Component_GetHas(entity->sprite->enabled);
+        if(hasSprite){
+            AF_CSprite* sprite = entity->sprite;
+            sprite_t* spriteData = (sprite_t*)sprite->spriteData;
+            if(spriteData != NULL){
+                sprite_free(spriteData);
+            }
+        }
+    }
+
+
     // Destroy Audio
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);

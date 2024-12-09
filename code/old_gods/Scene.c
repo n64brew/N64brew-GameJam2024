@@ -95,31 +95,6 @@ AF_Color PLAYER3_COLOR = {82, 200, 223, 255};
 AF_Color PLAYER4_COLOR = {255, 233, 0, 255};
 
 
-typedef struct
-{
-  PlyNum plynum;
-  T3DMat4FP* modelMatFP;
-  rspq_block_t *dplSnake;
-  T3DAnim animAttack;
-  T3DAnim animWalk;
-  T3DAnim animIdle;
-  T3DSkeleton skelBlend;
-  T3DSkeleton skel;
-  T3DVec3 moveDir;
-  T3DVec3 playerPos;
-  float rotY;
-  float currSpeed;
-  float animBlend;
-  bool isAttack;
-  bool isAlive;
-  float attackTimer;
-  PlyNum ai_target;
-  int ai_reactionspeed;
-} player_data;
-
-player_data players[MAXPLAYERS];
-
-
 // ======== AUDIO ========
 wav64_t feedGodSoundFX;
 wav64_t pickupSoundFX;
@@ -1044,6 +1019,7 @@ AF_Entity* GetBucket4(){
 }
 
 void Scene_Destroy(AF_ECS* _ecs){
+    debugf("Scene: Destroy\n");
     wav64_close(&feedGodSoundFX);
     wav64_close(&pickupSoundFX);
 }

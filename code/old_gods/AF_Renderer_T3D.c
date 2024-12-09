@@ -28,16 +28,11 @@ Tiny3D rendering functions
 uint8_t debugCam = DEBUG_CAM_ON;
 
 
-// T3D variables and defines
-/**
- * This shows how you can draw multiple objects (actors) in a scene.
- * Each actor has a scale, rotation, translation (knows as SRT) and a model matrix.
- */
 #define RAD_360 6.28318530718f
 static T3DViewport viewport;
 
 //static T3DVec3 rotAxis;
-static uint8_t colorAmbient[4] = {0xFF, 0xFF, 0xFF, 0xFF};//{80, 50, 50, 0xFF};
+static uint8_t colorAmbient[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static T3DVec3 lightDirVec = {{1.0f, 1.0f, 0.0f}};
 // SkyBlue 142,224,240
@@ -56,31 +51,16 @@ T3DAnim animAttacks[AF_ECS_TOTAL_ENTITIES];
 
 
 // ============ ANIMATIONS ============
-const char* idlePath = "Idle";//"Snake_Idle";
-const char* walkPath = "Walk";//"Snake_Walk";
-const char* attackPath = "Attack";//"Snake_Attack";
+const char* idlePath = "Idle";
+const char* walkPath = "Walk";
+const char* attackPath = "Attack";
 
 // we need a seperate skelton anim for each skeleton
 T3DSkeleton skeletons[AF_ECS_TOTAL_ENTITIES];
 T3DSkeleton skeletonBlends[AF_ECS_TOTAL_ENTITIES];
 
 // ============ PARTICLES ===============
-// Allocate a particle buffer.
-// In contrast to triangles, there is no split between loading and drawing.
-// So later there will be only one command to draw all of them in one go.
-// Meaning you only have to allocate an buffer of arbitrary size here and fill it with data.
-//uint32_t particleCountMax = 100;//100'000;
-//uint32_t particleCount = 2000;
-//#define PARTICLE_COUNT 1000
-// NOTE: just like with vertices, particles are interleaved in pairs of 2.
-// So one TPXParticle struct always contains 2 particles.
-// If you need an odd number, just set the second particle size to 0.
-//uint32_t allocSize = sizeof(TPXParticle) * particleCountMax / 2;
-//TPXParticle *particles = malloc_uncached(allocSize);
-//uint32_t allocSize = 0;// = sizeof(TPXParticle) * particleCountMax / 2;
-//TPXParticle particles[PARTICLE_COUNT];// = malloc_uncached(allocSize);
-//AF_Animation animations[AF_ECS_TOTAL_ENTITIES];
-//T3DMat4FP matPartFP;// = malloc_uncached(sizeof(T3DMat4FP));
+// TODO
 
 
 // Holds our actor data, relevant for t3d is 'modelMat'.
@@ -337,23 +317,9 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 // Only process the entities that have mesh componets with a mesh
                 // initialise modelsMat
                 // TODO: i don't like this
-                //modelsMat[i] = malloc_uncached(sizeof(T3DMat4FP));
                 T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
-                //debugf("AF_Renderer_T3D: AF_RenderInit modelsMat address: %p \n",meshMat);
                 mesh->modelMatrix = (void*)meshMat;
-                //mesh->modelMatrix = (Mat4FP*)(sizeof(T3DMat4FP));
-                
-                /*if(mesh->modelMatrix == NULL){
-                    debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
-                    //continue;
-                }*/
-                //rspq_block_begin();
-            
-               
-                
-                // TODO: put a flag in that can signal a mesh is skinned
-                // The snake model needs special color and call to skinned command
-                
+
                 if(hasSkeletalComponent == TRUE){
                     t3d_matrix_push(mesh->modelMatrix);
                     color_t color ={mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
@@ -399,35 +365,24 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 // Only process the entities that have mesh componets with a mesh
                 // initialise modelsMat
                 // TODO: i don't like this
-                //modelsMat[i] = malloc_uncached(sizeof(T3DMat4FP));
                 T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
-                //debugf("AF_Renderer_T3D: AF_RenderInit modelsMat address: %p \n",meshMat);
                 mesh->modelMatrix = (void*)meshMat;
-                //mesh->modelMatrix = (Mat4FP*)(sizeof(T3DMat4FP));
-                
-                /*if(mesh->modelMatrix == NULL){
-                    debugf("AF_Renderer_T3D: AF_RenderInit modelsMat %i mesh ID %i mesh type %i is null\n",i, mesh->meshID, mesh->meshType);
-                    //continue;
-                }*/
+               
                 //rspq_block_begin();
             
                 t3d_matrix_push(mesh->modelMatrix);
-                //color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, 0xFF};
-                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));//color);//RGBA32(0, 0, 0, 0xFF));
-                ///t3d_state_set_vertex_fx(T3D_VERTEX_FX_NONE, 0, 0);
-                //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                 // Scroll the foam
                 
-                
+                // TODO: don't be specific to foam
                 if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL){
+
                     // skip drawing foam, as we do it another way.
                 }else{
                     t3d_model_draw(models[mesh->meshID]);
                 }
                 
-                
-                //rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
-                //t3d_model_draw(models[MODEL_SHADOW]);
+
                 totalNormalMeshCommands++;
                 t3d_matrix_pop(1);
                 totalDrawCommands ++;
@@ -730,13 +685,14 @@ void AF_Renderer_Finish(){
 
 // Shutdown Renderer
 void AF_Renderer_Shutdown(AF_ECS* _ecs){
+   debugf("AF_Renderer_T3D: Shutdown\n");
 
-    
-   
+    // Free the display buffers
+    rspq_block_free(skinnedBufferList);
+    rspq_block_free(staticBufferList);
+
     for (int i = 0; i < MODEL_COUNT; ++i){
       free(models[i]);
-
-      
     }
     // free the malloc'd mat4s
     for(int i = 0; i < AF_ECS_TOTAL_ENTITIES; ++i){
@@ -768,6 +724,7 @@ void AF_Renderer_Shutdown(AF_ECS* _ecs){
             t3d_anim_destroy(animations[i].idleAnimationData);
       */
     }
+
         
 
     t3d_destroy();

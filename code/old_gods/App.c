@@ -13,27 +13,9 @@
 #include "AI.h"
 
 
-
-//AF_Time* timerPtr;
-
-//#define FRAME_BUFFER_SIZE 320*240*2
-//display_context_t disp;
-//char buffer[FRAME_BUFFER_SIZE];// = {0};
-
-//const BOOL isDebug = TRUE;
-//float deltaTime;
-//int32_t curTick = 0;
-//int32_t curFrame = 0;
-
-
-//float frameMeasure;
-//float updateMeasure;
-
-
-
 // forward declare
 void App_Update_Wrapper(int _ovfl);
-//float App_Measure(void (*func)(int, ...), int num_args, ...);
+void PrintHeapStatus(const char* _message);
 
 void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeight){
     _appData->windowWidth = _windowWidth;
@@ -60,15 +42,23 @@ void App_Init(AppData* _appData){
     assert(ecs != NULL && "App_Init: ecs is null");
 
     AF_ECS_Init(ecs);
-
     PrintAppDataSize(_appData);
+    PrintHeapStatus("ECS Init: ");
+   
 
-    // Basic  setup for libdragon
-    debug_init_isviewer(); // this enables the ISViewer debug channel
-    console_init();
-    debug_init_usblog();
-    console_set_debug(true);
+    // Basic  setup for libdragon debugging
+    // toggled to true or false at the entry point
+    //if(_appData->gameplayData.isDebug == TRUE){
+        debug_init_isviewer(); // this enables the ISViewer debug channel
+        console_init();
+        debug_init_usblog();
+        console_set_debug(true);
+        //rdpq_debug_start();
+    //}
+    PrintHeapStatus("Debug init: ");
+
     timer_init();
+    PrintHeapStatus("Timer Init: ");
 
     // Tiny 3d stuff but
     asset_init_compression(2);  // if we are loading assets that have level 2 compression we need this
@@ -77,25 +67,34 @@ void App_Init(AppData* _appData){
     // Now do system specific initialisation
     // Init Input
     AF_Input_Init();
+    PrintHeapStatus("Input Init: ");
+
     AF_Physics_Init(ecs);
+    PrintHeapStatus("Physics Init: ");
     // Init Rendering
     
     // 3D rendering
     Vec2 screenSize = {_appData->windowWidth, _appData->windowHeight};
     AF_Renderer_Init(ecs, screenSize); 
-    
-    Game_Awake(ecs);
-    Scene_Awake(_appData);
 
-    Game_Start(ecs);
+    Scene_Awake(_appData);
+    PrintHeapStatus("Scene Awake: ");
+
+
     Scene_Start(_appData);
+    PrintHeapStatus("Scene Start: ");
 
     // UI
     UI_Menu_Awake(_appData);
+    PrintHeapStatus("Menu Awake ");
+
     UI_Menu_Start(_appData);
+    PrintHeapStatus("Menu Start: ");
 
     // start renderer things that need to know about scene or game entities that have been setup
     AF_Renderer_LateStart(ecs);
+    PrintHeapStatus("Renderer Late Start: ");
+    
     
     // set framerate to target 60fp and call the app update function
     //new_timer(TIMER_TICKS(1000000 / 60), TF_CONTINUOUS, App_Update_Wrapper);
@@ -103,6 +102,8 @@ void App_Init(AppData* _appData){
     // set the game state to player
    // _appData->gameplayData.gameState = GAME_STATE_PLAYING;
 }
+
+
 
 /*
 void App_Update_Wrapper(int _ovfl){
@@ -173,37 +174,53 @@ void App_Render_Update(AppData* _appData){
 
 void App_Shutdown(AppData* _appData){
     assert(_appData != NULL && "App: App_Shutdown: argument is null");
-    if(_appData){}
 	debugf("App_Shutdown\n");
-    Game_Shutdown();
-	AF_Renderer_Shutdown(&_appData->ecs);
-    AF_UI_Renderer_Shutdown();
-    UI_Menu_Shutdown(&_appData->ecs);
-	AF_Physics_Shutdown();
-	AF_Input_Shutdown();	
-	//AF_ECS_Shutdown();
 
+    // UI Renderer
+    AF_UI_Renderer_Shutdown();
+    PrintHeapStatus("UI Renderer Destroy: ");
+
+    // UI Menu
+    UI_Menu_Shutdown(&_appData->ecs);
+    PrintHeapStatus("Menu Destroy: ");
+
+    // Scene
+    Scene_Destroy(&_appData->ecs);
+    PrintHeapStatus("Scene Destroy: ");
+
+    // Physics
+	AF_Physics_Shutdown();
+    PrintHeapStatus("Physics Shutdown: ");
+    
+    // Input
+	AF_Input_Shutdown();
+    PrintHeapStatus("Input Shutdown: ");
+
+    // Timer Shutdown
+    PrintHeapStatus("Timer ShutDown TODO: ");
+
+    // debug shutdown
+    PrintHeapStatus("Debug Shutdown TODO: ");
+
+    // ECS
+	//AF_ECS_Shutdown();
+    //PrintHeapStatus("ECS Shutdown: ");
+
+    // Renderer
+	// TODO:this is out of order but matching game jam tmeplay shutdown order
+    AF_Renderer_Shutdown(&_appData->ecs);
+    PrintHeapStatus("Renderer Destroy: ");
+    // close the display used
+    // TODO ths should go into renderer
+    display_close();
+    PrintHeapStatus("App: Final Size: ");
 }
 
-// TODO: Get this working
-/*
-float App_Measure(void (*func)(int, ...), int num_args, ...)
-{
-    uint64_t diff = 0;
-    va_list args;
-    rspq_wait();
-    disable_interrupts();
-    uint32_t t0 = get_ticks();
-    // Initialize the argument list
-    va_start(args, num_args);
-        
-    // Call the function with the variable arguments
-    func(num_args, args);
-        
-    va_end(args);
-    uint32_t t1 = get_ticks();
-    enable_interrupts();
-    diff += t1-t0;
-    
-    return TIMER_MICROS(diff) / 16.0f;
-}*/
+
+// Print the N64 Heap status to the console
+// Helpful for checking for memory leaks
+void PrintHeapStatus(const char* _message){
+    heap_stats_t heap_stats;
+    sys_get_heap_stats(&heap_stats);
+    debugf("====\n%s: Mem: %d KiB\n====\n", _message, heap_stats.used/1024);
+}

@@ -230,12 +230,15 @@ void AF_UI_RendererText_Update(AF_CText* _text){
     if(_text->textData == NULL){
         return;
     }
-    rdpq_paragraph_render((rdpq_paragraph_t*)_text->textData, _text->screenPos.x, _text->screenPos.y);
+    rdpq_paragraph_t* textData = (rdpq_paragraph_t*)_text->textData;
+    rdpq_paragraph_render(textData, _text->screenPos.x, _text->screenPos.y);
     
 
     //rdpq_paragraph_render(par, _text->screenPos.x, _text->screenPos.y);
-    //rdpq_paragraph_free(par);
-
+    // try to free the text data memory
+    //if(textData != NULL){
+    //    rdpq_paragraph_free(textData);
+    // }
 }
 
 
@@ -259,164 +262,3 @@ Do shutdown things
 void AF_UI_Renderer_Shutdown(void){
 
 }
-
-/*
-
-void Game_UpdatePlayerScoreText();
-
-
-void RenderGameOverScreen(AF_Input* _input);
-void UpdateText(AF_ECS* _ecs);
-void RenderMainMenu(AF_Input* _input, AF_Time* _time);
-
-void UpdateText(AF_ECS* _ecs){
-    // God eat count
-    
-
-    // countdown timer
-    sprintf(countdownTimerLabelText, "TIME %i", (int)countdownTimer);
-    countdownTimerLabelEntity->text->text = countdownTimerLabelText;
-    // update the text
-    countdownTimerLabelEntity->text->isDirty = TRUE;
-
-    
-    //playersCountUIEntity->text->text = playerCountCharBuff;
-    // Update player counters
-    // player 1
-    
-}
-*/
-
-/*
-Game_UpdatePlayerScoreText
-Update the UI score elements
-*/
-
-/*
-void Game_UpdatePlayerScoreText(){
-    sprintf(godsCountLabelText, "%i", godEatCount);
-    godEatCountLabelEntity->text->text = godsCountLabelText;
-    // our UI text rendering needs to be told an element is dirty so it will rebuild the text paragraph (for performance)
-    godEatCountLabelEntity->text->isDirty = TRUE;
-    sprintf(playerCountCharBuff, "%i                 %i                  %i                  %i", (int)player1Entity->playerData->score, (int)player2Entity->playerData->score, (int)player3Entity->playerData->score, (int)player4Entity->playerData->score);
-    debugf("playerScore %s \n", playerCountCharBuff);
-    
-    playersCountUIEntity->text->text = playerCountCharBuff;
-    playersCountUIEntity->text->isDirty = TRUE;
-   
-}
-
-void RenderMainMenu(AF_Input* _input, AF_Time* _time){
-    switch (gameState)
-    {
-    case GAME_STATE_MAIN_MENU:
-        // Main Menu
-        mainMenuTitleEntity->text->isShowing = TRUE;
-        mainMenuSubTitleEntity->text->isShowing = TRUE;
-
-        // Game Over
-        gameOverTitleEntity->text->isShowing = FALSE;
-        gameOverSubTitleEntity->text->isShowing = FALSE;
-        gameOverTitleEntity->text->isShowing = FALSE;
-        gameOverSubTitleEntity->text->isShowing = FALSE;
-
-        // Player Counts hid
-        playersCountUIEntity->text->isShowing = FALSE;
-
-        // reset the visible text
-        //Game_UpdatePlayerScoreText();
-        // Header bar
-        godEatCountLabelEntity->text->isShowing = FALSE;
-        // gods count reset
-        godEatCount = 0;
-
-        countdownTimerLabelEntity->text->isShowing = FALSE;
-
-        // countdown Time
-        countdownTimer = COUNT_DOWN_TIME;
-
-        // detect start button pressed
-        if(_input->keys[2].pressed == TRUE){
-
-            
-            gameState = GAME_STATE_PLAYING;
-            player1Entity->playerData->score = 0;
-            player2Entity->playerData->score = 0;
-            player3Entity->playerData->score = 0;
-            player4Entity->playerData->score = 0;
-            playersCountUIEntity->playerData->score = 0;
-            Game_UpdatePlayerScoreText();
-        }
-        
-        
-    break;
-
-    case GAME_STATE_PLAYING:
-        // Update countdown timer
-        countdownTimer -= _time->timeSinceLastFrame;
-        if(countdownTimer <= 0){
-            gameState = GAME_STATE_GAME_OVER_LOSE;
-            countdownTimer = COUNT_DOWN_TIME;
-        }
-
-        if(godEatCount == GODS_EAT_COUNT){
-            gameState = GAME_STATE_GAME_OVER_WIN;
-            countdownTimer = COUNT_DOWN_TIME;
-        }
-
-    // Player Counts
-        playersCountUIEntity->text->isShowing = TRUE;
-
-        // MAin MEnu
-        mainMenuTitleEntity->text->isShowing = FALSE;
-        mainMenuSubTitleEntity->text->isShowing = FALSE;
-
-        // Header bar
-        godEatCountLabelEntity->text->isShowing = TRUE;
-        countdownTimerLabelEntity->text->isShowing= TRUE;
-    break;
-
-    default:
-        break;
-    }
-}
-void RenderGameOverScreen(AF_Input* _input){
-    switch (gameState)
-    {
-    case GAME_STATE_PLAYING:
-        
-    break;
-    case GAME_STATE_GAME_OVER_WIN:
-    
-        // render game over win title
-        // render game over sub title showing what player won
-        gameOverSubTitleEntity->text->text = gameOverSubTitleWinCharBuffer;
-        gameOverTitleEntity->text->isShowing = TRUE;
-        gameOverSubTitleEntity->text->isShowing = TRUE;
-
-        // detect start button pressed
-        if(_input->keys[2].pressed == TRUE){
-            gameState = GAME_STATE_MAIN_MENU;
-        }
-        break;
-
-    case GAME_STATE_GAME_OVER_LOSE:
-   
-        // render Game over lose title
-        // Render Game Over lose sub title
-        gameOverSubTitleEntity->text->text = gameOverSubTitleLoseCharBuffer;
-        gameOverTitleEntity->text->isShowing = TRUE;
-        gameOverSubTitleEntity->text->isShowing = TRUE;
-
-        // detect start button pressed
-        if(_input->keys[2].pressed == TRUE){
-            gameState = GAME_STATE_MAIN_MENU;
-        }
-        break;
-    
-    default:
-        break;
-    }
-    
-    // if player presses start button. Restart the game
-}*/

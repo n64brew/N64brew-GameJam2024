@@ -31,6 +31,7 @@ void minigame_init()
     resolution = RESOLUTION_640x240;
     //Initialise the app data structure to default values or zero before use
     AppData_Init(&g_appData, resolution.width, resolution.height);
+    g_appData.gameplayData.isDebug = FALSE;
     g_appData.gameTime.lastTime = timer_ticks();
 
     // init the other app things

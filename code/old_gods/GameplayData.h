@@ -33,6 +33,7 @@ GameData
 Struct to hold game data to pass around to functions that need it
 */
 typedef struct GameplayData {
+    BOOL isDebug;
     // Gameplay Vars
     int godEatCount;
     float countdownTimer;
@@ -50,6 +51,7 @@ typedef struct GameplayData {
 // Factor function to initialise the gameplay data
 static inline GameplayData GameplayData_INIT(){
     GameplayData gameplayData = {
+        .isDebug = FALSE,
         .godEatCount = GODS_EAT_COUNT,
         .countdownTimer = COUNT_DOWN_TIME,
         .gameState = GAME_STATE_MAIN_MENU,
