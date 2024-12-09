@@ -5,54 +5,40 @@ BUILD_DIR = build
 ASSETS_DIR = assets
 MINIGAME_DIR = code
 FILESYSTEM_DIR = filesystem
-#N64_INST = libdragon
-#T3D_INST = tiny3D
-
-#T3D_INST= tiny3d
-
-#-- ADDED
 MINIGAMEDSO_DIR = $(FILESYSTEM_DIR)/minigames
 
-# UNFLoader files
-UNFLLOADER_DIR = UNFLoader/
-DEBUGFILES = $(UNFLLOADER_DIR)debug.c $(UNFLLOADER_DIR)usb.c
-CFLAGS += -IAF_Math/include -IAF_Lib/include -IUNFLoader
-
-SRC = main.c core.c minigame.c menu.c $(DEBUGFILES:.c=.o)
+SRC = main.c core.c minigame.c menu.c
 
 filesystem/squarewave.font64: MKFONT_FLAGS += --outline 1 --range all
 
-#include $(N64_INST)/n64.mk
+###
 include libdragon/n64.mk
-#include tiny3d/t3d.mk
-#include $(T3D_INST)/t3d.mk
 include tiny3D/t3d.mk
-
-#include 
+#include $(N64_INST)/include/n64.mk
+#include $(N64_INST)/include/t3d.mk
 
 MINIGAMES_LIST = $(notdir $(wildcard $(MINIGAME_DIR)/*))
 DSO_LIST = $(addprefix $(MINIGAMEDSO_DIR)/, $(addsuffix .dso, $(MINIGAMES_LIST)))
 
 IMAGE_LIST = $(wildcard $(ASSETS_DIR)/*.png) $(wildcard $(ASSETS_DIR)/core/*.png)
-FONT_LIST = $(wildcard $(ASSETS_DIR)/*.ttf)
-MODEL_LIST = $(wildcard $(ASSETS_DIR)/*.glb)
-SOUND_LIST = $(wildcard $(ASSETS_DIR)/*.wav) $(wildcard $(ASSETS_DIR)/core/*.wav)
-MUSIC_LIST = $(wildcard $(ASSETS_DIR)/*.xm)
+FONT_LIST  = $(wildcard $(ASSETS_DIR)/*.ttf)
+MODEL_LIST  = $(wildcard $(ASSETS_DIR)/*.glb)
+SOUND_LIST  = $(wildcard $(ASSETS_DIR)/*.wav) $(wildcard $(ASSETS_DIR)/core/*.wav)
+SOUND2_LIST  = $(wildcard $(ASSETS_DIR)/*.mp3) $(wildcard $(ASSETS_DIR)/core/*.mp3)
+MUSIC_LIST  = $(wildcard $(ASSETS_DIR)/*.xm)
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(IMAGE_LIST:%.png=%.sprite))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(FONT_LIST:%.ttf=%.font64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MODEL_LIST:%.glb=%.t3dm))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(SOUND_LIST:%.wav=%.wav64))
+ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(SOUND2_LIST:%.mp3=%.wav64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MUSIC_LIST:%.xm=%.xm64))
 
 ifeq ($(DEBUG), 1)
 	N64_CFLAGS += -g -O0
 	N64_LDFLAGS += -g
-	N64_CFLAGS += -Wno-unused-variables -Wno-unsued-function
 else
 	N64_CFLAGS += -O2
 endif
-
-
 
 all: $(ROMNAME).z64
 
@@ -77,6 +63,11 @@ $(FILESYSTEM_DIR)/%.wav64: $(ASSETS_DIR)/%.wav
 	@echo "    [SFX] $@"
 	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o $(dir $@) "$<"
 
+$(FILESYSTEM_DIR)/%.wav64: $(ASSETS_DIR)/%.mp3
+	@mkdir -p $(dir $@)
+	@echo "    [SFX] $@"
+	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o $(dir $@) "$<"
+
 $(FILESYSTEM_DIR)/%.xm64: $(ASSETS_DIR)/%.xm
 	@mkdir -p $(dir $@)
 	@echo "    [XM] $@"
@@ -85,15 +76,12 @@ $(FILESYSTEM_DIR)/%.xm64: $(ASSETS_DIR)/%.xm
 define MINIGAME_template
 SRC_$(1) = \
 	$$(wildcard $$(MINIGAME_DIR)/$(1)/*.c) \
-	$$(wildcard $$(MINIGAME_DIR)/$(1)/**/*.c) \
+	$$(wildcard $$(MINIGAME_DIR)/$(1)/*/*.c) \
 	$$(wildcard $$(MINIGAME_DIR)/$(1)/*.cpp) \
-	$$(wildcard $$(MINIGAME_DIR)/$(1)/**/*.cpp)
+	$$(wildcard $$(MINIGAME_DIR)/$(1)/*/*.cpp)
 $$(MINIGAMEDSO_DIR)/$(1).dso: $$(SRC_$(1):%.cpp=$$(BUILD_DIR)/%.o)
 $$(MINIGAMEDSO_DIR)/$(1).dso: $$(SRC_$(1):%.c=$$(BUILD_DIR)/%.o)
-
--include $$(MINIGAME_DIR)/$(1)/$(1).mk ]
-
-
+-include $$(MINIGAME_DIR)/$(1)/$(1).mk
 endef
 
 $(foreach minigame, $(MINIGAMES_LIST), $(eval $(call MINIGAME_template,$(minigame))))
@@ -110,8 +98,6 @@ $(BUILD_DIR)/$(ROMNAME).msym: $(BUILD_DIR)/$(ROMNAME).elf
 clean:
 	rm -rf $(BUILD_DIR) $(FILESYSTEM_DIR) $(DSO_LIST) $(ROMNAME).z64 
 
--include $(wildcard $(BUILD_DIR)/*.d)
+-include $(wildcard $(BUILD_DIR)/*.d) $(wildcard $(BUILD_DIR)/*/*.d) $(wildcard $(BUILD_DIR)/*/*/*.d) $(wildcard $(BUILD_DIR)/*/*/*/*.d)
 
 .PHONY: all clean
-
-

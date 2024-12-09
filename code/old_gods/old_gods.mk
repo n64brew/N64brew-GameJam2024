@@ -37,6 +37,12 @@ filesystem/old_gods/Jumpman_H1.font64: MKFONT_FLAGS += --outline -1 --size 64 --
 filesystem/old_gods/Jumpman_H2.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2
 filesystem/old_gods/Jumpman_P.font64: MKFONT_FLAGS += --outline -1 --size 32 --char-spacing 2
 
+# UNFLoader files
+UNFLLOADER_DIR = code/old_gods/UNFLoader/
+DEBUGFILES = $(UNFLLOADER_DIR)debug.c $(UNFLLOADER_DIR)usb.c
+CFLAGS += -Icode/old_gods/AF_Math/include -Icode/old_gods/AF_Lib/include -I$(UNFLLOADER_DIR)
+
+#==== CREDITS =====
 #pikcup rat https://opengameart.org/content/paper-crush-sounds
 # god eat sound effect https://opengameart.org/content/7-assorted-sound-effects-menu-level-up
 #ui and othe effect sounds https://opengameart.org/content/ui-and-item-sounds-sample-1
