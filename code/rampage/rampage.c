@@ -286,8 +286,8 @@ float pointLightDistance[] = {
     0.2f,
 };
 
-#define NUMBER_WIDTH    21
-#define NUMBER_HEIGHT   33
+#define NUMBER_WIDTH    34
+#define NUMBER_HEIGHT   48
 #define MARGIN          40
 
 struct Vector2 scorePosition[] = {
@@ -319,6 +319,14 @@ uint8_t clear_shade = 128;
 void minigame_redraw_rects() {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_redraw_rect(&viewport, &gRampage.players[i]);
+
+
+        struct RedrawRect rect;
+        rect.min[0] = scorePosition[i].x;
+        rect.min[1] = scorePosition[i].y;
+        rect.max[0] = scorePosition[i].x + 68;
+        rect.max[1] = scorePosition[i].y + 48;
+        redraw_update_dirty(gRampage.score_redraw[i], &rect);
     }
 
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
@@ -514,22 +522,22 @@ void minigame_loop(float deltatime) {
 
         rdpq_sprite_blit(
             rampage_assets_get()->score_digits[i],
-            scorePosition[i].x,
+            scorePosition[i].x - 7,
             scorePosition[i].y,
             &(rdpq_blitparms_t) {
-                .s0 = tens * 21,
-                .width = 20,
+                .s0 = tens * 48,
+                .width = 48,
                 .scale_y = 1.0f / HEIGHT_SCALE,
             }
         );
 
         rdpq_sprite_blit(
             rampage_assets_get()->score_digits[i],
-            scorePosition[i].x + 20.0f,
+            scorePosition[i].x + 27.0f,
             scorePosition[i].y,
             &(rdpq_blitparms_t) {
-                .s0 = ones * 21,
-                .width = 20,
+                .s0 = ones * 48,
+                .width = 48,
                 .scale_y = 1.0f / HEIGHT_SCALE,
             }
         );
@@ -689,6 +697,7 @@ void rampage_init(struct Rampage* rampage) {
 
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_init(&rampage->players[i], &gStartingPositions[i], &gStartingRotations[i], i, rampage_player_type(i));
+        rampage->score_redraw[i] = redraw_aquire_handle();
     }
 
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {

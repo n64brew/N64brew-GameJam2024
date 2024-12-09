@@ -40,6 +40,7 @@ struct Rampage {
     int winner_count;
     int winner_mask;
     RedrawHandle center_text_redraw;
+    RedrawHandle score_redraw[PLAYER_COUNT];
 };
 
 void rampage_init(struct Rampage* rampage);
