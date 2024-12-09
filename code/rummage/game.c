@@ -1118,7 +1118,7 @@ void game_render(float deltatime, T3DViewport viewport)
                     // TODO only set anim when switching state ?
                     t3d_anim_set_playing(&players[i].anim_walk, true);
                     t3d_anim_set_playing(&players[i].anim_idle, false);
-                    t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);
+                    t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/3.0f + 0.15f);
                     t3d_anim_update(&players[i].anim_walk, deltatime);
                 } else {
                     // TODO only set anim when switching state ?
