@@ -20,6 +20,7 @@ void AF_Input_Init(){
 	debugf("Input Init\n");
 	// Init Libdragon input
 	joypad_init();
+	
 }
 
 /* ================

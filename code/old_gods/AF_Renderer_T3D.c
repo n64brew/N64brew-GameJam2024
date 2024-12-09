@@ -34,7 +34,7 @@ static T3DViewport viewport;
 //static T3DVec3 rotAxis;
 static uint8_t colorAmbient[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-static T3DVec3 lightDirVec = {{1.0f, 1.0f, 0.0f}};
+static T3DVec3 lightDirVec = {{1.0f, 1.0f, 0.001f}};
 // SkyBlue 142,224,240
 const uint8_t skyColor[3] = {142,224,240};
 
@@ -229,9 +229,7 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
 
 // Init Rendering
 void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
-    assert(_ecs != NULL && "AF_Renderer_T3D: Renderer_Init has null ecs referenced passed in \n");
-    debugf("AF_Renderer_T3D: AF_Renderer_Init: To be implemented\n");
-   	
+    assert(_ecs != NULL && "AF_Renderer_T3D: Renderer_Init has null ecs referenced passed in \n");   	
 	debugf("InitRendering\n");
 
     // Tindy 3D Init stuff
@@ -277,7 +275,8 @@ void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
 
     // Setup lights
     t3d_light_set_ambient(colorAmbient);
-    t3d_light_set_directional(0, colorDir, &lightDirVec);
+    // have to comment this out due to strange bug if playing another 3d game first.
+    //t3d_light_set_directional(0, colorDir, &lightDirVec); 
     t3d_light_set_count(1);
     //dplDraw = NULL;
 
@@ -692,37 +691,38 @@ void AF_Renderer_Shutdown(AF_ECS* _ecs){
     rspq_block_free(staticBufferList);
 
     for (int i = 0; i < MODEL_COUNT; ++i){
-      free(models[i]);
+      //free(models[i]);
+      debugf("AF_Renderer_T3D: freeing models %i\n", i);
+      t3d_model_free(models[i]);
     }
-    // free the malloc'd mat4s
+    // free the malloc'd mat4s matrix's
     for(int i = 0; i < AF_ECS_TOTAL_ENTITIES; ++i){
         AF_CMesh* mesh = &_ecs->meshes[i];
         
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+            debugf("AF_Renderer_T3D: freeing model matrix's %i\n", i);
             free_uncached(mesh->modelMatrix);
         }
-        // TODO: Free memory
-        // skeleton data
-
-        // Font
-
-        // Sound
-
-        // sprites
-
-
-
-        /*
+        
+        // Free the skeltons
         AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
-        if(AF_Component_GetHas(skeletalAnimation->enabled)){
-            
-            t3d_skeleton_destroy(animations[i].skeleton);
-            t3d_skeleton_destroy(animations[i].skeletonBlend);
+        if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
+            debugf("AF_Renderer_T3D: destroying skeltons %i \n", i);
+            T3DSkeleton* skelton = (T3DSkeleton*) skeletalAnimation->skeleton;
+            T3DSkeleton* skelBlend = (T3DSkeleton*) skeletalAnimation->skeletonBlend;
+            T3DAnim* animIdle = (T3DAnim*) skeletalAnimation->idleAnimationData;
+            T3DAnim* animAttack = (T3DAnim*) skeletalAnimation->attackAnimationData;
+            T3DAnim* animWalk = (T3DAnim*) skeletalAnimation->walkAnimationData;
 
-            t3d_anim_destroy(animations[i].idleAnimationData);
-            t3d_anim_destroy(animations[i].idleAnimationData);
-            t3d_anim_destroy(animations[i].idleAnimationData);
-      */
+            // destroy the skeletons
+            t3d_skeleton_destroy(skelton);
+            t3d_skeleton_destroy(skelBlend);
+            
+            // Destroy the animations
+            t3d_anim_destroy(animIdle);
+            t3d_anim_destroy(animAttack);
+            t3d_anim_destroy(animWalk);
+        }
     }
 
         

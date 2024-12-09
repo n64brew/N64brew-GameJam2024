@@ -6,9 +6,9 @@
 [x] snakes have floaties
 [x] snakes pickup rat
 [x] snake are colour coded
-[] player win number is correct
+[x] player win number is correct
 
-[] snakes have water movement effect
+[x] snakes have water movement effect
 [] snakes can attack each other
 [] celebration at end
 
@@ -16,5 +16,8 @@
 [x] count down visual at start
 [x] count down audio
 [x] end screen audio
-[] pickup audio
-[] put down audio
+[x] pickup audio
+[x] put down audio
+[] fix memory leaks
+[] fix template project back to original
+[] Allow the minigame to be paused by pressing START, and possibly exit as well

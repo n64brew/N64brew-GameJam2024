@@ -76,6 +76,7 @@ void App_Init(AppData* _appData){
     // 3D rendering
     Vec2 screenSize = {_appData->windowWidth, _appData->windowHeight};
     AF_Renderer_Init(ecs, screenSize); 
+    PrintHeapStatus("Init Rendering: ");
 
     Scene_Awake(_appData);
     PrintHeapStatus("Scene Awake: ");
