@@ -7,7 +7,8 @@
 
 #define ENABLE_MUSIC 1
 #define ENABLE_TEXT 1
-#define ENABLE_WIREFRAME 1
+#define ENABLE_WIREFRAME 0
+#define ENABLE_DEBUG_TEXT 0
 
 #if ENABLE_WIREFRAME
 #include <GL/gl.h>
@@ -35,7 +36,7 @@ const MinigameDef minigame_def = {
     .gamename = "Rummage",
     .developername = "tfmoe__",
     .description = "Find the key and be the first to open the correct safe!",
-    .instructions = "Press A to rummage through the furniture or B to steal the key."
+    .instructions = "A: rummage through the furniture B: steal the key"
 };
 
 float countdown_timer;
@@ -62,7 +63,10 @@ float menu_time;
 #if ENABLE_WIREFRAME
 bool show_wireframe = false;
 #endif
+
+#if ENABLE_DEBUG_TEXT
 bool show_debug_text = false;
+#endif
 
 
 /*==============================
@@ -190,10 +194,12 @@ void minigame_loop(float deltatime)
         show_wireframe = !show_wireframe;
     }
 #endif
+#if ENABLE_DEBUG_TEXT
     // Show/hide debug text by pressing R
     if (pressed.r) {
         show_debug_text = !show_debug_text;
     }
+#endif
 
     // Toggle pause menu
     if (pressed.start) {
@@ -270,6 +276,7 @@ void minigame_loop(float deltatime)
     rdpq_sync_tile();
     rdpq_sync_pipe();
 
+#if ENABLE_DEBUG_TEXT
     if (show_debug_text) {
         // Display FPS
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 15, "FPS: %d", (int)display_get_fps());
@@ -278,6 +285,7 @@ void minigame_loop(float deltatime)
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 30, "Key: %d", game_key());
         rdpq_text_printf(NULL, FONT_DEBUG, 10, 45, "Vault: %d", game_vault());
     }
+#endif
 
     // Display winner
     if (is_ending && end_timer >= WIN_SHOW_DELAY) {
