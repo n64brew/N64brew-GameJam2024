@@ -16,16 +16,26 @@ const MinigameDef minigame_def
                         "The player with the most land when the first player "
                         "runs out of pieces wins!" };
 
+typedef enum
+{
+  MINIGAME_STATE_PLAY = 0,
+  MINIGAME_STATE_PAUSE,
+  MINIGAME_STATE_END
+} MinigameState;
+
+MinigameState minigame_state = MINIGAME_STATE_PLAY;
 Player players[MAXPLAYERS];
 size_t turn_count = 0;
 
 #define BACKGROUND_COLOR RGBA32 (50, 20, 20, 255)
 
+PlayerTurnResult last_active_turn[MAXPLAYERS];
+
 static const char *TURN_MESSAGES[] = {
-  "Player 1's Turn!",
-  "Player 2's Turn!",
-  "Player 3's Turn!",
-  "Player 4's Turn!",
+  FMT_SQUAREWAVE_P1 "Player 1's Turn!",
+  FMT_SQUAREWAVE_P2 "Player 2's Turn!",
+  FMT_SQUAREWAVE_P3 "Player 3's Turn!",
+  FMT_SQUAREWAVE_P4 "Player 4's Turn!",
 };
 
 /*==============================
@@ -70,7 +80,7 @@ minigame_cleanup (void)
 }
 
 void
-minigame_render (void)
+minigame_play_render (void)
 {
   PlyNum active_player = turn_count % MAXPLAYERS;
 
@@ -82,7 +92,15 @@ minigame_render (void)
 
   board_render ();
 
-  PLAYER_FOREACH (i) { player_render (&players[i], i == active_player); }
+  PLAYER_FOREACH (p)
+  {
+    if (p != active_player)
+      {
+        player_render (&players[p], false);
+      }
+  }
+
+  player_render (&players[active_player], true);
 
   const int TURN_BOX_TOP = BOARD_TOP - 12;
   const int HINT_BOX_BTM = BOARD_BOTTOM + 12;
@@ -92,8 +110,9 @@ minigame_render (void)
   rdpq_fill_rectangle (BOARD_LEFT, BOARD_BOTTOM, BOARD_RIGHT, HINT_BOX_BTM);
 
   rdpq_set_mode_standard ();
-  rdpq_textparms_t textparms
-      = { .width = BOARD_RIGHT - BOARD_LEFT, .align = ALIGN_CENTER };
+  rdpq_textparms_t textparms = { .width = BOARD_RIGHT - BOARD_LEFT,
+                                 .align = ALIGN_CENTER,
+                                 .style_id = STYLE_SQUAREWAVE_WHITE };
 
   const int TURN_MSG_Y = TURN_BOX_TOP + 9;
   const int HINT_MSG_Y = HINT_BOX_BTM - 4;
@@ -108,16 +127,128 @@ minigame_render (void)
   rdpq_detach_show ();
 }
 
-/*==============================
-    minigame_fixedloop
-    Code that is called every loop, at a fixed delta time.
-    Use this function for stuff where a fixed delta time is
-    important, like physics.
-    @param  The fixed delta time for this tick
-==============================*/
 void
-minigame_fixedloop (float deltatime)
+minigame_play_loop (float deltatime)
 {
+  const PlyNum active_player = turn_count % MAXPLAYERS;
+  bool turn_ended = false;
+
+  PLAYER_FOREACH (p)
+  {
+    const bool player_active = p == active_player;
+
+    PlayerTurnResult player_loop_result
+        = p < core_get_playercount ()
+              ? player_loop (&players[p], player_active, deltatime)
+              : player_loop_ai (&players[p], player_active, deltatime);
+
+    if (player_loop_result == PLAYER_TURN_PAUSE)
+      {
+        minigame_state = MINIGAME_STATE_PAUSE;
+        break;
+      }
+    // Only the active player can end the turn
+    if (player_active)
+      {
+        turn_ended = player_loop_result == PLAYER_TURN_END
+                     || player_loop_result == PLAYER_TURN_PASS;
+        last_active_turn[p] = player_loop_result;
+      }
+  }
+
+  minigame_play_render ();
+
+  // Wait until after rendering to "end the turn" so the UI is consistent.
+  if (turn_ended)
+    {
+      turn_count++;
+
+      bool all_players_passed = true;
+      PLAYER_FOREACH (p)
+      {
+        if (last_active_turn[p] != PLAYER_TURN_PASS)
+          {
+            all_players_passed = false;
+            break;
+          }
+      }
+      if (all_players_passed)
+        {
+          minigame_state = MINIGAME_STATE_END;
+        }
+    }
+}
+
+void
+minigame_pause_loop (float deltatime)
+{
+  PLAYER_FOREACH (p)
+  {
+    if (p < core_get_playercount ())
+      {
+        joypad_port_t port = core_get_playercontroller (p);
+        joypad_buttons_t pressed = joypad_get_buttons_pressed (port);
+        joypad_buttons_t held = joypad_get_buttons_held (port);
+
+        if (pressed.start)
+          {
+            if (held.l && held.r)
+              {
+                minigame_end();
+              }
+            else
+              {
+                minigame_state = MINIGAME_STATE_PLAY;
+              }
+          }
+      }
+  }
+
+  // Attach and clear the screen
+  surface_t *disp = display_get ();
+  rdpq_attach (disp, NULL);
+
+  background_render ();
+
+  board_render ();
+
+  PLAYER_FOREACH (p) { player_render (&players[p], false); }
+
+  const int TURN_BOX_TOP = BOARD_TOP - 12;
+  const int HINT_BOX_BTM = BOARD_BOTTOM + 12;
+
+  rdpq_set_mode_fill (COLOR_BLACK);
+  rdpq_fill_rectangle (BOARD_LEFT, TURN_BOX_TOP, BOARD_RIGHT, BOARD_TOP);
+  rdpq_fill_rectangle (BOARD_LEFT, BOARD_BOTTOM, BOARD_RIGHT, HINT_BOX_BTM);
+
+  rdpq_set_mode_standard ();
+  rdpq_textparms_t textparms = { .width = BOARD_RIGHT - BOARD_LEFT,
+                                 .align = ALIGN_CENTER,
+                                 .style_id = STYLE_SQUAREWAVE_WHITE };
+
+  const int TURN_MSG_Y = TURN_BOX_TOP + 9;
+  const int HINT_MSG_Y = HINT_BOX_BTM - 4;
+
+  rdpq_text_print (&textparms, FONT_SQUAREWAVE, BOARD_LEFT, TURN_MSG_Y,
+                   "Game Paused");
+  rdpq_text_print (&textparms, FONT_SQUAREWAVE, BOARD_LEFT, HINT_MSG_Y,
+                   "Press L + R + Start to exit");
+
+  rdpq_detach_show ();
+}
+
+void
+minigame_end_loop (float deltatime)
+{
+  // Attach and clear the screen
+  surface_t *disp = display_get ();
+  rdpq_attach (disp, NULL);
+
+  background_render ();
+
+  board_render ();
+
+  rdpq_detach_show ();
 }
 
 /*==============================
@@ -128,19 +259,18 @@ minigame_fixedloop (float deltatime)
 void
 minigame_loop (float deltatime)
 {
-  PlyNum active_player = turn_count % MAXPLAYERS;
+  switch (minigame_state)
+    {
+    case MINIGAME_STATE_PLAY:
+      minigame_play_loop (deltatime);
+      break;
 
-  PLAYER_FOREACH (i)
-  {
-    if (i < core_get_playercount ())
-      {
-        player_loop (&players[i], i == active_player);
-      }
-    else
-      {
-        player_loop_ai (&players[i], i == active_player);
-      }
-  }
+    case MINIGAME_STATE_PAUSE:
+      minigame_pause_loop (deltatime);
+      break;
 
-  minigame_render ();
+    case MINIGAME_STATE_END:
+      minigame_end_loop (deltatime);
+      break;
+    }
 }

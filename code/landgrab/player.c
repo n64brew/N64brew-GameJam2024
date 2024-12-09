@@ -2,15 +2,23 @@
 #include "board.h"
 #include "color.h"
 
+#define PLAYER_MOVE_DELAY 0.2f;
+#define BONUS_USED_ALL_PIECES 15
+#define BONUS_MONOMINO_FINAL_PIECE 20
+
 void
 player_init (Player *player, PlyNum plynum)
 {
   player->plynum = plynum;
-  player->score = 0;
+  player->pieces_left = PIECE_COUNT;
+  player->monomino_final_piece = false;
   player->color = PLAYER_COLORS[plynum];
+  player->move_delay = 0.0f;
   player->pulse_sine_x = 0.0f;
   player->pulse_sine_y = 0.0f;
   memset (player->pieces_used, 0, sizeof (player->pieces_used));
+  player_set_cursor (player, (BOARD_COLS / 2) - (PIECE_COLS / 2),
+                     (BOARD_ROWS / 2) - (PIECE_ROWS / 2));
   player_change_piece (player, 0);
   switch (plynum)
     {
@@ -22,11 +30,13 @@ player_init (Player *player, PlyNum plynum)
     case PLAYER_2:
       player->cursor_sprite
           = sprite_load ("rom:/landgrab/cursor_p2.rgba16.sprite");
+      player_mirror_piece (player);
       player_set_cursor (player, BOARD_COLS + PIECE_COLS, -PIECE_ROWS);
       break;
     case PLAYER_3:
       player->cursor_sprite
           = sprite_load ("rom:/landgrab/cursor_p3.rgba16.sprite");
+      player_mirror_piece (player);
       player_set_cursor (player, -PIECE_COLS, BOARD_ROWS + PIECE_ROWS);
       break;
     case PLAYER_4:
@@ -45,51 +55,88 @@ player_cleanup (Player *player)
   player->cursor_sprite = NULL;
 }
 
-bool
-player_loop (Player *player, bool active)
+int
+player_score (Player *player)
+{
+  int score = 0;
+  for (size_t i = 0; i < PIECE_COUNT; i++)
+    {
+      if (!player->pieces_used[i])
+        {
+          score -= PIECES[i].value;
+        }
+    }
+
+  if (player->pieces_left == 0)
+    {
+      score += BONUS_USED_ALL_PIECES;
+      if (player->monomino_final_piece)
+        {
+          score += BONUS_MONOMINO_FINAL_PIECE;
+        }
+    }
+
+  return score;
+}
+
+PlayerTurnResult
+player_loop (Player *player, bool active, float deltatime)
 {
   joypad_port_t port = core_get_playercontroller (player->plynum);
   joypad_buttons_t pressed = joypad_get_buttons_pressed (port);
+  joypad_8way_t d = joypad_get_direction (port, JOYPAD_2D_LH);
 
-  if (active && pressed.a)
+  if (pressed.start)
+  {
+    return PLAYER_TURN_PAUSE;
+  }
+
+  if (player->pieces_left == 0)
     {
-      bool placed = board_place_piece (player);
-      if (placed)
+      return PLAYER_TURN_PASS;
+    }
+
+  if (player->move_delay <= 0.0f)
+    {
+
+      if (JOYPAD_8WAY_IS_UP (d))
         {
-          player->pieces_used[player->piece_index] = true;
-          player_incr_piece (player, 1);
-          // This is the end of the player's turn
-          return true;
+          player_set_cursor (player, player->cursor_col,
+                             player->cursor_row - 1);
+          player->move_delay = PLAYER_MOVE_DELAY;
         }
-      // TODO Play a sound if placement failed
-      // TODO Provide feedback to the player
+      else if (JOYPAD_8WAY_IS_DOWN (d))
+        {
+          player_set_cursor (player, player->cursor_col,
+                             player->cursor_row + 1);
+          player->move_delay = PLAYER_MOVE_DELAY;
+        }
+
+      if (JOYPAD_8WAY_IS_LEFT (d))
+        {
+          player_set_cursor (player, player->cursor_col - 1,
+                             player->cursor_row);
+          player->move_delay = PLAYER_MOVE_DELAY;
+        }
+      else if (JOYPAD_8WAY_IS_RIGHT (d))
+        {
+          player_set_cursor (player, player->cursor_col + 1,
+                             player->cursor_row);
+          player->move_delay = PLAYER_MOVE_DELAY;
+        }
+    }
+  else
+    {
+      player->move_delay -= deltatime;
     }
 
-  if (pressed.d_up)
+  if (pressed.l || pressed.z)
     {
-      player_set_cursor (player, player->cursor_col, player->cursor_row - 1);
-    }
-  else if (pressed.d_down)
-    {
-      player_set_cursor (player, player->cursor_col, player->cursor_row + 1);
-    }
-
-  if (pressed.d_left)
-    {
-      player_set_cursor (player, player->cursor_col - 1, player->cursor_row);
-    }
-  else if (pressed.d_right)
-    {
-      player_set_cursor (player, player->cursor_col + 1, player->cursor_row);
-    }
-
-  if (pressed.l)
-    {
-      player_flip_piece_left (player);
+      player_mirror_piece (player);
     }
   else if (pressed.r)
     {
-      player_flip_piece_right (player);
+      player_flip_piece (player);
     }
 
   if (pressed.c_left)
@@ -101,26 +148,60 @@ player_loop (Player *player, bool active)
       player_incr_piece (player, +1);
     }
 
+  if (pressed.c_up)
+    {
+      player_incr_value (player, +1);
+    }
+  else if (pressed.c_down)
+    {
+      player_incr_value (player, -1);
+    }
+
+  if (active && pressed.a)
+    {
+      if (player_place_piece (player))
+        {
+          // This is the end of the player's turn
+          return PLAYER_TURN_END;
+        }
+    }
+
+  if (active && pressed.b)
+    {
+      // Player has passed their turn
+      // TODO: Make the player hold for a second to confirm?
+      return PLAYER_TURN_PASS;
+    }
+
   // This is not the end of the player's turn
-  return false;
+  return PLAYER_TURN_CONTINUE;
 }
 
-bool
-player_loop_ai (Player *player, bool active)
+PlayerTurnResult
+player_loop_ai (Player *player, bool active, float deltatime)
 {
   // TODO: Implement AI
-  return active;
+  return PLAYER_TURN_PASS;
 }
 
 void
-player_render_piece (Player *player)
+player_render_piece (Player *player, bool active)
 {
-  player->pulse_sine_x += 0.1f;
-  player->pulse_sine_y = fabs (sinf (player->pulse_sine_x));
-  color_t draw_color
-      = color_between (player->color, COLOR_WHITE, player->pulse_sine_y);
+  color_t draw_color = player->color;
 
-  for (int i = 0; i < PIECE_SIZE; i++)
+  if (active)
+    {
+      player->pulse_sine_x += 0.1f;
+      player->pulse_sine_y = fabs (sinf (player->pulse_sine_x));
+      draw_color
+          = color_between (player->color, COLOR_WHITE, player->pulse_sine_y);
+    }
+  else
+    {
+      draw_color.a = 0x80;
+    }
+
+  for (size_t i = 0; i < PIECE_SIZE; i++)
     {
       if (player->piece_buffer[i] == 1)
         {
@@ -132,23 +213,31 @@ player_render_piece (Player *player)
 }
 
 void
-player_render (Player *player, bool active)
+player_render_cursor (Player *player)
 {
-  // if (active)
-  //   {
-  //     player_render_piece (player);
-  //   }
-  player_render_piece (player);
-
-  int icon_col = player->cursor_col + 2;
-  int icon_row = player->cursor_row + 2;
+  const int icon_col = player->cursor_col + (PIECE_COLS / 2);
+  const int icon_row = player->cursor_row + (PIECE_ROWS / 2);
   Rect icon_rect = board_get_tile_rect (icon_col, icon_row);
 
-  rdpq_set_mode_standard ();
-  rdpq_mode_filter (FILTER_BILINEAR);
-  rdpq_mode_alphacompare (1);
-  rdpq_sprite_blit (player->cursor_sprite, icon_rect.x0, icon_rect.y0,
-                    &(rdpq_blitparms_t){});
+  rdpq_mode_push ();
+  {
+    rdpq_set_mode_standard ();
+    rdpq_mode_filter (FILTER_BILINEAR);
+    rdpq_mode_alphacompare (1);
+    rdpq_sprite_blit (player->cursor_sprite, icon_rect.x0, icon_rect.y0,
+                      &(rdpq_blitparms_t){});
+  }
+  rdpq_mode_pop ();
+}
+
+void
+player_render (Player *player, bool active)
+{
+  if (player->pieces_left > 0)
+    {
+      player_render_piece (player, active);
+      player_render_cursor (player);
+    }
 }
 
 bool
@@ -205,17 +294,6 @@ player_set_cursor (Player *player, int set_col, int set_row)
   return valid;
 }
 
-int
-player_remaining_pieces (Player *player)
-{
-  int remaining = PIECE_COUNT;
-  for (int i = 0; i < PIECE_COUNT; i++)
-    {
-      remaining -= player->pieces_used[i];
-    }
-  return remaining;
-}
-
 void
 player_reconstrain_cursor (Player *player)
 {
@@ -243,10 +321,34 @@ player_change_piece (Player *player, int piece_index)
   return false;
 }
 
+bool
+player_place_piece (Player *player)
+{
+  if (board_place_piece (player))
+    {
+      player->pieces_used[player->piece_index] = true;
+      player->pieces_left--;
+      if (player->pieces_left == 0 && PIECES[player->piece_index].value == 1)
+        {
+          player->monomino_final_piece = true;
+        }
+
+      player_incr_piece (player, 1);
+      // This is the end of the player's turn
+      return true;
+    }
+  else
+    {
+      // TODO Play a "failure" sound effect
+      // The piece could not be placed
+      return false;
+    }
+}
+
 void
 player_incr_piece (Player *player, int incr)
 {
-  if (player_remaining_pieces (player) == 0)
+  if (player->pieces_left == 0)
     {
       player_clear_piece (player);
       return;
@@ -275,7 +377,7 @@ void
 player_incr_value (Player *player, int incr)
 {
   // Bail if there are no pieces left
-  if (player_remaining_pieces (player) == 0)
+  if (player->pieces_left == 0)
     {
       player_clear_piece (player);
       return;
@@ -307,7 +409,7 @@ player_incr_value (Player *player, int incr)
 }
 
 void
-player_flip_piece_right (Player *player)
+player_flip_piece (Player *player)
 {
   int flip_buffer[PIECE_SIZE];
   for (int i = 0; i < PIECE_SIZE; i++)
@@ -316,30 +418,26 @@ player_flip_piece_right (Player *player)
       int row = i / PIECE_COLS;
       int new_col = PIECE_COLS - 1 - row;
       int new_row = col;
-      flip_buffer[new_row * PIECE_COLS + new_col]
-          = player->piece_buffer[i];
+      flip_buffer[new_row * PIECE_COLS + new_col] = player->piece_buffer[i];
     }
 
-  memcpy (player->piece_buffer, flip_buffer,
-          sizeof (player->piece_buffer));
+  memcpy (player->piece_buffer, flip_buffer, sizeof (player->piece_buffer));
   player_reconstrain_cursor (player);
 }
 
 void
-player_flip_piece_left (Player *player)
+player_mirror_piece (Player *player)
 {
-  int flip_buffer[PIECE_SIZE];
+  int mirror_buffer[PIECE_SIZE];
   for (int i = 0; i < PIECE_SIZE; i++)
     {
       int col = i % PIECE_COLS;
       int row = i / PIECE_COLS;
-      int new_col = row;
-      int new_row = PIECE_ROWS - 1 - col;
-      flip_buffer[new_row * PIECE_COLS + new_col]
-          = player->piece_buffer[i];
+      int new_col = PIECE_COLS - 1 - col;
+      int new_row = row;
+      mirror_buffer[new_row * PIECE_COLS + new_col] = player->piece_buffer[i];
     }
 
-  memcpy (player->piece_buffer, flip_buffer,
-          sizeof (player->piece_buffer));
+  memcpy (player->piece_buffer, mirror_buffer, sizeof (player->piece_buffer));
   player_reconstrain_cursor (player);
 }

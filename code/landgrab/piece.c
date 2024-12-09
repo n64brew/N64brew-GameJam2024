@@ -5,7 +5,7 @@
 // clang-format off
 // MAKE SURE YOU UPDATE PIECE_COUNT IF YOU CHANGE THE NUMBER OF PIECES HERE!
 const Piece PIECES[PIECE_COUNT] = {
-    // 5's
+    // Pentaminos (5)
 
     // Z
     {5, {0, 0, 0, 0, 0,
@@ -91,7 +91,7 @@ const Piece PIECES[PIECE_COUNT] = {
          0, 0, X, 0, 0,
          0, 0, 0, 0, 0}},
 
-     // 4's
+     // Tetraminos (4)
 
     {4, {0, 0, 0, 0, 0,
          0, 0, X, 0, 0,
@@ -123,7 +123,7 @@ const Piece PIECES[PIECE_COUNT] = {
          0, 0, 0, 0, 0,
          0, 0, 0, 0, 0}},
 
-    // 3's
+    // Triominos (3)
 
     {3, {0, 0, 0, 0, 0,
          0, 0, X, 0, 0,
@@ -137,7 +137,7 @@ const Piece PIECES[PIECE_COUNT] = {
          0, 0, 0, 0, 0,
          0, 0, 0, 0, 0}},
 
-    // 2's
+    // Dominos (2)
 
     {2, {0, 0, 0, 0, 0,
          0, 0, 0, 0, 0,
@@ -145,7 +145,7 @@ const Piece PIECES[PIECE_COUNT] = {
          0, 0, 0, 0, 0,
          0, 0, 0, 0, 0}},
 
-    // 1's
+    // Monominos (1)
 
     {1, {0, 0, 0, 0, 0,
          0, 0, 0, 0, 0,

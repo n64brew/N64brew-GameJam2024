@@ -8,6 +8,15 @@ font_init (void)
 {
   font_squarewave = rdpq_font_load ("rom:/squarewave.font64");
   rdpq_text_register_font (FONT_SQUAREWAVE, font_squarewave);
+
+  PLAYER_FOREACH (i)
+  {
+    rdpq_font_style (font_squarewave, i,
+                     &(rdpq_fontstyle_t){ .color = COLOR_WHITE, .outline_color = PLAYER_COLORS[i] });
+  }
+
+  rdpq_font_style (font_squarewave, STYLE_SQUAREWAVE_WHITE,
+                   &(rdpq_fontstyle_t){ .color = COLOR_WHITE, .outline_color = COLOR_DARK_GRAY });
 }
 
 void

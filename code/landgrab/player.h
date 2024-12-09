@@ -8,9 +8,11 @@
 typedef struct Player
 {
   PlyNum plynum;
-  int score;
+  int pieces_left;
+  bool monomino_final_piece;
   color_t color;
   sprite_t *cursor_sprite;
+  float move_delay;
   int cursor_col;
   int cursor_row;
   int piece_index;
@@ -20,28 +22,39 @@ typedef struct Player
   float pulse_sine_y;
 } Player;
 
+typedef enum
+{
+  PLAYER_TURN_CONTINUE = 0,
+  PLAYER_TURN_PASS,
+  PLAYER_TURN_END,
+  PLAYER_TURN_PAUSE,
+
+} PlayerTurnResult;
+
 void player_init (Player *player, PlyNum plynum);
 
 void player_cleanup (Player *player);
 
-bool player_loop (Player *player, bool active);
+PlayerTurnResult player_loop (Player *player, bool active, float deltatime);
 
-bool player_loop_ai (Player *player, bool active);
+PlayerTurnResult player_loop_ai (Player *player, bool active, float deltatime);
 
 void player_render (Player *player, bool active);
 
+int player_score (Player *player);
+
 bool player_set_cursor (Player *player, int col, int row);
 
-int player_remaining_pieces (Player *player);
-
 bool player_change_piece (Player *player, int piece_index);
+
+bool player_place_piece (Player *player);
 
 void player_incr_piece (Player *player, int incr);
 
 void player_incr_value (Player *player, int incr);
 
-void player_flip_piece_right (Player *player);
+void player_flip_piece (Player *player);
 
-void player_flip_piece_left (Player *player);
+void player_mirror_piece (Player *player);
 
 #endif
