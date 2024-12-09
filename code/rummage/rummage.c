@@ -290,7 +290,7 @@ void minigame_loop(float deltatime)
     // Display winner
     if (is_ending && end_timer >= WIN_SHOW_DELAY) {
         rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = 320, };
-        rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins!", winner()+1);
+        rdpq_text_printf(&textparms, FONT_TEXT, 0, 100, "Player %d wins", winner()+1);
     }
 
     // Display pause menu
