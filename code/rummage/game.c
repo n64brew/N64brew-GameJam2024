@@ -112,6 +112,8 @@ typedef struct {
     T3DAnim anim_act;
     T3DAnim anim_attack;
     T3DAnim anim_hurt;
+    T3DAnim anim_win;
+    T3DAnim anim_lose;
     wav64_t sfx_rummage;
     wav64_t sfx_open;
     wav64_t sfx_attack;
@@ -657,6 +659,10 @@ void game_init()
         t3d_anim_attach(&players[i].anim_hurt, &players[i].skel);
         t3d_anim_set_looping(&players[i].anim_hurt, false);
         t3d_anim_set_playing(&players[i].anim_hurt, false);
+        players[i].anim_win = t3d_anim_create(players[i].model, "Action_Win");
+        t3d_anim_attach(&players[i].anim_win, &players[i].skel);
+        players[i].anim_lose = t3d_anim_create(players[i].model, "Action_Lose");
+        t3d_anim_attach(&players[i].anim_lose, &players[i].skel);
         players[i].color = colors[i];
         t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
         rspq_block_begin();
@@ -665,7 +671,6 @@ void game_init()
             t3d_model_draw_skinned(players[i].model, &players[i].skel);
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
-        // FIXME use correct sfx files
         wav64_open(&players[i].sfx_rummage, "rom:/rummage/rummage.wav64");
         wav64_open(&players[i].sfx_open, "rom:/rummage/open.wav64");
         wav64_open(&players[i].sfx_attack, "rom:/rummage/attack.wav64");
@@ -1090,23 +1095,37 @@ void game_render(float deltatime, T3DViewport viewport)
     // Players
     for (int i=0; i<MAXPLAYERS; i++) {
         if (!is_paused()) {
-            if (players[i].action_playing_time > 0) {
-                t3d_anim_update(&players[i].anim_act, deltatime);
-            } else if (players[i].attack_playing_time > 0) {
-                t3d_anim_update(&players[i].anim_attack, deltatime);
-            } else if (players[i].hurt_playing_time > 0) {
-                t3d_anim_update(&players[i].anim_hurt, deltatime);
-            } else if (players[i].speed > 0.0f) {
-                // TODO only set anim when switching state ?
-                t3d_anim_set_playing(&players[i].anim_walk, true);
-                t3d_anim_set_playing(&players[i].anim_idle, false);
-                t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);
-                t3d_anim_update(&players[i].anim_walk, deltatime);
+            if (has_winner()) {
+                if (players[i].has_won) {
+                    t3d_anim_set_playing(&players[i].anim_walk, false);
+                    t3d_anim_set_playing(&players[i].anim_idle, false);
+                    t3d_anim_set_playing(&players[i].anim_win, true);
+                    t3d_anim_update(&players[i].anim_win, deltatime);
+                } else {
+                    t3d_anim_set_playing(&players[i].anim_walk, false);
+                    t3d_anim_set_playing(&players[i].anim_idle, false);
+                    t3d_anim_set_playing(&players[i].anim_lose, true);
+                    t3d_anim_update(&players[i].anim_lose, deltatime);
+                }
             } else {
-                // TODO only set anim when switching state ?
-                t3d_anim_set_playing(&players[i].anim_idle, true);
-                t3d_anim_set_playing(&players[i].anim_walk, false);
-                t3d_anim_update(&players[i].anim_idle, deltatime);
+                if (players[i].action_playing_time > 0) {
+                    t3d_anim_update(&players[i].anim_act, deltatime);
+                } else if (players[i].attack_playing_time > 0) {
+                    t3d_anim_update(&players[i].anim_attack, deltatime);
+                } else if (players[i].hurt_playing_time > 0) {
+                    t3d_anim_update(&players[i].anim_hurt, deltatime);
+                } else if (players[i].speed > 0.0f) {
+                    // TODO only set anim when switching state ?
+                    t3d_anim_set_playing(&players[i].anim_walk, true);
+                    t3d_anim_set_playing(&players[i].anim_idle, false);
+                    t3d_anim_set_speed(&players[i].anim_walk, players[i].speed/4.8f + 0.15f);
+                    t3d_anim_update(&players[i].anim_walk, deltatime);
+                } else {
+                    // TODO only set anim when switching state ?
+                    t3d_anim_set_playing(&players[i].anim_idle, true);
+                    t3d_anim_set_playing(&players[i].anim_walk, false);
+                    t3d_anim_update(&players[i].anim_idle, deltatime);
+                }
             }
             t3d_skeleton_update(&players[i].skel);
             t3d_mat4fp_from_srt_euler(players[i].mat_fp, players[i].scale.v, players[i].rotation.v, players[i].position.v);
@@ -1295,6 +1314,8 @@ void game_cleanup()
         t3d_anim_destroy(&players[i].anim_act);
         t3d_anim_destroy(&players[i].anim_attack);
         t3d_anim_destroy(&players[i].anim_hurt);
+        t3d_anim_destroy(&players[i].anim_win);
+        t3d_anim_destroy(&players[i].anim_lose);
         free_uncached(players[i].mat_fp);
         wav64_close(&players[i].sfx_rummage);
         wav64_close(&players[i].sfx_open);
