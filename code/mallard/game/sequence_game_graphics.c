@@ -87,20 +87,20 @@ void sequence_game_draw_press_start_to_pause()
 {
     if (sequence_game_started == true && sequence_game_finished == false)
     {
+        // "Press" Text
+        rdpq_text_print(NULL, FONT_HALODEK, 115, 230, "$01^00Press");
+
+        // Start Button
         rdpq_mode_push();
         rdpq_set_mode_standard();
         rdpq_mode_alphacompare(1);
         rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY_CONST);
-        rdpq_set_fog_color(RGBA32(0, 0, 0, (int)(255.0f * 0.5f)));
-        // Draw "Start" button
-        rdpq_sprite_blit(sequence_game_start_button_sprite,
-                         RESOLUTION_320x240.width / 2 - sequence_game_start_button_sprite->width - 36,
-                         RESOLUTION_320x240.height - sequence_game_start_button_sprite->height - 1,
-                         NULL);
+        rdpq_set_fog_color(RGBA32(0, 0, 0, 255));
+        rdpq_sprite_blit(sequence_game_start_button_sprite, 146, 218, NULL);
         rdpq_mode_pop();
 
-        // Draw "Pause" text
-        rdpq_text_print(NULL, FONT_HALODEK, RESOLUTION_320x240.width / 2 - 34, RESOLUTION_320x240.height - 5, "$01^01Pause");
+        // "to Pause" Text
+        rdpq_text_print(NULL, FONT_HALODEK, 165, 230, "$01^00to Pause");
     }
 }
 
@@ -121,11 +121,23 @@ void sequence_game_draw_paused()
     else if (sequence_game_player_holding_start == 3)
         utf8_text = "$03^04PAUSED";
 
-    rdpq_set_scissor(0, 0, 70 + x + (180.0f * percentage), 240);
+    // COLORED "Paused" Text
     rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, utf8_text);
 
-    // WHITE
-    rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 320, 240);
+    // "Hold" Text
+    rdpq_text_print(NULL, FONT_HALODEK, 115, 160, "$01^00Hold");
+
+    // Start Button
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_sprite_blit(sequence_game_start_button_sprite, 145, 148, NULL);
+
+    // "to Quit" Text
+    rdpq_text_print(NULL, FONT_HALODEK, 165, 160, "$01^00to Quit");
+
+    rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 250 + x, 240);
+
+    // WHITE "Paused" Text
     rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$03^00PAUSED");
 }
 
