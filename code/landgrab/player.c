@@ -1,6 +1,7 @@
 #include "player.h"
 #include "board.h"
 #include "color.h"
+#include "minigame.h"
 
 #define PLAYER_MOVE_DELAY 0.2f
 
@@ -407,6 +408,18 @@ player_place_piece (Player *player)
     }
   else
     {
+      if (player->pieces_left == PIECE_COUNT)
+      {
+        minigame_set_hint("Piece must touch a corner!");
+      }
+      else if (result.is_touching_faces)
+      {
+        minigame_set_hint("Piece can only touch diagonally!");
+      }
+      else if (!result.is_touching_corners)
+      {
+        minigame_set_hint("Pieces must touch diagonally!");
+      }
       // TODO Play a "failure" sound effect
       // The piece could not be placed
       return false;

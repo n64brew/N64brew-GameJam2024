@@ -1,4 +1,5 @@
 #include "board.h"
+#include "color.h"
 #include "player.h"
 
 int board[BOARD_SIZE];

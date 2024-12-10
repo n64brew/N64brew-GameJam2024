@@ -4,6 +4,7 @@
 
 #include "background.h"
 #include "board.h"
+#include "color.h"
 #include "font.h"
 #include "global.h"
 #include "player.h"
@@ -14,8 +15,7 @@ const MinigameDef minigame_def
         .developername = "Meeq Corporation",
         .description = "Claim as much land as you can!",
         .instructions = "Place pieces at diagonals to claim land. "
-                        "The player with the most land when the first player "
-                        "runs out of pieces wins!" };
+                        "The player with the most land at the end wins!" };
 
 #define PAUSE_INPUT_DELAY 0.5f
 #define END_INPUT_DELAY 2.0f
@@ -46,6 +46,41 @@ static const char *TURN_MESSAGES[] = {
   FMT_STYLE_P3 "Player 3's Turn!",
   FMT_STYLE_P4 "Player 4's Turn!",
 };
+
+static const char *RANDOM_HINTS[] = {
+  "Press B to end your turn",
+  "Press A to place your piece",
+  "Change pieces with C-Left/C-Right",
+  "Press L/Z to mirror your piece",
+  "Press R to flip your piece",
+  "Press C-Down for smaller pieces",
+  "Corner connections are key!",
+  "Your pieces must all connect",
+  "Other colors can block you!",
+  "Don't get blocked out!",
+  "Expand wisely...",
+  "Use all pieces for a bonus!",
+  "Use monomino last for a bonus!",
+  "Monomino means 'one square'",
+  "Each square is worth 1 point",
+  "Try to use all of your pieces!",
+  "When in doubt, expand out!",
+  "Act decisively!",
+  "What could possibly go wrong?",
+  "Are you sure about that?",
+  "Don't forget to guard your flank",
+  "Try to block your opponents",
+  "Start with larger pieces",
+  "Save small pieces for the end",
+  "Play defensively",
+  "Anticipate their next moves",
+  "Adapt, overcome, improvise",
+};
+
+static float random_hint_timer = 0.0f;
+static const float RANDOM_HINT_DELAY = 10.0f;
+static bool random_hint_paused = false;
+static const char *hint_msg = NULL;
 
 static void
 minigame_set_state (MinigameState new_state)
@@ -107,6 +142,9 @@ minigame_init (void)
   PLAYER_FOREACH (p) { player_init (&players[p], p); }
 
   turn_count = 0;
+  hint_msg = NULL;
+  random_hint_paused = false;
+  random_hint_timer = RANDOM_HINT_DELAY;
   minigame_set_state (MINIGAME_STATE_PLAY);
 }
 
@@ -131,6 +169,13 @@ minigame_cleanup (void)
   rdpq_debug_stop ();
 
   display_close ();
+}
+
+void
+minigame_set_hint (const char *msg)
+{
+  hint_msg = msg;
+  random_hint_paused = true;
 }
 
 static const int UPPER_BOX_TOP = BOARD_TOP - 12;
@@ -205,14 +250,18 @@ minigame_play_render (void)
 
   minigame_upper_msg_print (TURN_MESSAGES[active_player]);
 
-  if (players[active_player].pieces_left == PIECE_COUNT)
-  {
-    minigame_lower_msg_print ("Place a piece touching a corner!");
-  } else
-  {
-    minigame_lower_msg_print ("Expand diagonally to win!");
-  }
-
+  if (hint_msg != NULL)
+    {
+      minigame_lower_msg_print (hint_msg);
+    }
+  else if (players[active_player].pieces_left == PIECE_COUNT)
+    {
+      minigame_lower_msg_print ("Place a piece touching a corner!");
+    }
+  else
+    {
+      minigame_lower_msg_print ("Expand diagonally to win!");
+    }
 
   scoreboard_pieces_render ();
 
@@ -248,12 +297,26 @@ minigame_play_loop (float deltatime)
       }
   }
 
+  // Tick the random hint timer
+  if (!random_hint_paused)
+    {
+      random_hint_timer -= deltatime;
+      if (random_hint_timer < 0.0f)
+        {
+          hint_msg = RANDOM_HINTS[rand () % ARRAY_SIZE (RANDOM_HINTS)];
+          random_hint_timer = RANDOM_HINT_DELAY;
+        }
+    }
+
   scoreboard_calculate (false);
   minigame_play_render ();
 
   // Wait until after rendering to "end the turn" so the UI is consistent.
   if (turn_ended)
     {
+      hint_msg = NULL;
+      random_hint_paused = false;
+      random_hint_timer = RANDOM_HINT_DELAY;
       turn_count++;
 
       bool all_players_passed = true;

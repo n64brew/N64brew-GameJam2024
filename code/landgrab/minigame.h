@@ -5,4 +5,6 @@
 
 extern Player players[MAXPLAYERS];
 
+void minigame_set_hint (const char *msg);
+
 #endif

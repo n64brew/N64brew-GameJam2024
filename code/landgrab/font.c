@@ -1,4 +1,5 @@
 #include "font.h"
+#include "color.h"
 #include "player.h"
 
 rdpq_font_t *font_squarewave;

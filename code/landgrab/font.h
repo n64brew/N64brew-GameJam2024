@@ -24,9 +24,6 @@ typedef enum
 #define FMT_STYLE_P4 "^03"
 #define FMT_STYLE_WHITE "^04"
 
-extern rdpq_font_t *font_squarewave;
-extern rdpq_font_t *font_anita;
-
 void font_init (void);
 
 void font_cleanup (void);

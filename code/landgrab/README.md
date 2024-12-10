@@ -2,11 +2,19 @@
 
 ## TODOs
 
-- [ ] Visual hint when placement fails
+### Expected
+
 - [ ] Movement sound effects
 - [ ] Placement sound effects
 - [ ] AI (any difficulty capable of play)
+
+### Nice to have
+
 - [ ] AI difficulties (Easy, Medium, Hard)
+- [ ] Music control in pause menu
+- [ ] Winners get crowns
+- [ ] Party background in win state
+- [ ] Quick instructions card
 
 ## Credits
 

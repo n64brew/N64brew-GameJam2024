@@ -1,4 +1,5 @@
 #include "scoreboard.h"
+#include "color.h"
 #include "font.h"
 
 PlayerScore scoreboard[MAXPLAYERS];
@@ -59,15 +60,25 @@ scoreboard_calculate (bool game_over)
 void
 scoreboard_scores_render (void)
 {
-  const int x = 260;
-  int y = 40;
+  const int x = 259;
+  int y = 35;
   rdpq_textparms_t textparms
       = { .width = 50, .align = ALIGN_CENTER, .style_id = FONT_STYLE_WHITE };
 
   rdpq_set_mode_standard ();
 
+  rdpq_mode_push ();
+  {
+    rdpq_mode_combiner (RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color (BOARD_COLOR);
+    rdpq_fill_rectangle (259, 15, 309, 221);
+    rdpq_fill_rectangle (259, 15, 309, 50);
+  }
+  rdpq_mode_pop ();
+
   rdpq_text_print (&textparms, FONT_SQUAREWAVE, x, y, "SCORE");
-  y += 40;
+  y += 45;
 
   for (size_t i = 0; i < MAXPLAYERS; i++)
     {
@@ -81,8 +92,39 @@ scoreboard_scores_render (void)
 }
 
 void
+scoreboard_star_render (PlyNum p, int x, int y)
+{
+  rdpq_mode_push ();
+  {
+    rdpq_set_mode_standard ();
+    rdpq_mode_filter (FILTER_BILINEAR);
+    rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
+    rdpq_mode_combiner (
+        RDPQ_COMBINER1 ((PRIM, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
+    rdpq_set_prim_color (PLAYER_COLORS[p]); // fill color
+    rdpq_set_env_color (PLAYER_COLORS[p]);  // outline color
+    rdpq_sprite_blit (
+        star_sprite, x, y,
+        &(rdpq_blitparms_t){ .scale_x = 0.67f, .scale_y = 0.67f });
+  }
+  rdpq_mode_pop ();
+}
+
+void
 scoreboard_pieces_render (void)
 {
+  rdpq_set_mode_standard ();
+
+  rdpq_mode_push ();
+  {
+    rdpq_mode_combiner (RDPQ_COMBINER_FLAT);
+    rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color (BOARD_COLOR);
+    rdpq_fill_rectangle (15, 15, 64, 221);
+    rdpq_fill_rectangle (15, 15, 64, 50);
+  }
+  rdpq_mode_pop ();
+
   const int x = 16;
   int y = 30;
   rdpq_textparms_t heading_parms = { .width = 50,
@@ -96,8 +138,6 @@ scoreboard_pieces_render (void)
                                    .style_id = FONT_STYLE_WHITE,
                                    .char_spacing = 1 };
 
-  rdpq_set_mode_standard ();
-
   rdpq_text_print (&heading_parms, FONT_SQUAREWAVE, x, y, "PIECES\nLEFT");
   y += 50;
 
@@ -106,20 +146,7 @@ scoreboard_pieces_render (void)
     int n = players[p].pieces_left;
     if (players[p].monomino_final_piece)
       {
-        rdpq_mode_push ();
-        {
-          rdpq_set_mode_standard ();
-          rdpq_mode_filter (FILTER_BILINEAR);
-          rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
-          rdpq_mode_combiner (
-              RDPQ_COMBINER1 ((PRIM, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
-          rdpq_set_prim_color (PLAYER_COLORS[p]); // fill color
-          rdpq_set_env_color (PLAYER_COLORS[p]);  // outline color
-          rdpq_sprite_blit (
-              star_sprite, x + 4, y - 27,
-              &(rdpq_blitparms_t){ .scale_x = 0.67f, .scale_y = 0.67f });
-        }
-        rdpq_mode_pop ();
+        scoreboard_star_render (p, x + 4, y - 27);
       }
 
     rdpq_text_printf (&digit_parms, FONT_ANITA, x, y, "^%02X%d", p, n);
