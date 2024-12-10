@@ -11,6 +11,7 @@
 #define MAX_PARTICLE_SOURCES 4
 #define SCRIPT_NUM_SIGNALS 4
 #define FADE_TIME 1.f
+#define MITIGATE_FONT_BUG {rdpq_sync_pipe(); rdpq_sync_tile();}
 
 struct entity {
   const T3DModel *model;

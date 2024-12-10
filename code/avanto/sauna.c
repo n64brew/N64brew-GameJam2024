@@ -849,6 +849,7 @@ void sauna_dynamic_loop_render(float delta_time) {
 
   // Time
   if (sauna_stage == SAUNA_GAME) {
+    MITIGATE_FONT_BUG;
     rdpq_text_printf(&timer_params,
       FONT_TIMER,
       0,
@@ -860,6 +861,7 @@ void sauna_dynamic_loop_render(float delta_time) {
   // Banner
   if (banner_time > EPS) {
     banner_time -= delta_time;
+    MITIGATE_FONT_BUG;
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
   }
 

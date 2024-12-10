@@ -316,6 +316,7 @@ void minigame_loop(float delta_time) {
       rdpq_mode_pop();
     }
 
+    MITIGATE_FONT_BUG;
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 60, "PAUSED");
 
     rdpq_textparms_t params = {
@@ -324,6 +325,7 @@ void minigame_loop(float delta_time) {
       .wrap = WRAP_WORD,
     };
 
+    MITIGATE_FONT_BUG;
     rdpq_text_printf(&params,
         FONT_NORMAL,
         10,
@@ -334,12 +336,14 @@ void minigame_loop(float delta_time) {
         minigame_def.description,
         minigame_def.instructions);
 
+    MITIGATE_FONT_BUG;
     rdpq_text_printf(NULL,
         FONT_NORMAL,
         40,
         215,
         "%sRESUME",
         paused_selection? SW_NORMAL_S : SW_SELECTED_S);
+    MITIGATE_FONT_BUG;
     rdpq_text_printf(NULL,
         FONT_NORMAL,
         40+160,
@@ -348,14 +352,6 @@ void minigame_loop(float delta_time) {
         !paused_selection? SW_NORMAL_S : SW_SELECTED_S);
   }
 
-  /*
-  rdpq_text_printf(NULL,
-    FONT_NORMAL,
-    10,
-    235,
-    SW_NORMAL_S "FPS: %.2f",
-    display_get_fps());
-  */
   rdpq_mode_pop();
 
   rdpq_detach_show();

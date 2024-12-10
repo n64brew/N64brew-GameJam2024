@@ -304,6 +304,7 @@ rspq_block_t *build_empty_hud_block() {
     int x = HUD_HORIZONTAL_BORDER + i*HUD_INDIVIDUAL_H_SPACE;
     int mid_x = x + HUD_INDIVIDUAL_H_SPACE/2;
 
+    MITIGATE_FONT_BUG;
     rdpq_text_print(NULL, FONT_NORMAL, mid_x-4, y, PLAYER_TITLES[i]);
 
     x += HUD_BAR_X_OFFSET;
@@ -347,6 +348,7 @@ void draw_hud() {
     rdpq_fill_rectangle(x, y, x+w, y+h);
 
     if (players[i].out) {
+      MITIGATE_FONT_BUG;
       rdpq_text_print(NULL, FONT_NORMAL, mid_x-8, y+10, SW_OUT_S "OUT");
     }
   }

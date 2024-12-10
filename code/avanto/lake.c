@@ -773,6 +773,7 @@ void lake_dynamic_loop_render(float delta_time) {
       }
       rdpq_mode_pop();
 
+      MITIGATE_FONT_BUG;
       rdpq_text_print(NULL,
           FONT_NORMAL,
           inst_x+3,
@@ -787,6 +788,7 @@ void lake_dynamic_loop_render(float delta_time) {
   }
 
   if (lake_stage == LAKE_GAME) {
+    MITIGATE_FONT_BUG;
     rdpq_text_printf(&timer_params,
       FONT_TIMER,
       0,
@@ -798,6 +800,7 @@ void lake_dynamic_loop_render(float delta_time) {
   if (banner_str[0]) {
     rdpq_mode_push();
     rdpq_mode_zbuf(false, false);
+    MITIGATE_FONT_BUG;
     rdpq_text_print(&banner_params, FONT_BANNER, 0, 120, banner_str);
     rdpq_mode_pop();
   }
