@@ -15,15 +15,21 @@
 // Gameplay Screen
 // TODO: wrap this into a struct
 // ======== Text ========
-const char *titleText = "og64 0.1\n";
+const char *titleText = "og64 0.5\n";
 char godsCountLabelText[20] = "666";
 char countdownTimerLabelText[20] = "6666";
 
 // player counter char buffers
 char playerCountCharBuff[640];
 const char* characterSpace = "    ";
+
 char mainMenuTitleCharBuffer[20] = " OLD GODS";
 char mainMenuSubTitleCharBuffer[40] = " Press A";
+
+// Pause Menu
+char pausedMenuTitleCharBuffer[7] = "PAUSED";
+char pausedMenuSubTitle1CharBuffer[11] = "resume (A)";
+char pausedMenuSubTitle2CharBuffer[11] = "exit (B)";
 
 // GameOverScreen
 char gameOverTitleCharBuffer[40] = "WINNER";
@@ -31,8 +37,15 @@ char gameOverSubTitle[40] = "Player 1";
 
 // Start Countdown char
 char startCountdownCharBuffer[16] = "0";
-//char gameOverSubTitleLoseCharBuffer[80] = "You have failed to contain the the god\nPress Start to restart";
-//char gameOverSubTitleWinCharBuffer[80] = "You have succeded to contain the the god\nPress Start to restart";
+
+// UI Size Defines
+#define PADDING 32
+#define MARGIN 32
+
+// UI COLORS
+uint8_t whiteColor[4] = {255, 255, 255, 255};
+uint8_t yellowColor[4] = {254, 222, 42, 255};
+uint8_t pink[4] = {223, 82, 200, 255};
 
 // ======== Entities ========
 AF_Entity* gameTitleEntity = NULL;
@@ -49,6 +62,19 @@ AF_Entity* mainMenuSubTitleEntity = NULL;
 AF_Entity* mainMenuTitleBackground = NULL;
 AF_Entity* mainMenuSubTitleBackground = NULL;
 
+// Pause Menu
+AF_Entity* pauseMenuTitleEntity = NULL;
+AF_Entity* pauseMenuTitleBackground = NULL;
+
+// Resume
+AF_Entity* pauseMenuSubTitle1Entity = NULL;
+AF_Entity* pauseMenuSubTitle1Background = NULL;
+
+// Exit
+AF_Entity* pauseMenuSubTitle2Entity = NULL;
+AF_Entity* pauseMenuSubTitle2Background = NULL;
+
+// Player Score Cards
 AF_Entity* player1ScoreBackground = NULL;
 AF_Entity* player2ScoreBackground = NULL;
 AF_Entity* player3ScoreBackground = NULL;
@@ -57,7 +83,6 @@ AF_Entity* player4ScoreBackground = NULL;
 // GameOverScreen
 AF_Entity* gameOverTitleEntity = NULL;
 AF_Entity* gameOverSubTitleEntity = NULL;
-
 AF_Entity* gameOverTitleBackground = NULL;
 AF_Entity* gameOverSubTitleBackground = NULL;
 
@@ -101,11 +126,6 @@ rdpq_font_t* font4Ptr = NULL;
 rdpq_font_t* font5Ptr = NULL;
 rdpq_font_t* font6Ptr = NULL;
 
-
-// Forward decalred functions
-//void Game_UpdatePlayerScoreText();
-
-
 void UI_Menu_RenderGameOverScreen(AppData* _appData);
 void RefreshCountdownTimer(AF_ECS* _ecs);
 // set ui states
@@ -114,9 +134,16 @@ void UI_Menu_RenderPlayingUI(AppData* _appData);
 void UI_Menu_MainMenuSetShowing(BOOL _state);
 void UI_Menu_GameOverUISetShowing(BOOL _state);
 void UI_Menu_PlayingSetState(BOOL _state);
+
+// Setup 
+void UI_Menu_SetupPauseMenu(AppData* _appData);
+
 void UI_Menu_SetupAudio();
 void UI_Menu_RenderCountdown(AppData* _appData);
 void UI_Menu_CountdownState(BOOL _state);
+
+void UI_Menu_RenderPausedScreen(AppData* _appData);
+
 
 void UI_Menu_Awake(AppData* _appData){
 
@@ -129,31 +156,15 @@ void UI_Menu_Start(AppData* _appData){
     // Create test Text
     //int FONT1_ID = 1;
     //int FONT2_ID = 2;
-    uint8_t whiteColor[4];
-    whiteColor[0] = 255;
-    whiteColor[1] = 255;
-    whiteColor[2] = 255;
-    whiteColor[3] = 255;
 
-
-    uint8_t yellowColor[4];
-    yellowColor[0] = 254;
-    yellowColor[1] = 222;
-    yellowColor[2] = 42;
-    yellowColor[3] = 255;
-
-    
-
-    uint8_t pink[4];
-    pink[0] = 223;
-    pink[1] = 82;
-    pink[2] = 200;
-    pink[3] = 255;
 
     uint16_t screenWidth = RESOLUTION_640x240.width;
     uint16_t screenHeight = RESOLUTION_640x240.height;
-    uint16_t padding = 32;
-    uint16_t margin = 32;
+    
+
+    float screenHalfWidth = screenWidth * 0.5f;
+    float screenHalfHeight = screenHeight * 0.5f;
+    float paddingMargin = PADDING + MARGIN;
 
     font2Ptr = (rdpq_font_t*)AF_LoadFont(FONT2_ID, fontPath2, pink);
     font3Ptr = (rdpq_font_t*)AF_LoadFont(FONT3_ID, fontPath3, whiteColor);
@@ -170,26 +181,16 @@ void UI_Menu_Start(AppData* _appData){
 	gameTitleEntity->text->fontID = FONT3_ID;
 	gameTitleEntity->text->fontPath = fontPath3;
 
-	// Text Color
-	//gameTitleEntity->text->textColor = whiteColor;
-
-	// Title Text position
-    //int box_width = screenWidth;
-    //int box_height = screenHeight;
-
-    float screenHalfWidth = screenWidth * 0.5f;
-    float screenHalfHeight = screenHeight * 0.5f;
-    float paddingMargin = padding + margin;
 
     Vec2 titlePos = {screenHalfWidth - (screenHalfWidth*.5f), paddingMargin};
     Vec2 titleSize = {screenWidth, 0};
-    Vec2 subTitlePos = {titlePos.x - padding, titlePos.y + paddingMargin};
+    Vec2 subTitlePos = {titlePos.x - PADDING, titlePos.y + paddingMargin};
     Vec2 subTitleSize = {screenWidth, 0};
 	//Vec2 textBounds = {box_width, box_height};
 
 
-    Vec2 buildTitlePos = {screenWidth - paddingMargin*2, screenHeight - (padding)};
-    Vec2 buildTitleBounds = {paddingMargin, padding};
+    Vec2 buildTitlePos = {screenWidth - paddingMargin*2, screenHeight - (PADDING)};
+    Vec2 buildTitleBounds = {paddingMargin, PADDING};
     gameTitleEntity->text->screenPos = buildTitlePos;
 	gameTitleEntity->text->textBounds = buildTitleBounds;
 
@@ -201,7 +202,7 @@ void UI_Menu_Start(AppData* _appData){
 	godEatCountLabelEntity->text->fontPath = fontPath4;
 
 	// Text Color
-	Vec2 godLabelTextScreenPos = {screenHalfWidth, padding};
+	Vec2 godLabelTextScreenPos = {screenHalfWidth, PADDING};
 	Vec2 godLabelTextBounds = {screenWidth, 0};
     godEatCountLabelEntity->text->screenPos = godLabelTextScreenPos;
 	godEatCountLabelEntity->text->textBounds = godLabelTextBounds;
@@ -214,9 +215,9 @@ void UI_Menu_Start(AppData* _appData){
 
     int countdownTimerBox_width = screenWidth + paddingMargin;
     int countdownTimerBox_height = 0;//150;
-    int countdownTimerBoxPosX = screenHalfWidth - margin;//(320-box_width);///2;
+    int countdownTimerBoxPosX = screenHalfWidth - MARGIN;//(320-box_width);///2;
 
-	Vec2 countdownTimerLabelTextScreenPos = {countdownTimerBoxPosX, padding};
+	Vec2 countdownTimerLabelTextScreenPos = {countdownTimerBoxPosX, PADDING};
 	Vec2 countdownTimerLabelTextBounds = {countdownTimerBox_width, countdownTimerBox_height};
     //countdownTimerLabelEntity->text->screenPos = countdownTimerLabelTextScreenPos;
 	//countdownTimerLabelEntity->text->textBounds = countdownTimerLabelTextBounds;
@@ -233,21 +234,19 @@ void UI_Menu_Start(AppData* _appData){
     Vec2 mainMenuSubTitleSize = subTitleSize;
     
     // title background elements
-    Vec2 titleSpriteSize = {256, 256};//{64,64};
-    Vec2 titleSheetSpriteSize = {256, 256};//{64,64};
+    Vec2 titleSpriteSize = {256, 256};
+    Vec2 titleSheetSpriteSize = {256, 256};
     
-    Vec2 titleSpriteScale = {2.0f, 0.25f};//{7.0f, 1.0f};
-    //uint8_t fontSize = 14;
-    //Vec2 mainMenutitleSpritePos = {titlePos.x - (titleSpriteSize.y*titleSpriteScale.y), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y) *titleSpriteScale.y) + fontSize};
+    Vec2 titleSpriteScale = {2.0f, 0.25f};
+    
     Vec2 mainMenutitleSpritePos = {screenHalfWidth- ((titleSpriteSize.x*titleSpriteScale.x)* 0.5f), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
     
-    Vec2 subTitleSpriteSize = {256, 256};//{64,64};
-    Vec2 subTitleSheetSpriteSize = {256, 256};//{64,64};
-    Vec2 subTitleSpriteScale = {1.25, 0.25f};//{7.0f, 1.0f};
+    Vec2 subTitleSpriteSize = {256, 256};
+    Vec2 subTitleSheetSpriteSize = {256, 256};
+    Vec2 subTitleSpriteScale = {1.25, 0.25f};
     Vec2 mainMenuSubTitlePos = {screenHalfWidth- ((subTitleSpriteSize.x*subTitleSpriteScale.x)* 0.5f), screenHalfHeight};
     Vec2 mainMenuSubTitleTextPos = {screenHalfWidth - 96,  screenHalfHeight + 32+12};
     
-    //mainMenuSubTitleBackground->sprite->spriteRotation = 0.2f;
     mainMenuTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],mainMenutitleSpritePos, titleSpriteScale,titleSpriteSize,pink,0,titleSheetSpriteSize);
     mainMenuSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],mainMenuSubTitlePos, subTitleSpriteScale,subTitleSpriteSize,whiteColor,0,subTitleSheetSpriteSize);
     AF_CSprite* mainMenuTitleBackgroundSprite = mainMenuTitleBackground->sprite;
@@ -262,12 +261,11 @@ void UI_Menu_Start(AppData* _appData){
     // ============ Player Score ========
 
     Vec2 playerScoreBackgroundSize = {64,64};
-    //Vec2 playerScoreBackgroundSheetSpriteSize = {64,64};
     Vec2 playerScoreBackgroundSizeScale = {1.0f, 0.6f};
-    float scorePadding = (screenWidth - (padding*2)) * .15f;//.25f;
+    float scorePadding = (screenWidth - (PADDING*2)) * .15f;
 
     float scoreBasePosX = paddingMargin*2 + 24;
-    float scoreBasePosY = screenHeight - (padding + 15);
+    float scoreBasePosY = screenHeight - (PADDING + 15);
 
 
     // TODO: clean this up
@@ -280,7 +278,7 @@ void UI_Menu_Start(AppData* _appData){
     Vec2 scoreTextPos = {player1ScoreBackgroundSpritePos.x + 8, player1ScoreBackgroundSpritePos.y - 15};
 
     // Create Player 1 card
-    //Vec2 playe1CountLabelPos = {padding, screenHeight - paddingMargin};
+    //Vec2 playe1CountLabelPos = {PADDING, screenHeight - paddingMargin};
     Vec2 playe1CountLabelSize = {screenWidth, paddingMargin};
     playersCountUIEntity = Entity_Factory_CreateUILabel(&_appData->ecs, playerCountCharBuff, FONT5_ID, fontPath5, yellowColor, scoreTextPos, playe1CountLabelSize);
     
@@ -350,16 +348,82 @@ void UI_Menu_Start(AppData* _appData){
 
      // Setup the audio and countdown timer
     countDownTimer = COUNTDOWN_DELAY;
+    UI_Menu_SetupPauseMenu(_appData);
     UI_Menu_SetupAudio();
+}
+
+void UI_Menu_SetupPauseMenu(AppData* _appData){
+    // default useful values
+    uint16_t screenWidth = _appData->windowWidth; 
+    uint16_t screenHeight = _appData->windowHeight;
+    float screenHalfWidth = screenWidth * 0.5f;
+    float screenHalfHeight = screenHeight * 0.5f;
+
+    // ==== MAIN TITLE - PAUSED ====
+    // title background elements
+    Vec2 pauseTitleSpriteSize = {256, 256};
+    Vec2 pauseTitleSheetSpriteSize = {256, 256};
+    Vec2 pauseTitleSpriteScale = {2.0f, 0.25f};
+
+    // Text Pos
+    Vec2 pauseMenuTitlePos = {screenHalfWidth - (screenHalfWidth*.25f) , PADDING + MARGIN};
+    // sprite pos
+    Vec2 pauseMenutitleSpritePos = {screenHalfWidth- ((pauseTitleSpriteSize.x*pauseTitleSpriteScale.x)* 0.5f), pauseMenuTitlePos.y - ((pauseTitleSpriteSize.y*pauseTitleSpriteScale.y)* 0.75f)};
+    // Size
+    Vec2 pauseMenuTitleSize = {screenWidth, 0};
+
+    // Label entity
+    pauseMenuTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],pauseMenutitleSpritePos, pauseTitleSpriteScale, pauseTitleSpriteSize, pink, 0, pauseTitleSheetSpriteSize);
+    // text Entity
+    pauseMenuTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, pausedMenuTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, pauseMenuTitlePos, pauseMenuTitleSize);
+
+     // sprite settings
+    pauseMenuTitleBackground->sprite->filtering = TRUE;
+    pauseMenuTitleBackground->sprite->spriteRotation = 0.1f;
+
+    // ==== Sub title 1 - Resume ====
+    Vec2 pauseSubTitle1SpriteSize = {256, 256};
+    Vec2 pauseSubTitle1SheetSpriteSize = {256, 256};
+    Vec2 pauseSubTitle1SpriteScale = {1, 0.25f};
+    Vec2 pauseMenuSubTitle1Size = pauseMenuTitleSize;
+    Vec2 pauseMenuSubTitle1Pos = {screenHalfWidth- ((pauseSubTitle1SpriteSize.x*pauseSubTitle1SpriteScale.x)), screenHalfHeight};
+    Vec2 pauseMenuSubTitle1TextPos = {screenHalfWidth - (116*2),  screenHalfHeight + 32+12};
+
+    // Label Entity
+    pauseMenuSubTitle1Entity = Entity_Factory_CreateUILabel(&_appData->ecs, pausedMenuSubTitle1CharBuffer, FONT4_ID, fontPath4, whiteColor, pauseMenuSubTitle1TextPos, pauseMenuSubTitle1Size);
+    // Sprite entity
+    pauseMenuSubTitle1Background = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0], pauseMenuSubTitle1Pos, pauseSubTitle1SpriteScale, pauseSubTitle1SpriteSize, whiteColor, 0, pauseSubTitle1SheetSpriteSize);
+    
+    // turn on sprite filtering
+    pauseMenuSubTitle1Background->sprite->filtering = TRUE;
+
+    // Rotate the spirtes slightly
+    pauseMenuSubTitle1Background->sprite->spriteRotation = -.1f;
+
+    // ==== Sub title 2- Resume ====
+    Vec2 pauseSubTitle2SpriteSize = {256, 256};
+    Vec2 pauseSubTitle2SheetSpriteSize = {256, 256};
+    Vec2 pauseSubTitle2SpriteScale = {1, 0.25f};
+    Vec2 pauseMenuSubTitle2Size = pauseMenuTitleSize;
+    Vec2 pauseMenuSubTitle2Pos = {screenHalfWidth + ((pauseSubTitle2SpriteSize.x*pauseSubTitle2SpriteScale.x)* 0.25f), screenHalfHeight};
+    Vec2 pauseMenuSubTitle2TextPos = {screenHalfWidth + 116,  screenHalfHeight + 32+12};
+
+    // Label Entity
+    pauseMenuSubTitle2Entity = Entity_Factory_CreateUILabel(&_appData->ecs, pausedMenuSubTitle2CharBuffer, FONT4_ID, fontPath4, whiteColor, pauseMenuSubTitle2TextPos, pauseMenuSubTitle1Size);
+    // Sprite entity
+    pauseMenuSubTitle2Background = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0], pauseMenuSubTitle2Pos, pauseSubTitle2SpriteScale, pauseSubTitle2SpriteSize, whiteColor, 0, pauseSubTitle2SheetSpriteSize);
+    
+    // turn on sprite filtering
+    pauseMenuSubTitle2Background->sprite->filtering = TRUE;
+
+    // Rotate the spirtes slightly
+    pauseMenuSubTitle2Background->sprite->spriteRotation = -.1f;
 }
 
 void UI_Menu_Update(AppData* _appData){
     switch (_appData->gameplayData.gameState)
     {
         case GAME_STATE_MAIN_MENU:
-            // this will decide how to render depending on game state
-            // TODO
-            //UI_Menu_RenderGameOverScreen(_appData);
             UI_Menu_RenderMainMenu(_appData);
         break;
 
@@ -370,6 +434,10 @@ void UI_Menu_Update(AppData* _appData){
         case GAME_STATE_PLAYING:
         // TODO
             UI_Menu_RenderPlayingUI(_appData);
+        break;
+
+        case GAME_STATE_PAUSED:
+            UI_Menu_RenderPausedScreen(_appData);
         break;
 
         case GAME_STATE_GAME_OVER_LOSE:
@@ -389,11 +457,7 @@ void UI_Menu_Update(AppData* _appData){
         case GAME_STATE_GAME_END:
             minigame_end();
         break;
-
     }
-
-   
-    
 }
 
 
@@ -473,6 +537,25 @@ void UI_Menu_MainMenuSetShowing(BOOL _state){
         mainMenuSubTitleBackground->sprite->enabled =AF_Component_SetEnabled(mainMenuSubTitleBackground->sprite->enabled, _state);
 }
 
+// Pause MEnu
+void UI_Menu_PauseMenuSetShowing(BOOL _state){
+        // Text
+        pauseMenuTitleEntity->text->isShowing = _state;
+        pauseMenuSubTitle1Entity->text->isShowing = _state;
+        pauseMenuSubTitle2Entity->text->isShowing = _state;
+
+        // sprite
+        pauseMenuTitleBackground->text->isShowing = _state;
+        pauseMenuSubTitle1Background->text->isShowing = _state;
+        pauseMenuSubTitle2Background->text->isShowing = _state;
+
+        // background panels
+        pauseMenuTitleBackground->sprite->enabled= AF_Component_SetEnabled(pauseMenuTitleBackground->sprite->enabled, _state);
+        pauseMenuSubTitle1Background->sprite->enabled =AF_Component_SetEnabled(pauseMenuSubTitle1Background->sprite->enabled, _state);
+        pauseMenuSubTitle2Background->sprite->enabled =AF_Component_SetEnabled(pauseMenuSubTitle2Background->sprite->enabled, _state);
+
+}
+
 void UI_Menu_GameOverUISetShowing(BOOL _state){
     
     // Game Over
@@ -515,6 +598,7 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
         UI_Menu_GameOverUISetShowing(FALSE);
         UI_Menu_PlayingSetState(FALSE);
         UI_Menu_CountdownState(FALSE);
+        UI_Menu_PauseMenuSetShowing(FALSE);
 
         // TODO: tidy this up
         if(isMusicPlaying == FALSE){
@@ -557,6 +641,7 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
     UI_Menu_GameOverUISetShowing(FALSE);
     UI_Menu_PlayingSetState(TRUE);
     UI_Menu_CountdownState(FALSE);
+     UI_Menu_PauseMenuSetShowing(FALSE);
 
     GameplayData* gameplayData = &_appData->gameplayData; 
     sprintf(godsCountLabelText, "%i", gameplayData->godEatCount);
@@ -596,6 +681,18 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
         gameplayData->gameState = GAME_STATE_GAME_OVER_WIN;
         gameplayData->countdownTimer = COUNT_DOWN_TIME;
     }
+
+    // detect start button pressed by any player
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        if(_appData->input.keys[i][START_KEY].pressed == TRUE){
+                debugf("Pause game\n");
+                wav64_play(&sfx_startButton, 31);
+                GameplayData* gameplayData = &_appData->gameplayData;
+                gameplayData->gameState = GAME_STATE_PAUSED;
+                // TODO: hack to force the key off so the resume works ocrrectly.
+                //_appData->input.keys[i][START_KEY]. = FALSE;
+        }
+    }
 }
 
 void UI_Menu_RenderGameOverScreen(AppData* _appData ){
@@ -604,7 +701,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     UI_Menu_MainMenuSetShowing(FALSE);
     UI_Menu_PlayingSetState(FALSE);
     UI_Menu_CountdownState(FALSE);
-    
+    UI_Menu_PauseMenuSetShowing(FALSE);
     
     //gameOverTitleEntity->text->isShowing = TRUE;
     //gameOverSubTitleEntity->text->isShowing = TRUE;
@@ -665,7 +762,6 @@ void UI_Menu_RenderCountdown(AppData* _appData){
     UI_Menu_PlayingSetState(FALSE);
     UI_Menu_CountdownState(TRUE);
 
-
     // this will loop 3 times then progress
     if (countDownTimer > -GO_DELAY)
     {
@@ -704,4 +800,30 @@ void UI_Menu_SetupAudio(){
   
   //xm64player_play(&music, 0);
   mixer_ch_set_vol(31, 0.5f, 0.5f);
+}
+
+void UI_Menu_RenderPausedScreen(AppData* _appData){
+    UI_Menu_PauseMenuSetShowing(TRUE);
+    UI_Menu_MainMenuSetShowing(FALSE);
+    UI_Menu_GameOverUISetShowing(FALSE);
+    UI_Menu_PlayingSetState(FALSE);
+    UI_Menu_CountdownState(FALSE);
+
+        // detect start button pressed by any player
+        
+        for(int i = 0; i < PLAYER_COUNT; ++i){
+            if(_appData->input.keys[i][A_KEY].pressed == TRUE){
+                    debugf("Resume game\n");
+                    wav64_play(&sfx_startButton, 31);
+                    GameplayData* gameplayData = &_appData->gameplayData;
+                    gameplayData->gameState = GAME_STATE_PLAYING;
+            }
+
+            if(_appData->input.keys[i][B_KEY].pressed == TRUE){
+                    debugf("Exit game\n");
+                    wav64_play(&sfx_startButton, 31);
+                    GameplayData* gameplayData = &_appData->gameplayData;
+                    gameplayData->gameState = GAME_STATE_GAME_END;
+            }
+        }
 }

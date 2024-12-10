@@ -11,10 +11,10 @@
     #define SKIP_PLAYERSELECTION  0
 
     // The number of human players
-    #define PLAYER_COUNT  1
+    #define PLAYER_COUNT  4
 
     // Skip asking the AI difficulty and assume AI_DIFFICULTY
-    #define SKIP_DIFFICULTYSELECTION  1
+    #define SKIP_DIFFICULTYSELECTION  0
 
     // The difficulty of the AI. 
     #define AI_DIFFICULTY  DIFF_MEDIUM

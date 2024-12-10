@@ -27,6 +27,7 @@ ASSETS_LIST += \
 	filesystem/old_gods/snake.t3dm \
 	filesystem/old_gods/rat.t3dm \
 	filesystem/old_gods/torus.t3dm \
+	filesystem/old_gods/shark.t3dm \
 	filesystem/old_gods/bottled_bubbles.xm64 \
 	filesystem/old_gods/Item2A.wav64 \
 	filesystem/old_gods/sandy_seaside.wav64 \

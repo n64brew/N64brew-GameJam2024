@@ -43,17 +43,15 @@ AF_Entity* bucket4 = NULL;
 // Villagers
 AF_Entity* villager1 = NULL;
 
+// Shark
+AF_Entity* sharkEntity = NULL;
+AF_Entity* sharkTrail = NULL;
+
 // player trails
-AF_Entity* player1Trail;
-
-// Rates
-
-
-// Audio
-//AF_Entity* laserSoundEntity = NULL;
-//AF_Entity* cannonSoundEntity = NULL;
-//AF_Entity* musicSoundEntity = NULL;
-
+AF_Entity* player1Trail = NULL;
+AF_Entity* player2Trail = NULL;
+AF_Entity* player3Trail = NULL;
+AF_Entity* player4Trail = NULL;
 
 
 // Gameplay Var
@@ -107,7 +105,9 @@ void Scene_AIFollowEntity(AF_AI_Action* _aiAction);
 void Scene_AIStateMachine(AF_AI_Action* _aiAction);
 void OnRatCollision(AF_Collision* _collision);
 void RatAIBehaviourUpdate(AppData* _appData);
+void SharkAIBehaviourUpdate(AppData* _appData);
 void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state);
+void UpdateWaterTrails(AppData* appData);
 
 
 void PlayerController_DamageHandler(AppData* _appData){
@@ -179,18 +179,17 @@ void Scene_Update(AppData* _appData){
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
         
         PlayerController_UpdateAllPlayerMovements(&_appData->input, *_appData->gameplayData.playerEntities, PLAYER_COUNT);
-        // adjust the transparency of trails for each player based on their speed.
-        AF_C3DRigidbody* player1Rigidbody = _appData->gameplayData.playerEntities[0]->rigidbody;
-        AF_CMesh* player1TrailMesh = player1Trail->mesh; 
         
-        float hat1Transparency = Vec3_MAGNITUDE(player1Rigidbody->velocity) / 25;
-        //debugf("hat transparency %f \n", hat1Transparency);
-        // normalised 0-1 will mult against color range of alpha value
-        player1TrailMesh->material.color.a = hat1Transparency * 255;
+        UpdateWaterTrails(_appData);
+
+
+
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
 
         RatAIBehaviourUpdate(_appData);
+
+        SharkAIBehaviourUpdate(_appData);
 
     }
 
@@ -260,6 +259,43 @@ void Scene_Update(AppData* _appData){
 	}
 }
 
+void UpdateWaterTrails(AppData* _appData){
+    // Player 1
+    AF_C3DRigidbody* player1Rigidbody = _appData->gameplayData.playerEntities[0]->rigidbody;
+    AF_CMesh* player1TrailMesh = player1Trail->mesh; 
+    float foamTransparency1 = Vec3_MAGNITUDE(player1Rigidbody->velocity) / 25;
+    // normalised 0-1 will mult against color range of alpha value
+    player1TrailMesh->material.color.a = foamTransparency1 * 255;
+
+    // Player 2
+    AF_C3DRigidbody* player2Rigidbody = _appData->gameplayData.playerEntities[1]->rigidbody;
+    AF_CMesh* player2TrailMesh = player2Trail->mesh; 
+    float foamTransparency2 = Vec3_MAGNITUDE(player2Rigidbody->velocity) / 25;
+    // normalised 0-1 will mult against color range of alpha value
+    player2TrailMesh->material.color.a = foamTransparency2 * 255;
+
+    // Player 3
+    AF_C3DRigidbody* player3Rigidbody = _appData->gameplayData.playerEntities[2]->rigidbody;
+    AF_CMesh* player3TrailMesh = player3Trail->mesh; 
+    float foamTransparency3 = Vec3_MAGNITUDE(player3Rigidbody->velocity) / 25;
+    // normalised 0-1 will mult against color range of alpha value
+    player3TrailMesh->material.color.a = foamTransparency3 * 255;
+
+    // Player 4
+    AF_C3DRigidbody* player4Rigidbody = _appData->gameplayData.playerEntities[3]->rigidbody;
+    AF_CMesh* player4TrailMesh = player4Trail->mesh; 
+    float foamTransparency4 = Vec3_MAGNITUDE(player4Rigidbody->velocity) / 25;
+    // normalised 0-1 will mult against color range of alpha value
+    player4TrailMesh->material.color.a = foamTransparency4 * 255;
+
+    // Shark
+    //AF_C3DRigidbody* sharkRigidbody = sharkEntity->rigidbody;
+    //AF_CMesh* sharkTrailMesh = sharkTrail->mesh; 
+    //float foamTransparencyShark = Vec3_MAGNITUDE(sharkRigidbody->velocity) / 25;
+    // normalised 0-1 will mult against color range of alpha value
+    //sharkTrailMesh->material.color.a = foamTransparencyShark * 255;
+}
+
 void Scene_LateUpdate(AppData* _appData){
 
 }
@@ -297,46 +333,31 @@ void Scene_SetupEntities(AppData* _appData){
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
     
-    Vec3 godSeaFoamPos = {0.0f, -0.0001f, -0.15f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
+    Vec3 godSeaFoamPos = {0.0f, -0.0001f, -0.15f};
     Vec3 godSeaFoamScale = {30.0f, 1.0f, 15.0f};
     mapSeaFoamEntity = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
     mapSeaFoamEntity->transform->pos = godSeaFoamPos;
     mapSeaFoamEntity->transform->scale = godSeaFoamScale;
-	//mapSeaFoamEntity->transform->localPos = godSeaFoamPos;
-    //mapSeaFoamEntity->transform->localScale = godSeaFoamScale;
-    //mapSeaFoamEntity->parentTransform = mapSeaFoamEntity->transform;
+
 	// add a rigidbody to our cube
 	*mapSeaFoamEntity->mesh = AF_CMesh_ADD();
 	mapSeaFoamEntity->mesh->meshType = AF_MESH_TYPE_MESH;
     mapSeaFoamEntity->mesh->material.color = WHITE_COLOR;
     mapSeaFoamEntity->mesh->material.color.a = 100;
-
-    //player1Trail->parentTransform = player1Entity->transform;
-    mapSeaFoamEntity->mesh->meshID = MODEL_FOAM;//MODEL_SNAKE2;
+    mapSeaFoamEntity->mesh->meshID = MODEL_FOAM;
+    *mapSeaFoamEntity->animation = AF_CAnimation_ADD();
+    mapSeaFoamEntity->animation->animationSpeed = 0.1f;
     
-    //*godEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
-    // god pedestal
-    /*
-    Vec3 godPedistalPos = {0, 0.01f, 0};
-	Vec3 godPedistalScale = {3,0.1f,3};
-    //Vec3 godPedistalBoundingScale = {1,1,1};
-    godPedestalEntity = Entity_Factory_CreatePrimative(_ecs, godPedistalPos, godPedistalScale, AF_MESH_TYPE_MESH, AABB);
-    //godPedestalEntity->collider->collision.callback = Scene_OnGodTrigger;
-    //godPedestalEntity->collider->boundingVolume = godPedistalBoundingScale;
-    godPedestalEntity->mesh->meshID = MODEL_CYLINDER;
-    godPedestalEntity->rigidbody->inverseMass = zeroInverseMass;
-    godPedestalEntity->rigidbody->isKinematic = TRUE;
-    */
-
-    // setup animations
+    // Player shared Vars
+    float foamAnimationSpeed = -0.5f;
 	// ---------Create Player1------------------
 	Vec3 player1Pos = {2.0f, 1.5f, 1.0f};
 	Vec3 player1Scale = {1.0f,1.0f,1.0f};
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
-    player1Entity->mesh->meshID = MODEL_SNAKE;//MODEL_SNAKE2;
+    player1Entity->mesh->meshID = MODEL_SNAKE;
     player1Entity->mesh->material.color = PLAYER1_COLOR;
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
@@ -347,10 +368,10 @@ void Scene_SetupEntities(AppData* _appData){
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     
-    // Create Player1 Hat
+    // Create Player1 Foam Trail
     // position needs to be thought of as local to the parent it will be inherited by
-    Vec3 player1TrailPos = {0.0f, -.01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 player1TrailScale = {1.5f, 1.0f, 1.5f};//{0.5f, 1.5f, 0.25f};
+    Vec3 player1TrailPos = {0.0f, -.01f, 0.0f};
+    Vec3 player1TrailScale = {1.5f, 1.0f, 1.5f};
     player1Trail = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
 	player1Trail->transform->localPos = player1TrailPos;
@@ -361,10 +382,11 @@ void Scene_SetupEntities(AppData* _appData){
 	player1Trail->mesh->meshType = AF_MESH_TYPE_MESH;
     player1Trail->mesh->material.color = WHITE_COLOR;
     player1Trail->mesh->material.color.a = 0;
+    player1Trail->mesh->meshID = MODEL_TRAIL;
 
-    //player1Trail->parentTransform = player1Entity->transform;
-    player1Trail->mesh->meshID = MODEL_TRAIL;//MODEL_SNAKE2;
-    
+    // Animation
+    *player1Trail->animation = AF_CAnimation_ADD();
+    player1Trail->animation->animationSpeed = foamAnimationSpeed;
 
 
     // Get AI Level
@@ -386,25 +408,27 @@ void Scene_SetupEntities(AppData* _appData){
     player2Entity->playerData->startPosition = player2Pos;
     player2Entity->playerData->movementSpeed = aiReactionSpeed;
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
-    
-    /*
-    Vec3 player2HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 player2HatScale = {1.5f, 1.5f, 1.5f};
-    AF_Entity* player2Hat = AF_ECS_CreateEntity(_ecs);
+
+    // Create Player2 Foam Trail
+    // position needs to be thought of as local to the parent it will be inherited by
+    Vec3 player2TrailPos = {0.0f, -.01f, 0.0f};
+    Vec3 player2TrailScale = {1.5f, 1.0f, 1.5f};
+    player2Trail = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
-	player2Hat->transform->localPos = player2HatPos;
-    player2Hat->transform->localScale = player2HatScale;
-    player2Hat->parentTransform = player2Entity->transform;
+	player2Trail->transform->localPos = player2TrailPos;
+    player2Trail->transform->localScale = player2TrailScale;
+    player2Trail->parentTransform = player2Entity->transform;
 	// add a rigidbody to our cube
-	*player2Hat->mesh = AF_CMesh_ADD();
-	player2Hat->mesh->meshType = AF_MESH_TYPE_MESH;
-    player2Hat->mesh->material.color = PLAYER2_COLOR;
+	*player2Trail->mesh = AF_CMesh_ADD();
+	player2Trail->mesh->meshType = AF_MESH_TYPE_MESH;
+    player2Trail->mesh->material.color = WHITE_COLOR;
+    player2Trail->mesh->material.color.a = 0;
+    player2Trail->mesh->meshID = MODEL_TRAIL;
 
-    //player1Trail->parentTransform = player1Entity->transform;
-    player2Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
-    */
+    // Animation
+    *player2Trail->animation = AF_CAnimation_ADD();
+    player2Trail->animation->animationSpeed = foamAnimationSpeed;
     
-
     // Create Player3
 	Vec3 player3Pos = {-2.0f, 1.5f, -1.0f};
 	Vec3 player3Scale = {.75f,.75f,.75f};
@@ -421,23 +445,26 @@ void Scene_SetupEntities(AppData* _appData){
     player3Entity->playerData->movementSpeed = aiReactionSpeed;
     *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
-    /*
-
-    Vec3 player3HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 player3HatScale = {1.5f, 1.5f, 1.5f};
-    AF_Entity* player3Hat = AF_ECS_CreateEntity(_ecs);
+    // Create Player3 Foam Trail
+    // position needs to be thought of as local to the parent it will be inherited by
+    Vec3 player3TrailPos = {0.0f, -.01f, 0.0f};
+    Vec3 player3TrailScale = {1.5f, 1.0f, 1.5f};
+    player3Trail = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
-	player3Hat->transform->localPos = player3HatPos;
-    player3Hat->transform->localScale = player3HatScale;
-    player3Hat->parentTransform = player3Entity->transform;
+	player3Trail->transform->localPos = player3TrailPos;
+    player3Trail->transform->localScale = player3TrailScale;
+    player3Trail->parentTransform = player3Entity->transform;
 	// add a rigidbody to our cube
-	*player3Hat->mesh = AF_CMesh_ADD();
-	player3Hat->mesh->meshType = AF_MESH_TYPE_MESH;
-    player3Hat->mesh->material.color = PLAYER3_COLOR;
+	*player3Trail->mesh = AF_CMesh_ADD();
+	player3Trail->mesh->meshType = AF_MESH_TYPE_MESH;
+    player3Trail->mesh->material.color = WHITE_COLOR;
+    player3Trail->mesh->material.color.a = 0;
+    player3Trail->mesh->meshID = MODEL_TRAIL;
 
-    //player1Trail->parentTransform = player1Entity->transform;
-    player3Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
-    */
+    // animation
+    *player3Trail->animation = AF_CAnimation_ADD();
+    player3Trail->animation->animationSpeed = foamAnimationSpeed;
+
 
     // Create Player4
 	Vec3 player4Pos = {2.0f, 1.5f, -1.0f};
@@ -455,22 +482,25 @@ void Scene_SetupEntities(AppData* _appData){
     player4Entity->playerData->movementSpeed = aiReactionSpeed;
     *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
-    /*
-    Vec3 player4HatPos = {0.0f, .01f, 0.0f};//Vec3_ADD(player1Entity->transform->pos, hatPos);
-    Vec3 player4HatScale = {1.5f, 1.5f, 1.5f};
-    AF_Entity* player4Hat = AF_ECS_CreateEntity(_ecs);
+    // Create Player4 Foam Trail
+    // position needs to be thought of as local to the parent it will be inherited by
+    Vec3 player4TrailPos = {0.0f, -.01f, 0.0f};
+    Vec3 player4TrailScale = {1.5f, 1.0f, 1.5f};
+    player4Trail = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
-	player4Hat->transform->localPos = player4HatPos;
-    player4Hat->transform->localScale = player4HatScale;
-    player4Hat->parentTransform = player4Entity->transform;
+	player4Trail->transform->localPos = player4TrailPos;
+    player4Trail->transform->localScale = player4TrailScale;
+    player4Trail->parentTransform = player4Entity->transform;
 	// add a rigidbody to our cube
-	*player4Hat->mesh = AF_CMesh_ADD();
-	player4Hat->mesh->meshType = AF_MESH_TYPE_MESH;
-    player4Hat->mesh->material.color = PLAYER4_COLOR;
+	*player4Trail->mesh = AF_CMesh_ADD();
+	player4Trail->mesh->meshType = AF_MESH_TYPE_MESH;
+    player4Trail->mesh->material.color = WHITE_COLOR;
+    player4Trail->mesh->material.color.a = 0;
+    player4Trail->mesh->meshID = MODEL_TRAIL;
 
-    //player1Trail->parentTransform = player1Entity->transform;
-    player4Hat->mesh->meshID = MODEL_TORUS;//MODEL_SNAKE2;
-    */
+    // Animation
+    *player4Trail->animation = AF_CAnimation_ADD();
+    player4Trail->animation->animationSpeed = foamAnimationSpeed;
 
 
     // assign AI to other players based on the players choosen in the game jam menu
@@ -582,12 +612,42 @@ void Scene_SetupEntities(AppData* _appData){
         //TogglePrimativeComponents(rat, TRUE);
     }
 
+    // ==== SHARKS ====
+    Vec3 sharkSpawnPos = {17, 0, 0};
+    Vec3 sharkScale = {1,1,1};
+    sharkEntity = Entity_Factory_CreatePrimative(_ecs, sharkSpawnPos, sharkScale, AF_MESH_TYPE_MESH, AABB);
+    sharkEntity->mesh->meshID = MODEL_SHARK;
+    sharkEntity->rigidbody->inverseMass = zeroInverseMass;
+    sharkEntity->rigidbody->isKinematic = TRUE;
+
+    // Create Player1 Foam Trail
+    // position needs to be thought of as local to the parent it will be inherited by
+    Vec3 sharkTrailPos = {0.0f, -.01f, 0.0f};
+    Vec3 sharkTrailScale = {1.5f, 1.0f, 1.5f};
+    sharkTrail = AF_ECS_CreateEntity(_ecs);
+	//move the position up a little
+	sharkTrail->transform->localPos = sharkTrailPos;
+    sharkTrail->transform->localScale = sharkTrailScale;
+    sharkTrail->parentTransform = sharkEntity->transform;
+	// add a rigidbody to our cube
+	*sharkTrail->mesh = AF_CMesh_ADD();
+	sharkTrail->mesh->meshType = AF_MESH_TYPE_MESH;
+    sharkTrail->mesh->material.color = WHITE_COLOR;
+    sharkTrail->mesh->material.color.a = 255;
+
+    sharkTrail->mesh->meshID = MODEL_TRAIL; 
+
+    // Animation
+    *sharkTrail->animation = AF_CAnimation_ADD();
+    sharkTrail->animation->animationSpeed = foamAnimationSpeed;
+
 	// Scale everything due to strange model sizes exported from blender
     for(int i = 0; i < _ecs->entitiesCount; ++i){
         // scale everything
-        _ecs->transforms[i].scale = Vec3_MULT_SCALAR(_ecs->transforms[i].scale, .0075f);//0.075f);
+        _ecs->transforms[i].scale = Vec3_MULT_SCALAR(_ecs->transforms[i].scale, .0075f);
     }
 
+    
     // ======== AUDIO ========
     wav64_open(&feedGodSoundFX,feedGodSoundFXPath);
     wav64_open(&pickupSoundFX, pickupSoundFXPath);
@@ -725,17 +785,17 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
     
 	
    
-        // attatch the villager to this player
-        if(_villager->playerData->isCarried == FALSE){
-            playerData2->carryingEntity = _villager->id_tag;
-            _villager->mesh->material.textureID = _godEntity->mesh->material.textureID;
-            debugf("carry villager \n");
-            playerData2->isCarrying = TRUE;
-            _villager->playerData->isCarried = TRUE;
+    // attatch the villager to this player
+    if(_villager->playerData->isCarried == FALSE){
+        playerData2->carryingEntity = _villager->id_tag;
+        _villager->mesh->material.textureID = _godEntity->mesh->material.textureID;
+        debugf("carry villager \n");
+        playerData2->isCarrying = TRUE;
+        _villager->playerData->isCarried = TRUE;
 
-            // play sound
-             wav64_play(&pickupSoundFX, 16);
-        }
+        // play sound
+            wav64_play(&pickupSoundFX, 16);
+    }
 }
 
 /*
@@ -994,6 +1054,50 @@ void RatAIBehaviourUpdate(AppData* _appData){
         // move rats around if they are alive
 
     }
+}
+
+void SharkAIBehaviourUpdate(AppData* _appData){
+    // move in a circular pattern around the centre
+    // facing in the direction of movement.
+    AF_CTransform3D* sharkTransform = sharkEntity->transform;
+    AF_C3DRigidbody* sharkRigidbody = sharkEntity->rigidbody;
+
+    Vec3 centre = {0,0,0};
+    float radiusX = 4.0f; // Horizontal radius
+    float radiusZ = 1.0f; // vertical radius
+
+    float speed = 20.0f;
+
+    // Current position relative to the center
+    Vec3 vecToCentre = Vec3_MINUS(centre, sharkTransform->pos);
+    
+    // Project position onto the ellipse
+    Vec3 ellipsePos;
+    ellipsePos.x = vecToCentre.x / (radiusX * radiusX);
+    ellipsePos.y = 0;
+    ellipsePos.z = vecToCentre.z / (radiusZ * radiusZ);
+
+    // Normalise the projected vector to find direction along the ellipse
+    Vec3 ellipseNorm = Vec3_NORMALIZE(ellipsePos);
+
+    // Calculate tangential velocity (perpendicular to radial direction)
+    Vec3 tangent;
+    tangent.x = -ellipseNorm.z * radiusZ; // Perpendicular component
+    tangent.y = 0;
+    tangent.z = ellipseNorm.x * radiusX; // Perpendicular component
+
+    
+    Vec3 tangentialVelocity = Vec3_NORMALIZE(tangent);
+    // Scale tangential velocity to the desired speed
+    tangentialVelocity = Vec3_MULT_SCALAR(tangentialVelocity, speed);
+
+    //AF_Physics_ApplyLinearImpulse(sharkRigidbody, tangentialVelocity);
+    sharkRigidbody->velocity = tangentialVelocity;
+
+    // rotate towards direction
+	float newAngle = atan2f(-tangentialVelocity.x, tangentialVelocity.z);
+	sharkTransform->rot.y = AF_Math_Lerp_Angle(sharkTransform->rot.y, newAngle, 0.25f);
+
 }
 
 void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state){

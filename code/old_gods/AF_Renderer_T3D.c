@@ -25,7 +25,7 @@ Tiny3D rendering functions
 #define DEBUG_RDP 0
 #define DEBUG_CAM_ON 1
 #define DEBUG_CAM_OFF 0
-uint8_t debugCam = DEBUG_CAM_ON;
+uint8_t debugCam = DEBUG_CAM_OFF;
 
 
 #define RAD_360 6.28318530718f
@@ -33,7 +33,7 @@ static T3DViewport viewport;
 
 //static T3DVec3 rotAxis;
 static uint8_t colorAmbient[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+//static uint8_t colorDir[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static T3DVec3 lightDirVec = {{1.0f, 1.0f, 0.001f}};
 // SkyBlue 142,224,240
 const uint8_t skyColor[3] = {142,224,240};
@@ -99,7 +99,6 @@ float deltaTime;
 
 
 // temp for scrolling
-float tileOffset = 0.0f;
 // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
 //static T3DModel *snakeModel;// = t3d_model_load("rom:/snake.t3dm");
 
@@ -401,7 +400,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
 // TODO: take in an array of entities 
 void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 	assert(_ecs != NULL && "AF_Renderer_T3D: AF_Renderer_Update has null ecs referenced passed in \n");
-    tileOffset += 0.1f;
+    
     float newTime = get_time_s();
     rendererDebugData.totalRenderTime = get_time_ms();
 
@@ -490,15 +489,17 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     // only way to make the foam scroll is force it.
     for(int i  = 0; i < _ecs->entitiesCount; ++i){
         AF_CMesh* mesh = _ecs->entities[i].mesh;
+        AF_CAnimation* animation = _ecs->entities[i].animation;
         BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
-        if(hasMesh){
+        BOOL hasAnimation = AF_Component_GetHas(_ecs->entities[i].animation->enabled);
+        if(hasMesh == TRUE && hasAnimation == TRUE){
             if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL){
                 // do special drawing for foam.
                 T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
                 t3d_matrix_push(meshMat);
                 
-                // make the trail speed based
-                float adjustedTileOffset = tileOffset;
+                // make the trail speed based off the animation component
+                float adjustedTileOffset = _time->currentFrame * animation->animationSpeed;
                 if(mesh->meshID == MODEL_TRAIL){
                     adjustedTileOffset  = adjustedTileOffset * 2;
                 }
@@ -515,9 +516,6 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
         }
     }
 
-   
-    
-                
 
     // ======== DRAW PARTICLES ========
     //AF_Renderer_DrawParticles(&_ecs->entities[0]);
@@ -535,7 +533,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     // ======== DEBUG Editor =========
     joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     // TODO: Move this to outside renderer
-    if (pressed1.start & 1) {
+    if (pressed1.c_up & 1) {
         if(debugCam == DEBUG_CAM_OFF){
             debugCam = DEBUG_CAM_ON;
         }else{
