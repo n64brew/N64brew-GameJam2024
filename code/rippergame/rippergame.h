@@ -92,6 +92,10 @@
              Functions
 *********************************/
 
+// forward declarations
+    void player_guardAbility(float deltaTime, int playerNumber);
+    void player_theifAbility(float deltaTime, int playerNumber);
+
     void rippergame_init();
     void rippergame_fixedloop(float deltatime);
     void rippergame_loop(float deltatime);

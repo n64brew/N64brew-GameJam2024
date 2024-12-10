@@ -14,14 +14,20 @@ typedef enum
 {
     StateWaiting,
     StateWandering,
-    StateFollowing
+    StateFollowingOtherPlayer,
+    StateMoveToObjective,
+    StateRunningFromGuard,
+    StateStuck
+
 } AIMachineState;
 
 typedef enum
 {
     targetTypeNone,
     targetTypeObjective,
-    targetTypePlayer
+    targetTypePlayer,
+    targetTypeGuard,
+    targetTypeThief
 } AITargetType;
 
 typedef struct
@@ -31,9 +37,19 @@ typedef struct
     int targetIndex;
     T3DVec3 destination;
     int framesRemainingBeforeCheck;
+    float stuckTimer;
     AIMachineState currentState;
+    AIMachineState previousState;
     AITargetType targetType;
 } AIDataStruct;
+
+typedef struct
+{
+    bool isValidTarget;
+    int targetIndex;
+    AITargetType targetType;
+    float distanceToTarget;
+} EntitySearchReturnData;
 
 /*********************************
             Functions
@@ -43,6 +59,17 @@ void ai_waitingStateEnter(int aiIndex);
 void ai_waitingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed);
 void ai_wanderingStateEnter(int aiIndex);
 void ai_wanderingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed);
+void ai_followingOtherPlayerStateEnter(int aiIndex);
+void ai_followingOtherPlayerState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed);
+void ai_moveToObjectiveStateEnter(int aiIndex);
+void ai_moveToObjectiveState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed);
+void ai_runningFromGuardStateEnter(int aiIndex);
+void ai_runningFromGuardState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed);
+
+void ai_findClosestEntityOfType(EntitySearchReturnData* returnStruct, int aiIndex, AITargetType desiredType);
+bool ai_checkForProximityBasedStateChanges(int aiIndex);
+void ai_findNewState(int aiIndex);
+int  ai_getCurrentStateAsInt(int aiIndex);
 
 void ai_init(player_data* a_players, int a_playerDataSize, objective_data* a_objectives, 
         int a_objectiveDataSize, collisionobject_data* a_collisionObjects, int a_collisionObjectSize);

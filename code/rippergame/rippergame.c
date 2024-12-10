@@ -82,6 +82,9 @@ const MinigameDef minigame_def = {
 };
 
 
+//TODO remove:
+float tempSpeed;
+
 /*==============================
     debugInfoDraw
     draws debug HUD info using the RDP
@@ -95,6 +98,7 @@ void debugInfoDraw(float deltaTime)
     rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+10, "Test Debug");
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+20, "FPS: %f", 1.0f/deltaTime);
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "AI Statuses: P1: %i P2: %i P3: %i P4: %i", ai_getCurrentStateAsInt(0), ai_getCurrentStateAsInt(1), ai_getCurrentStateAsInt(2), ai_getCurrentStateAsInt(3));
     /*rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
     joypad_port_t controllerPort = core_get_playercontroller(0);
     
@@ -105,7 +109,7 @@ void debugInfoDraw(float deltaTime)
     else
     {
         joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "p1 stick x: %i, p1 stick y: %i", joypad.stick_x, joypad.stick_y);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "p1 stick x: %i, p1 stick y: %i, p1 speed: %f", joypad.stick_x, joypad.stick_y, tempSpeed);
         
         // TODO: remove
         // linear algebra tests
@@ -574,8 +578,12 @@ void player_fixedloop(float deltaTime, int playerNumber)
     if(players[playerNumber].isAi && !(players[playerNumber].stunTimer > 0.0f)) // is an AI
     {
         // run the generic ai update function to let the AI state machine worry about it
+        newDir.x = 0.0f; newDir.y = 0.0f; newDir.z = 0.0f; speed = 0.0f;
         ai_update(players[playerNumber].aiIndex, deltaTime, &newDir, &speed);
     }
+
+    //TODO: Remove
+    if(playerNumber == 0) tempSpeed = speed;
 
     if(speed > 0.15f)
     {
@@ -591,7 +599,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
     {
         players[playerNumber].currSpeed *= 0.64f;
     }
-    
+
     // simulate a move for the player
     T3DVec3 tempPosition = players[playerNumber].playerPos;
     tempPosition.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
@@ -668,6 +676,105 @@ void player_fixedloop(float deltaTime, int playerNumber)
 }
 
 /*==============================
+    player_guardAbility
+    Triggers the guard's ability on the chosen player entity
+==============================*/
+
+void player_guardAbility(float deltaTime, int playerNumber)
+{
+    // stun in an AoE
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        if(players[iDx].isActive == false || players[iDx].playerTeam == teamGuard)
+        {
+            continue;
+        }
+        T3DVec3 tempVec = {0};
+        t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
+        if(t3d_vec3_len(&tempVec) < 50 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 1.0f;
+    }
+    // set the ability timer
+    players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+    // set the effect model to appear
+    effectPool[playerNumber].isActive = true;
+    effectPool[playerNumber].remainingTimer = 1.0f;
+    effectPool[playerNumber].effectPos = players[playerNumber].playerPos;
+    effectPool[playerNumber].effectSize = 100.0f;
+
+    // play sound effect here
+    wav64_play(&sfx_guardStunAbility, 29);
+}
+
+/*==============================
+    player_thiefAbility
+    Triggers the thief's ability on the chosen player entity
+==============================*/
+
+void player_thiefAbility(float deltaTime, int playerNumber)
+{
+    T3DVec3 tempUnitisedRotatedVector = {0};
+    T3DVec3 tempvec = {0};
+    collisionresult_data tempResult;
+    bool hasHitAWall = false;
+    tempUnitisedRotatedVector = (T3DVec3){{0,0,1}};
+    tempUnitisedRotatedVector.v[0] = -sinf(players[playerNumber].rotY);
+    tempUnitisedRotatedVector.v[2] = cosf(players[playerNumber].rotY);
+
+    for(float fDx = 1.0f; fDx < 24; fDx+= 2.0)
+    {
+        t3d_vec3_scale(&tempvec, &tempUnitisedRotatedVector, fDx);
+        t3d_vec3_add(&tempvec, &tempvec, &players[playerNumber].playerPos);
+
+        collision_check(&tempResult, &tempvec);
+        if(tempResult.didCollide == true && tempResult.collisionType != collisionGuardOnly)
+        {
+            hasHitAWall = true;
+            continue;
+        }
+        else if(hasHitAWall && (tempResult.didCollide == false || (tempResult.didCollide == true && tempResult.collisionType == collisionGuardOnly)))
+        {
+            // move the player
+            // TODO: make it a destination and do an animation over to it
+            players[playerNumber].playerPos = tempvec;
+            // set a cooldown if ability worked
+            players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+            break;
+        }
+    }
+
+
+    // take out current position
+    // Get current location
+        //get a vector of 1,1
+        // X = Cos(Th), Y = Sin(Th)
+        // ex.  Cos(45) = 0.707, Sin(45) = 0.707
+        // rotation Th in degrees (not rads)
+        // result should be a unitised vector for direction
+        // can use this to iterate
+	// Get direction
+	// loop like X amount of times with difference between current location and direction times length
+	// see if the spot is open, if it is, set is as a destination and teleport to the other side
+    // if teleported, set abilitytimer
+
+    // scratchpad
+    // starting position: 45,10
+    // rotation of 45 degrees
+    // unitised rotated vector = 0.707, 0.707
+    // starting position += (URV * steps)
+    // 45.000, 10.000
+    // 45.707, 10.707
+    // 46.414, 11.414
+    // 47.121, 12.121
+    // 47.828, 12.828
+    // 48.535, 13.535
+    // 49.242, 14.242
+    // 49.949, 14.949
+    // 50.656, 15.656
+    // 51.363, 16.363
+    // 52.070, 17.070
+}
+
+/*==============================
     player_loop
     Updates players in any way that is not required to be
     on a fixed timebase
@@ -698,27 +805,7 @@ void player_loop(float deltaTime, int playerNumber)
             // check to see if our ability cooldown is not active
             if(!(players[playerNumber].abilityTimer > 0.0f))
             {
-                // stun in an AoE
-                for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
-                {
-                    if(players[iDx].isActive == false || players[iDx].playerTeam == teamGuard)
-                    {
-                        continue;
-                    }
-                    T3DVec3 tempVec = {0};
-                    t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
-                    if(t3d_vec3_len(&tempVec) < 50 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 1.0f;
-                }
-                // set the ability timer
-                players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
-                // set the effect model to appear
-                effectPool[playerNumber].isActive = true;
-                effectPool[playerNumber].remainingTimer = 1.0f;
-                effectPool[playerNumber].effectPos = players[playerNumber].playerPos;
-                effectPool[playerNumber].effectSize = 100.0f;
-
-                // play sound effect here
-                wav64_play(&sfx_guardStunAbility, 29);
+                player_guardAbility(deltaTime, playerNumber);
             }
         }
 
@@ -728,66 +815,7 @@ void player_loop(float deltaTime, int playerNumber)
             // check to see if our ability cooldown is not active
             if(!(players[playerNumber].abilityTimer > 0.0f))
             {
-                T3DVec3 tempUnitisedRotatedVector = {0};
-                T3DVec3 tempvec = {0};
-                collisionresult_data tempResult;
-                bool hasHitAWall = false;
-                tempUnitisedRotatedVector = (T3DVec3){{0,0,1}};
-                tempUnitisedRotatedVector.v[0] = -sinf(players[playerNumber].rotY);
-                tempUnitisedRotatedVector.v[2] = cosf(players[playerNumber].rotY);
-
-                for(float fDx = 1.0f; fDx < 24; fDx+= 2.0)
-                {
-                    t3d_vec3_scale(&tempvec, &tempUnitisedRotatedVector, fDx);
-                    t3d_vec3_add(&tempvec, &tempvec, &players[playerNumber].playerPos);
-
-                    collision_check(&tempResult, &tempvec);
-                    if(tempResult.didCollide == true && tempResult.collisionType != collisionGuardOnly)
-                    {
-                        hasHitAWall = true;
-                        continue;
-                    }
-                    else if(hasHitAWall && (tempResult.didCollide == false || (tempResult.didCollide == true && tempResult.collisionType == collisionGuardOnly)))
-                    {
-                        // move the player
-                        // TODO: make it a destination and do an animation over to it
-                        players[playerNumber].playerPos = tempvec;
-                        // set a cooldown if ability worked
-                        players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
-                        break;
-                    }
-                }
-
-
-                // take out current position
-                // Get current location
-                    //get a vector of 1,1
-                    // X = Cos(Th), Y = Sin(Th)
-                    // ex.  Cos(45) = 0.707, Sin(45) = 0.707
-                    // rotation Th in degrees (not rads)
-                    // result should be a unitised vector for direction
-                    // can use this to iterate
-		        // Get direction
-		        // loop like X amount of times with difference between current location and direction times length
-		        // see if the spot is open, if it is, set is as a destination and teleport to the other side
-                // if teleported, set abilitytimer
-
-                // scratchpad
-                // starting position: 45,10
-                // rotation of 45 degrees
-                // unitised rotated vector = 0.707, 0.707
-                // starting position += (URV * steps)
-                // 45.000, 10.000
-                // 45.707, 10.707
-                // 46.414, 11.414
-                // 47.121, 12.121
-                // 47.828, 12.828
-                // 48.535, 13.535
-                // 49.242, 14.242
-                // 49.949, 14.949
-                // 50.656, 15.656
-                // 51.363, 16.363
-                // 52.070, 17.070
+                player_thiefAbility(deltaTime, playerNumber);
             }
         }
     }
@@ -827,7 +855,8 @@ void objective_init()
         t3d_model_draw(objectives[0].model);
         t3d_matrix_pop(1);
     objectives[0].dplObjective = rspq_block_end();
-    objectives[0].objectivePos = (T3DVec3){{96, 0.0f, 96}};
+    //objectives[0].objectivePos = (T3DVec3){{96, 0.0f, 96}};
+    objectives[0].objectivePos = (T3DVec3){{0.0f, 0.0f, 128}};
     
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
@@ -838,7 +867,8 @@ void objective_init()
         t3d_model_draw(objectives[1].model);
         t3d_matrix_pop(1);
     objectives[1].dplObjective = rspq_block_end();
-    objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
+    //objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
+    objectives[1].objectivePos = (T3DVec3){{0.0f, 0.0f, -128}};
 }
 
 void objective_update()
@@ -951,7 +981,7 @@ void minigame_init()
     gameTimeRemaining = STARTING_GAME_TIME;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS_DEDITHER);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -977,7 +1007,7 @@ void minigame_init()
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0,0,-10});
 
     // set camera position and target vectors
-    camPos = (T3DVec3){{0, 175.0f, 60.0f}};
+    camPos = (T3DVec3){{0, 215.0f, 65.0f}};
     camTarget = (T3DVec3){{0, 0, 20}};
 
     // set up a vector for the directional light
