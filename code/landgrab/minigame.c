@@ -7,6 +7,7 @@
 #include "font.h"
 #include "global.h"
 #include "player.h"
+#include "scoreboard.h"
 
 const MinigameDef minigame_def
     = { .gamename = "Land Grab",
@@ -40,10 +41,10 @@ float menu_input_delay;
 PlayerTurnResult last_active_turn[MAXPLAYERS];
 
 static const char *TURN_MESSAGES[] = {
-  FMT_SQUAREWAVE_P1 "Player 1's Turn!",
-  FMT_SQUAREWAVE_P2 "Player 2's Turn!",
-  FMT_SQUAREWAVE_P3 "Player 3's Turn!",
-  FMT_SQUAREWAVE_P4 "Player 4's Turn!",
+  FMT_STYLE_P1 "Player 1's Turn!",
+  FMT_STYLE_P2 "Player 2's Turn!",
+  FMT_STYLE_P3 "Player 3's Turn!",
+  FMT_STYLE_P4 "Player 4's Turn!",
 };
 
 static void
@@ -57,11 +58,6 @@ minigame_set_state (MinigameState new_state)
       xm64player_set_loop (&music, true);
       xm64player_set_vol (&music, 0.5f);
       xm64player_play (&music, 0);
-    }
-
-  if (old_state == MINIGAME_STATE_PLAY && new_state == MINIGAME_STATE_PAUSE)
-    {
-      xm64player_stop (&music);
     }
 
   if (old_state == MINIGAME_STATE_PAUSE && new_state == MINIGAME_STATE_PLAY)
@@ -79,11 +75,14 @@ minigame_set_state (MinigameState new_state)
 
   if (new_state == MINIGAME_STATE_PAUSE)
     {
+      xm64player_stop (&music);
       menu_input_delay = PAUSE_INPUT_DELAY;
     }
-  else if (new_state == MINIGAME_STATE_END)
+
+  if (new_state == MINIGAME_STATE_END)
     {
       menu_input_delay = END_INPUT_DELAY;
+      scoreboard_calculate (true);
     }
 
   minigame_state = new_state;
@@ -99,13 +98,11 @@ minigame_init (void)
   display_init (RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE,
                 FILTERS_RESAMPLE_ANTIALIAS);
 
-  rdpq_init ();
-  rdpq_debug_start ();
-
   font_init ();
 
   background_init ();
   board_init ();
+  scoreboard_init ();
 
   PLAYER_FOREACH (p) { player_init (&players[p], p); }
 
@@ -125,6 +122,7 @@ minigame_cleanup (void)
 
   PLAYER_FOREACH (i) { player_cleanup (&players[i]); }
 
+  scoreboard_cleanup ();
   board_cleanup ();
   background_cleanup ();
 
@@ -135,36 +133,49 @@ minigame_cleanup (void)
   display_close ();
 }
 
-static void
-minigame_upper_msg_render (const char *msg)
-{
-  const int UPPER_BOX_TOP = BOARD_TOP - 12;
-  const int UPPER_MSG_Y = UPPER_BOX_TOP + 9;
+static const int UPPER_BOX_TOP = BOARD_TOP - 12;
+static const int UPPER_MSG_Y = UPPER_BOX_TOP + 9;
+static const int LOWER_BOX_BTM = BOARD_BOTTOM + 13;
+static const int LOWER_MSG_Y = LOWER_BOX_BTM - 4;
 
+static void
+minigame_upper_msg_print (const char *msg)
+{
   rdpq_set_mode_fill (COLOR_BLACK);
   rdpq_fill_rectangle (BOARD_LEFT, UPPER_BOX_TOP, BOARD_RIGHT, BOARD_TOP);
 
   rdpq_set_mode_standard ();
   rdpq_textparms_t textparms = { .width = BOARD_RIGHT - BOARD_LEFT,
                                  .align = ALIGN_CENTER,
-                                 .style_id = STYLE_SQUAREWAVE_WHITE };
+                                 .style_id = FONT_STYLE_WHITE };
 
   rdpq_text_print (&textparms, FONT_SQUAREWAVE, BOARD_LEFT, UPPER_MSG_Y, msg);
 }
 
-static void
-minigame_lower_msg_render (const char *msg)
-{
-  const int LOWER_BOX_BTM = BOARD_BOTTOM + 12;
-  const int LOWER_MSG_Y = LOWER_BOX_BTM - 4;
+#define minigame_upper_msg_printf(fmt, ...)                                   \
+  {                                                                           \
+    rdpq_mode_push ();                                                        \
+    rdpq_set_mode_fill (COLOR_BLACK);                                         \
+    rdpq_fill_rectangle (BOARD_LEFT, UPPER_BOX_TOP, BOARD_RIGHT, BOARD_TOP);  \
+    rdpq_set_mode_standard ();                                                \
+    rdpq_textparms_t textparms = { .width = BOARD_RIGHT - BOARD_LEFT,         \
+                                   .align = ALIGN_CENTER,                     \
+                                   .style_id = FONT_STYLE_WHITE };            \
+    rdpq_text_printf (&textparms, FONT_SQUAREWAVE, BOARD_LEFT, UPPER_MSG_Y,   \
+                      fmt, __VA_ARGS__);                                      \
+    rdpq_mode_pop ();                                                         \
+  }
 
+static void
+minigame_lower_msg_print (const char *msg)
+{
   rdpq_set_mode_fill (COLOR_BLACK);
   rdpq_fill_rectangle (BOARD_LEFT, BOARD_BOTTOM, BOARD_RIGHT, LOWER_BOX_BTM);
 
   rdpq_set_mode_standard ();
   rdpq_textparms_t textparms = { .width = BOARD_RIGHT - BOARD_LEFT,
                                  .align = ALIGN_CENTER,
-                                 .style_id = STYLE_SQUAREWAVE_WHITE };
+                                 .style_id = FONT_STYLE_WHITE };
 
   rdpq_text_print (&textparms, FONT_SQUAREWAVE, BOARD_LEFT, LOWER_MSG_Y, msg);
 }
@@ -192,8 +203,20 @@ minigame_play_render (void)
 
   player_render (&players[active_player], true);
 
-  minigame_upper_msg_render (TURN_MESSAGES[active_player]);
-  minigame_lower_msg_render ("Place a piece touching a corner!");
+  minigame_upper_msg_print (TURN_MESSAGES[active_player]);
+
+  if (players[active_player].pieces_left == PIECE_COUNT)
+  {
+    minigame_lower_msg_print ("Place a piece touching a corner!");
+  } else
+  {
+    minigame_lower_msg_print ("Expand diagonally to win!");
+  }
+
+
+  scoreboard_pieces_render ();
+
+  scoreboard_scores_render ();
 
   rdpq_detach_show ();
 }
@@ -206,12 +229,10 @@ minigame_play_loop (float deltatime)
 
   PLAYER_FOREACH (p)
   {
-    const bool player_active = p == active_player;
-
     PlayerTurnResult player_loop_result
         = p < core_get_playercount ()
-              ? player_loop (&players[p], player_active, deltatime)
-              : player_loop_ai (&players[p], player_active, deltatime);
+              ? player_loop (&players[p], p == active_player, deltatime)
+              : player_loop_ai (&players[p], p == active_player, deltatime);
 
     if (player_loop_result == PLAYER_TURN_PAUSE)
       {
@@ -219,7 +240,7 @@ minigame_play_loop (float deltatime)
         break;
       }
     // Only the active player can end the turn
-    if (player_active)
+    if (p == active_player)
       {
         turn_ended = player_loop_result == PLAYER_TURN_END
                      || player_loop_result == PLAYER_TURN_PASS;
@@ -227,6 +248,7 @@ minigame_play_loop (float deltatime)
       }
   }
 
+  scoreboard_calculate (false);
   minigame_play_render ();
 
   // Wait until after rendering to "end the turn" so the UI is consistent.
@@ -263,8 +285,8 @@ minigame_pause_render (void)
 
   PLAYER_FOREACH (p) { player_render (&players[p], false); }
 
-  minigame_upper_msg_render ("Game Paused");
-  minigame_lower_msg_render ("Press A + B + Start to exit");
+  minigame_upper_msg_print ("Game Paused");
+  minigame_lower_msg_print ("Press A + B + Start to exit");
 
   rdpq_detach_show ();
 }
@@ -272,16 +294,15 @@ minigame_pause_render (void)
 static void
 minigame_pause_loop (float deltatime)
 {
+  joypad_port_t port;
+  joypad_buttons_t btn, pressed;
+
   if (menu_input_delay > 0.0f)
     {
       menu_input_delay -= deltatime;
     }
   else
     {
-
-      joypad_port_t port;
-      joypad_buttons_t btn, pressed;
-
       PLAYER_FOREACH (p)
       {
         if (p < core_get_playercount ())
@@ -319,6 +340,32 @@ minigame_end_render (void)
   background_render ();
 
   board_render ();
+
+  scoreboard_pieces_render ();
+
+  scoreboard_scores_render ();
+
+  if (winners == 1)
+    {
+      minigame_upper_msg_printf ("Player %d wins!", scoreboard[0].p + 1);
+    }
+  else if (winners == 2)
+    {
+      minigame_upper_msg_printf ("Players %d and %d win!", scoreboard[0].p + 1,
+                                 scoreboard[1].p + 1);
+    }
+  else if (winners == 3)
+    {
+      minigame_upper_msg_printf ("Players %d, %d, and %d win!",
+                                 scoreboard[0].p + 1, scoreboard[1].p + 1,
+                                 scoreboard[2].p + 1);
+    }
+  else if (winners == 4)
+    {
+      minigame_upper_msg_print ("It's a draw!");
+    }
+
+  minigame_lower_msg_print ("Press A / B / Start to exit");
 
   rdpq_detach_show ();
 }

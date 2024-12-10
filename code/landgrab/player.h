@@ -10,7 +10,6 @@ typedef struct Player
   PlyNum plynum;
   int pieces_left;
   bool monomino_final_piece;
-  color_t color;
   sprite_t *cursor_sprite;
   float move_delay;
   int cursor_col;

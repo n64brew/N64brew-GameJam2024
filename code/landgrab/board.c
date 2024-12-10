@@ -1,29 +1,23 @@
 #include "board.h"
 #include "player.h"
 
-color_t board[BOARD_SIZE];
+int board[BOARD_SIZE];
+
+static sprite_t *x_sprite;
+
+#define TILE_UNCLAIMED 0
 
 void
 board_init (void)
 {
-  board_fill (TILE_UNCLAIMED);
+  memset (board, TILE_UNCLAIMED, sizeof (board));
+  x_sprite = sprite_load ("rom:/landgrab/x.ia8.sprite");
 }
 
 void
 board_cleanup (void)
 {
-}
-
-void
-board_fill (color_t color)
-{
-  for (int row = 0; row < BOARD_ROWS; row++)
-    {
-      for (int col = 0; col < BOARD_COLS; col++)
-        {
-          board[row * BOARD_COLS + col] = color;
-        }
-    }
+  sprite_free (x_sprite);
 }
 
 void
@@ -44,7 +38,12 @@ board_render (void)
     {
       for (int col = 0; col < BOARD_COLS; col++)
         {
-          color_t tile_color = board[row * BOARD_COLS + col];
+          int tile = board[row * BOARD_COLS + col];
+          color_t tile_color = TILE_UNCLAIMED_COLOR;
+          if (tile != TILE_UNCLAIMED)
+            {
+              tile_color = PLAYER_COLORS[tile - 1];
+            }
           board_render_tile (col, row, tile_color);
         }
     }
@@ -58,6 +57,51 @@ board_render_tile (int col, int row, color_t color)
   rdpq_fill_rectangle (rect.x0, rect.y0, rect.x1, rect.y1);
 }
 
+void
+board_render_bad_tile_marker (int col, int row)
+{
+  Rect rect = board_get_tile_rect (col, row);
+
+  rdpq_mode_push ();
+  {
+    rdpq_set_mode_standard ();
+    rdpq_mode_filter (FILTER_BILINEAR);
+    rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
+    rdpq_mode_combiner (
+        RDPQ_COMBINER1 ((PRIM, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
+    rdpq_set_prim_color (COLOR_DARK_GRAY); // fill color
+    rdpq_set_env_color (COLOR_DARK_GRAY);  // outline color
+    rdpq_sprite_blit (x_sprite, rect.x0, rect.y0, &(rdpq_blitparms_t){});
+  }
+  rdpq_mode_pop ();
+}
+
+bool
+board_is_tile_valid (int col, int row)
+{
+  return col >= 0 && col < BOARD_COLS && row >= 0 && row < BOARD_ROWS;
+}
+
+bool
+board_is_tile_unclaimed (int col, int row)
+{
+  if (!board_is_tile_valid (col, row))
+    {
+      return false;
+    }
+  return board[row * BOARD_COLS + col] == TILE_UNCLAIMED;
+}
+
+bool
+board_is_tile_claimed (int col, int row, PlyNum player)
+{
+  if (!board_is_tile_valid (col, row))
+    {
+      return false;
+    }
+  return board[row * BOARD_COLS + col] == player + 1;
+}
+
 Rect
 board_get_tile_rect (int col, int row)
 {
@@ -66,38 +110,10 @@ board_get_tile_rect (int col, int row)
   return (Rect){ x0, y0, x0 + TILE_SIZE, y0 + TILE_SIZE };
 }
 
-bool
-board_place_piece (Player *player)
+void
+board_blit_piece (Player *player)
 {
-  // First, make sure the placement is valid
-  for (int piece_row = 0; piece_row < PIECE_ROWS; piece_row++)
-    {
-      for (int piece_col = 0; piece_col < PIECE_COLS; piece_col++)
-        {
-          int index = piece_row * PIECE_COLS + piece_col;
-          if (player->piece_buffer[index] == CELL_FILLED)
-            {
-              int board_col = player->cursor_col + piece_col;
-              int board_row = player->cursor_row + piece_row;
-              // Ensure the cell is in-bounds of the board
-              if (board_col < 0 || board_col >= BOARD_COLS || board_row < 0
-                  || board_row >= BOARD_ROWS)
-                {
-                  return false;
-                }
-              // Ensure the cell is unclaimed
-              color_t check_tile = board[board_row * BOARD_COLS + board_col];
-              color_t unclaimed = TILE_UNCLAIMED;
-              if (check_tile.r != unclaimed.r || check_tile.g != unclaimed.g
-                  || check_tile.b != unclaimed.b
-                  || check_tile.a != unclaimed.a)
-                {
-                  return false;
-                }
-            }
-        }
-    }
-
+  int p = player->plynum;
   // Actually place the piece on the board
   for (int piece_row = 0; piece_row < PIECE_ROWS; piece_row++)
     {
@@ -108,10 +124,102 @@ board_place_piece (Player *player)
             {
               int board_col = player->cursor_col + piece_col;
               int board_row = player->cursor_row + piece_row;
-              board[board_row * BOARD_COLS + board_col] = player->color;
+              board[board_row * BOARD_COLS + board_col] = p + 1;
+            }
+        }
+    }
+}
+
+CheckPieceResult
+board_check_piece (Player *player)
+{
+  int p = player->plynum;
+  // Assume the placement is valid until proven otherwise
+  CheckPieceResult result = { .is_available = true };
+
+  // First, make sure the placement is valid
+  for (int piece_row = 0; piece_row < PIECE_ROWS; piece_row++)
+    {
+      for (int piece_col = 0; piece_col < PIECE_COLS; piece_col++)
+        {
+          int index = piece_row * PIECE_COLS + piece_col;
+          if (player->piece_buffer[index] == CELL_FILLED)
+            {
+              int board_col = player->cursor_col + piece_col;
+              int board_row = player->cursor_row + piece_row;
+              // Ensure the cell is unclaimed
+              if (!board_is_tile_unclaimed (board_col, board_row))
+                {
+                  result.is_available = false;
+                  goto board_check_piece_bail;
+                }
+              // Convenience check for the first piece placed
+              result.is_in_corner
+                  = result.is_in_corner
+                    || ((board_col == 0 || board_col == BOARD_COLS - 1)
+                        && (board_row == 0 || board_row == BOARD_ROWS - 1));
+              // Check left face
+              if (board_is_tile_claimed (board_col - 1, board_row, p))
+                {
+                  result.is_touching_faces = true;
+                  goto board_check_piece_bail;
+                }
+              // Check right face
+              if (board_is_tile_claimed (board_col + 1, board_row, p))
+                {
+                  result.is_touching_faces = true;
+                  goto board_check_piece_bail;
+                }
+              // Check top face
+              if (board_is_tile_claimed (board_col, board_row - 1, p))
+                {
+                  result.is_touching_faces = true;
+                  goto board_check_piece_bail;
+                }
+              // Check bottom face
+              if (board_is_tile_claimed (board_col, board_row + 1, p))
+                {
+                  result.is_touching_faces = true;
+                  goto board_check_piece_bail;
+                }
+              // Check top-left corner
+              if (board_is_tile_claimed (board_col - 1, board_row - 1, p))
+                {
+                  result.is_touching_corners = true;
+                }
+              // Check top-right corner
+              if (board_is_tile_claimed (board_col + 1, board_row - 1, p))
+                {
+                  result.is_touching_corners = true;
+                }
+              // Check bottom-left corner
+              if (board_is_tile_claimed (board_col - 1, board_row + 1, p))
+                {
+                  result.is_touching_corners = true;
+                }
+              // Check bottom-right corner
+              if (board_is_tile_claimed (board_col + 1, board_row + 1, p))
+                {
+                  result.is_touching_corners = true;
+                }
             }
         }
     }
 
-  return true;
+board_check_piece_bail:
+
+  if (player->pieces_left == PIECE_COUNT)
+    {
+      // SPECIAL CASE: On the player's first turn, there are no pieces to
+      // touch, so we instead check to make sure the piece is in a corner of
+      // the board.
+      result.is_valid = result.is_available && result.is_in_corner;
+    }
+  else
+    {
+      result.is_valid = result.is_available && result.is_touching_corners
+                        && !result.is_touching_faces;
+    }
+
+  return result;
 }

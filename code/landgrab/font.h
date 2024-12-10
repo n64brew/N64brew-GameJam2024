@@ -5,25 +5,27 @@
 
 typedef enum
 {
-    FONT_SQUAREWAVE = 1
+    FONT_SQUAREWAVE = 1,
+    FONT_ANITA = 2
 } Font;
 
 typedef enum
 {
-    STYLE_SQUAREWAVE_P1 = 0x00,
-    STYLE_SQUAREWAVE_P2 = 0x01,
-    STYLE_SQUAREWAVE_P3 = 0x02,
-    STYLE_SQUAREWAVE_P4 = 0x03,
-    STYLE_SQUAREWAVE_WHITE = 0x04
+    FONT_STYLE_P1 = 0x00,
+    FONT_STYLE_P2 = 0x01,
+    FONT_STYLE_P3 = 0x02,
+    FONT_STYLE_P4 = 0x03,
+    FONT_STYLE_WHITE = 0x04
 } StyleSquarewave;
 
-#define FMT_SQUAREWAVE_P1 "^00"
-#define FMT_SQUAREWAVE_P2 "^01"
-#define FMT_SQUAREWAVE_P3 "^02"
-#define FMT_SQUAREWAVE_P4 "^03"
-#define FMT_SQUAREWAVE_WHITE "^04"
+#define FMT_STYLE_P1 "^00"
+#define FMT_STYLE_P2 "^01"
+#define FMT_STYLE_P3 "^02"
+#define FMT_STYLE_P4 "^03"
+#define FMT_STYLE_WHITE "^04"
 
 extern rdpq_font_t *font_squarewave;
+extern rdpq_font_t *font_anita;
 
 void font_init (void);
 

@@ -2,7 +2,8 @@
 #include "board.h"
 #include "color.h"
 
-#define PLAYER_MOVE_DELAY 0.2f;
+#define PLAYER_MOVE_DELAY 0.2f
+
 #define BONUS_USED_ALL_PIECES 15
 #define BONUS_MONOMINO_FINAL_PIECE 20
 
@@ -12,7 +13,6 @@ player_init (Player *player, PlyNum plynum)
   player->plynum = plynum;
   player->pieces_left = PIECE_COUNT;
   player->monomino_final_piece = false;
-  player->color = PLAYER_COLORS[plynum];
   player->move_delay = 0.0f;
   player->pulse_sine_x = 0.0f;
   player->pulse_sine_y = 0.0f;
@@ -87,9 +87,9 @@ player_loop (Player *player, bool active, float deltatime)
   joypad_8way_t d = joypad_get_direction (port, JOYPAD_2D_LH);
 
   if (pressed.start)
-  {
-    return PLAYER_TURN_PAUSE;
-  }
+    {
+      return PLAYER_TURN_PAUSE;
+    }
 
   if (player->pieces_left == 0)
     {
@@ -187,33 +187,94 @@ player_loop_ai (Player *player, bool active, float deltatime)
 void
 player_render_piece (Player *player, bool active)
 {
-  color_t draw_color = player->color;
+  PlyNum p = player->plynum;
+  Cell *piece = player->piece_buffer;
+  color_t draw_color = PLAYER_COLORS[player->plynum];
+  color_t hint_color = RGBA32 (0x50, 0x50, 0x50, 0x80);
 
   if (active)
     {
       player->pulse_sine_x += 0.1f;
       player->pulse_sine_y = fabs (sinf (player->pulse_sine_x));
       draw_color
-          = color_between (player->color, COLOR_WHITE, player->pulse_sine_y);
+          = color_between (draw_color, COLOR_WHITE, player->pulse_sine_y);
     }
   else
     {
-      draw_color.a = 0x80;
+      draw_color.a = 0x20;
     }
 
   for (size_t i = 0; i < PIECE_SIZE; i++)
     {
-      if (player->piece_buffer[i] == 1)
+      if (piece[i] == CELL_FILLED)
         {
           int col = player->cursor_col + (i % PIECE_COLS);
           int row = player->cursor_row + (i / PIECE_COLS);
           board_render_tile (col, row, draw_color);
+          if (active)
+            {
+              if (!board_is_tile_unclaimed (col, row))
+                {
+                  board_render_bad_tile_marker (col, row);
+                }
+              else
+                {
+                  if (board_is_tile_valid (col - 1, row)
+                      && (col == 0 || piece[i - 1] == CELL_EMPTY))
+                    {
+                      if (board_is_tile_unclaimed (col - 1, row))
+                        {
+                          board_render_tile (col - 1, row, hint_color);
+                        }
+                      if (board_is_tile_claimed (col - 1, row, p))
+                        {
+                          board_render_bad_tile_marker (col - 1, row);
+                        }
+                    }
+                  if (board_is_tile_valid (col + 1, row)
+                      && (col == PIECE_COLS - 1 || piece[i + 1] == CELL_EMPTY))
+                    {
+                      if (board_is_tile_unclaimed (col + 1, row))
+                        {
+                          board_render_tile (col + 1, row, hint_color);
+                        }
+                      if (board_is_tile_claimed (col + 1, row, p))
+                        {
+                          board_render_bad_tile_marker (col + 1, row);
+                        }
+                    }
+                  if (board_is_tile_valid (col, row - 1)
+                      && (row == 0 || piece[i - PIECE_COLS] == CELL_EMPTY))
+                    {
+                      if (board_is_tile_unclaimed (col, row - 1))
+                        {
+                          board_render_tile (col, row - 1, hint_color);
+                        }
+                      if (board_is_tile_claimed (col, row - 1, p))
+                        {
+                          board_render_bad_tile_marker (col, row - 1);
+                        }
+                    }
+                  if (board_is_tile_valid (col, row + 1)
+                      && (row == 0 || piece[i + PIECE_COLS] == CELL_EMPTY))
+                    {
+                      if (board_is_tile_unclaimed (col, row + 1))
+                        {
+                          board_render_tile (col, row + 1, hint_color);
+                        }
+                      if (board_is_tile_claimed (col, row + 1, p))
+                        {
+                          board_render_bad_tile_marker (col, row + 1);
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 void
-player_render_cursor (Player *player)
+player_render_cursor (Player *player, bool active)
 {
   const int icon_col = player->cursor_col + (PIECE_COLS / 2);
   const int icon_row = player->cursor_row + (PIECE_ROWS / 2);
@@ -228,6 +289,11 @@ player_render_cursor (Player *player)
                       &(rdpq_blitparms_t){});
   }
   rdpq_mode_pop ();
+
+  if (active && !board_is_tile_unclaimed (icon_col, icon_row))
+    {
+      board_render_bad_tile_marker (icon_col, icon_row);
+    }
 }
 
 void
@@ -236,7 +302,7 @@ player_render (Player *player, bool active)
   if (player->pieces_left > 0)
     {
       player_render_piece (player, active);
-      player_render_cursor (player);
+      player_render_cursor (player, active);
     }
 }
 
@@ -324,8 +390,10 @@ player_change_piece (Player *player, int piece_index)
 bool
 player_place_piece (Player *player)
 {
-  if (board_place_piece (player))
+  CheckPieceResult result = board_check_piece (player);
+  if (result.is_valid)
     {
+      board_blit_piece (player);
       player->pieces_used[player->piece_index] = true;
       player->pieces_left--;
       if (player->pieces_left == 0 && PIECES[player->piece_index].value == 1)
@@ -334,7 +402,7 @@ player_place_piece (Player *player)
         }
 
       player_incr_piece (player, 1);
-      // This is the end of the player's turn
+      // The piece was placed on the board
       return true;
     }
   else
