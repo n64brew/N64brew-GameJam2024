@@ -12,13 +12,15 @@
 #include <t3d/t3danim.h>
 #include "AF_Physics.h"
 #include "AF_Math.h"
+#include "AF_Renderer.h"
 #include "AI.h"
 
 // ECS system
 AF_Entity* camera = NULL;
 
 // God
-AF_Entity* godEntity = NULL;
+AF_Entity* levelEntity = NULL;
+AF_Entity* godSnekEntity = NULL;
 AF_Entity* mapSeaFoamEntity;
 //AF_Entity* godPedestalEntity = NULL;
 /*
@@ -335,19 +337,35 @@ void Scene_SetupEntities(AppData* _appData){
     // also useful for mapping to a ui editor
     // Create God
     
-	Vec3 godPos = {0, .1, 0};
-	Vec3 godScale = {2,2,2};
+	Vec3 levelPos = {0, .1, 0};
+	Vec3 levelScale = {2,2,2};
     Vec3 godBoundingScale = {1,1,1};
-    godEntity = Entity_Factory_CreatePrimative(_ecs, godPos, godScale, AF_MESH_TYPE_MESH, AABB);
-    godEntity->mesh->enabled = AF_Component_SetHas(godEntity->mesh->enabled, FALSE);
-    godEntity->mesh->enabled = AF_Component_SetEnabled(godEntity->mesh->enabled, FALSE);
-    //godEntity->mesh->meshID = MODEL_SNAKE;
-    //godEntity->mesh->material.color = WHITE_COLOR;
-    godEntity->rigidbody->inverseMass = zeroInverseMass;
-    //godEntity->rigidbody->isKinematic = TRUE;
-    godEntity->collider->collision.callback = Scene_OnGodTrigger;
-    godEntity->collider->boundingVolume = godBoundingScale;
-    godEntity->collider->showDebug = TRUE;
+    levelEntity = Entity_Factory_CreatePrimative(_ecs, levelPos, levelScale, AF_MESH_TYPE_MESH, AABB);
+    levelEntity->mesh->enabled = AF_Component_SetHas(levelEntity->mesh->enabled, FALSE);
+    levelEntity->mesh->enabled = AF_Component_SetEnabled(levelEntity->mesh->enabled, FALSE);
+    //levelEntity->mesh->meshID = MODEL_SNAKE;
+    //levelEntity->mesh->material.color = WHITE_COLOR;
+    levelEntity->rigidbody->inverseMass = zeroInverseMass;
+    //levelEntity->rigidbody->isKinematic = TRUE;
+    levelEntity->collider->collision.callback = Scene_OnGodTrigger;
+    levelEntity->collider->boundingVolume = godBoundingScale;
+    levelEntity->collider->showDebug = TRUE;
+
+    // Create rising god snek
+    Vec3 godSnekPos = {0,-1,-3};
+    Vec3 godSnekScale = {2,2,2};
+    godSnekEntity = Entity_Factory_CreatePrimative(_ecs, godSnekPos, godSnekScale, AF_MESH_TYPE_MESH, AABB);
+    godSnekEntity->mesh->meshID = MODEL_SNAKE;
+    godSnekEntity->mesh->material.color = WHITE_COLOR;
+    godSnekEntity->rigidbody->inverseMass = zeroInverseMass;
+    //levelEntity->rigidbody->isKinematic = TRUE;
+    godSnekEntity->collider->collision.callback = Scene_OnGodTrigger;
+    godSnekEntity->collider->boundingVolume = godBoundingScale;
+    godSnekEntity->collider->showDebug = TRUE;
+    *godSnekEntity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
+
+
+
 
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
@@ -545,7 +563,7 @@ void Scene_SetupEntities(AppData* _appData){
         // First behaviour is to go for the villager
         AI_CreateFollow_Action(aiPlayerEntity, villager1,  Scene_AIStateMachine);
         // second behaviour is go for the god 
-        AI_CreateFollow_Action(aiPlayerEntity, godEntity,  Scene_AIStateMachine);
+        AI_CreateFollow_Action(aiPlayerEntity, levelEntity,  Scene_AIStateMachine);
     }
     
 	//=========ENVIRONMENT========
@@ -775,7 +793,7 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
         randomNum = 3;
     }
 
-    if(godEntity == NULL || bucket1 == NULL || bucket2 == NULL || bucket3 == NULL || bucket4 == NULL)
+    if(levelEntity == NULL || bucket1 == NULL || bucket2 == NULL || bucket3 == NULL || bucket4 == NULL)
     {   
         debugf("Game: SpawnBucket: god or bucket entity is null \n");
         return;
@@ -853,6 +871,16 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         //debugf("Scene_GodTrigger: eat count %i \n", godEatCount);
         // TODO: update godEatCount. observer pattern would be nice right now
         //godEatCount++;
+
+        // Animate God eating
+        AF_CSkeletalAnimation*  animation = godSnekEntity->skeletalAnimation;
+        // if this entity has animations, then call play animation
+        BOOL hasMeshComponent = AF_Component_GetHas(animation->enabled);
+        BOOL isEnabled = AF_Component_GetEnabled(animation->enabled);
+        if(hasMeshComponent == TRUE && isEnabled == TRUE){
+            
+            AF_Renderer_PlayAnimation(animation);
+        }
         
         // update the player who collided with gods score.
         collidedEntity->playerData->score ++;
@@ -923,7 +951,7 @@ void Scene_OnBucket1Trigger(AF_Collision* _collision){
         return;
     }
     
-    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, godEntity);
+    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, levelEntity);
 }
 
 void Scene_OnBucket2Trigger(AF_Collision* _collision){
@@ -931,7 +959,7 @@ void Scene_OnBucket2Trigger(AF_Collision* _collision){
     if(g_currentBucket != bucketID){
         return;
     }
-    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, godEntity);
+    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, levelEntity);
 }
 
 void Scene_OnBucket3Trigger(AF_Collision* _collision){
@@ -939,7 +967,7 @@ void Scene_OnBucket3Trigger(AF_Collision* _collision){
     if(g_currentBucket != bucketID){
         return;
     }
-    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, godEntity);
+    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, levelEntity);
 }
 
 void Scene_OnBucket4Trigger(AF_Collision* _collision){
@@ -947,7 +975,7 @@ void Scene_OnBucket4Trigger(AF_Collision* _collision){
     if(g_currentBucket != bucketID){
         return;
     }
-    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, godEntity);
+    Scene_BucketCollisionBehaviour(g_currentBucket, bucketID, _collision, villager1, levelEntity);
 }
 
 
@@ -986,9 +1014,6 @@ AF_Entity* GetVillager(){
     return villager1;
 }
 
-AF_Entity* GetGodEntity(){
-    return godEntity;
-}
 
 /*
 AF_Entity* GetPlayerEntity(uint8_t _index){
