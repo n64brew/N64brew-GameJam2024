@@ -737,37 +737,54 @@ void set_duck_movement(Duck *duck, Snowman *snowman)
     float dx = snowman_x - duck_x;
     float dy = snowman_y - duck_y;
 
+    float speed;
+    switch (difficulty)
+    {
+    case DIFF_EASY:
+        speed = 0.75;
+        break;
+    case DIFF_MEDIUM:
+        speed = 1.25;
+        break;
+    case DIFF_HARD:
+        speed = 1.5;
+        break;
+    default:
+        speed = 1.0;
+        break;
+    }
+
     if (dx > 1 && dy > 1)
     {
-        movement = (Vector2){.x = 1, .y = 1};
+        movement = (Vector2){.x = 1 * speed, .y = 1 * speed};
     }
     else if (dx > 1 && dy < -1)
     {
-        movement = (Vector2){.x = 1, .y = -1};
+        movement = (Vector2){.x = 1 * speed, .y = -1 * speed};
     }
     else if (dx < -1 && dy > 1)
     {
-        movement = (Vector2){.x = -1, .y = 1};
+        movement = (Vector2){.x = -1 * speed, .y = 1 * speed};
     }
     else if (dx < -1 && dy < -1)
     {
-        movement = (Vector2){.x = -1, .y = -1};
+        movement = (Vector2){.x = -1 * speed, .y = -1 * speed};
     }
     else if (dx > 1)
     {
-        movement = (Vector2){.x = 1, .y = 0};
+        movement = (Vector2){.x = 1 * speed, .y = 0};
     }
     else if (dx < -1)
     {
-        movement = (Vector2){.x = -1, .y = 0};
+        movement = (Vector2){.x = -1 * speed, .y = 0};
     }
     else if (dy > 1)
     {
-        movement = (Vector2){.x = 0, .y = 1};
+        movement = (Vector2){.x = 0, .y = 1 * speed};
     }
     else if (dy < -1)
     {
-        movement = (Vector2){.x = 0, .y = -1};
+        movement = (Vector2){.x = 0, .y = -1 * speed};
     }
 
     validMovement = validate_movement(duck, movement);
@@ -817,6 +834,28 @@ void simulate_input(Duck *duck, float deltatime)
         if (duck->frames_locked_for_damage > 0)
         {
             duck->frames_locked_for_damage--;
+            return;
+        }
+
+        float seeking_delay;
+        switch (difficulty)
+        {
+        case DIFF_EASY:
+            seeking_delay = DUCK_TIME_SEEKING_TARGET_EASY;
+            break;
+        case DIFF_MEDIUM:
+            seeking_delay = DUCK_TIME_SEEKING_TARGET_MEDIUM;
+            break;
+        case DIFF_HARD:
+            seeking_delay = DUCK_TIME_SEEKING_TARGET_HARD;
+            break;
+        default:
+            seeking_delay = DUCK_TIME_SEEKING_TARGET_MEDIUM;
+            break;
+        }
+
+        if (duck->time_seeking_target < seeking_delay)
+        {
             return;
         }
 
@@ -899,6 +938,7 @@ void evaluate_attack()
                             {
                                 // Reward Duck
                                 currentDuck->score += 1;
+                                currentDuck->time_seeking_target = 0.0f;
                             }
 
                             // Next Snowman.
@@ -1039,6 +1079,7 @@ void process_human_players(float deltatime)
         process_input(duck, controller, pressed, held, released, direction, i, deltatime);
     }
 }
+
 void process_computer_players(float deltatime)
 {
     if (time_elapsed >= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)

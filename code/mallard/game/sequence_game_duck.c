@@ -85,6 +85,7 @@ Duck *create_duck(int i)
     duck->score = 0.0f;
     duck->action = DUCK_IDLE;
     duck->time_since_last_hit = 0.0f;
+    duck->time_seeking_target = 0.0f;
     duck->direction = (i == 0 || i == 2) ? RIGHT : LEFT;
     duck->collision_box_x1 = spawn.x + DUCK_COLLISION_BOX_X1_OFFSET;
     duck->collision_box_y1 = spawn.y + DUCK_COLLISION_BOX_Y1_OFFSET;
@@ -242,6 +243,7 @@ void update_ducks(float deltatime)
         {
             currentDuck->frames++;
             currentDuck->time_since_last_hit += deltatime;
+            currentDuck->time_seeking_target += deltatime;
 
             currentDuck->collision_box_x1 = currentDuck->x + DUCK_COLLISION_BOX_X1_OFFSET;
             currentDuck->collision_box_y1 = currentDuck->y + DUCK_COLLISION_BOX_Y1_OFFSET;

@@ -1,7 +1,6 @@
 #ifndef SEQUENCE_GAME_INPUT_H
 #define SEQUENCE_GAME_INPUT_H
-
-#include <libdragon.h> // Can i remove this????
+#include "../../../core.h"
 
 extern Snowman *snowmen;
 extern Duck *ducks;
@@ -9,11 +8,10 @@ extern Duck *ducks;
 extern bool sequence_game_should_cleanup;
 extern bool sequence_game_paused;
 extern int sequence_game_player_holding_start;
-
 extern float sequence_game_start_held_elapsed;
 
+extern AiDiff difficulty;
 extern xm64player_t sequence_game_xm;
-
 extern wav64_t sfx_start;
 extern wav64_t sfx_countdown;
 extern wav64_t sfx_stop;

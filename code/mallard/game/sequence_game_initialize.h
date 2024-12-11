@@ -3,6 +3,10 @@
 
 #include "sequence_game.h"
 
+#define DUCK_TIME_SEEKING_TARGET_EASY 0.75f
+#define DUCK_TIME_SEEKING_TARGET_MEDIUM 0.50f
+#define DUCK_TIME_SEEKING_TARGET_HARD 0.0f
+
 #define DUCK_MIN_X 5
 #define DUCK_MAX_X 294
 #define DUCK_MIN_Y 26

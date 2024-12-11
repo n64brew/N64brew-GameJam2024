@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include "../../../core.h"
 #include "../../../minigame.h"
 #include "../mallard.h"
 #include "sequence_game.h"
@@ -54,6 +55,8 @@ bool sequence_game_did_cleanup = false;
 bool sequence_game_paused = false;
 
 xm64player_t sequence_game_xm;
+
+AiDiff difficulty;
 
 wav64_t sfx_start;
 wav64_t sfx_countdown;
@@ -114,6 +117,7 @@ void sequence_game_init()
 
     sequence_game_should_initialize = false;
     sequence_game_did_initialize = true;
+    difficulty = core_get_aidifficulty();
 
     initialize_ducks();
     initialize_controllers();
