@@ -28,11 +28,18 @@ void AI_Update(AppData* _appData){
     if(_appData->gameplayData.gameState != GAME_STATE_PLAYING){
         return;
     }
+    /*
     for(int i = 0; i < PLAYER_COUNT; ++i){
         AF_Entity* entity = _appData->gameplayData.playerEntities[i];
         // update all the AI components
         ExecuteAIBehaviours(entity);
+    }*/
+    for(int i = 0; i < _appData->ecs.entitiesCount ; ++i){
+        AF_Entity* entity = &_appData->ecs.entities[i];
+        // update all the AI components
+        ExecuteAIBehaviours(entity);
     }
+
 
     // update AI behaviour
     //AF_Entity* playerToFollow = _appData->gameplayData.playerEntities[0];
@@ -40,7 +47,9 @@ void AI_Update(AppData* _appData){
 
 void ExecuteAIBehaviours(AF_Entity* _entity){
      AF_CAI_Behaviour* aiBehaviour = _entity->aiBehaviour;
-     if(AF_Component_GetHas(aiBehaviour->enabled) == TRUE){
+     BOOL hasAI = AF_Component_GetHas(aiBehaviour->enabled);
+     BOOL isAIEnabled = AF_Component_GetEnabled(aiBehaviour->enabled);;
+     if(hasAI == TRUE && isAIEnabled == TRUE){
         for(int i = 0; i < AF_AI_ACTION_ARRAY_SIZE; ++i){
             AF_AI_Action* action = &aiBehaviour->actionsArray[i];
             
@@ -82,7 +91,7 @@ void AI_CreateFollow_Action(AF_Entity* _entity, AF_Entity* _entityToFollow, void
         return;
     }
     
-    entityAIBehaviour->enabled = TRUE;
+    entityAIBehaviour->enabled = AF_Component_SetEnabled(entityAIBehaviour->enabled, TRUE);
     AF_AI_Action* entityAction = &entityAIBehaviour->actionsArray[entityAIBehaviour->nextAvailableActionSlot];
     entityAction->enabled = TRUE;
     entityAction->actionType = AI_ACTION_GOTO;

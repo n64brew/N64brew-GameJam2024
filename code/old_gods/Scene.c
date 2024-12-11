@@ -47,6 +47,11 @@ AF_Entity* villager1 = NULL;
 AF_Entity* sharkEntity = NULL;
 AF_Entity* sharkTrail = NULL;
 
+// Hunters - 1 for each player ;)
+AF_Entity* sharkHunterEntities[PLAYER_COUNT] = {NULL, NULL, NULL, NULL};
+AF_Entity* sharkHunterTrails[PLAYER_COUNT] = {NULL, NULL, NULL, NULL};
+AF_Entity* sharkHomeEntity = NULL;
+
 // player trails
 AF_Entity* player1Trail = NULL;
 AF_Entity* player2Trail = NULL;
@@ -79,11 +84,13 @@ uint8_t g_currentBucket = 0;
 
 #define BILLBOARD_YOFFSET   15.0f
 
-#define PLAYER_MOVEMENT_SPEED 1.0f
-#define AI_MOVEMENT_SPEED_MOD 0.3f
+#define PLAYER_MOVEMENT_SPEED 0.75f
+#define AI_MOVEMENT_SPEED_MOD 0.1f
 #define AI_TARGET_DISTANCE 1.0f
 
 #define RAT_MOVEMENT_SPEED 0.5f
+
+// FACTIONS
 
 AF_Color WHITE_COLOR = {255, 255, 255, 255};
 AF_Color SAND_COLOR = {255, 245, 177};
@@ -108,7 +115,12 @@ void RatAIBehaviourUpdate(AppData* _appData);
 void SharkAIBehaviourUpdate(AppData* _appData);
 void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state);
 void UpdateWaterTrails(AppData* appData);
+void MonitorPlayerHealth(AppData* _appData);
+void RespawnPlayer(AF_Entity* _entity);
 
+void OnSharkCollision(AF_Collision* _collision);
+void Scene_SetupSharks(AppData* _appData);
+void RespawnVillager();
 
 void PlayerController_DamageHandler(AppData* _appData){
     for(int i = 0; i < PLAYER_COUNT; ++i){
@@ -202,6 +214,7 @@ void Scene_Update(AppData* _appData){
         
         // TODO: move this out of this function
         //if((AF_Component_GetHas(playerData->enabled) == TRUE) && (AF_Component_GetEnabled(playerData->enabled) == TRUE)){
+        // TODO let parent transform take care of this.
         if(AF_Component_GetHas(playerData->enabled) == TRUE && playerData->isCarrying == TRUE){
             // make villager match player transform
             Vec3 villagerCarryPos = {entity->transform->pos.x, entity->transform->pos.y+VILLAGER_CARRY_HEIGHT, entity->transform->pos.z};
@@ -239,24 +252,30 @@ void Scene_Update(AppData* _appData){
         // Quick AABB check of the level bounds 
             Vec3 levelBounds = _appData->gameplayData.levelBounds;
             Vec3 adjustedPlayerPos = Vec3_MINUS(*pos, _appData->gameplayData.levelPos);
+            AF_Entity* hunterShark = sharkHunterEntities[i];
             if (adjustedPlayerPos.x < -levelBounds.x ||
                 adjustedPlayerPos.x > levelBounds.x ||
                 adjustedPlayerPos.z < -levelBounds.z ||
                 adjustedPlayerPos.z > levelBounds.z){
-                    //debugf("PlayerPos: x: %f, y: %f, z: %f, Level Bounds: x: %f, y: %f, z: %f \n", pos->x, pos->y, pos->z, levelBounds.z, levelBounds.y, levelBounds.z);
-            
-                    // zero out the velocity so we don't travel further 
-                    Vec3 zeroVelocity = {0,0,0};
-                    Vec3 negativeVelocity = Vec3_NORMALIZE(Vec3_MULT_SCALAR(rigidbody->velocity, -1.0f));
-                    // remove y and make the amount to back back very very small amount
-                    Vec3 removeY = {0.5f,0.0f,0.5f};
-                    negativeVelocity = Vec3_MULT(negativeVelocity, removeY);
-                    Vec3 positionBack = Vec3_ADD(transform->pos, negativeVelocity);
-                    rigidbody->velocity = zeroVelocity;
-                    transform->pos = positionBack;
+                
+                // send shark to eat player
+                hunterShark->aiBehaviour->enabled = AF_Component_SetEnabled(hunterShark->aiBehaviour->enabled, TRUE);
+                hunterShark->playerData->isAttacking = TRUE;
+                // Shark will target and move towards the player
+                // on collision will handle the rest
+                  
+            }else{
+                // disable the hunter shark ai behaviour
+                //hunterShark->aiBehaviour->enabled = AF_Component_SetEnabled(hunterShark->aiBehaviour->enabled, FALSE);
+                hunterShark->playerData->isAttacking = FALSE;
+                // TODO: need a way to tell shark to target a distant location
             }
         }
 	}
+
+   
+
+    MonitorPlayerHealth(_appData);
 }
 
 void UpdateWaterTrails(AppData* _appData){
@@ -349,7 +368,17 @@ void Scene_SetupEntities(AppData* _appData){
     *mapSeaFoamEntity->animation = AF_CAnimation_ADD();
     mapSeaFoamEntity->animation->animationSpeed = 0.1f;
     
+    // ======== RATS ========
+    // Villages
+	Vec3 villager1Pos = {-1000.0f, 0, 0};
+	Vec3 villager1Scale = {0.5f,0.5f,0.5f};
+    villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_MESH, AABB);
+    villager1->mesh->meshID = MODEL_RAT;
+	villager1->rigidbody->inverseMass = zeroInverseMass;
+	villager1->rigidbody->isKinematic = TRUE;
+    villager1->collider->collision.callback = Scene_OnCollision;
 
+    // ======== PLAYERS ========
     // Player shared Vars
     float foamAnimationSpeed = -0.5f;
 	// ---------Create Player1------------------
@@ -362,7 +391,7 @@ void Scene_SetupEntities(AppData* _appData){
     player1Entity->rigidbody->inverseMass = 1.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
-    player1Entity->playerData->faction = 1;
+    player1Entity->playerData->faction = PLAYER;
     player1Entity->playerData->startPosition = player1Pos;
     player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -404,7 +433,7 @@ void Scene_SetupEntities(AppData* _appData){
     player2Entity->rigidbody->inverseMass = 1.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
-    player2Entity->playerData->faction = 1;
+    player2Entity->playerData->faction = PLAYER;
     player2Entity->playerData->startPosition = player2Pos;
     player2Entity->playerData->movementSpeed = aiReactionSpeed;
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -440,7 +469,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player3Entity->rigidbody->isKinematic = TRUE;
     player3Entity->rigidbody->inverseMass = 1.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
-    player3Entity->playerData->faction = 1;
+    player3Entity->playerData->faction = PLAYER;
     player3Entity->playerData->startPosition = player3Pos;
     player3Entity->playerData->movementSpeed = aiReactionSpeed;
     *player3Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -477,7 +506,7 @@ void Scene_SetupEntities(AppData* _appData){
 	player4Entity->rigidbody->isKinematic = TRUE;
     player4Entity->rigidbody->inverseMass = 1.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
-    player4Entity->playerData->faction = 1;
+    player4Entity->playerData->faction = PLAYER;
     player4Entity->playerData->startPosition = player4Pos;
     player4Entity->playerData->movementSpeed = aiReactionSpeed;
     *player4Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -508,10 +537,17 @@ void Scene_SetupEntities(AppData* _appData){
     for(int i = core_get_playercount(); i < PLAYER_COUNT; ++i){
         AF_Entity* aiPlayerEntity = _appData->gameplayData.playerEntities[i];
         *aiPlayerEntity->aiBehaviour = AF_CAI_Behaviour_ADD();
-        AI_CreateFollow_Action(aiPlayerEntity, player1Entity,  Scene_AIStateMachine);
+        //AI_CreateFollow_Action(aiPlayerEntity, player1Entity,  Scene_AIStateMachine);
+        //BOOL hasAI = AF_Component_GetHas(aiPlayerEntity->aiBehaviour->enabled );
+        //BOOL isEnabled = AF_Component_GetEnabled(aiPlayerEntity->aiBehaviour->enabled);
+        //debugf("player hasAI: %i isEnabled: %i\n",hasAI, isEnabled);
+
+        // First behaviour is to go for the villager
+        AI_CreateFollow_Action(aiPlayerEntity, villager1,  Scene_AIStateMachine);
+        // second behaviour is go for the god 
+        AI_CreateFollow_Action(aiPlayerEntity, godEntity,  Scene_AIStateMachine);
     }
     
-
 	//=========ENVIRONMENT========
     Vec3 mapBoundingVolume = {15,1, 7.5};
     Vec3 levelMapPos = {0, 0, 0};
@@ -585,14 +621,7 @@ void Scene_SetupEntities(AppData* _appData){
      // TODO: add details to scene_onBucketTrigger callback
     bucket4->collider->collision.callback = Scene_OnBucket4Trigger;
 
-    /// Villages
-	Vec3 villager1Pos = {-1000.0f, 0, 0};
-	Vec3 villager1Scale = {0.5f,0.5f,0.5f};
-    villager1 = Entity_Factory_CreatePrimative(_ecs, villager1Pos, villager1Scale, AF_MESH_TYPE_MESH, AABB);
-    villager1->mesh->meshID = MODEL_RAT;
-	villager1->rigidbody->inverseMass = zeroInverseMass;
-	villager1->rigidbody->isKinematic = TRUE;
-    villager1->collider->collision.callback = Scene_OnCollision;
+    
     
     // ======== RATS ========
     Vec3 ratSpawnPos = {2, 0,0};
@@ -613,33 +642,10 @@ void Scene_SetupEntities(AppData* _appData){
     }
 
     // ==== SHARKS ====
-    Vec3 sharkSpawnPos = {17, 0, 0};
-    Vec3 sharkScale = {1,1,1};
-    sharkEntity = Entity_Factory_CreatePrimative(_ecs, sharkSpawnPos, sharkScale, AF_MESH_TYPE_MESH, AABB);
-    sharkEntity->mesh->meshID = MODEL_SHARK;
-    sharkEntity->rigidbody->inverseMass = zeroInverseMass;
-    sharkEntity->rigidbody->isKinematic = TRUE;
+    Scene_SetupSharks(_appData);
+    
 
-    // Create Player1 Foam Trail
-    // position needs to be thought of as local to the parent it will be inherited by
-    Vec3 sharkTrailPos = {0.0f, -.01f, 0.0f};
-    Vec3 sharkTrailScale = {1.5f, 1.0f, 1.5f};
-    sharkTrail = AF_ECS_CreateEntity(_ecs);
-	//move the position up a little
-	sharkTrail->transform->localPos = sharkTrailPos;
-    sharkTrail->transform->localScale = sharkTrailScale;
-    sharkTrail->parentTransform = sharkEntity->transform;
-	// add a rigidbody to our cube
-	*sharkTrail->mesh = AF_CMesh_ADD();
-	sharkTrail->mesh->meshType = AF_MESH_TYPE_MESH;
-    sharkTrail->mesh->material.color = WHITE_COLOR;
-    sharkTrail->mesh->material.color.a = 255;
-
-    sharkTrail->mesh->meshID = MODEL_TRAIL; 
-
-    // Animation
-    *sharkTrail->animation = AF_CAnimation_ADD();
-    sharkTrail->animation->animationSpeed = foamAnimationSpeed;
+    
 
 	// Scale everything due to strange model sizes exported from blender
     for(int i = 0; i < _ecs->entitiesCount; ++i){
@@ -654,6 +660,109 @@ void Scene_SetupEntities(AppData* _appData){
 }
 
 
+void Scene_SetupSharks(AppData* _appData){
+    // ==== Patroling Shark ====
+    float sharkFoamAnimationSpeed = -0.7f;
+    Vec3 sharkSpawnPos = {20, 0, 0};
+    
+    Vec3 sharkScale = {1,1,1};
+    sharkEntity = Entity_Factory_CreatePrimative(&_appData->ecs, sharkSpawnPos, sharkScale, AF_MESH_TYPE_MESH, AABB);
+    sharkEntity->mesh->meshID = MODEL_SHARK;
+    sharkEntity->rigidbody->inverseMass = 0.0f;
+    sharkEntity->rigidbody->isKinematic = TRUE;
+    sharkEntity->collider->collision.callback = OnSharkCollision;
+
+    // player data
+    *sharkEntity->playerData = AF_CPlayerData_ADD();
+    
+    sharkEntity->playerData->movementSpeed = 10.0f;
+    sharkEntity->playerData->faction = ENEMY2;
+    // Create Player1 Foam Trail
+    // position needs to be thought of as local to the parent it will be inherited by
+    Vec3 sharkTrailPos = {0.0f, -.01f, 0.0f};
+    Vec3 sharkTrailScale = {1.5f, 1.0f, 1.5f};
+    sharkTrail = AF_ECS_CreateEntity(&_appData->ecs);
+	//move the position up a little
+	sharkTrail->transform->localPos = sharkTrailPos;
+    sharkTrail->transform->localScale = sharkTrailScale;
+    sharkTrail->parentTransform = sharkEntity->transform;
+	// add a rigidbody to our cube
+	*sharkTrail->mesh = AF_CMesh_ADD();
+	sharkTrail->mesh->meshType = AF_MESH_TYPE_MESH;
+    sharkTrail->mesh->material.color = WHITE_COLOR;
+    sharkTrail->mesh->material.color.a = 255;
+    sharkTrail->mesh->meshID = MODEL_TRAIL; 
+
+    // Animation
+    *sharkTrail->animation = AF_CAnimation_ADD();
+    sharkTrail->animation->animationSpeed = sharkFoamAnimationSpeed;
+
+    Vec3 sharkHunterSpawnPos = {-20, 0, 0};
+    // create the shark home
+    sharkHomeEntity = AF_ECS_CreateEntity(&_appData->ecs);
+    sharkHomeEntity->transform->pos = sharkHunterSpawnPos;
+    // ==== Hunter Shark ====
+    // 1 for each player
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        
+        Vec3 sharkHunterScale = {1,1,1};
+
+        sharkHunterEntities[i] = Entity_Factory_CreatePrimative(&_appData->ecs, sharkHunterSpawnPos, sharkHunterScale, AF_MESH_TYPE_MESH, AABB);
+        AF_Entity* sharkHunterEntity = sharkHunterEntities[i];
+        sharkHunterEntity->mesh->meshID = MODEL_SHARK;
+        sharkHunterEntity->rigidbody->inverseMass = 0.0f;
+        sharkHunterEntity->rigidbody->isKinematic = TRUE;
+        sharkHunterEntity->collider->collision.callback = OnSharkCollision;
+
+        // player data
+        *sharkHunterEntity->playerData = AF_CPlayerData_ADD();
+        sharkHunterEntity->playerData->movementSpeed = AI_MOVEMENT_SPEED_MOD * ((1+core_get_aidifficulty()) + rand()%((1+core_get_aidifficulty())))*2;
+        sharkHunterEntity->playerData->faction = ENEMY2;
+
+        // AI
+        *sharkHunterEntity->aiBehaviour = AF_CAI_Behaviour_ADD();
+        
+
+        //BOOL hasAI = AF_Component_GetHas(sharkHunterEntity->aiBehaviour->enabled);
+        //BOOL isEnabled = AF_Component_GetEnabled(sharkHunterEntity->aiBehaviour->enabled);
+        //debugf("shark hasAI: %i isEnabled: %i\n",hasAI, isEnabled);
+        // match the target with the player number
+        // add a follow action 
+        AI_CreateFollow_Action(sharkHunterEntity, _appData->gameplayData.playerEntities[i],  Scene_AIStateMachine);
+
+        // Create the go home action. This function increments to a new action slot if called again.
+        AI_CreateFollow_Action(sharkHunterEntity, sharkHomeEntity,  Scene_AIStateMachine);
+
+        // disable the component for now, but it will be enabled when the player goes out of bounds.
+        sharkHunterEntity->aiBehaviour->enabled = AF_Component_SetEnabled(sharkHunterEntity->aiBehaviour->enabled, FALSE);
+        //BOOL hasAIBehaviour = AF_Component_GetHas(sharkHunterEntity->aiBehaviour->enabled);
+        //BOOL aiIsEnabled = AF_Component_GetEnabled(sharkHunterEntity->aiBehaviour->enabled);
+        //debugf("entity: %i hasAI: %i isEnabled: %i\n",i, hasAIBehaviour, aiIsEnabled);
+        // Create Player1 Foam Trail
+        // position needs to be thought of as local to the parent it will be inherited by
+        Vec3 sharkHunterTrailPos = {0.0f, -.01f, 0.0f};
+        Vec3 sharkHunterTrailScale = {1.5f, 1.0f, 1.5f};
+        sharkHunterTrails[i] = AF_ECS_CreateEntity(&_appData->ecs);
+        AF_Entity* sharkHunterTrail = sharkHunterTrails[i];
+        //move the position up a little
+        sharkHunterTrail->transform->localPos = sharkTrailPos;
+        sharkHunterTrail->transform->localScale = sharkTrailScale;
+        sharkHunterTrail->parentTransform = sharkHunterEntity->transform;
+        // add a rigidbody to our cube
+        *sharkHunterTrail->mesh = AF_CMesh_ADD();
+        sharkHunterTrail->mesh->meshType = AF_MESH_TYPE_MESH;
+        sharkHunterTrail->mesh->material.color = WHITE_COLOR;
+        sharkHunterTrail->mesh->material.color.a = 255;
+        sharkHunterTrail->mesh->meshID = MODEL_TRAIL; 
+
+        // Animation
+        *sharkHunterTrail->animation = AF_CAnimation_ADD();
+        sharkHunterTrail->animation->animationSpeed = sharkFoamAnimationSpeed;
+    }
+
+     
+}
+
 
 // ======== SPAWNERS ==========
 // TODO: add better control flow
@@ -667,7 +776,8 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
     }
 
     if(godEntity == NULL || bucket1 == NULL || bucket2 == NULL || bucket3 == NULL || bucket4 == NULL)
-    {   debugf("Game: SpawnBucket: god or bucket entity is null \n");
+    {   
+        debugf("Game: SpawnBucket: god or bucket entity is null \n");
         return;
     }
 
@@ -715,6 +825,8 @@ Scene_OnGodTrigger
 Callback Behaviour triggered when the player dropps off a sacrafice to the gods
 */
 void Scene_OnGodTrigger(AF_Collision* _collision){
+
+    
 	AF_Entity* entity1 =  _collision->entity1;
 	BOOL hasPlayerData1 = AF_Component_GetHas(entity1->playerData->enabled);
 
@@ -736,7 +848,7 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
 
     // if entity is carrying, eat and shift the villager into the distance
     if(collidedEntity->playerData->isCarrying == TRUE){
-        debugf("trigger god eat entity: %lu \n", AF_ECS_GetID(collidedEntity->id_tag));
+        //debugf("trigger god eat entity: %lu \n", AF_ECS_GetID(collidedEntity->id_tag));
        
         //debugf("Scene_GodTrigger: eat count %i \n", godEatCount);
         // TODO: update godEatCount. observer pattern would be nice right now
@@ -744,21 +856,22 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         
         // update the player who collided with gods score.
         collidedEntity->playerData->score ++;
-        
-
         collidedEntity->playerData->isCarrying = FALSE;
         collidedEntity->playerData->carryingEntity = 0;
-        Vec3 poolLocation = {100, 0,0};
-        villager1->transform->pos = poolLocation;
-        villager1->playerData->isCarried = FALSE;
-        // randomly call for a colour bucket
-        Scene_SpawnBucket(&g_currentBucket);
-
-
+        RespawnVillager();
         // play sound
         wav64_play(&feedGodSoundFX, 16);
         // clear the players from carrying
     }
+}
+
+void RespawnVillager(){
+    Vec3 poolLocation = {100, 0,0};
+    villager1->transform->pos = poolLocation;
+    villager1->playerData->isCarried = FALSE;
+    // randomly call for a colour bucket
+    Scene_SpawnBucket(&g_currentBucket);
+    debugf("Scene: respawn villager \n");
 }
 
 /*
@@ -783,18 +896,20 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
         return;
     }
     
-	
-   
+	// only players can carry rats
+    if(playerData2->faction != PLAYER){
+        return;
+    }
     // attatch the villager to this player
     if(_villager->playerData->isCarried == FALSE){
         playerData2->carryingEntity = _villager->id_tag;
         _villager->mesh->material.textureID = _godEntity->mesh->material.textureID;
-        debugf("carry villager \n");
+        //debugf("carry villager \n");
         playerData2->isCarrying = TRUE;
         _villager->playerData->isCarried = TRUE;
 
         // play sound
-            wav64_play(&pickupSoundFX, 16);
+        wav64_play(&pickupSoundFX, 16);
     }
 }
 
@@ -885,6 +1000,79 @@ AF_Entity* GetPlayerEntity(uint8_t _index){
     return playerEntities[_index];
 }*/
 
+
+
+
+// ==== Collision Behaviours ====
+
+// Rat collision behaviour
+void OnRatCollision(AF_Collision* _collision){
+    if(_collision == NULL){
+        return;
+    }
+
+    AF_Entity* rat =  _collision->entity1;
+	AF_Entity* player =  _collision->entity2;
+
+    // Second collision is the playable character
+    // skip if collision object doesn't have player data
+    AF_CPlayerData* playerData = player->playerData;
+    AF_CPlayerData* ratData = rat->playerData;
+    if(AF_Component_GetHas(playerData->enabled) == FALSE){
+        return;
+    }
+
+    if(playerData->faction == PLAYER){
+        
+        // if player is attacking
+        if(playerData->isAttacking == TRUE){
+            //debugf("OnRatCollision: hit player attacking player \n");
+            // Rat is carried by colliding player
+            playerData->isCarrying = TRUE;
+            playerData->carryingEntity = AF_ECS_GetID(rat->id_tag);
+            ratData->isCarried = TRUE;
+            //ratData->isAlive = FALSE;
+        }
+    }
+    //debugf("OnRatCollision: with a player\n");
+    // is rat dead?
+        // attatch to collided player
+    // if rat is alive
+        // puff of smoke
+        // rat flips onto its back
+        // rat is dead
+}
+
+// Shark Collision Behaviour
+void OnSharkCollision(AF_Collision* _collision){
+    if(_collision == NULL){
+        return;
+    }
+
+    //AF_Entity* shark =  _collision->entity1;
+	AF_Entity* player =  _collision->entity2;
+
+    // Second collision is the playable character
+    // skip if collision object doesn't have player data
+    AF_CPlayerData* playerData = player->playerData;
+    //AF_CPlayerData* sharkData = shark->playerData;
+    if(AF_Component_GetHas(playerData->enabled) == FALSE){
+        return;
+    }
+
+    // if the collider entity is of player faction
+    if(playerData->faction == PLAYER){
+        playerData->isAlive = FALSE;
+        //debugf("OnSharkCollision: hit player yum yum \n");
+        // player yum yum audio
+        wav64_play(&pickupSoundFX, 16);
+    }
+}
+
+
+// ==== AI BEHAVIOURS ====
+// AI state machine
+// TODO move this into its own system/header
 void Scene_AIStateMachine(AF_AI_Action* _aiAction){
     // We need to 
     assert(_aiAction != NULL);
@@ -895,20 +1083,56 @@ void Scene_AIStateMachine(AF_AI_Action* _aiAction){
     assert(targetEntity != NULL);
 
     AF_CPlayerData* sourceEntityPlayerData = sourceEntity->playerData;
-    if(sourceEntityPlayerData->isCarrying){
-        // change the AI action to head towards god
-        _aiAction->sourceEntity = sourceEntity;
-        // TODO: don't like this. need better control flow
-        _aiAction->targetEntity = godEntity;
-    }else{
-        // change the AI action to head towards food
-        _aiAction->sourceEntity = sourceEntity;
-        // TODO: don't like this. need better control flow
-        _aiAction->targetEntity = villager1;
+    AF_CAI_Behaviour* sourceAIBehaviour = sourceEntity->aiBehaviour;
+
+    switch(sourceEntity->playerData->faction){
+        // Player Behaviour
+        case PLAYER:
+            if(sourceEntityPlayerData->isCarrying){
+                _aiAction = &sourceAIBehaviour->actionsArray[1];
+            }else{
+                _aiAction = &sourceAIBehaviour->actionsArray[0];
+            }
+            _aiAction->sourceEntity = sourceEntity;
+        break;
+
+        // Enemy/Shark behaviour
+        case ENEMY1:
+            // TODO:
+            
+        break;
+
+        case ENEMY2:
+            // if we are in an attacking state. go after the target we have had set
+            
+            if(sourceEntityPlayerData->isAttacking){
+                // first action is setup to follow the player
+                _aiAction = &sourceAIBehaviour->actionsArray[0];
+            }else{
+                // Second action is setup to follow the go home point
+                _aiAction = &sourceAIBehaviour->actionsArray[1];
+            }
+            _aiAction->sourceEntity = sourceEntity;
+        break;
+
+        case ENEMY3:
+            // TODO:
+        break;
+
+        case ENEMY4:
+            // TODO:
+
+        break;
+
+        case DEFAULT:
+
+        break;
     }
+    
 
     Scene_AIFollowEntity(_aiAction);
 }
+
 
 
 // AI behaviour tester function
@@ -962,51 +1186,13 @@ void Scene_AIFollowEntity(AF_AI_Action* _aiAction){
         // Attack * AI difficulty
 }
 
-void OnRatCollision(AF_Collision* _collision){
-    if(_collision == NULL){
-        return;
-    }
-
-    AF_Entity* rat =  _collision->entity1;
-	AF_Entity* player =  _collision->entity2;
-
-    // Second collision is the playable character
-    // skip if collision object doesn't have player data
-    AF_CPlayerData* playerData = player->playerData;
-    AF_CPlayerData* ratData = rat->playerData;
-    if(AF_Component_GetHas(playerData->enabled) == FALSE){
-        return;
-    }
-
-    if(playerData->faction == 1){
-        
-        // if player is attacking
-        if(playerData->isAttacking == TRUE){
-            debugf("OnRatCollision: hit player attacking player \n");
-            // Rat is carried by colliding player
-            playerData->isCarrying = TRUE;
-            playerData->carryingEntity = AF_ECS_GetID(rat->id_tag);
-            ratData->isCarried = TRUE;
-            //ratData->isAlive = FALSE;
-        }
-        
-    }
-    //debugf("OnRatCollision: with a player\n");
-    // is rat dead?
-        // attatch to collided player
-    // if rat is alive
-        // puff of smoke
-        // rat flips onto its back
-        // rat is dead
-}
-
+// Rat AI behaviour
 void RatAIBehaviourUpdate(AppData* _appData){
     Vec3 spawnBounds = {7, 1, 3.5};
     int upperX = spawnBounds.x;
     int lowerX = -spawnBounds.x;
     int upperZ = spawnBounds.z;
     int lowerZ = -spawnBounds.z;
-    
     
     for(int i = 0; i < ENEMY_POOL_COUNT; ++i){
         AF_Entity* ratEntity = _appData->gameplayData.enemyEntities[i];
@@ -1066,7 +1252,8 @@ void SharkAIBehaviourUpdate(AppData* _appData){
     float radiusX = 4.0f; // Horizontal radius
     float radiusZ = 1.0f; // vertical radius
 
-    float speed = 20.0f;
+    
+    AF_CPlayerData* sharkPlayerData = sharkEntity->playerData;
 
     // Current position relative to the center
     Vec3 vecToCentre = Vec3_MINUS(centre, sharkTransform->pos);
@@ -1089,7 +1276,7 @@ void SharkAIBehaviourUpdate(AppData* _appData){
     
     Vec3 tangentialVelocity = Vec3_NORMALIZE(tangent);
     // Scale tangential velocity to the desired speed
-    tangentialVelocity = Vec3_MULT_SCALAR(tangentialVelocity, speed);
+    tangentialVelocity = Vec3_MULT_SCALAR(tangentialVelocity, sharkPlayerData->movementSpeed);
 
     //AF_Physics_ApplyLinearImpulse(sharkRigidbody, tangentialVelocity);
     sharkRigidbody->velocity = tangentialVelocity;
@@ -1099,6 +1286,57 @@ void SharkAIBehaviourUpdate(AppData* _appData){
 	sharkTransform->rot.y = AF_Math_Lerp_Angle(sharkTransform->rot.y, newAngle, 0.25f);
 
 }
+
+// Monitor Player Health
+// if players die, then respawn in a position.
+void MonitorPlayerHealth(AppData* _appData){
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        AF_Entity* playerEntity = _appData->gameplayData.playerEntities[i];
+        AF_CPlayerData* playerData = playerEntity->playerData;
+
+        if(playerData->isAlive == FALSE){
+            // if the player dies whilst carrying. ensure it is respawned
+            if(playerData->isCarrying == TRUE){
+                
+                RespawnVillager();
+            }
+            // start a timer and restart
+            RespawnPlayer(playerEntity);
+        }
+
+        /*
+        AF_Entity* aiPlayerEntity = _appData->gameplayData.playerEntities[i];
+        *aiPlayerEntity->aiBehaviour = AF_CAI_Behaviour_ADD();
+        aiPlayerEntity->aiBehaviour->enabled = AF_Component_SetEnabled(aiPlayerEntity->aiBehaviour->enabled, TRUE);
+        BOOL hasAI = AF_Component_GetHas(aiPlayerEntity->aiBehaviour->enabled );
+        BOOL isEnabled = AF_Component_GetEnabled(aiPlayerEntity->aiBehaviour->enabled);
+        */
+        //debugf("MonitorHealth: %i player hasAI: %i isEnabled: %i\n",i, hasAI, isEnabled);
+    }
+}
+
+// Respawn player
+void RespawnPlayer(AF_Entity* _entity){
+    // zero velocities
+    AF_C3DRigidbody* rigidbody = _entity->rigidbody;
+    Vec3 zeroVel = {0,0,0};
+    rigidbody->velocity = zeroVel;
+
+
+    // make alive
+    AF_CPlayerData* playerData = _entity->playerData;
+    playerData->isAlive = TRUE;
+    playerData->isCarrying = FALSE;
+    playerData->carryingEntity = 0;
+
+    // position back to starting spot
+    AF_CTransform3D* transform = _entity->transform;
+    transform->pos = playerData->startPosition;
+
+    
+}
+
+// ===== HELPERS ====
 
 void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state){
     _entity->rigidbody->enabled = AF_Component_SetEnabled(_entity->rigidbody->enabled, _state);

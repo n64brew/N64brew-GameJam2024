@@ -2,12 +2,16 @@
 [x] Allow the minigame to be paused by pressing START, and possibly exit as well
 [x] change debug to be c up button
 [x] Menu button press plays sound effect
-[] snakes can't leave the boundry area
-[] put in shark on the outside circling. Shark eats player who moves beyond outer area.
+[x] snakes can't leave the boundry area
+[x] put in shark 
+[x] shark moves on the outside circling. 
+[x] Shark eats player who moves beyond outer area.
+[x] player respawns on being eaten
+[] player respawns after delay
 
 [] snakes can attack each other visually
 
-[] snakes have foam trails
+[x] snakes have foam trails
 
 [] god changes color/emerges based on number of rats
 [] rats pile up infront of god 
