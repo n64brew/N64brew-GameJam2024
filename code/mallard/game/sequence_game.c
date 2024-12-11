@@ -52,7 +52,6 @@ bool sequence_game_should_cleanup = false;
 bool sequence_game_did_cleanup = false;
 
 bool sequence_game_paused = false;
-// bool sequence_game_finish = false;
 
 xm64player_t sequence_game_xm;
 

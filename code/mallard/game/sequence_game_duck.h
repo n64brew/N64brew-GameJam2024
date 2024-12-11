@@ -32,6 +32,7 @@
 #define DUCK_SLAP_BOX_Y2_OFFSET_FACING_RIGHT 20
 
 extern Duck *ducks;
+extern float time_elapsed;
 
 void display_ducks();
 Duck *get_duck_by_id(int i);

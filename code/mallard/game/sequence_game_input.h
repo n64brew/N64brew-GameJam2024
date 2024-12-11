@@ -12,6 +12,8 @@ extern int sequence_game_player_holding_start;
 
 extern float sequence_game_start_held_elapsed;
 
+extern xm64player_t sequence_game_xm;
+
 extern wav64_t sfx_start;
 extern wav64_t sfx_countdown;
 extern wav64_t sfx_stop;

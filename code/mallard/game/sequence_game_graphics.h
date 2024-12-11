@@ -29,6 +29,7 @@ extern Duck *ducks;
 extern Snowman *snowmen;
 
 extern float time_elapsed;
+extern int winner;
 
 void sequence_game_render_map();
 void sequence_game_render_paused();

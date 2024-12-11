@@ -12,11 +12,14 @@
 
 float time_elapsed_since_last_snowman_spawn = 0.0f;
 float time_elapsed = 0.0f;
+int winner = -1;
 
 bool countdown_one_played = false;
 bool countdown_two_played = false;
 bool countdown_three_played = false;
 bool start_played = false;
+bool stop_played = false;
+bool winner_played = false;
 
 void duck_slap(Duck *duck)
 {
@@ -81,6 +84,11 @@ void remove_snowman(int id)
 
 void update_snowmen(float deltatime)
 {
+    if (time_elapsed >= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)
+    {
+        return;
+    }
+
     if (!sequence_game_paused)
     {
         float SNOWMAN_SPAWN_FREQUENCY;
@@ -90,10 +98,8 @@ void update_snowmen(float deltatime)
             SNOWMAN_SPAWN_FREQUENCY = 1.0f;
         else if (time_elapsed >= 30.0f && time_elapsed < 45.0f)
             SNOWMAN_SPAWN_FREQUENCY = 0.75f;
-        else if (time_elapsed >= 45.0f && time_elapsed < 60.0f)
-            SNOWMAN_SPAWN_FREQUENCY = 0.5f;
         else
-            SNOWMAN_SPAWN_FREQUENCY = 100.0f;
+            SNOWMAN_SPAWN_FREQUENCY = 0.5f;
 
         // Update snowmen.
         Snowman *currentSnowman = snowmen;
@@ -851,6 +857,11 @@ void simulate_input(Duck *duck, float deltatime)
 
 void evaluate_attack()
 {
+    if (time_elapsed >= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)
+    {
+        return;
+    }
+
     if (!sequence_game_paused)
     {
         Duck *currentDuck = ducks;
@@ -958,7 +969,6 @@ void play_sounds()
         {
             if (countdown_one_played == false)
             {
-                fprintf(stderr, "Playing countdown one\n");
                 wav64_play(&sfx_countdown, 31);
                 countdown_one_played = true;
             }
@@ -969,7 +979,6 @@ void play_sounds()
         {
             if (countdown_two_played == false)
             {
-                fprintf(stderr, "Playing countdown two\n");
                 wav64_play(&sfx_countdown, 31);
                 countdown_two_played = true;
             }
@@ -980,7 +989,6 @@ void play_sounds()
         {
             if (countdown_three_played == false)
             {
-                fprintf(stderr, "Playing countdown three\n");
                 wav64_play(&sfx_countdown, 31);
                 countdown_three_played = true;
             }
@@ -1009,6 +1017,11 @@ void update_time(float deltatime)
 
 void process_human_players(float deltatime)
 {
+    if (time_elapsed >= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)
+    {
+        return;
+    }
+
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
         Duck *duck = get_duck_by_id(i);
@@ -1028,10 +1041,72 @@ void process_human_players(float deltatime)
 }
 void process_computer_players(float deltatime)
 {
+    if (time_elapsed >= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)
+    {
+        return;
+    }
+
     for (size_t i = core_get_playercount(); i < 4; i++)
     {
         Duck *duck = get_duck_by_id(i);
         simulate_input(duck, deltatime);
+    }
+}
+
+void update_winner()
+{
+    if (time_elapsed > GAME_FADE_IN_DURATION + 3 + GAME_DURATION && winner == -1 && stop_played == false)
+    {
+        Duck *currentDuck = ducks;
+        Duck *highestDuck = currentDuck;
+        bool draw = false;
+        fprintf(stderr, "Evaluating winner\n");
+        while (currentDuck != NULL)
+        {
+            fprintf(stderr, "??? Duck %d: %f\n", currentDuck->id, currentDuck->score);
+            if (currentDuck->id == highestDuck->id)
+            {
+                currentDuck = currentDuck->next;
+                continue;
+            }
+
+            if ((int)roundf(currentDuck->score) == (int)roundf(highestDuck->score))
+            {
+                draw = true;
+            }
+
+            if ((int)roundf(currentDuck->score) > (int)roundf(highestDuck->score))
+            {
+                highestDuck = currentDuck;
+                draw = false;
+            }
+
+            currentDuck = currentDuck->next;
+        }
+
+        if (!draw)
+        {
+            winner = highestDuck->id;
+        }
+
+        wav64_play(&sfx_stop, 31);
+        stop_played = true;
+    }
+
+    if (time_elapsed > GAME_FADE_IN_DURATION + 3 + GAME_DURATION + 1)
+    {
+        xm64player_stop(&sequence_game_xm);
+    }
+
+    if (time_elapsed > GAME_FADE_IN_DURATION + 3 + GAME_DURATION + 2 && winner_played == false)
+    {
+        wav64_play(&sfx_winner, 31);
+        winner_played = true;
+    }
+
+    if (time_elapsed > GAME_FADE_IN_DURATION + 3 + GAME_DURATION + 5)
+    {
+        sequence_game_should_cleanup = true;
     }
 }
 
@@ -1040,6 +1115,7 @@ void sequence_game_update(float deltatime)
     process_human_players(deltatime);
     process_computer_players(deltatime);
     update_time(deltatime);
+    update_winner();
     update_ducks(deltatime);
     update_snowmen(deltatime);
     play_sounds();

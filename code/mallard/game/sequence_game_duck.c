@@ -230,6 +230,11 @@ void ducks_bubble_sort()
 // Update each duck's frame, collision box, and slap box.
 void update_ducks(float deltatime)
 {
+    if( time_elapsed >= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)
+    {
+        return;
+    }
+    
     if (!sequence_game_paused)
     {
         Duck *currentDuck = ducks;

@@ -384,6 +384,25 @@ void sequence_game_render_timer()
     rdpq_text_print(NULL, FONT_HALODEK_MEDIUM, 140, 30, utf8_text);
 }
 
+void sequence_game_render_results()
+{
+    if (time_elapsed > GAME_FADE_IN_DURATION + 3 + GAME_DURATION + 2)
+    {
+        char *utf8_text = "$02^00DRAW";
+        if (winner == 0)
+            utf8_text = "$02^01P1 WINS";
+        else if (winner == 1)
+            utf8_text = "$02^02P2 WINS";
+        else if (winner == 2)
+            utf8_text = "$02^03P3 WINS";
+        else if (winner == 3)
+            utf8_text = "$02^04P4 WINS";
+
+        // WINNING TEXT
+        rdpq_text_print(NULL, FONT_HALODEK_MEDIUM, 100, 140, utf8_text);
+    }
+}
+
 void sequence_game_render(float deltatime)
 {
     rdpq_attach(display_get(), NULL);
@@ -396,6 +415,7 @@ void sequence_game_render(float deltatime)
     sequence_game_render_timer();
     sequence_game_render_fade_in();
     sequence_game_render_paused();
+    sequence_game_render_results();
 
     rdpq_detach_show();
 }
