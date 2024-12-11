@@ -9,6 +9,8 @@
 #include "./health.h"
 #include "./bullet.h"
 
+#define MAX_HIT_COUNT   8
+
 struct RampageTank {
     struct dynamic_object dynamic_object;
     T3DMat4FP mtx;
@@ -17,6 +19,8 @@ struct RampageTank {
     struct Bullet bullet;
     float fire_timer;
     struct health health;
+    int last_hit_by;
+    uint8_t already_hit_ids[MAX_HIT_COUNT];
 
     RedrawHandle redraw_handle;
     RedrawHandle bullet_redraw_handle;

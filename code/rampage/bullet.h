@@ -12,6 +12,8 @@ struct Bullet {
     struct dynamic_object dynamic_object;
     T3DMat4FP mtx;
     uint32_t is_active: 1;
+    int last_hit_by;
+    struct health health;
 };
 
 void bullet_init(struct Bullet* bullet, int collision_group);

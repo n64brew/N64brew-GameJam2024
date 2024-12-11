@@ -15,6 +15,8 @@ struct Vector2 tank_rotate_speed;
 #define TANK_SLOW_SPEED     SCALE_FIXED_POINT(0.01f)
 #define TANK_ACCEL          SCALE_FIXED_POINT(0.5f)
 
+#define TANK_DAMAGE_SPEED   SCALE_FIXED_POINT(0.8f)
+
 #define MIN_FIRE_TIME   3.0f
 #define MAX_FIRE_TIME   5.0f
 
@@ -130,6 +132,23 @@ void rampage_tank_damage(void* data, int amount, struct Vector3* velocity, int s
     tank->dynamic_object.velocity = (struct Vector3){velocity->x, 0.0f, velocity->z};
     vector3Normalize(&tank->dynamic_object.velocity, &tank->dynamic_object.velocity);
     vector3Scale(&tank->dynamic_object.velocity, &tank->dynamic_object.velocity, KNOCKBACK_VELOCITY);
+    tank->last_hit_by = source_id;
+    memset(tank->already_hit_ids, 0, MAX_HIT_COUNT);
+}
+
+void rampage_tank_contact_damage(struct RampageTank* tank) {
+    if (vector3MagSqrd(&tank->dynamic_object.velocity) < TANK_DAMAGE_SPEED * TANK_DAMAGE_SPEED || !tank->last_hit_by) {
+        return;
+    }
+
+    health_contact_damage(
+        tank->dynamic_object.active_contacts, 
+        1, 
+        &tank->dynamic_object.velocity, 
+        tank->last_hit_by,
+        tank->already_hit_ids,
+        MAX_HIT_COUNT
+    );
 }
 
 void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position) {
@@ -162,6 +181,7 @@ void rampage_tank_init(struct RampageTank* tank, struct Vector3* start_position)
 
     tank->redraw_handle = redraw_aquire_handle();
     tank->bullet_redraw_handle = redraw_aquire_handle();
+    tank->last_hit_by = 0;
 }
 
 void rampage_tank_destroy(struct RampageTank* tank) {
@@ -271,6 +291,8 @@ void rampage_tank_update(struct RampageTank* tank, float delta_time) {
     tank->dynamic_object.rotation.y = current_dir.x;
 
     bullet_update(&tank->bullet, delta_time);
+
+    rampage_tank_contact_damage(tank);
 
     tank->fire_timer -= delta_time;
 }

@@ -187,6 +187,11 @@ struct RampageInput rampage_player_get_input(struct RampagePlayer* player, float
 void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampagePlayer* player = (struct RampagePlayer*)data;
 
+    if (player->dynamic_object.entity_id == source_id) {
+        // tanks shouldn't damage the player who hit them
+        return;
+    }
+
     if (!player->animStun.isPlaying) {
         t3d_anim_set_playing(&player->animStun, true);
         t3d_anim_set_time(&player->animStun, 0.0f);
@@ -199,8 +204,10 @@ void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int
 
         vector3Scale(&player->dynamic_object.velocity, &player->dynamic_object.velocity, PLAYER_ATTACK_VELOCITY);
         player->dynamic_object.velocity.y = PLAYER_STUN_IMPULSE;
+        player->is_attacking = 0;
 
         wav64_play(&rampage_assets_get()->roarSounds[randomInRange(0, 2)], 3);
+        mixer_ch_set_vol_pan(3, 0.75f, 0.0f);
     }
 }
 
@@ -243,6 +250,7 @@ void rampage_player_init(struct RampagePlayer* player, struct Vector3* start_pos
     player->damage_trigger.collision_group = FIRST_PLAYER_COLLIDER_GROUP + player_index;
     player->player_index = player_index;
     player->score = 0;
+    player->score_dirty = 2;
 
     T3DModel* model = rampage_assets_get()->player;
 
@@ -513,6 +521,7 @@ void rampage_player_update(struct RampagePlayer* player, float delta_time) {
         return;
     } else if (player->animStun.isPlaying) {
         t3d_anim_update(&player->animStun, delta_time);
+        swing_effect_update(&player->swing_effect, NULL, NULL);
 
         if (is_grounded) {
             player->dynamic_object.velocity.x *= 0.5f;

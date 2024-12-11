@@ -65,7 +65,6 @@ ASSETS_LIST += \
 	filesystem/rampage/canal.sprite \
 	filesystem/rampage/walls.ci4.sprite \
 	filesystem/rampage/props.sprite \
-	filesystem/rampage/QuirkyRobot.font64 \
 	filesystem/rampage/stompin.wav64 \
 	filesystem/rampage/Collapse.wav64 \
 	filesystem/rampage/countdown.wav64 \
@@ -75,13 +74,13 @@ ASSETS_LIST += \
 	filesystem/rampage/startjingle.wav64 \
 	filesystem/rampage/ground.layout
 
-assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
-	@mkdir -p $(@D)
-	$(BLENDER_4_0) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
+# assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
+# 	@mkdir -p $(@D)
+# 	$(BLENDER_4_0) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
 
-filesystem/rampage/ground.layout: assets/rampage/ground.blend tools/export_linked_objects.py
-	@mkdir -p $(@D)
-	$(BLENDER_4_0) $< --background --python tools/export_linked_objects.py -- $@
+# filesystem/rampage/ground.layout: assets/rampage/ground.blend tools/export_linked_objects.py
+# 	@mkdir -p $(@D)
+# 	$(BLENDER_4_0) $< --background --python tools/export_linked_objects.py -- $@
 
-
-filesystem/rampage/QuirkyRobot.font64: MKFONT_FLAGS += --size 32
+filesystem/rampage/ground.layout: assets/rampage/ground.layout
+	cp $< $@

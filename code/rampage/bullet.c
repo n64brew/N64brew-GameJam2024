@@ -6,8 +6,9 @@
 #include "./rampage.h"
 #include "./math/quaternion.h"
 #include "./assets.h"
+#include "./scene_query.h"
 
-#define BULLET_SPEED    300
+#define BULLET_SPEED    100
 
 struct dynamic_object_type bullet_collider = {
     .minkowsi_sum = sphere_minkowski_sum,
@@ -30,6 +31,30 @@ void bullet_deactivate(struct Bullet* bullet) {
     collision_scene_remove(&bullet->dynamic_object);
 }
 
+void rampage_bullet_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
+    struct Bullet* bullet = (struct Bullet*)data;
+
+    if (!is_player(source_id)) {
+        return;
+    }
+
+    bullet->last_hit_by = source_id;
+    
+
+    struct Vector3 normalized = *velocity;
+    normalized.y = 0.0f;
+    vector3Normalize(&normalized, &normalized);
+
+
+    bullet->dynamic_object.rotation.y = normalized.x;
+    bullet->dynamic_object.rotation.x = normalized.z;
+
+    bullet->dynamic_object.velocity.x = normalized.x * BULLET_SPEED;
+    bullet->dynamic_object.velocity.y = 0.0f;
+    bullet->dynamic_object.velocity.z = normalized.z * BULLET_SPEED;
+
+}
+
 void bullet_init(struct Bullet* bullet, int collision_group) {
     bullet->is_active = false;
 
@@ -46,6 +71,8 @@ void bullet_init(struct Bullet* bullet, int collision_group) {
 
     bullet->dynamic_object.collision_group = collision_group;
     bullet->dynamic_object.has_gravity = 0;
+    bullet->last_hit_by = 0;
+    health_register(entity_id, &bullet->health, rampage_bullet_damage, bullet);
 }
 
 void bullet_fire(struct Bullet* bullet, struct Vector3* from, struct Vector2* rotation) {
@@ -59,6 +86,7 @@ void bullet_fire(struct Bullet* bullet, struct Vector3* from, struct Vector2* ro
     bullet->dynamic_object.velocity.x = rotation->y * BULLET_SPEED;
     bullet->dynamic_object.velocity.y = 0.0f;
     bullet->dynamic_object.velocity.z = rotation->x * BULLET_SPEED;
+    bullet->last_hit_by = bullet->dynamic_object.entity_id;
 
     collision_scene_add(&bullet->dynamic_object);
 
@@ -81,7 +109,7 @@ void bullet_update(struct Bullet* bullet, float delta_time) {
             bullet->dynamic_object.active_contacts, 
             1, 
             &bullet->dynamic_object.velocity, 
-            bullet->dynamic_object.entity_id,
+            bullet->last_hit_by,
             NULL,
             0
         );

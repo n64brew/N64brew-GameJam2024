@@ -47,6 +47,7 @@ void give_player_score(int enity_id, int amount) {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         if (gRampage.players[i].dynamic_object.entity_id == enity_id) {
             gRampage.players[i].score += amount;
+            gRampage.players[i].score_dirty = 2;
         }
     }
 }

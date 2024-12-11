@@ -34,9 +34,6 @@ bool has_background;
 T3DVec3 camPos = {{SCALE_FIXED_POINT(3.0f), SCALE_FIXED_POINT(4.5f), SCALE_FIXED_POINT(4.0f)}};
 T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 
-rdpq_font_t* font;
-#define FONT_TEXT 1
-
 #define START_DELAY 4.5f
 #define FINISH_DELAY 3.0f
 #define END_SCREEN_DELAY    4.0f
@@ -98,24 +95,6 @@ void minigame_init() {
     
     depthBuffer = display_get_zbuf();
     viewport = t3d_viewport_create();
-
-    font = rdpq_font_load("rom:/rampage/QuirkyRobot.font64");
-    rdpq_text_register_font(FONT_TEXT, font);
-    rdpq_font_style(font, 0, &(rdpq_fontstyle_t){
-        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
-    });
-    rdpq_font_style(font, 1, &(rdpq_fontstyle_t){
-        .color = RGBA32(0xFF, 0x00, 0x00, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
-    });
-    rdpq_font_style(font, 2, &(rdpq_fontstyle_t){
-        .color = RGBA32(0x00, 0xFF, 0x00, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
-    });
-    rdpq_font_style(font, 3, &(rdpq_fontstyle_t){
-        .color = RGBA32(0x00, 0x00, 0xFF, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
-    });
-    rdpq_font_style(font, 4, &(rdpq_fontstyle_t){
-        .color = RGBA32(0xFF, 0xFF, 0x00, 0xFF), .outline_color = RGBA32(0x0, 0x0, 0x0, 0xFF),
-    });
 
     rampage_init(&gRampage);
 
@@ -207,6 +186,7 @@ void rampage_fixedloop(float deltatime) {
             minigame_set_active(true);
             wav64_set_loop(&rampage_assets_get()->music, true);
             wav64_play(&rampage_assets_get()->music, 1);
+            mixer_ch_set_vol_pan(1, 0.85f, 0.0f);
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING) {
         gRampage.delay_timer -= deltatime;
@@ -320,13 +300,17 @@ void minigame_redraw_rects() {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_redraw_rect(&viewport, &gRampage.players[i]);
 
+        if (gRampage.players[i].score_dirty == 0) {
+            continue;
+        }
 
         struct RedrawRect rect;
         rect.min[0] = scorePosition[i].x;
         rect.min[1] = scorePosition[i].y;
-        rect.max[0] = scorePosition[i].x + 68;
+        rect.max[0] = scorePosition[i].x + 70;
         rect.max[1] = scorePosition[i].y + 48;
         redraw_update_dirty(gRampage.score_redraw[i], &rect);
+        gRampage.players[i].score_dirty -= 1;
     }
 
     for (int y = 0; y < BUILDING_COUNT_Y; y += 1) {
@@ -608,8 +592,6 @@ void minigame_cleanup() {
     t3d_destroy();
     collision_scene_destroy();
     health_destroy();
-    rdpq_text_unregister_font(FONT_TEXT);
-    rdpq_font_free(font);
     display_close();
 }
 

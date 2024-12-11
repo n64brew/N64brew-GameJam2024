@@ -55,6 +55,7 @@ struct RampagePlayer {
     uint32_t next_shape_offset: 1;
 
     uint16_t score;
+    uint16_t score_dirty;
 
     struct Vector3 current_target;
     struct swing_effect swing_effect;
