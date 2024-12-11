@@ -37,6 +37,7 @@ void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _i
 
 
 		}else{
+			// TODO: make this a delayed off
 			playerData->isAttacking = FALSE;
 		}
 

@@ -373,7 +373,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 // Scroll the foam
                 
                 // TODO: don't be specific to foam
-                if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL){
+                if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || mesh->meshID == MODEL_ATTACK_WAVE){
 
                     // skip drawing foam, as we do it another way.
                 }else{
@@ -491,16 +491,17 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
         AF_CMesh* mesh = _ecs->entities[i].mesh;
         AF_CAnimation* animation = _ecs->entities[i].animation;
         BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
+        BOOL isEnabled = AF_Component_GetEnabled(_ecs->entities[i].mesh->enabled);
         BOOL hasAnimation = AF_Component_GetHas(_ecs->entities[i].animation->enabled);
-        if(hasMesh == TRUE && hasAnimation == TRUE){
-            if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL){
+        if(hasMesh == TRUE && hasAnimation == TRUE && isEnabled == TRUE){
+            if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || MODEL_ATTACK_WAVE){
                 // do special drawing for foam.
                 T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
                 t3d_matrix_push(meshMat);
                 
                 // make the trail speed based off the animation component
                 float adjustedTileOffset = _time->currentFrame * animation->animationSpeed;
-                if(mesh->meshID == MODEL_TRAIL){
+                if(mesh->meshID == MODEL_TRAIL || mesh->meshID == MODEL_TRAIL || mesh->meshID == MODEL_ATTACK_WAVE){
                     adjustedTileOffset  = adjustedTileOffset * 2;
                 }
 

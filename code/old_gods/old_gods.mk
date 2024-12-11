@@ -4,6 +4,7 @@ ASSETS_LIST += \
 	filesystem/old_gods/checker.sprite \
 	filesystem/old_gods/shadow.i8.sprite \
 	filesystem/old_gods/sea_foam.sprite \
+	filesystem/old_gods/particle.sprite \
 	filesystem/old_gods/player1_panel_64_64.sprite \
 	filesystem/old_gods/player2_panel_64_64.sprite \
 	filesystem/old_gods/player3_panel_64_64.sprite \
@@ -28,6 +29,7 @@ ASSETS_LIST += \
 	filesystem/old_gods/rat.t3dm \
 	filesystem/old_gods/torus.t3dm \
 	filesystem/old_gods/shark.t3dm \
+	filesystem/old_gods/attackWave.t3dm \
 	filesystem/old_gods/bottled_bubbles.xm64 \
 	filesystem/old_gods/Item2A.wav64 \
 	filesystem/old_gods/sandy_seaside.wav64 \

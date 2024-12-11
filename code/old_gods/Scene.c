@@ -60,6 +60,8 @@ AF_Entity* player2Trail = NULL;
 AF_Entity* player3Trail = NULL;
 AF_Entity* player4Trail = NULL;
 
+// player attackWaves
+AF_Entity* playerWaves[PLAYER_COUNT] = {NULL, NULL, NULL, NULL};
 
 // Gameplay Var
 uint8_t g_currentBucket = 0;
@@ -117,6 +119,7 @@ void RatAIBehaviourUpdate(AppData* _appData);
 void SharkAIBehaviourUpdate(AppData* _appData);
 void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state);
 void UpdateWaterTrails(AppData* appData);
+void UpdatePlayerAttackWaves(AppData* _appData);
 void MonitorPlayerHealth(AppData* _appData);
 void RespawnPlayer(AF_Entity* _entity);
 
@@ -189,22 +192,17 @@ void Scene_Update(AppData* _appData){
         _appData->gameplayData.gameState = GAME_STATE_MAIN_MENU;
         Scene_Start(_appData);
     }
+
     // TODO
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
-        
         PlayerController_UpdateAllPlayerMovements(&_appData->input, *_appData->gameplayData.playerEntities, PLAYER_COUNT);
-        
         UpdateWaterTrails(_appData);
-
-
+        UpdatePlayerAttackWaves(_appData);
 
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
-
         RatAIBehaviourUpdate(_appData);
-
         SharkAIBehaviourUpdate(_appData);
-
     }
 
     AF_ECS* ecs = &_appData->ecs;
@@ -213,7 +211,6 @@ void Scene_Update(AppData* _appData){
         AF_Entity* entity = &ecs->entities[i];
         AF_CPlayerData* playerData = entity->playerData;
 
-        
         // TODO: move this out of this function
         //if((AF_Component_GetHas(playerData->enabled) == TRUE) && (AF_Component_GetEnabled(playerData->enabled) == TRUE)){
         // TODO let parent transform take care of this.
@@ -275,9 +272,29 @@ void Scene_Update(AppData* _appData){
         }
 	}
 
-   
-
     MonitorPlayerHealth(_appData);
+}
+
+void UpdatePlayerAttackWaves(AppData* _appData){
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        if(_appData->gameplayData.playerEntities[i]->playerData->isAttacking == TRUE){
+            debugf("player attacking \n");
+            playerWaves[i]->mesh->material.color.a = 255;
+            // TODO: fix this. its a hack as we get a crash if we tried to disable the mesh renderer during setup. strange. so we put it out of sight until its first used
+            //playerWaves[i]->transform->pos = _appData->gameplayData.playerEntities[i]->transform->pos;
+            //playerWaves[i]->mesh->enabled = AF_Component_SetEnabled(playerWaves[i]->mesh->enabled, TRUE);
+        }else{
+            // it will solwly fade away
+             // don't overflow
+            if(playerWaves[i]->mesh->material.color.a - 10.0f <= 0){
+                playerWaves[i]->mesh->material.color.a = 0.0f;
+            }else{
+                playerWaves[i]->mesh->material.color.a -= 10.0f;
+            }
+            
+            //playerWaves[i]->mesh->enabled = AF_Component_SetEnabled(playerWaves[i]->mesh->enabled, FALSE);
+        }
+    }
 }
 
 void UpdateWaterTrails(AppData* _appData){
@@ -435,6 +452,9 @@ void Scene_SetupEntities(AppData* _appData){
     *player1Trail->animation = AF_CAnimation_ADD();
     player1Trail->animation->animationSpeed = foamAnimationSpeed;
 
+    
+    
+
 
     // Get AI Level
     //AI_MOVEMENT_SPEED_MOD * ((2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3));
@@ -564,6 +584,32 @@ void Scene_SetupEntities(AppData* _appData){
         AI_CreateFollow_Action(aiPlayerEntity, villager1,  Scene_AIStateMachine);
         // second behaviour is go for the god 
         AI_CreateFollow_Action(aiPlayerEntity, levelEntity,  Scene_AIStateMachine);
+    }
+
+    
+    // Create Attack Wave effect
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        // attack wave
+        Vec3 playerWavePos = {0.0f, -.01f, 0.0f};
+        Vec3 playerWaveScale = {2.5f, 1.0f, 2.5f};
+        playerWaves[i] = AF_ECS_CreateEntity(_ecs);
+        //move the position up a little
+        playerWaves[i]->transform->localPos = playerWavePos;
+        playerWaves[i]->transform->localScale = playerWaveScale;
+        playerWaves[i]->parentTransform = _appData->gameplayData.playerEntities[i]->transform;
+        // add a rigidbody to our cube
+        *playerWaves[i]->mesh = AF_CMesh_ADD();
+        playerWaves[i]->mesh->meshType = AF_MESH_TYPE_MESH;
+        playerWaves[i]->mesh->material.color = WHITE_COLOR;
+        playerWaves[i]->mesh->material.color.a = 0;
+        playerWaves[i]->mesh->meshID = MODEL_ATTACK_WAVE;
+        //playerWaves[i]->mesh->enabled = AF_Component_SetEnabled(playerWaves[i]->mesh->enabled, FALSE);
+
+        // Animation
+        *playerWaves[i]->animation = AF_CAnimation_ADD();
+        playerWaves[i]->animation->animationSpeed = foamAnimationSpeed;
+        // disable at the start. Will get re-enabled on attack
+        
     }
     
 	//=========ENVIRONMENT========
@@ -1014,16 +1060,6 @@ AF_Entity* GetVillager(){
     return villager1;
 }
 
-
-/*
-AF_Entity* GetPlayerEntity(uint8_t _index){
-    if(_index >= PLAYER_COUNT)
-    {
-        debugf("Scene: GetPlayerEntity: passed index out of range %i \n", _index);
-        return NULL;
-    }
-    return playerEntities[_index];
-}*/
 
 
 
