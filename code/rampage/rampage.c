@@ -42,7 +42,7 @@ T3DVec3 camTarget = {{0.0f, 0.0f, 0.0f}};
 struct Rampage gRampage;
 
 const MinigameDef minigame_def = {
-    .gamename = "Rampage",
+    .gamename = "Destroy!",
     .developername = "Ultrarare",
     .description = "Destroy buildings for points. Most points wins.",
     .instructions = "Press B to attack."
