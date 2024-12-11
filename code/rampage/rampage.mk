@@ -74,11 +74,15 @@ ASSETS_LIST += \
 	filesystem/rampage/startjingle.wav64 \
 	filesystem/rampage/ground.layout
 
+# these rules can help faciliate iterating assets without needing to manually export
+# you just need to set the environment variable BLENDER_4_0 to the executable path of
+# blender 4.0. It is important that it is 4.0 and not 4.1 onward
+
 # assets/rampage/%.glb: assets/rampage/%.blend tools/mesh_export.py
 # 	@mkdir -p $(@D)
 # 	$(BLENDER_4_0) $< --background --python tools/mesh_export.py -- $(<:%.blend=%.glb)
 
-# filesystem/rampage/ground.layout: assets/rampage/ground.blend tools/export_linked_objects.py
+# assets/rampage/ground.layout: assets/rampage/ground.blend tools/export_linked_objects.py
 # 	@mkdir -p $(@D)
 # 	$(BLENDER_4_0) $< --background --python tools/export_linked_objects.py -- $@
 
