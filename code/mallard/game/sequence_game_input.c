@@ -1104,7 +1104,6 @@ void update_winner()
         fprintf(stderr, "Evaluating winner\n");
         while (currentDuck != NULL)
         {
-            fprintf(stderr, "??? Duck %d: %f\n", currentDuck->id, currentDuck->score);
             if (currentDuck->id == highestDuck->id)
             {
                 currentDuck = currentDuck->next;

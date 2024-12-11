@@ -117,6 +117,11 @@ void sequence_introduction_draw_paragraph(float deltatime)
 {
     if (sequence_introduction_paragraphs_started == true && sequence_introduction_paragraphs_finished == false)
     {
+        // BYPASS THE PARAGRAPHS
+        sequence_introduction_paragraphs_finished = true;
+        sequence_introduction_should_cleanup = true;
+        return;
+
         int total_chars = 0;
         switch (sequence_introduction_current_paragraph)
         {
