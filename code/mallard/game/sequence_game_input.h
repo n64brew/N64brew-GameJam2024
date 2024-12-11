@@ -12,6 +12,11 @@ extern int sequence_game_player_holding_start;
 
 extern float sequence_game_start_held_elapsed;
 
+extern wav64_t sfx_start;
+extern wav64_t sfx_countdown;
+extern wav64_t sfx_stop;
+extern wav64_t sfx_winner;
+
 typedef struct Vector2
 {
     float x;

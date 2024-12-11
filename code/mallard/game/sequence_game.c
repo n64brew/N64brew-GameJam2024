@@ -52,8 +52,14 @@ bool sequence_game_should_cleanup = false;
 bool sequence_game_did_cleanup = false;
 
 bool sequence_game_paused = false;
+// bool sequence_game_finish = false;
 
 xm64player_t sequence_game_xm;
+
+wav64_t sfx_start;
+wav64_t sfx_countdown;
+wav64_t sfx_stop;
+wav64_t sfx_winner;
 
 Duck *ducks;
 Snowman *snowmen;
@@ -118,6 +124,12 @@ void sequence_game_init()
     ///////////////////////////////////////////////////////////
 
     xm64player_open(&sequence_game_xm, "rom:/mallard/mallard_game_music.xm64");
+
+    wav64_open(&sfx_start, "rom:/core/Start.wav64");
+    wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
+    wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
+
     xm64player_play(&sequence_game_xm, 0);
 }
 
@@ -161,11 +173,17 @@ void sequence_game_cleanup()
     xm64player_stop(&sequence_game_xm);
     xm64player_close(&sequence_game_xm);
 
+    wav64_close(&sfx_start);
+    wav64_close(&sfx_countdown);
+    wav64_close(&sfx_stop);
+    wav64_close(&sfx_winner);
+
     // Close the display and free the allocated memory.
     rspq_wait();
     display_close();
 
     // End the sequence.
+    sequence_game_did_cleanup = true;
     sequence_game_finished = true;
 }
 

@@ -230,29 +230,32 @@ void ducks_bubble_sort()
 // Update each duck's frame, collision box, and slap box.
 void update_ducks(float deltatime)
 {
-    Duck *currentDuck = ducks;
-    while (currentDuck != NULL)
+    if (!sequence_game_paused)
     {
-        currentDuck->frames++;
-        currentDuck->time_since_last_hit += deltatime;
+        Duck *currentDuck = ducks;
+        while (currentDuck != NULL)
+        {
+            currentDuck->frames++;
+            currentDuck->time_since_last_hit += deltatime;
 
-        currentDuck->collision_box_x1 = currentDuck->x + DUCK_COLLISION_BOX_X1_OFFSET;
-        currentDuck->collision_box_y1 = currentDuck->y + DUCK_COLLISION_BOX_Y1_OFFSET;
-        currentDuck->collision_box_x2 = currentDuck->x + DUCK_COLLISION_BOX_X2_OFFSET;
-        currentDuck->collision_box_y2 = currentDuck->y + DUCK_COLLISION_BOX_Y2_OFFSET;
+            currentDuck->collision_box_x1 = currentDuck->x + DUCK_COLLISION_BOX_X1_OFFSET;
+            currentDuck->collision_box_y1 = currentDuck->y + DUCK_COLLISION_BOX_Y1_OFFSET;
+            currentDuck->collision_box_x2 = currentDuck->x + DUCK_COLLISION_BOX_X2_OFFSET;
+            currentDuck->collision_box_y2 = currentDuck->y + DUCK_COLLISION_BOX_Y2_OFFSET;
 
-        currentDuck->hit_box_x1 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_X1_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_X1_OFFSET_FACING_LEFT);
-        currentDuck->hit_box_y1 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_Y1_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_Y1_OFFSET_FACING_LEFT);
-        currentDuck->hit_box_x2 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_X2_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_X2_OFFSET_FACING_LEFT);
-        currentDuck->hit_box_y2 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_Y2_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_Y2_OFFSET_FACING_LEFT);
+            currentDuck->hit_box_x1 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_X1_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_X1_OFFSET_FACING_LEFT);
+            currentDuck->hit_box_y1 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_Y1_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_Y1_OFFSET_FACING_LEFT);
+            currentDuck->hit_box_x2 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_X2_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_X2_OFFSET_FACING_LEFT);
+            currentDuck->hit_box_y2 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_HIT_BOX_Y2_OFFSET_FACING_RIGHT : DUCK_HIT_BOX_Y2_OFFSET_FACING_LEFT);
 
-        currentDuck->slap_box_x1 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_X1_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_X1_OFFSET_FACING_LEFT);
-        currentDuck->slap_box_y1 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_Y1_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_Y1_OFFSET_FACING_LEFT);
-        currentDuck->slap_box_x2 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_X2_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_X2_OFFSET_FACING_LEFT);
-        currentDuck->slap_box_y2 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_Y2_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_Y2_OFFSET_FACING_LEFT);
+            currentDuck->slap_box_x1 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_X1_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_X1_OFFSET_FACING_LEFT);
+            currentDuck->slap_box_y1 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_Y1_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_Y1_OFFSET_FACING_LEFT);
+            currentDuck->slap_box_x2 = currentDuck->x + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_X2_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_X2_OFFSET_FACING_LEFT);
+            currentDuck->slap_box_y2 = currentDuck->y + (currentDuck->direction == RIGHT ? DUCK_SLAP_BOX_Y2_OFFSET_FACING_RIGHT : DUCK_SLAP_BOX_Y2_OFFSET_FACING_LEFT);
 
-        currentDuck = currentDuck->next;
+            currentDuck = currentDuck->next;
+        }
+
+        ducks_bubble_sort();
     }
-
-    ducks_bubble_sort();
 }

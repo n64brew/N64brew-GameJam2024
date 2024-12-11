@@ -28,8 +28,10 @@ extern sprite_t *sequence_game_paused_text_sprite;
 extern Duck *ducks;
 extern Snowman *snowmen;
 
+extern float time_elapsed;
+
 void sequence_game_render_map();
-void sequence_game_draw_paused();
+void sequence_game_render_paused();
 void sequence_game_render(float deltatime);
 
 int get_frame_from_snowman(Snowman *snowman);

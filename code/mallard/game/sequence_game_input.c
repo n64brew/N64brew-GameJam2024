@@ -9,14 +9,14 @@
 #include "sequence_game_duck.h"
 
 #define BOOST 2.0
-#define SNOWMAN_SPAWN_FREQUENCY_ONE 2.0f
-#define SNOWMAN_SPAWN_FREQUENCY_TWO 2.0f
-#define SNOWMAN_SPAWN_FREQUENCY_THREE 2.0f
-#define SNOWMAN_SPAWN_FREQUENCY_FOUR 2.0f
 
 float time_elapsed_since_last_snowman_spawn = 0.0f;
 float time_elapsed = 0.0f;
-float SNOWMAN_SPAWN_FREQUENCY;
+
+bool countdown_one_played = false;
+bool countdown_two_played = false;
+bool countdown_three_played = false;
+bool start_played = false;
 
 void duck_slap(Duck *duck)
 {
@@ -79,76 +79,74 @@ void remove_snowman(int id)
     }
 }
 
-// Monitor and update spawn frequency.
-// Update each snowman's frame, time existed, collision box, and hit box.
 void update_snowmen(float deltatime)
 {
-    if (time_elapsed >= 0.0f && time_elapsed < 15.0f)
+    if (!sequence_game_paused)
     {
-        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_ONE;
-    }
-    else if (time_elapsed >= 15.0f && time_elapsed < 30.0f)
-    {
-        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_TWO;
-    }
-    else if (time_elapsed >= 30.0f && time_elapsed < 45.0f)
-    {
-        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_THREE;
-    }
-    else if (time_elapsed >= 45.0f && time_elapsed < 60.0f)
-    {
-        SNOWMAN_SPAWN_FREQUENCY = SNOWMAN_SPAWN_FREQUENCY_FOUR;
-    }
+        float SNOWMAN_SPAWN_FREQUENCY;
+        if (time_elapsed >= 0.0f && time_elapsed < 15.0f)
+            SNOWMAN_SPAWN_FREQUENCY = 1.5f;
+        else if (time_elapsed >= 15.0f && time_elapsed < 30.0f)
+            SNOWMAN_SPAWN_FREQUENCY = 1.0f;
+        else if (time_elapsed >= 30.0f && time_elapsed < 45.0f)
+            SNOWMAN_SPAWN_FREQUENCY = 0.75f;
+        else if (time_elapsed >= 45.0f && time_elapsed < 60.0f)
+            SNOWMAN_SPAWN_FREQUENCY = 0.5f;
+        else
+            SNOWMAN_SPAWN_FREQUENCY = 100.0f;
 
-    // Update snowmen.
-    Snowman *currentSnowman = snowmen;
-    while (currentSnowman != NULL)
-    {
-        currentSnowman->frames++;
-        currentSnowman->time_since_last_hit += deltatime;
-
-        currentSnowman->collision_box_x1 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X1_OFFSET;
-        currentSnowman->collision_box_y1 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y1_OFFSET;
-        currentSnowman->collision_box_x2 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X2_OFFSET;
-        currentSnowman->collision_box_y2 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y2_OFFSET;
-
-        currentSnowman->hit_box_x1 = currentSnowman->x + SNOWMAN_HIT_BOX_X1_OFFSET;
-        currentSnowman->hit_box_y1 = currentSnowman->y + SNOWMAN_HIT_BOX_Y1_OFFSET;
-        currentSnowman->hit_box_x2 = currentSnowman->x + SNOWMAN_HIT_BOX_X2_OFFSET;
-        currentSnowman->hit_box_y2 = currentSnowman->y + SNOWMAN_HIT_BOX_Y2_OFFSET;
-
-        if (currentSnowman->frames_locked_for_damage > 0)
+        // Update snowmen.
+        Snowman *currentSnowman = snowmen;
+        while (currentSnowman != NULL)
         {
-            currentSnowman->frames_locked_for_damage--;
-        }
+            currentSnowman->frames++;
+            currentSnowman->time_since_last_hit += deltatime;
 
-        if (currentSnowman->frames_locked_for_damage == 0)
-        {
-            currentSnowman->action = SNOWMAN_IDLE;
+            currentSnowman->collision_box_x1 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X1_OFFSET;
+            currentSnowman->collision_box_y1 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y1_OFFSET;
+            currentSnowman->collision_box_x2 = currentSnowman->x + SNOWMAN_COLLISION_BOX_X2_OFFSET;
+            currentSnowman->collision_box_y2 = currentSnowman->y + SNOWMAN_COLLISION_BOX_Y2_OFFSET;
 
-            if (currentSnowman->health <= 0)
+            currentSnowman->hit_box_x1 = currentSnowman->x + SNOWMAN_HIT_BOX_X1_OFFSET;
+            currentSnowman->hit_box_y1 = currentSnowman->y + SNOWMAN_HIT_BOX_Y1_OFFSET;
+            currentSnowman->hit_box_x2 = currentSnowman->x + SNOWMAN_HIT_BOX_X2_OFFSET;
+            currentSnowman->hit_box_y2 = currentSnowman->y + SNOWMAN_HIT_BOX_Y2_OFFSET;
+
+            if (currentSnowman->frames_locked_for_damage > 0)
             {
-                Snowman *temporary = currentSnowman;
-                currentSnowman = currentSnowman->next;
-                remove_snowman(temporary->id);
-                continue;
+                currentSnowman->frames_locked_for_damage--;
             }
+
+            if (currentSnowman->frames_locked_for_damage == 0)
+            {
+                currentSnowman->action = SNOWMAN_IDLE;
+
+                if (currentSnowman->health <= 0)
+                {
+                    Snowman *temporary = currentSnowman;
+                    currentSnowman = currentSnowman->next;
+                    remove_snowman(temporary->id);
+                    continue;
+                }
+            }
+
+            currentSnowman = currentSnowman->next;
         }
 
-        currentSnowman = currentSnowman->next;
+        // Add snowman.
+        if (time_elapsed_since_last_snowman_spawn >= SNOWMAN_SPAWN_FREQUENCY)
+        {
+            add_snowman();
+            time_elapsed_since_last_snowman_spawn = 0.0f;
+        }
+
+        snowmen_bubble_sort();
+
+        if (time_elapsed > GAME_FADE_IN_DURATION + 3)
+        {
+            time_elapsed_since_last_snowman_spawn += deltatime;
+        }
     }
-
-    // Add snowman.
-    if (time_elapsed_since_last_snowman_spawn >= SNOWMAN_SPAWN_FREQUENCY)
-    {
-        add_snowman();
-        time_elapsed_since_last_snowman_spawn = 0.0f;
-    }
-
-    snowmen_bubble_sort();
-
-    time_elapsed += deltatime;
-    time_elapsed_since_last_snowman_spawn += deltatime;
 }
 
 typedef struct ValidMovement
@@ -808,13 +806,8 @@ void set_duck_action(Duck *duck, Snowman *snowman)
 
 void simulate_input(Duck *duck, float deltatime)
 {
-    // If the game is paused, don't simulate input.
     if (!sequence_game_paused)
     {
-        // Vector2 movement;
-        // ValidMovement validMovement;
-
-        // Stun Lock.
         if (duck->frames_locked_for_damage > 0)
         {
             duck->frames_locked_for_damage--;
@@ -828,8 +821,6 @@ void simulate_input(Duck *duck, float deltatime)
         set_duck_movement(duck, nearestSnowman);
 
         set_duck_action(duck, nearestSnowman);
-
-        /////////////////////////////////////////////
 
         if (duck->x > DUCK_MAX_X)
         {
@@ -860,45 +851,53 @@ void simulate_input(Duck *duck, float deltatime)
 
 void evaluate_attack()
 {
-    Duck *currentDuck = ducks;
-
-    while (currentDuck != NULL)
+    if (!sequence_game_paused)
     {
-        if (currentDuck->action == DUCK_SLAP)
+        Duck *currentDuck = ducks;
+
+        while (currentDuck != NULL)
         {
-            Rect currentDuckSlapBox = (Rect){.x1 = currentDuck->slap_box_x1, .y1 = currentDuck->slap_box_y1, .x2 = currentDuck->slap_box_x2, .y2 = currentDuck->slap_box_y2};
-
-            Snowman *currentSnowman = snowmen;
-            while (currentSnowman != NULL)
+            if (currentDuck->action == DUCK_SLAP)
             {
-                Rect currentSnowmanHitBox = (Rect){.x1 = currentSnowman->hit_box_x1, .y1 = currentSnowman->hit_box_y1, .x2 = currentSnowman->hit_box_x2, .y2 = currentSnowman->hit_box_y2};
+                Rect currentDuckSlapBox = (Rect){.x1 = currentDuck->slap_box_x1, .y1 = currentDuck->slap_box_y1, .x2 = currentDuck->slap_box_x2, .y2 = currentDuck->slap_box_y2};
 
-                if (detect_collision(currentDuckSlapBox, currentSnowmanHitBox))
+                Snowman *currentSnowman = snowmen;
+                while (currentSnowman != NULL)
                 {
-                    if (currentSnowman->time_since_last_hit > SNOWMAN_TIME_BETWEEN_DAMAGE)
+                    Rect currentSnowmanHitBox = (Rect){.x1 = currentSnowman->hit_box_x1, .y1 = currentSnowman->hit_box_y1, .x2 = currentSnowman->hit_box_x2, .y2 = currentSnowman->hit_box_y2};
+
+                    if (detect_collision(currentDuckSlapBox, currentSnowmanHitBox))
                     {
-                        // Set action to damage.
-                        currentSnowman->action = SNOWMAN_DAMAGE;
-                        currentSnowman->frames = 0;
-                        currentSnowman->frames_locked_for_damage = 4 * SEQUENCE_GAME_SNOWMAN_DAMAGE_FRAMES;
-
-                        // Reset time since last hit.
-                        currentSnowman->time_since_last_hit = 0.0f;
-
-                        // TODO: Sound Effect.
-
-                        // Damage Snowman. If health is 0, remove snowman and reward duck.
-                        currentSnowman->health -= 1;
-
-                        // Evaluate if snowman is dead.
-                        if (currentSnowman->health <= 0)
+                        if (currentSnowman->time_since_last_hit > SNOWMAN_TIME_BETWEEN_DAMAGE)
                         {
-                            // Reward Duck
-                            currentDuck->score += 1;
-                        }
+                            // Set action to damage.
+                            currentSnowman->action = SNOWMAN_DAMAGE;
+                            currentSnowman->frames = 0;
+                            currentSnowman->frames_locked_for_damage = 4 * SEQUENCE_GAME_SNOWMAN_DAMAGE_FRAMES;
 
-                        // Next Snowman.
-                        currentSnowman = currentSnowman->next;
+                            // Reset time since last hit.
+                            currentSnowman->time_since_last_hit = 0.0f;
+
+                            // TODO: Sound Effect.
+
+                            // Damage Snowman. If health is 0, remove snowman and reward duck.
+                            currentSnowman->health -= 1;
+
+                            // Evaluate if snowman is dead.
+                            if (currentSnowman->health <= 0)
+                            {
+                                // Reward Duck
+                                currentDuck->score += 1;
+                            }
+
+                            // Next Snowman.
+                            currentSnowman = currentSnowman->next;
+                        }
+                        else
+                        {
+                            // Next Snowman.
+                            currentSnowman = currentSnowman->next;
+                        }
                     }
                     else
                     {
@@ -906,59 +905,110 @@ void evaluate_attack()
                         currentSnowman = currentSnowman->next;
                     }
                 }
-                else
+
+                Duck *temporaryDuck = ducks;
+                while (temporaryDuck != NULL)
                 {
-                    // Next Snowman.
-                    currentSnowman = currentSnowman->next;
-                }
-            }
-
-            Duck *temporaryDuck = ducks;
-            while (temporaryDuck != NULL)
-            {
-                if (currentDuck->id == temporaryDuck->id)
-                {
-                    temporaryDuck = temporaryDuck->next;
-                    continue;
-                }
-
-                Rect temporaryDuckHitBox = (Rect){.x1 = temporaryDuck->hit_box_x1, .y1 = temporaryDuck->hit_box_y1, .x2 = temporaryDuck->hit_box_x2, .y2 = temporaryDuck->hit_box_y2};
-
-                if (detect_collision(currentDuckSlapBox, temporaryDuckHitBox))
-                {
-                    // TODO: Sound Effect.
-
-                    if (temporaryDuck->time_since_last_hit > DUCK_TIME_BETWEEN_DAMAGE)
+                    if (currentDuck->id == temporaryDuck->id)
                     {
-                        // Set action to damage.
-                        temporaryDuck->action = DUCK_DAMAGE;
-                        temporaryDuck->frames = 0;
-                        temporaryDuck->frames_locked_for_damage = 4 * SEQUENCE_GAME_MALLARD_DAMAGE_FRAMES;
+                        temporaryDuck = temporaryDuck->next;
+                        continue;
+                    }
 
-                        // Reset time since last hit.
-                        temporaryDuck->time_since_last_hit = 0.0f;
+                    Rect temporaryDuckHitBox = (Rect){.x1 = temporaryDuck->hit_box_x1, .y1 = temporaryDuck->hit_box_y1, .x2 = temporaryDuck->hit_box_x2, .y2 = temporaryDuck->hit_box_y2};
 
-                        // Reward Duck
-                        currentDuck->score += 0.1f;
+                    if (detect_collision(currentDuckSlapBox, temporaryDuckHitBox))
+                    {
+                        // TODO: Sound Effect.
 
-                        // Damage Duck
-                        temporaryDuck->score -= 0.1f;
-                        if (temporaryDuck->score < 0.0f)
+                        if (temporaryDuck->time_since_last_hit > DUCK_TIME_BETWEEN_DAMAGE)
                         {
-                            temporaryDuck->score = 0.0f;
+                            // Set action to damage.
+                            temporaryDuck->action = DUCK_DAMAGE;
+                            temporaryDuck->frames = 0;
+                            temporaryDuck->frames_locked_for_damage = 4 * SEQUENCE_GAME_MALLARD_DAMAGE_FRAMES;
+
+                            // Reset time since last hit.
+                            temporaryDuck->time_since_last_hit = 0.0f;
+
+                            // Reward Duck
+                            currentDuck->score += 0.1f;
+
+                            // Damage Duck
+                            temporaryDuck->score -= 0.1f;
+                            if (temporaryDuck->score < 0.0f)
+                            {
+                                temporaryDuck->score = 0.0f;
+                            }
                         }
                     }
+                    temporaryDuck = temporaryDuck->next;
                 }
-                temporaryDuck = temporaryDuck->next;
             }
+            currentDuck = currentDuck->next;
         }
-        currentDuck = currentDuck->next;
     }
 }
 
-void sequence_game_update(float deltatime)
+void play_sounds()
 {
-    // Human Players Input
+    if (!sequence_game_paused)
+    {
+        if (GAME_FADE_IN_DURATION < time_elapsed && countdown_one_played == false)
+        {
+            if (countdown_one_played == false)
+            {
+                fprintf(stderr, "Playing countdown one\n");
+                wav64_play(&sfx_countdown, 31);
+                countdown_one_played = true;
+            }
+            return;
+        }
+
+        if (GAME_FADE_IN_DURATION + 1 < time_elapsed && countdown_two_played == false)
+        {
+            if (countdown_two_played == false)
+            {
+                fprintf(stderr, "Playing countdown two\n");
+                wav64_play(&sfx_countdown, 31);
+                countdown_two_played = true;
+            }
+            return;
+        }
+
+        if (GAME_FADE_IN_DURATION + 2 < time_elapsed && countdown_three_played == false)
+        {
+            if (countdown_three_played == false)
+            {
+                fprintf(stderr, "Playing countdown three\n");
+                wav64_play(&sfx_countdown, 31);
+                countdown_three_played = true;
+            }
+            return;
+        }
+
+        if (GAME_FADE_IN_DURATION + 3 < time_elapsed && start_played == false)
+        {
+            if (start_played == false)
+            {
+                wav64_play(&sfx_start, 31);
+                start_played = true;
+            }
+            return;
+        }
+    }
+}
+
+void update_time(float deltatime)
+{
+    if (!sequence_game_paused)
+    {
+        time_elapsed += deltatime;
+    }
+}
+
+void process_human_players(float deltatime)
+{
     for (size_t i = 0; i < core_get_playercount(); i++)
     {
         Duck *duck = get_duck_by_id(i);
@@ -975,18 +1025,23 @@ void sequence_game_update(float deltatime)
 
         process_input(duck, controller, pressed, held, released, direction, i, deltatime);
     }
-
-    // Computer Players Input
+}
+void process_computer_players(float deltatime)
+{
     for (size_t i = core_get_playercount(); i < 4; i++)
     {
         Duck *duck = get_duck_by_id(i);
         simulate_input(duck, deltatime);
     }
+}
 
-    if (!sequence_game_paused)
-    {
-        update_ducks(deltatime);
-        update_snowmen(deltatime);
-        evaluate_attack();
-    }
+void sequence_game_update(float deltatime)
+{
+    process_human_players(deltatime);
+    process_computer_players(deltatime);
+    update_time(deltatime);
+    update_ducks(deltatime);
+    update_snowmen(deltatime);
+    play_sounds();
+    evaluate_attack();
 }

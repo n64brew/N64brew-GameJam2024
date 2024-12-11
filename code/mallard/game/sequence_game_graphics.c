@@ -29,7 +29,6 @@
 #define PLAYER_4_BOX_X2 320
 #define PLAYER_4_BOX_Y2 135
 
-float sequence_game_fade_in_elapsed = 0.0f;
 float sequence_game_start_held_elapsed = 0.0f;
 int sequence_game_player_holding_start = -1;
 
@@ -83,9 +82,9 @@ void sequence_game_render_map()
     rdpq_mode_pop();
 }
 
-void sequence_game_draw_press_start_to_pause()
+void sequence_game_render_press_start_to_pause()
 {
-    if (sequence_game_started == true && sequence_game_finished == false)
+    if (sequence_game_paused == false)
     {
         // "Press" Text
         rdpq_text_print(NULL, FONT_HALODEK, 115, 230, "$01^00Press");
@@ -104,41 +103,44 @@ void sequence_game_draw_press_start_to_pause()
     }
 }
 
-void sequence_game_draw_paused()
+void sequence_game_render_paused()
 {
-    float x = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
-    float y = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
-    float percentage = sequence_game_start_held_elapsed / GAME_EXIT_DURATION > 1.0 ? 1.0 : sequence_game_start_held_elapsed / GAME_EXIT_DURATION;
+    if (sequence_game_paused == true)
+    {
+        float x = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+        float y = powf(sequence_game_start_held_elapsed, 3) * ((((float)rand() / (float)RAND_MAX) * 2.0f) - 1.0f);
+        float percentage = sequence_game_start_held_elapsed / GAME_EXIT_DURATION > 1.0 ? 1.0 : sequence_game_start_held_elapsed / GAME_EXIT_DURATION;
 
-    // COLOR
-    char *utf8_text = "$03^01PAUSED";
-    if (sequence_game_player_holding_start == 0)
-        utf8_text = "$03^01PAUSED";
-    else if (sequence_game_player_holding_start == 1)
-        utf8_text = "$03^02PAUSED";
-    else if (sequence_game_player_holding_start == 2)
-        utf8_text = "$03^03PAUSED";
-    else if (sequence_game_player_holding_start == 3)
-        utf8_text = "$03^04PAUSED";
+        // COLOR
+        char *utf8_text = "$03^01PAUSED";
+        if (sequence_game_player_holding_start == 0)
+            utf8_text = "$03^01PAUSED";
+        else if (sequence_game_player_holding_start == 1)
+            utf8_text = "$03^02PAUSED";
+        else if (sequence_game_player_holding_start == 2)
+            utf8_text = "$03^03PAUSED";
+        else if (sequence_game_player_holding_start == 3)
+            utf8_text = "$03^04PAUSED";
 
-    // COLORED "Paused" Text
-    rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, utf8_text);
+        // COLORED "Paused" Text
+        rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, utf8_text);
 
-    // "Hold" Text
-    rdpq_text_print(NULL, FONT_HALODEK, 115, 160, "$01^00Hold");
+        // "Hold" Text
+        rdpq_text_print(NULL, FONT_HALODEK, 115, 160, "$01^00Hold");
 
-    // Start Button
-    rdpq_set_mode_standard();
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_sprite_blit(sequence_game_start_button_sprite, 145, 148, NULL);
+        // Start Button
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_sprite_blit(sequence_game_start_button_sprite, 145, 148, NULL);
 
-    // "to Quit" Text
-    rdpq_text_print(NULL, FONT_HALODEK, 165, 160, "$01^00to Quit");
+        // "to Quit" Text
+        rdpq_text_print(NULL, FONT_HALODEK, 165, 160, "$01^00to Quit");
 
-    rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 250 + x, 240);
+        rdpq_set_scissor(70 + x + (180.0f * percentage), 0, 250 + x, 240);
 
-    // WHITE "Paused" Text
-    rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$03^00PAUSED");
+        // WHITE "Paused" Text
+        rdpq_text_print(NULL, FONT_HALODEK_BIG, 70 + x, 140 + y, "$03^00PAUSED");
+    }
 }
 
 int get_frame_from_snowman(Snowman *snowman)
@@ -300,27 +302,27 @@ void sequence_game_render_scores()
         {
         case 0:
             snprintf(utf8_text, 10, "$02^01%i", (int)roundf(currentDuck->score));
-            x = 10;
+            x = 7;
             y = 240;
             break;
         case 1:
             snprintf(utf8_text, 10, "$02^02%i", (int)roundf(currentDuck->score));
-            x = 290;
+            x = 277;
             y = 240;
             break;
         case 2:
             snprintf(utf8_text, 10, "$02^03%i", (int)roundf(currentDuck->score));
-            x = 10;
+            x = 7;
             y = 30;
             break;
         case 3:
             snprintf(utf8_text, 10, "$02^04%i", (int)roundf(currentDuck->score));
-            x = 290;
+            x = 277;
             y = 30;
             break;
         default:
             snprintf(utf8_text, 10, "$02^00%i", (int)roundf(currentDuck->score));
-            x = 10;
+            x = 7;
             y = 240;
             break;
         }
@@ -334,42 +336,66 @@ void sequence_game_render_scores()
         currentDuck = currentDuck->next;
     }
 }
+void sequence_game_render_fade_in()
+{
+    if (time_elapsed < GAME_FADE_IN_DURATION)
+    {
+        float percentage = time_elapsed > GAME_FADE_IN_DURATION ? 1.0f : time_elapsed / GAME_FADE_IN_DURATION;
+        uint8_t alpha = (int)(255.0f * (1.0f - percentage));
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_set_prim_color(RGBA32(0, 0, 0, alpha));
+        rdpq_fill_rectangle(0, 0, RESOLUTION_320x240.width, RESOLUTION_320x240.height);
+        rdpq_mode_pop();
+    }
+}
+
+void sequence_game_render_timer()
+{
+    float time;
+    if (time_elapsed <= GAME_FADE_IN_DURATION)
+    {
+        return;
+    }
+    else if (GAME_FADE_IN_DURATION < time_elapsed && time_elapsed <= GAME_FADE_IN_DURATION + 1)
+    {
+        time = 3;
+    }
+    else if (GAME_FADE_IN_DURATION + 1 < time_elapsed && time_elapsed <= GAME_FADE_IN_DURATION + 2)
+    {
+        time = 2;
+    }
+    else if (GAME_FADE_IN_DURATION + 2 < time_elapsed && time_elapsed <= GAME_FADE_IN_DURATION + 3)
+    {
+        time = 1;
+    }
+    else if (GAME_FADE_IN_DURATION + 3 < time_elapsed && time_elapsed <= GAME_FADE_IN_DURATION + 3 + GAME_DURATION)
+    {
+        time = GAME_FADE_IN_DURATION + 3 + GAME_DURATION - time_elapsed;
+    }
+    else
+    {
+        time = 0;
+    }
+    char utf8_text[9];
+    snprintf(utf8_text, 10, "$02^00%i", (int)roundf(time));
+    rdpq_text_print(NULL, FONT_HALODEK_MEDIUM, 140, 30, utf8_text);
+}
 
 void sequence_game_render(float deltatime)
 {
-    if (sequence_game_started == true && sequence_game_finished == false)
-    {
-        rdpq_attach(display_get(), NULL);
-        rdpq_clear(BLACK);
+    rdpq_attach(display_get(), NULL);
+    rdpq_clear(BLACK);
 
-        sequence_game_render_map();
+    sequence_game_render_map();
+    sequence_game_render_snowmen_and_ducks();
+    sequence_game_render_scores();
+    sequence_game_render_press_start_to_pause();
+    sequence_game_render_timer();
+    sequence_game_render_fade_in();
+    sequence_game_render_paused();
 
-        sequence_game_render_snowmen_and_ducks();
-
-        sequence_game_render_scores();
-
-        if (sequence_game_paused == false)
-            sequence_game_draw_press_start_to_pause();
-
-        if (sequence_game_paused == true)
-            sequence_game_draw_paused();
-
-        // Fade in
-        if (sequence_game_fade_in_elapsed < GAME_FADE_IN_DURATION)
-        {
-            float percentage = sequence_game_fade_in_elapsed > GAME_FADE_IN_DURATION ? 1.0f : sequence_game_fade_in_elapsed / GAME_FADE_IN_DURATION;
-            uint8_t alpha = (int)(255.0f * (1.0f - percentage));
-            rdpq_mode_push();
-            rdpq_set_mode_standard();
-            rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-            rdpq_set_prim_color(RGBA32(0, 0, 0, alpha));
-            rdpq_fill_rectangle(0, 0, RESOLUTION_320x240.width, RESOLUTION_320x240.height);
-            rdpq_mode_pop();
-        }
-
-        rdpq_detach_show();
-
-        sequence_game_fade_in_elapsed += deltatime;
-    }
+    rdpq_detach_show();
 }
