@@ -321,7 +321,11 @@ void crafts_draw(){
                 }
                 rdpq_mode_antialias(AA_STANDARD);
                 rdpq_set_prim_color(crafts[c].color);
+                rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_model_draw_object(it.object, NULL);
+                rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
             }
             t3d_matrix_pop(1);
         }
@@ -351,7 +355,11 @@ void crafts_draw(){
                 rdpq_mode_antialias(AA_STANDARD);
                 if(!crafts[c].arm.rocketdl){
                     rspq_block_begin();
+                    rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                     t3d_model_draw_object(obj, NULL);
+                    rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                     crafts[c].arm.rocketdl = rspq_block_end();
                 } else rspq_block_run(crafts[c].arm.rocketdl);
                 t3d_matrix_pop(1);
@@ -379,7 +387,11 @@ void crafts_draw(){
                 rdpq_mode_antialias(AA_STANDARD);
                 if(!crafts[c].arm.asteroiddl){
                     rspq_block_begin();
+                    rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                     t3d_model_draw_object(obj, NULL);
+                    rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                     crafts[c].arm.asteroiddl = rspq_block_end();
                 } else rspq_block_run(crafts[c].arm.asteroiddl);
                 t3d_matrix_pop(1);

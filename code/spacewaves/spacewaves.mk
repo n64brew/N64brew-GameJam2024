@@ -58,3 +58,4 @@ ASSETS_LIST += \
 
 filesystem/spacewaves/JupiteroidBoldItalic.font64: MKFONT_FLAGS=--size 16
 filesystem/spacewaves/Jupiteroid.font64: MKFONT_FLAGS=--size 32
+

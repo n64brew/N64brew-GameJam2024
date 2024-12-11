@@ -109,6 +109,7 @@ void world_draw(){
 
     rdpq_mode_mipmap(MIPMAP_NONE,0);
     rdpq_mode_zbuf(false, false);
+    rdpq_mode_antialias(AA_NONE);
 
     rdpq_mode_combiner(RDPQ_COMBINER2(
       (TEX0, 0, PRIM, 0), 		(0,0,0,0),
@@ -125,7 +126,11 @@ void world_draw(){
         
     if(!world.space.dlblock){
         rspq_block_begin();    
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         t3d_model_draw_object(obj, NULL);
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         world.space.dlblock = rspq_block_end();
     } else rspq_block_run(world.space.dlblock);
 
@@ -153,12 +158,16 @@ void world_draw(){
             rdpq_set_env_color(world.planets[p].back);
             rdpq_set_blend_color(world.planets[p].city);
             rdpq_set_fog_color(world.planets[p].fog);
+            rdpq_mode_antialias(AA_STANDARD);
             t3d_matrix_push(world.planets[p].modelMatFP);
             rdpq_set_tile_size(TILE1, fwrap(CURRENT_TIME, 0, 256), fwrap(CURRENT_TIME,0,256), 255,255);
             if(!world.planets[p].dlblock){
                 rspq_block_begin();
+                rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_model_draw_object(obj, NULL);
-
+rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                 if(rand() % 2){
                     mat = t3d_model_get_material(models[i], "f3d.planetrings");
                     obj = t3d_model_get_object_by_index(models[i], 1);
@@ -167,8 +176,11 @@ void world_draw(){
                     rdpq_mode_combiner(RDPQ_COMBINER1(
                       (ENV, 0, SHADE, 0), 		(ENV,0,TEX0,0)));
                     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                    rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                     t3d_model_draw_object(obj, NULL);
-
+rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
                     mat = t3d_model_get_material(models[i], "f3d.planet");
                     obj = t3d_model_get_object_by_index(models[i], 0);
                     t3d_model_draw_material(mat, NULL);
@@ -176,10 +188,9 @@ void world_draw(){
                     rdpq_mode_combiner(RDPQ_COMBINER2(
                       (PRIM, ENV, TEX0, ENV), 		(1,SHADE,ENV,0),
                       (TEX1,  COMBINED, SHADE,  0),	(ONE,TEX1,ENV,SHADE)));
-                            
+                    rdpq_mode_antialias(AA_STANDARD);
                     rdpq_mode_blender(RDPQ_BLENDER(
                       (FOG_RGB, IN_ALPHA, IN_RGB, INV_MUX_ALPHA)));
-                    
                     rdpq_set_blend_color(world.planets[p].city);
                 }
                 world.planets[p].dlblock = rspq_block_end();

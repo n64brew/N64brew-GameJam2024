@@ -72,9 +72,12 @@ void userinterface_draw(){
     float fps = display_get_fps();
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
+    rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
     rdpq_text_printf(NULL, FONT_TEXT, 20, h - 40, "FPS: %.2f", fps);
     rdpq_text_printf(NULL, FONT_TEXT, 20, h - 20, "Mem: %d KiB", heap_stats.used/1024);
-
+rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
     if(gamestatus.state == GAMESTATE_PLAY){
 
         rdpq_set_mode_standard();
@@ -180,10 +183,14 @@ void userinterface_draw(){
         }
 
         if(targinfo.enabled){
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
             FONT_TEXT, w2 - 300, h - 20, 
             "Target in sight. Type: %s, Distance: %.2f, Health: %.2f", 
             targnames[targinfo.type], targinfo.distance, targinfo.hp);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         }
 
         userinterface_playerdraw(station.currentplayer, 100 * station.hp / station.maxhp, gamestatus.playerscores[station.currentplayer], station.arm.rocketcount, station.arm.powerup, station.arm.shield);
@@ -203,48 +210,91 @@ void userinterface_draw(){
             rdpq_set_prim_color(RGBA32(0,0,0, t3d_lerp(128,255, fclampr(1 - (gamestatus.statetime * 0.2), 0,1))));
         rdpq_texture_rectangle(TILE0,0,0,w, h, 0,0);
     }
-    else    
+    else    {
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
         FONT_TEXT, w2 - 300, h - 40, 
         "%02i:%02i", (int)gamestatus.statetime / 60, (int)gamestatus.statetime % 60);
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+    }
     if(gamestatus.state == GAMESTATE_PAUSED){
+        {
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2, 
         "Paused. Press Start to continue...");
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        }
     }
     if(gamestatus.state == GAMESTATE_GETREADY){
+        {
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2 - 100, 
         "Player %i is now in Defense.\nPress Start to get ready!", station.currentplayer + 1);
-        for(int i = 0; i < MAXPLAYERS; i++)
+        }
+        for(int i = 0; i < MAXPLAYERS; i++){
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
             FONT_HEADING, w2 - 300, h2 + 40 * i + 40, 
             "%s %i score is %06i PTS", i < playercount? "Player" : "BOT", i + 1, gamestatus.playerscores[i]);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        }
     }
     if(gamestatus.state == GAMESTATE_COUNTDOWN){
+        {
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2, 
         "Match will begin in %.1f...", gamestatus.statetime);
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        }
     }
     if(gamestatus.state == GAMESTATE_TRANSITION){
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2 - 100, 
         "Match has ended!\nMoving to the next galaxy in %.2f...", gamestatus.statetime);
-        for(int i = 0; i < MAXPLAYERS; i++)
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        for(int i = 0; i < MAXPLAYERS; i++){
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
             FONT_HEADING, w2 - 300, h2 + 40 * i + 40, 
             "%s %i score is %06i PTS", i < playercount? "Player" : "BOT", i + 1, gamestatus.playerscores[i]);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
+        }
     }
     if(gamestatus.state == GAMESTATE_FINISHED){
         for(int i = 0; i < MAXPLAYERS; i++){
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
             FONT_HEADING, w2 - 300, h2 + 40 * i + 40, 
             "%s %i score is %06i PTS", i < playercount? "Player" : "BOT", i + 1, gamestatus.playerscores[i]);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         }
 
+rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2 - 100, 
         "Game over!\nThe winner is %s %i", gamestatus.winner < playercount? "Player" : "BOT", gamestatus.winner + 1);
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
     }
     
 }

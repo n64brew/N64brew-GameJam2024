@@ -97,7 +97,11 @@ void effects_draw(){
             (float[3]){0,0,0},
             effects.exp3d[i].position.v);
             t3d_matrix_push(effects.exp3d[i].matx);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
             t3d_model_draw_object(obj, NULL);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
             t3d_matrix_pop(1);
         }
     
