@@ -339,21 +339,31 @@ ai_try (Player *player)
 {
   assert (ai_player != NULL && ai_player == player);
 
-  if (ai_move_index >= ai_move_count || ai_piece_count == 0)
+  if (ai_piece_count == 0)
     {
+      // No pieces left to place
       return PLAYER_TURN_PASS;
     }
 
   if (ai_piece_index >= ai_piece_count)
     {
+      // Out of pieces for this move; try the next move
       ai_move_index += 1;
       ai_piece_index = 0;
+    }
+
+  if (ai_move_index >= ai_move_count)
+    {
+      // Out of moves!
+      return PLAYER_TURN_PASS;
     }
 
   player_change_piece (player, ai_pieces[ai_piece_index++]);
   if (ai_try_move (player, &ai_moves[ai_move_index]))
     {
+      // AI has placed a piece
       return PLAYER_TURN_END;
     }
+  // Get 'em next try
   return PLAYER_TURN_CONTINUE;
 }
