@@ -1,16 +1,33 @@
 # Land Grab
 
+A game for 4 players inspired by the board game "Blokus" by Bernard Tavitian. Claim land and block out your opponents! Try to run out of pieces before you run out of space.
+
+Players are given 21 pieces, each made up of 1-5 squares. Players start by each placing a piece on a corner of the game board. Each turn consists of each player positioning and placing a piece diagonally-connected to their other placed pieces. **Squares of the same color cannot be connected horizontally or vertically: only diagonally.**
+
+The game ends when all players have either run out of pieces or run out of spaces to place pieces.
+
+Players start with -1 point for each square of their unused pieces. When a piece is placed, the player receives 1 point for each square of the piece. If a player uses all of their pieces, they receive a 15 point bonus. If the player's final piece is a Monomino ("one-square") piece, they receive an additional 20 point bonus.
+
+## Controls
+
+- **Move cursor:** D-Pad / Analog Stick
+- **Place piece:** A button
+- **Skip turn:** B button
+- **Flip piece:** R button
+- **Mirror piece:** L / Z button
+- **Next/previous piece:** C-Left / C-Right button
+- **Next/previous value:** C-Up / C-Down button
+- **Pause game:** Start button
+
 ## TODOs
 
 ### Expected
 
 - [ ] Movement sound effects
 - [ ] Placement sound effects
-- [ ] AI (any difficulty capable of play)
 
 ### Nice to have
 
-- [ ] AI difficulties (Easy, Medium, Hard)
 - [ ] Music control in pause menu
 - [ ] Winners get crowns
 - [ ] Party background in win state
@@ -26,6 +43,14 @@
 
 - "Blokus" by Bernard Tavitian
 
+### Fonts
+
+- ["Anita Semi-Square" by Gustavo Paz L.](https://fontlibrary.org/en/font/anita-semi-square)<br>
+  *Licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
+
+- ["Banana Brick" by artmaker](https://fontlibrary.org/en/font/banana-brick)<br>
+  *Licensed under [SIL OFL 1.1](https://openfontlicense.org/open-font-license-official-text/)
+
 ### Music
 
 - ["15 Years Before" (`15yearsb.xm`) by Ultrasyd](https://modarchive.org/index.php?request=view_by_moduleid&query=59698)<br>
@@ -34,7 +59,7 @@
 - ["4 Weeks Of Hysteria" (`phekkis-4_weeks_of_hysteria.xm`) by Phekkis](https://modarchive.org/index.php?request=view_by_moduleid&query=179029)<br>
   *Licensed under [CC by-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)*
 
-### Fonts
+### Sound Effects
 
-- ["Anita Semi-Square" by Gustavo Paz L.](https://fontlibrary.org/en/font/anita-semi-square)<br>
-  *Licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
+- [`pop.wav` by deathbyfairydust](https://freesound.org/s/658431/)<br>
+  License under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)

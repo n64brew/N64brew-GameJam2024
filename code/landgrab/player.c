@@ -1,12 +1,18 @@
 #include "player.h"
+#include "ai.h"
 #include "board.h"
 #include "color.h"
 #include "minigame.h"
 
-#define PLAYER_MOVE_DELAY 0.2f
+#define PLAYER_MOVE_DELAY 0.15f
 
 #define BONUS_USED_ALL_PIECES 15
 #define BONUS_MONOMINO_FINAL_PIECE 20
+
+#define SPRITE_CURSOR_P1 "rom:/landgrab/cursor_p1.rgba16.sprite"
+#define SPRITE_CURSOR_P2 "rom:/landgrab/cursor_p2.rgba16.sprite"
+#define SPRITE_CURSOR_P3 "rom:/landgrab/cursor_p3.rgba16.sprite"
+#define SPRITE_CURSOR_P4 "rom:/landgrab/cursor_p4.rgba16.sprite"
 
 void
 player_init (Player *player, PlyNum plynum)
@@ -24,25 +30,21 @@ player_init (Player *player, PlyNum plynum)
   switch (plynum)
     {
     case PLAYER_1:
-      player->cursor_sprite
-          = sprite_load ("rom:/landgrab/cursor_p1.rgba16.sprite");
+      player->cursor_sprite = sprite_load (SPRITE_CURSOR_P1);
       player_set_cursor (player, -PIECE_COLS, -PIECE_ROWS);
       break;
     case PLAYER_2:
-      player->cursor_sprite
-          = sprite_load ("rom:/landgrab/cursor_p2.rgba16.sprite");
+      player->cursor_sprite = sprite_load (SPRITE_CURSOR_P2);
       player_mirror_piece (player);
       player_set_cursor (player, BOARD_COLS + PIECE_COLS, -PIECE_ROWS);
       break;
     case PLAYER_3:
-      player->cursor_sprite
-          = sprite_load ("rom:/landgrab/cursor_p3.rgba16.sprite");
+      player->cursor_sprite = sprite_load (SPRITE_CURSOR_P3);
       player_mirror_piece (player);
       player_set_cursor (player, -PIECE_COLS, BOARD_ROWS + PIECE_ROWS);
       break;
     case PLAYER_4:
-      player->cursor_sprite
-          = sprite_load ("rom:/landgrab/cursor_p4.rgba16.sprite");
+      player->cursor_sprite = sprite_load (SPRITE_CURSOR_P4);
       player_set_cursor (player, BOARD_COLS + PIECE_COLS,
                          BOARD_ROWS + PIECE_COLS);
       break;
@@ -181,8 +183,27 @@ player_loop (Player *player, bool active, float deltatime)
 PlayerTurnResult
 player_loop_ai (Player *player, bool active, float deltatime)
 {
-  // TODO: Implement AI
-  return PLAYER_TURN_PASS;
+  if (active)
+    {
+      if (player->ai_delay < 1.0f)
+        {
+          player->ai_delay += deltatime;
+          return PLAYER_TURN_CONTINUE;
+        }
+      else if (ai_try (player))
+        {
+          return PLAYER_TURN_END;
+        }
+      else
+        {
+          return PLAYER_TURN_PASS;
+        }
+    }
+  else
+    {
+      player->ai_delay = 0;
+      return PLAYER_TURN_CONTINUE;
+    }
 }
 
 void
@@ -322,11 +343,12 @@ player_set_cursor (Player *player, int set_col, int set_row)
           for (int col = 0; col < PIECE_COLS; col++)
             {
               int index = row * PIECE_COLS + col;
+              int check_col, check_row;
               if (player->piece_buffer[index] == CELL_FILLED)
                 {
                 recheck_after_bump:
-                  int check_col = set_col + col;
-                  int check_row = set_row + row;
+                  check_col = set_col + col;
+                  check_row = set_row + row;
                   if (check_col < 0)
                     {
                       set_col += 1;
@@ -408,18 +430,19 @@ player_place_piece (Player *player)
     }
   else
     {
+      // On the player's first turn, the hint is different
       if (player->pieces_left == PIECE_COUNT)
-      {
-        minigame_set_hint("Piece must touch a corner!");
-      }
+        {
+          minigame_set_hint ("Piece must touch a corner");
+        }
       else if (result.is_touching_faces)
-      {
-        minigame_set_hint("Piece can only touch diagonally!");
-      }
+        {
+          minigame_set_hint ("Piece can only touch diagonally");
+        }
       else if (!result.is_touching_corners)
-      {
-        minigame_set_hint("Pieces must touch diagonally!");
-      }
+        {
+          minigame_set_hint ("Pieces must touch diagonally");
+        }
       // TODO Play a "failure" sound effect
       // The piece could not be placed
       return false;
@@ -429,28 +452,29 @@ player_place_piece (Player *player)
 void
 player_incr_piece (Player *player, int incr)
 {
+  // Bail if there are no pieces left
   if (player->pieces_left == 0)
     {
       player_clear_piece (player);
       return;
     }
 
-  int next_piece = player->piece_index + incr;
+  int desired_index = player->piece_index + incr;
   // Wrap-around negative values
-  while (next_piece < 0)
+  while (desired_index < 0)
     {
-      next_piece += PIECE_COUNT;
+      desired_index += PIECE_COUNT;
     }
   // Wrap-around overflowing positive values
-  while (next_piece >= PIECE_COUNT)
+  while (desired_index >= PIECE_COUNT)
     {
-      next_piece -= PIECE_COUNT;
+      desired_index -= PIECE_COUNT;
     }
-  bool result = player_change_piece (player, next_piece);
+  bool result = player_change_piece (player, desired_index);
   // The requested piece is unavailable, try the next one
   if (!result)
     {
-      player_incr_piece (player, incr > 0 ? 1 : -1);
+      player_incr_piece (player, incr + (incr > 0 ? 1 : -1));
     }
 }
 
@@ -492,33 +516,33 @@ player_incr_value (Player *player, int incr)
 void
 player_flip_piece (Player *player)
 {
-  int flip_buffer[PIECE_SIZE];
+  int temp[PIECE_SIZE];
   for (int i = 0; i < PIECE_SIZE; i++)
     {
       int col = i % PIECE_COLS;
       int row = i / PIECE_COLS;
       int new_col = PIECE_COLS - 1 - row;
       int new_row = col;
-      flip_buffer[new_row * PIECE_COLS + new_col] = player->piece_buffer[i];
+      temp[new_row * PIECE_COLS + new_col] = player->piece_buffer[i];
     }
 
-  memcpy (player->piece_buffer, flip_buffer, sizeof (player->piece_buffer));
+  memcpy (player->piece_buffer, temp, sizeof (player->piece_buffer));
   player_reconstrain_cursor (player);
 }
 
 void
 player_mirror_piece (Player *player)
 {
-  int mirror_buffer[PIECE_SIZE];
+  int temp[PIECE_SIZE];
   for (int i = 0; i < PIECE_SIZE; i++)
     {
       int col = i % PIECE_COLS;
       int row = i / PIECE_COLS;
       int new_col = PIECE_COLS - 1 - col;
       int new_row = row;
-      mirror_buffer[new_row * PIECE_COLS + new_col] = player->piece_buffer[i];
+      temp[new_row * PIECE_COLS + new_col] = player->piece_buffer[i];
     }
 
-  memcpy (player->piece_buffer, mirror_buffer, sizeof (player->piece_buffer));
+  memcpy (player->piece_buffer, temp, sizeof (player->piece_buffer));
   player_reconstrain_cursor (player);
 }

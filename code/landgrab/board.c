@@ -4,7 +4,7 @@
 
 int board[BOARD_SIZE];
 
-static sprite_t *x_sprite;
+static sprite_t *x_sprite = NULL;
 
 #define TILE_UNCLAIMED 0
 
@@ -19,6 +19,7 @@ void
 board_cleanup (void)
 {
   sprite_free (x_sprite);
+  x_sprite = NULL;
 }
 
 void

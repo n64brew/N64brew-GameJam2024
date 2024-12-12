@@ -19,6 +19,7 @@ typedef struct Player
   bool pieces_used[PIECE_COUNT];
   float pulse_sine_x;
   float pulse_sine_y;
+  float ai_delay;
 } Player;
 
 typedef enum

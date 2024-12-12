@@ -65,14 +65,14 @@ scoreboard_scores_render (void)
   rdpq_textparms_t textparms
       = { .width = 50, .align = ALIGN_CENTER, .style_id = FONT_STYLE_WHITE };
 
-  rdpq_set_mode_standard ();
-
   rdpq_mode_push ();
   {
     rdpq_mode_combiner (RDPQ_COMBINER_FLAT);
     rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
     rdpq_set_prim_color (BOARD_COLOR);
+    // Draw the box for the scores
     rdpq_fill_rectangle (259, 15, 309, 221);
+    // Draw the header in a darker shade
     rdpq_fill_rectangle (259, 15, 309, 50);
   }
   rdpq_mode_pop ();
@@ -96,16 +96,13 @@ scoreboard_star_render (PlyNum p, int x, int y)
 {
   rdpq_mode_push ();
   {
-    rdpq_set_mode_standard ();
+    // Draw the star using the player's color
     rdpq_mode_filter (FILTER_BILINEAR);
     rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner (
-        RDPQ_COMBINER1 ((PRIM, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
-    rdpq_set_prim_color (PLAYER_COLORS[p]); // fill color
-    rdpq_set_env_color (PLAYER_COLORS[p]);  // outline color
-    rdpq_sprite_blit (
-        star_sprite, x, y,
-        &(rdpq_blitparms_t){ .scale_x = 0.67f, .scale_y = 0.67f });
+        RDPQ_COMBINER1 ((0, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
+    rdpq_set_env_color (PLAYER_COLORS[p]);
+    rdpq_sprite_blit (star_sprite, x, y, NULL);
   }
   rdpq_mode_pop ();
 }
@@ -113,20 +110,19 @@ scoreboard_star_render (PlyNum p, int x, int y)
 void
 scoreboard_pieces_render (void)
 {
-  rdpq_set_mode_standard ();
-
   rdpq_mode_push ();
   {
+    // Blend the scoreboard with the background
     rdpq_mode_combiner (RDPQ_COMBINER_FLAT);
     rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
     rdpq_set_prim_color (BOARD_COLOR);
+    // Draw the box for the pieces scoreboard
     rdpq_fill_rectangle (15, 15, 64, 221);
+    // Draw the header in a darker shade
     rdpq_fill_rectangle (15, 15, 64, 50);
   }
   rdpq_mode_pop ();
 
-  const int x = 16;
-  int y = 30;
   rdpq_textparms_t heading_parms = { .width = 50,
                                      .align = ALIGN_CENTER,
                                      .style_id = FONT_STYLE_WHITE,
@@ -138,18 +134,23 @@ scoreboard_pieces_render (void)
                                    .style_id = FONT_STYLE_WHITE,
                                    .char_spacing = 1 };
 
+  const int x = 16;
+  int y = 30;
+
   rdpq_text_print (&heading_parms, FONT_SQUAREWAVE, x, y, "PIECES\nLEFT");
   y += 50;
 
   PLAYER_FOREACH (p)
   {
     int n = players[p].pieces_left;
+
     if (players[p].monomino_final_piece)
       {
         scoreboard_star_render (p, x + 4, y - 27);
       }
 
-    rdpq_text_printf (&digit_parms, FONT_ANITA, x, y, "^%02X%d", p, n);
+    digit_parms.style_id = p;
+    rdpq_text_printf (&digit_parms, FONT_ANITA, x, y, "%d", n);
     y += 40;
   }
 }
