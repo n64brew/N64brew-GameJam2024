@@ -9,6 +9,4 @@ void logo_loop (float deltatime);
 
 void logo_render (void);
 
-void logo_set_alpha (float alpha);
-
 #endif

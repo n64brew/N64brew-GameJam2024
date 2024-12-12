@@ -11,6 +11,7 @@
 #include "logo.h"
 #include "player.h"
 #include "scoreboard.h"
+#include "sfx.h"
 
 const MinigameDef minigame_def
     = { .gamename = "Land Grab",
@@ -49,11 +50,16 @@ static const char *TURN_MESSAGES[] = {
 };
 
 static const char *RANDOM_HINTS[] = {
-  "Press B to skip your turn",
   "Press A to place your piece",
+  "Press B to skip your turn",
+  "Press B to skip your turn",
+  "Change pieces with C-Left/C-Right",
   "Change pieces with C-Left/C-Right",
   "Press L/Z to mirror your piece",
+  "Press L/Z to mirror your piece",
   "Press R to flip your piece",
+  "Press R to flip your piece",
+  "Press C-Down for smaller pieces",
   "Press C-Down for smaller pieces",
   "Corner connections are key!",
   "Your pieces must all connect",
@@ -68,14 +74,14 @@ static const char *RANDOM_HINTS[] = {
   "When in doubt, expand out!",
   "Act decisively!",
   "What could possibly go wrong?",
-  "Are you sure about that?",
   "Don't forget to guard your flank",
   "Try to block your opponents",
-  "Start with larger pieces",
+  "Use larger pieces early",
   "Save small pieces for the end",
   "Play defensively",
   "Anticipate their next moves",
   "Adapt - Improvise - Overcome",
+  "Don't let them corner you!",
 };
 
 static void
@@ -139,7 +145,6 @@ minigame_set_state (MinigameState new_state)
     {
       xm64player_stop (&music);
       menu_input_delay = PAUSE_INPUT_DELAY;
-      logo_set_alpha (1.0f);
     }
 
   if (new_state == MINIGAME_STATE_END)
@@ -220,7 +225,7 @@ minigame_play_render (void)
   // Render the inactive players under the active player
   PLAYER_FOREACH (p)
   {
-    if (p != active_plynum)
+    if (p != active_plynum && last_active_turn[p] != PLAYER_TURN_PASS)
       {
         player_render (&players[p], false);
       }
@@ -347,7 +352,6 @@ minigame_pause_render (void)
   rdpq_attach (disp, NULL);
 
   background_render ();
-  logo_render ();
   board_render ();
 
   PLAYER_FOREACH (p) { player_render (&players[p], false); }
@@ -483,6 +487,7 @@ minigame_init (void)
                 FILTERS_RESAMPLE_ANTIALIAS);
 
   font_init ();
+  sfx_init ();
   logo_init ();
   background_init ();
   board_init ();
@@ -513,6 +518,7 @@ minigame_cleanup (void)
   board_cleanup ();
   background_cleanup ();
   logo_cleanup ();
+  sfx_cleanup();
   font_cleanup ();
 
   display_close ();

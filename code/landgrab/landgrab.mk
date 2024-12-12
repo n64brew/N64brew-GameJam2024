@@ -1,6 +1,9 @@
 ASSETS_LIST += \
 	filesystem/landgrab/15yearsb.xm64 \
 	filesystem/landgrab/phekkis-4_weeks_of_hysteria.xm64 \
+	filesystem/landgrab/buzz.wav64 \
+	filesystem/landgrab/click.wav64 \
+	filesystem/landgrab/pop.wav64 \
 	filesystem/landgrab/anita_semi_square.font64 \
 	filesystem/landgrab/bbrick.font64 \
 	filesystem/landgrab/background.ci8.sprite \

@@ -3,6 +3,7 @@
 #include "board.h"
 #include "color.h"
 #include "minigame.h"
+#include "sfx.h"
 
 #define PLAYER_MOVE_DELAY 0.15f
 
@@ -105,12 +106,14 @@ player_loop (Player *player, bool active, float deltatime)
           player_set_cursor (player, player->cursor_col,
                              player->cursor_row - 1);
           player->move_delay = PLAYER_MOVE_DELAY;
+          sfx_play (SFX_CLICK);
         }
       else if (JOYPAD_8WAY_IS_DOWN (d))
         {
           player_set_cursor (player, player->cursor_col,
                              player->cursor_row + 1);
           player->move_delay = PLAYER_MOVE_DELAY;
+          sfx_play (SFX_CLICK);
         }
 
       if (JOYPAD_8WAY_IS_LEFT (d))
@@ -118,12 +121,14 @@ player_loop (Player *player, bool active, float deltatime)
           player_set_cursor (player, player->cursor_col - 1,
                              player->cursor_row);
           player->move_delay = PLAYER_MOVE_DELAY;
+          sfx_play (SFX_CLICK);
         }
       else if (JOYPAD_8WAY_IS_RIGHT (d))
         {
           player_set_cursor (player, player->cursor_col + 1,
                              player->cursor_row);
           player->move_delay = PLAYER_MOVE_DELAY;
+          sfx_play (SFX_CLICK);
         }
     }
   else
@@ -428,6 +433,7 @@ player_place_piece (Player *player)
 
       player_incr_piece (player, 1);
       // The piece was placed on the board
+      sfx_play (SFX_POP);
       return true;
     }
   else
@@ -445,8 +451,8 @@ player_place_piece (Player *player)
         {
           minigame_set_hint ("Pieces must touch diagonally");
         }
-      // TODO Play a "failure" sound effect
       // The piece could not be placed
+      sfx_play (SFX_BUZZ);
       return false;
     }
 }

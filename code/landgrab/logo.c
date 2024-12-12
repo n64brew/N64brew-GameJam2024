@@ -45,12 +45,6 @@ logo_loop (float deltatime)
 }
 
 void
-logo_set_alpha (float alpha)
-{
-  logo_alpha = alpha;
-}
-
-void
 logo_render (void)
 {
   if (logo_alpha > 0)

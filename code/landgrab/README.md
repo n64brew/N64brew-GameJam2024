@@ -21,17 +21,12 @@ Players start with -1 point for each square of their unused pieces. When a piece
 
 ## TODOs
 
-### Expected
-
-- [ ] Movement sound effects
-- [ ] Placement sound effects
-
 ### Nice to have
 
 - [ ] Music control in pause menu
 - [ ] Winners get crowns
 - [ ] Party background in win state
-- [ ] Quick instructions card
+- [ ] Show controls in pause menu
 
 ## Credits
 
@@ -61,5 +56,11 @@ Players start with -1 point for each square of their unused pieces. When a piece
 
 ### Sound Effects
 
+- [`buzz.wav` by TannerSound](https://freesound.org/s/478262/)<br>
+  *Licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)*
+
+- [`click.wav` by kwahmah_02](https://freesound.org/s/256116/)<br>
+  *Licensed under [CC0](https://creativecommons.org/public-domain/cc0/)*
+
 - [`pop.wav` by deathbyfairydust](https://freesound.org/s/658431/)<br>
-  License under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+  *Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)*
