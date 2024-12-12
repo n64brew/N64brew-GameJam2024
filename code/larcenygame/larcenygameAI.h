@@ -1,10 +1,10 @@
-#ifndef GAMEJAM2024_RIPPERGAMEAI_H
-#define GAMEJAM2024_RIPPERGAMEAI_H 
+#ifndef GAMEJAM2024_LARCENYGAMEAI_H
+#define GAMEJAM2024_LARCENYGAMEAI_H 
 
 #include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
-#include "./rippergame.h"
+#include "./larcenygame.h"
 
 /*********************************
     Structs exclusive to AI
