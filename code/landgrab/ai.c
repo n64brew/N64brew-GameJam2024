@@ -13,6 +13,7 @@ static size_t ai_move_count;
 static size_t ai_move_index;
 static size_t ai_pieces[PIECE_COUNT];
 static size_t ai_piece_count;
+static size_t ai_piece_index;
 
 static void
 ai_shuffle_pieces (size_t *array, size_t n)
@@ -248,53 +249,49 @@ static bool
 ai_try_move (Player *player, const AiMove *loc)
 {
   CheckPieceResult check_result;
-  for (size_t piece_index = 0; piece_index < ai_piece_count; piece_index++)
-    {
-      player_change_piece (player, ai_pieces[piece_index]);
 
-      // Randomly flip and mirror the piece for variety
-      if (rand () % 2)
+  // Randomly flip and mirror the piece for variety
+  if (rand () % 2)
+    {
+      player_flip_piece (player);
+    }
+  if (rand () % 2)
+    {
+      player_mirror_piece (player);
+    }
+
+  for (size_t orientation = 0; orientation < 4; orientation++)
+    {
+      if (orientation == 1)
+        {
+          player_mirror_piece (player);
+        }
+      if (orientation == 2)
         {
           player_flip_piece (player);
         }
-      if (rand () % 2)
+      if (orientation == 3)
         {
           player_mirror_piece (player);
         }
 
-      for (size_t orientation = 0; orientation < 4; orientation++)
+      for (ssize_t offset_y = -PIECE_ROWS; offset_y <= PIECE_ROWS; offset_y++)
         {
-          if (orientation == 1)
+          for (ssize_t offset_x = -PIECE_COLS; offset_x <= PIECE_COLS;
+               offset_x++)
             {
-              player_mirror_piece (player);
-            }
-          if (orientation == 2)
-            {
-              player_flip_piece (player);
-            }
-          if (orientation == 3)
-            {
-              player_mirror_piece (player);
-            }
-
-          for (ssize_t offset_y = -PIECE_ROWS; offset_y <= PIECE_ROWS;
-               offset_y++)
-            {
-              for (ssize_t offset_x = -PIECE_COLS; offset_x <= PIECE_COLS;
-                   offset_x++)
+              player_set_cursor (player, loc->col + offset_x,
+                                 loc->row + offset_y);
+              check_result = board_check_piece (player);
+              if (check_result.is_valid)
                 {
-                  player_set_cursor (player, loc->col + offset_x,
-                                     loc->row + offset_y);
-                  check_result = board_check_piece (player);
-                  if (check_result.is_valid)
-                    {
-                      player_place_piece (player);
-                      return true;
-                    }
+                  player_place_piece (player);
+                  return true;
                 }
             }
         }
     }
+
   return false;
 }
 
@@ -305,6 +302,7 @@ ai_reset (Player *player)
   ai_move_count = 0;
   ai_move_index = 0;
   ai_piece_count = 0;
+  ai_piece_index = 0;
   if (player == NULL || player->pieces_left == 0)
     {
       return;
@@ -340,11 +338,20 @@ PlayerTurnResult
 ai_try (Player *player)
 {
   assert (ai_player != NULL && ai_player == player);
+
   if (ai_move_index >= ai_move_count || ai_piece_count == 0)
     {
       return PLAYER_TURN_PASS;
     }
-  if (ai_try_move (player, &ai_moves[ai_move_index++]))
+
+  if (ai_piece_index >= ai_piece_count)
+    {
+      ai_move_index += 1;
+      ai_piece_index = 0;
+    }
+
+  player_change_piece (player, ai_pieces[ai_piece_index++]);
+  if (ai_try_move (player, &ai_moves[ai_move_index]))
     {
       return PLAYER_TURN_END;
     }
