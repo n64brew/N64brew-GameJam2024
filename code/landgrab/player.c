@@ -310,8 +310,7 @@ player_render_cursor (Player *player, bool active)
     rdpq_set_mode_standard ();
     rdpq_mode_filter (FILTER_BILINEAR);
     rdpq_mode_alphacompare (1);
-    rdpq_sprite_blit (player->cursor_sprite, icon_rect.x0, icon_rect.y0,
-                      &(rdpq_blitparms_t){});
+    rdpq_sprite_blit (player->cursor_sprite, icon_rect.x0, icon_rect.y0, NULL);
   }
   rdpq_mode_pop ();
 

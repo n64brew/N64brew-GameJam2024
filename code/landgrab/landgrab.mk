@@ -11,6 +11,22 @@ ASSETS_LIST += \
 	filesystem/landgrab/cursor_p2.rgba16.sprite \
 	filesystem/landgrab/cursor_p3.rgba16.sprite \
 	filesystem/landgrab/cursor_p4.rgba16.sprite \
+	filesystem/landgrab/joypad_a.rgba16.sprite \
+	filesystem/landgrab/joypad_b.rgba16.sprite \
+	filesystem/landgrab/joypad_c_down.rgba16.sprite \
+	filesystem/landgrab/joypad_c_left.rgba16.sprite \
+	filesystem/landgrab/joypad_c_right.rgba16.sprite \
+	filesystem/landgrab/joypad_c_up.rgba16.sprite \
+	filesystem/landgrab/joypad_d_down.rgba16.sprite \
+	filesystem/landgrab/joypad_d_left.rgba16.sprite \
+	filesystem/landgrab/joypad_d_right.rgba16.sprite \
+	filesystem/landgrab/joypad_d_up.rgba16.sprite \
+	filesystem/landgrab/joypad_dpad.rgba16.sprite \
+	filesystem/landgrab/joypad_l.rgba16.sprite \
+	filesystem/landgrab/joypad_r.rgba16.sprite \
+	filesystem/landgrab/joypad_start.rgba16.sprite \
+	filesystem/landgrab/joypad_stick.rgba16.sprite \
+	filesystem/landgrab/joypad_z.rgba16.sprite \
 	filesystem/landgrab/logo.ci8.sprite \
 	filesystem/landgrab/star.ia8.sprite \
 	filesystem/landgrab/x.ia8.sprite

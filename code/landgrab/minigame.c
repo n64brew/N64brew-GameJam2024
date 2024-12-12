@@ -233,8 +233,17 @@ minigame_play_render (void)
 
   player_render (&players[active_plynum], true);
 
-  scoreboard_pieces_render ();
-  scoreboard_scores_render ();
+  if (player_is_first_turn (&players[active_plynum])
+      && !plynum_is_ai (active_plynum))
+    {
+      scoreboard_controls_render ();
+    }
+  else
+    {
+      scoreboard_pieces_render ();
+      scoreboard_scores_render ();
+    }
+
   logo_render ();
 
   minigame_upper_msg_print (TURN_MESSAGES[active_plynum]);
@@ -358,6 +367,8 @@ minigame_pause_render (void)
 
   minigame_upper_msg_print ("Game Paused");
   minigame_lower_msg_print ("Press A + B + Start to exit");
+
+  scoreboard_controls_render ();
 
   rdpq_detach_show ();
 }
@@ -518,7 +529,7 @@ minigame_cleanup (void)
   board_cleanup ();
   background_cleanup ();
   logo_cleanup ();
-  sfx_cleanup();
+  sfx_cleanup ();
   font_cleanup ();
 
   display_close ();
