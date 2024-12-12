@@ -24,6 +24,8 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define RESOLUTION_WIDTH 320
 #define RESOLUTION_HEIGHT 240
 
+#define DEFAULT_PLAYER_SCALE 0.375f
+
 /*********************************
              Globals
 *********************************/
@@ -37,14 +39,14 @@ T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 T3DModel* modelMap;
 T3DModel* modelCollision;
-T3DModel* modelStunWeaponEffect;
+T3DModel* modelWallJumpEffect;
 
 sprite_t* spriteAButton;
 
 player_data players[MAXPLAYERS];
 effect_data effectPool[MAXPLAYERS];
 objective_data objectives[2];
-collisionobject_data collisionObjects[10];
+collisionobject_data collisionObjects[9];
 
 // drawing variables
 rspq_block_t* dplMap;
@@ -62,6 +64,8 @@ wav64_t sfx_objectiveCompleted;
 wav64_t sfx_guardStunAbility;
 wav64_t sfx_thiefJumpAbility;
 wav64_t sfx_thiefCaught;
+
+xm64player_t xm_music;
 
 // Gameplay globals
 int lastCountdownNumber;
@@ -84,6 +88,7 @@ const MinigameDef minigame_def = {
 
 //TODO remove:
 float tempSpeed;
+T3DVec3 tempIntersectionPoint;
 
 /*==============================
     debugInfoDraw
@@ -96,11 +101,12 @@ void debugInfoDraw(float deltaTime)
     rdpq_sync_tile(); // Hardware crashes otherwise
 
     rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+10, "Test Debug");
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+20, "FPS: %f", 1.0f/deltaTime);
-    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "AI Statuses: P1: %i P2: %i P3: %i P4: %i", ai_getCurrentStateAsInt(0), ai_getCurrentStateAsInt(1), ai_getCurrentStateAsInt(2), ai_getCurrentStateAsInt(3));
-    /*rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+30, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
-    joypad_port_t controllerPort = core_get_playercontroller(0);
+    //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+10, "Test Debug");
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+20, "FPS: %f", 1.0f/deltaTime);
+    //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+30, "AI Statuses: P1: %i P2: %i P3: %i P4: %i", ai_getCurrentStateAsInt(0), ai_getCurrentStateAsInt(1), ai_getCurrentStateAsInt(2), ai_getCurrentStateAsInt(3));
+    //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+40, "Intersection point: %f, %f", tempIntersectionPoint.x, tempIntersectionPoint.z);
+    //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+50, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
+    /*joypad_port_t controllerPort = core_get_playercontroller(0);
     
     if(!joypad_is_connected(controllerPort))
     {
@@ -109,7 +115,7 @@ void debugInfoDraw(float deltaTime)
     else
     {
         joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+40, "p1 stick x: %i, p1 stick y: %i, p1 speed: %f", joypad.stick_x, joypad.stick_y, tempSpeed);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+40, "p1 stick x: %i, p1 stick y: %i, p1 speed: %f", joypad.stick_x, joypad.stick_y, tempSpeed);
         
         // TODO: remove
         // linear algebra tests
@@ -120,7 +126,7 @@ void debugInfoDraw(float deltaTime)
 
         t3d_vec3_add(&tempvec, &tempvec, &players[0].playerPos);
 
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 120+50, "rotation of player: %f, vector position test X: %f, Z: %f",players[0].rotY,tempvec.x, tempvec.z);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+50, "rotation of player: %f, vector position test X: %f, Z: %f",players[0].rotY,tempvec.x, tempvec.z);
     }*/
 }
 
@@ -246,60 +252,99 @@ void collision_init()
     collisionObjects[0].collisionType = collisionAll;
     collisionObjects[0].sizeX = 100;
     collisionObjects[0].sizeZ = 20;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[0].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[0].dplCollision = rspq_block_end();
     
     collisionObjects[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[1].collisionCentrePos = (T3DVec3){{0.0f, 1.0f, 0.0f}};
-    collisionObjects[1].collisionType = collisionGuardOnly;
-    collisionObjects[1].sizeX = 20;
-    collisionObjects[1].sizeZ = 100;
+    collisionObjects[1].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, 106.0f}};
+    collisionObjects[1].collisionType = collisionAll;
+    collisionObjects[1].sizeX = 60;
+    collisionObjects[1].sizeZ = 12;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[1].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[1].dplCollision = rspq_block_end();
 
     collisionObjects[2].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[2].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, -80.0f}};
     collisionObjects[2].collisionType = collisionAll;
     collisionObjects[2].sizeX = 12;
     collisionObjects[2].sizeZ = 60;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[2].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[2].dplCollision = rspq_block_end();
 
     collisionObjects[3].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[3].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, -106.0f}};
     collisionObjects[3].collisionType = collisionAll;
     collisionObjects[3].sizeX = 60;
     collisionObjects[3].sizeZ = 12;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[3].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[3].dplCollision = rspq_block_end();
 
     collisionObjects[4].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[4].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, -80.0f}};
     collisionObjects[4].collisionType = collisionAll;
     collisionObjects[4].sizeX = 12;
     collisionObjects[4].sizeZ = 60;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[4].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[4].dplCollision = rspq_block_end();
 
     collisionObjects[5].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[5].collisionCentrePos = (T3DVec3){{80.0f, 1.0f, -106.0f}};
     collisionObjects[5].collisionType = collisionAll;
     collisionObjects[5].sizeX = 60;
     collisionObjects[5].sizeZ = 12;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[5].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[5].dplCollision = rspq_block_end();
 
     collisionObjects[6].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[6].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, 80.0f}};
     collisionObjects[6].collisionType = collisionAll;
     collisionObjects[6].sizeX = 12;
     collisionObjects[6].sizeZ = 60;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[6].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[6].dplCollision = rspq_block_end();
 
     collisionObjects[7].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[7].collisionCentrePos = (T3DVec3){{80.0f, 1.0f, 106.0f}};
     collisionObjects[7].collisionType = collisionAll;
     collisionObjects[7].sizeX = 60;
     collisionObjects[7].sizeZ = 12;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[7].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[7].dplCollision = rspq_block_end();
 
     collisionObjects[8].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[8].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, 80.0f}};
     collisionObjects[8].collisionType = collisionAll;
     collisionObjects[8].sizeX = 12;
     collisionObjects[8].sizeZ = 60;
-
-    collisionObjects[9].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[9].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, 106.0f}};
-    collisionObjects[9].collisionType = collisionAll;
-    collisionObjects[9].sizeX = 60;
-    collisionObjects[9].sizeZ = 12;
+        rspq_block_begin();
+        t3d_matrix_push(collisionObjects[8].modelMatFP);
+        t3d_model_draw(modelCollision);
+        t3d_matrix_pop(1);
+    collisionObjects[8].dplCollision = rspq_block_end();
 }
 
 /*==============================
@@ -320,13 +365,11 @@ void collision_draw()
             (float[3]){collisionObjects[iDx].sizeX * 0.00625f, 1.0f,collisionObjects[iDx].sizeZ *  0.00625f},
             (float[3]){0.0f, 0, 0},
             collisionObjects[iDx].collisionCentrePos.v);
-
-        t3d_matrix_push(collisionObjects[iDx].modelMatFP);
         if(collisionObjects[iDx].collisionType == collisionGuardOnly) rdpq_set_prim_color(RGBA32(0,0,255,255));
         else
             rdpq_set_prim_color(RGBA32(255,0,0,255));
-        t3d_model_draw(modelCollision);
-        t3d_matrix_pop(1);
+        
+        rspq_block_run(collisionObjects[iDx].dplCollision);
     }
 }
 
@@ -341,7 +384,7 @@ void collision_draw()
 ==============================*/
 void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
 {
-    returnStruct->didCollide = false; returnStruct->collisionType = collisionAll; returnStruct->indexOfCollidedObject = 0;
+    returnStruct->didCollide = false; returnStruct->collisionType = collisionAll; returnStruct->indexOfCollidedObject = 0; returnStruct->intersectionPoint = (T3DVec3){{0}};
 
     int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
 
@@ -354,6 +397,95 @@ void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
             pos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2))
         {
             returnStruct->didCollide = true; returnStruct->collisionType = collisionObjects[iDx].collisionType; returnStruct->indexOfCollidedObject = iDx;
+            return;
+        }
+    }
+    return;
+}
+
+// takes two lines, AB and CD are arrays of 2, with two points, using X and Z
+// returns true if there's an intersection, otherwise returns false
+bool lineLineIntersectTest(T3DVec3* AB, T3DVec3* CD, T3DVec3* XZ)
+{
+    // First line for testing is AB, a1x+b1y=c1
+    float a1 = AB[1].z - AB[0].z;
+    float b1 = AB[0].x - AB[1].x;
+    float c1 = a1*(AB[0].x) + b1*(AB[0].z);
+
+    // Intersection line is CD, a2x+b2y=c2
+    float a2 = CD[1].z - CD[0].z;
+    float b2 = CD[0].x - CD[1].x;
+    float c2 = a2*(CD[0].x) + b2*(CD[0].z);
+
+    float determinant = (a1*b2) - (a2*b1);
+
+    if(determinant == 0)
+    {
+        //no intersection
+        return false;
+    }
+    else
+    {
+        XZ->x = (b2*c1 - b1*c2) / determinant;
+        XZ->z = (a1*c2 - a2*c1) / determinant;
+
+        return true;
+    }
+}
+
+// a version of collision check that handles intersecting points
+void collision_check_intersect(collisionresult_data* returnStruct, T3DVec3* startingPos, T3DVec3* endingPos)
+{
+    returnStruct->didCollide = false; returnStruct->collisionType = collisionAll; returnStruct->indexOfCollidedObject = 0; returnStruct->intersectionPoint = (T3DVec3){{0}};
+
+    int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
+
+    // iterate over every collision box to check
+    for(int iDx = 0; iDx < numberOfObjects; iDx++)
+    {
+        if( endingPos->v[0] > collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2) &&
+            endingPos->v[0] < collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2) &&
+            endingPos->v[2] > collisionObjects[iDx].collisionCentrePos.v[2] - (collisionObjects[iDx].sizeZ / 2) &&
+            endingPos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2))
+        {
+            // fill return struct as normal
+            returnStruct->didCollide = true; returnStruct->collisionType = collisionObjects[iDx].collisionType; returnStruct->indexOfCollidedObject = iDx;
+            // determine the intersection point of the box
+            T3DVec3 IntersectionLine[2]; // line made up of collision checker movement
+            IntersectionLine[0] = *endingPos; IntersectionLine[1] = *startingPos;
+            // create lines of each of the four sides
+            T3DVec3 Line1[2]; // top line
+            // use mini arrays to determine the 4 points, counter clockwise wrapped starting top-right
+            Line1[0].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line1[0].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
+            Line1[1].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line1[1].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
+            T3DVec3 Line2[2]; // left line
+            Line2[0].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line2[0].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
+            Line2[1].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line2[1].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
+            T3DVec3 Line3[2]; // bottom line
+            Line3[0].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line3[0].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
+            Line3[1].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line3[1].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
+            T3DVec3 Line4[2]; // right line
+            Line4[0].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line4[0].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
+            Line4[1].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line4[1].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
+
+            T3DVec3 intersectionResult;
+            if(lineLineIntersectTest(Line1, IntersectionLine, &intersectionResult))
+            {
+                returnStruct->intersectionPoint = intersectionResult;
+            }
+            else if(lineLineIntersectTest(Line2, IntersectionLine, &intersectionResult))
+            {
+                returnStruct->intersectionPoint = intersectionResult;
+            }
+            else if(lineLineIntersectTest(Line3, IntersectionLine, &intersectionResult))
+            {
+                returnStruct->intersectionPoint = intersectionResult;
+            }
+            else if(lineLineIntersectTest(Line4, IntersectionLine, &intersectionResult))
+            {
+                returnStruct->intersectionPoint = intersectionResult;
+            }
+
             return;
         }
     }
@@ -434,12 +566,12 @@ void player_init(int playerNumber)
     if(playerNumber == 0 || playerNumber == 2)
     {
         players[playerNumber].playerTeam = teamThief;
-        players[playerNumber].model = t3d_model_load("rom:/rippergame/testActor.t3dm");
+        players[playerNumber].model = t3d_model_load("rom:/rippergame/foxThief.t3dm");
     }
     else
     {
         players[playerNumber].playerTeam = teamGuard;
-        players[playerNumber].model = t3d_model_load("rom:/rippergame/testActorGuard.t3dm");
+        players[playerNumber].model = t3d_model_load("rom:/rippergame/dogGuard.t3dm");
     }
 
     switch(playerNumber)
@@ -465,13 +597,14 @@ void player_init(int playerNumber)
     // Instantiate skeletons, they will be used to draw skinned meshes
     players[playerNumber].skel = t3d_skeleton_create(players[playerNumber].model);
     players[playerNumber].skelBlend = t3d_skeleton_clone(&players[playerNumber].skel, false);
-//    players[playerNumber].animAttack = t3d_anim_create(players[playerNumber].model, "Snake_Attack");
-//    t3d_anim_set_looping(&players[playerNumber].animAttack, false);
-//    t3d_anim_set_playing(&players[playerNumber].animAttack, false);
-//    t3d_anim_attach(&players[playerNumber].animAttack, &players[playerNumber].skel);
-//    players[playerNumber].animWalk = t3d_anim_create(players[playerNumber].model, "Snake_Walk");
-//    t3d_anim_attach(&players[playerNumber].animWalk, &players[playerNumber].skel);
-    players[playerNumber].animIdle = t3d_anim_create(players[playerNumber].model, "Actor_Idle");
+    players[playerNumber].animAbility = t3d_anim_create(players[playerNumber].model, "Anim_Ability");
+    t3d_anim_set_looping(&players[playerNumber].animAbility, false);
+    t3d_anim_set_playing(&players[playerNumber].animAbility, false);
+    t3d_anim_attach(&players[playerNumber].animAbility, &players[playerNumber].skelBlend);
+    players[playerNumber].animAbilityPlaying = false;
+    players[playerNumber].animWalk = t3d_anim_create(players[playerNumber].model, "Anim_Run");
+    t3d_anim_attach(&players[playerNumber].animWalk, &players[playerNumber].skelBlend);
+    players[playerNumber].animIdle = t3d_anim_create(players[playerNumber].model, "Anim_Idle");
     t3d_anim_attach(&players[playerNumber].animIdle, &players[playerNumber].skel);
     rspq_block_begin();
         t3d_matrix_push(players[playerNumber].modelMatFP);
@@ -501,8 +634,8 @@ void player_cleanup(int playerNumber)
     t3d_skeleton_destroy(&players[playerNumber].skelBlend);
 
     t3d_anim_destroy(&players[playerNumber].animIdle);
-//    t3d_anim_destroy(&players[playerNumber].animWalk);
-//    t3d_anim_destroy(&players[playerNumber].animAttack);
+    t3d_anim_destroy(&players[playerNumber].animWalk);
+    t3d_anim_destroy(&players[playerNumber].animAbility);
 
     t3d_model_free(players[playerNumber].model);
     free_uncached(players[playerNumber].modelMatFP);
@@ -583,7 +716,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
     }
 
     //TODO: Remove
-    if(playerNumber == 0) tempSpeed = speed;
+    //if(playerNumber == 0) tempSpeed = speed;
 
     if(speed > 0.15f)
     {
@@ -605,10 +738,18 @@ void player_fixedloop(float deltaTime, int playerNumber)
     tempPosition.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
     tempPosition.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
 
+    //TODO: remove this
+    //if(playerNumber == 0) tempIntersectionPoint = (T3DVec3){{0}};
+
     // do collision checks here
     collisionresult_data collisionResult;
-    
+
     collision_check(&collisionResult, &tempPosition);
+    
+    //collision_check_intersect(&collisionResult, &players[playerNumber].playerPos, &tempPosition);
+
+    //TODO: remove this
+    //if(playerNumber == 0) tempIntersectionPoint = collisionResult.intersectionPoint;
 
     // use collisionResult data to determine if to apply simulated move
     if(!collisionResult.didCollide)
@@ -626,6 +767,11 @@ void player_fixedloop(float deltaTime, int playerNumber)
     if(players[playerNumber].playerPos.v[0] > BOX_SIZE)players[playerNumber].playerPos.v[0] = BOX_SIZE;
     if(players[playerNumber].playerPos.v[2] < -BOX_SIZE)players[playerNumber].playerPos.v[2] = -BOX_SIZE;
     if(players[playerNumber].playerPos.v[2] > BOX_SIZE)players[playerNumber].playerPos.v[2] = BOX_SIZE;
+
+    // use blend based on speed for smooth transitions
+    players[playerNumber].animBlend = players[playerNumber].currSpeed / 0.51f;
+    if(players[playerNumber].animBlend > 1.0f)players[playerNumber].animBlend = 1.0f;
+    if(players[playerNumber].animBlend < 0.01f) t3d_anim_set_time(&players[playerNumber].animWalk, 0.0f);
 
     // do objective touching check
     // only thieves can complete objectives
@@ -669,7 +815,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
                 players[iDx].isActive = false;
 
                 
-                wav64_play(&sfx_thiefCaught, 1);
+                wav64_play(&sfx_thiefCaught, 28);
             }
         }
     }
@@ -695,11 +841,10 @@ void player_guardAbility(float deltaTime, int playerNumber)
     }
     // set the ability timer
     players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
-    // set the effect model to appear
-    effectPool[playerNumber].isActive = true;
-    effectPool[playerNumber].remainingTimer = 1.0f;
-    effectPool[playerNumber].effectPos = players[playerNumber].playerPos;
-    effectPool[playerNumber].effectSize = 100.0f;
+    
+    // play the animation for the ability
+    t3d_anim_set_playing(&players[playerNumber].animAbility, true);
+    t3d_anim_set_time(&players[playerNumber].animAbility, 0.0f);
 
     // play sound effect here
     wav64_play(&sfx_guardStunAbility, 29);
@@ -733,11 +878,37 @@ void player_thiefAbility(float deltaTime, int playerNumber)
         }
         else if(hasHitAWall && (tempResult.didCollide == false || (tempResult.didCollide == true && tempResult.collisionType == collisionGuardOnly)))
         {
+            // set a cooldown if ability worked
+            players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+            
+            // play the animation for the ability
+            t3d_anim_set_playing(&players[playerNumber].animAbility, true);
+            t3d_anim_set_time(&players[playerNumber].animAbility, 0.0f);
+
+            // set the effect model to appear at the entry point of the effect
+            int effectPoolIndex = effect_getNextEmptyIndex();
+            effectPool[effectPoolIndex].isActive = true;
+            effectPool[effectPoolIndex].remainingTimer = 0.25f;
+            effectPool[effectPoolIndex].effectPos = players[playerNumber].playerPos;
+            effectPool[effectPoolIndex].effectRotationY = players[playerNumber].rotY;
+            effectPool[effectPoolIndex].effectSize = 20.0f;
+
+            // make a second effect on the other side of the wall
+            effectPoolIndex = effect_getNextEmptyIndex();
+            effectPool[effectPoolIndex].isActive = true;
+            effectPool[effectPoolIndex].remainingTimer = 0.25f;
+            effectPool[effectPoolIndex].effectPos = tempvec;
+            effectPool[effectPoolIndex].effectRotationY = players[playerNumber].rotY;
+            effectPool[effectPoolIndex].effectSize = 20.0f;
+
             // move the player
             // TODO: make it a destination and do an animation over to it
             players[playerNumber].playerPos = tempvec;
-            // set a cooldown if ability worked
-            players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+
+            // play sound effect here
+            // TODO: make this its own sound effect
+            wav64_play(&sfx_guardStunAbility, 29);
+
             break;
         }
     }
@@ -774,6 +945,29 @@ void player_thiefAbility(float deltaTime, int playerNumber)
     // 52.070, 17.070
 }
 
+// stops player animations, usually called when game ends
+void player_stopAnimations(float deltaTime, int playerNumber)
+{
+    players[playerNumber].animBlend = 0.0f;
+    t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
+    t3d_anim_set_speed(&players[playerNumber].animIdle, 1.0f);
+    t3d_anim_set_speed(&players[playerNumber].animWalk, players[playerNumber].animBlend);
+    t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
+
+    if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
+
+    t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
+
+    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
+
+    t3d_skeleton_update(&players[playerNumber].skel);
+    // update matrix
+    t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
+        (float[3]){DEFAULT_PLAYER_SCALE, DEFAULT_PLAYER_SCALE, DEFAULT_PLAYER_SCALE},
+        (float[3]){0.0f, players[playerNumber].rotY, 0},
+        players[playerNumber].playerPos.v);
+}
+
 /*==============================
     player_loop
     Updates players in any way that is not required to be
@@ -791,6 +985,21 @@ void player_loop(float deltaTime, int playerNumber)
         return;
     }
 
+    if(gameEnding)
+    {
+        player_stopAnimations(deltaTime, playerNumber);
+    }
+
+    // TODO: Remove this because it's fucked
+    // spam the fuck out of the button
+    if(players[playerNumber].isAi && players[playerNumber].playerTeam == teamThief)
+    {
+        if(!(players[playerNumber].abilityTimer > 0.0f))
+        {
+            player_thiefAbility(deltaTime, playerNumber);
+        }
+    }
+
     if(!players[playerNumber].isAi && !gameStarting && !gameEnding)
     {
         joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
@@ -800,7 +1009,7 @@ void player_loop(float deltaTime, int playerNumber)
         if(btn.c_right) end_game(teamGuard);
 
         // if A button pressed and player team is guard, then use guard ability
-        if(btn.a && players[playerNumber].playerTeam == teamGuard)
+        if((btn.a || btn.b) && players[playerNumber].playerTeam == teamGuard)
         {
             // check to see if our ability cooldown is not active
             if(!(players[playerNumber].abilityTimer > 0.0f))
@@ -810,7 +1019,7 @@ void player_loop(float deltaTime, int playerNumber)
         }
 
         // if A button pressed, and team is thief, then start up the thief ability
-        if(btn.a && players[playerNumber].playerTeam == teamThief)
+        if((btn.a || btn.b) && players[playerNumber].playerTeam == teamThief)
         {
             // check to see if our ability cooldown is not active
             if(!(players[playerNumber].abilityTimer > 0.0f))
@@ -822,8 +1031,10 @@ void player_loop(float deltaTime, int playerNumber)
 
     t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
     t3d_anim_set_speed(&players[playerNumber].animIdle, 1.0f);
-//    t3d_anim_set_speed(&players[playerNumber].animWalk, players[playerNumber].animBlend + 0.15f);
-//    t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
+    t3d_anim_set_speed(&players[playerNumber].animWalk, players[playerNumber].animBlend);
+    t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
+
+    if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
 
     t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
 
@@ -832,7 +1043,7 @@ void player_loop(float deltaTime, int playerNumber)
     t3d_skeleton_update(&players[playerNumber].skel);
     // update matrix
     t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
-        (float[3]){0.125f, 0.125f, 0.125f},
+        (float[3]){DEFAULT_PLAYER_SCALE, DEFAULT_PLAYER_SCALE, DEFAULT_PLAYER_SCALE},
         (float[3]){0.0f, players[playerNumber].rotY, 0},
         players[playerNumber].playerPos.v);
 }
@@ -908,11 +1119,29 @@ void effect_init()
     {
         effectPool[iDx].isActive = false;
         effectPool[iDx].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-        effectPool[iDx].model = modelStunWeaponEffect;
+        effectPool[iDx].model = modelWallJumpEffect;
         effectPool[iDx].effectPos = (T3DVec3){{128.0f, 1.0f, 0.0f}};
         effectPool[iDx].remainingTimer = 0.0f;
+        effectPool[iDx].effectRotationY = 0.0f;
         effectPool[iDx].effectSize = 1.0f;
     }
+}
+
+// returns the index of the first unused effect, returns 0 (overwrites the first one) if none free
+int effect_getNextEmptyIndex()
+{
+    int tempReturnValue = 0;
+
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
+    {
+        if(!effectPool[iDx].isActive)
+        {
+            tempReturnValue = iDx;
+            break;
+        }
+    }
+
+    return tempReturnValue;
 }
 
 void effect_update(float deltaTime)
@@ -939,11 +1168,11 @@ void effect_draw()
         {
             t3d_mat4fp_from_srt_euler(effectPool[iDx].modelMatFP,
             (float[3]){0.00625f * effectPool[iDx].effectSize, 0.00625f * effectPool[iDx].effectSize, 0.00625f * effectPool[iDx].effectSize},
-            (float[3]){0.0f, 0.0f, 0.0f},
+            (float[3]){0.0f, effectPool[iDx].effectRotationY, 0.0f},
             effectPool[iDx].effectPos.v);
 
             t3d_matrix_push(effectPool[iDx].modelMatFP);
-            rdpq_set_prim_color(RGBA32(0,128,255,255));
+            rdpq_set_prim_color(RGBA32(255,255,255,255));
             t3d_model_draw(effectPool[iDx].model);
             t3d_matrix_pop(1);
         }
@@ -1026,7 +1255,7 @@ void minigame_init()
     dplMap = rspq_block_end();
 
     // load a model from ROM for the stun weapon effect
-    modelStunWeaponEffect = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
+    modelWallJumpEffect = t3d_model_load("rom:/rippergame/dustEffect.t3dm");
 
     // load a model from ROM for the collision square
     modelCollision = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
@@ -1046,6 +1275,8 @@ void minigame_init()
     wav64_open(&sfx_guardStunAbility, "rom:/core/Countdown.wav64");
     wav64_open(&sfx_thiefJumpAbility, "rom:/core/Countdown.wav64");
     wav64_open(&sfx_thiefCaught, "rom:/core/Countdown.wav64");
+
+    xm64player_open(&xm_music, "rom:/snake3d/bottled_bubbles.xm64");
     
     mixer_ch_set_vol(31, 0.5f, 0.5f);
 
@@ -1108,6 +1339,7 @@ void minigame_fixedloop(float deltatime)
             gameStarting = false;
 
             // TODO: start playing music
+            xm64player_play(&xm_music, 0);
         }
     }
 
@@ -1290,8 +1522,10 @@ void minigame_cleanup()
     wav64_close(&sfx_guardStunAbility);
     wav64_close(&sfx_thiefJumpAbility);
     wav64_close(&sfx_thiefCaught);
+    
+    xm64player_close(&xm_music);
 
-    t3d_model_free(modelStunWeaponEffect);
+    t3d_model_free(modelWallJumpEffect);
 
     t3d_model_free(modelCollision);
 

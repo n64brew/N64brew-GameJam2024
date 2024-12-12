@@ -2,6 +2,9 @@
 ASSETS_LIST += \
 	filesystem/rippergame/map.t3dm \
 	filesystem/rippergame/collisionSquare.t3dm \
+	filesystem/rippergame/foxThief.t3dm \
+	filesystem/rippergame/dogGuard.t3dm \
+	filesystem/rippergame/dustEffect.t3dm \
 	filesystem/rippergame/testActor.t3dm \
 	filesystem/rippergame/testActorGuard.t3dm \
 	filesystem/rippergame/testObjective.t3dm \

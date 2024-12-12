@@ -17,10 +17,10 @@ float speedModifierDifficulty;
 int stunAbilityUseDistance;
 
 #define DEFAULT_STUCK_TIME_LIMIT 4.0f
-#define DEFAULT_DISTANCE_TO_CANCEL_CHASE 140
-#define DEFAULT_DISTANCE_TO_CANCEL_ESCAPE 150
-#define DEFAULT_DISTANCE_TO_SWITCH_CHASE_STATE 100
-#define DEFAULT_DISTANCE_TO_SWITCH_RUNNING_STATE 100
+#define DEFAULT_DISTANCE_TO_CANCEL_CHASE 180
+#define DEFAULT_DISTANCE_TO_CANCEL_ESCAPE 170
+#define DEFAULT_DISTANCE_TO_SWITCH_CHASE_STATE 140
+#define DEFAULT_DISTANCE_TO_SWITCH_RUNNING_STATE 150
 #define SPEED_MODIFIER_EASY 5.0f
 #define SPEED_MODIFIER_MEDIUM 6.0f
 #define SPEED_MODIFIER_HARD 7.0f
@@ -78,7 +78,9 @@ void ai_wanderingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* spe
         {
             *newDir = aiData[aiIndex].destination;
         
-            *speed = 0.3175f;
+            //*speed = 1.3175f;
+            *speed = sqrtf(t3d_vec3_len2(newDir));
+            if(*speed > speedModifierDifficulty) *speed = speedModifierDifficulty;
     
             aiData[aiIndex].framesRemainingBeforeCheck--;
         }
@@ -90,7 +92,11 @@ void ai_followingOtherPlayerStateEnter(int aiIndex)
     aiData[aiIndex].currentState = StateFollowingOtherPlayer;
     aiData[aiIndex].framesRemainingBeforeCheck = rand()%60;
     EntitySearchReturnData returnedStruct;
-    if(playersRef[aiIndex].playerTeam == teamGuard) ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeThief);
+    if(playersRef[aiIndex].playerTeam == teamGuard)
+    {
+        ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeThief);
+        if(!returnedStruct.isValidTarget) ai_waitingStateEnter(aiIndex); // if no valid targets, just leave
+    }
     // only guards should ever be in this state, exit the state if a thief
     if(playersRef[aiIndex].playerTeam == teamThief) ai_waitingStateEnter(aiIndex);
     aiData[aiIndex].targetIndex = returnedStruct.targetIndex;
@@ -154,7 +160,9 @@ void ai_followingOtherPlayerState(int aiIndex, float deltaTime, T3DVec3* newDir,
     *newDir = tempVec;
 
     // magic number
-    *speed = 0.3175f;
+    //*speed = 1.3175f;
+    *speed = sqrtf(t3d_vec3_len2(newDir));
+    if(*speed > speedModifierDifficulty) *speed = speedModifierDifficulty;
 }
 
 void ai_moveToObjectiveStateEnter(int aiIndex)
@@ -164,6 +172,7 @@ void ai_moveToObjectiveStateEnter(int aiIndex)
     aiData[aiIndex].framesRemainingBeforeCheck = rand()%120;
     EntitySearchReturnData returnedStruct;
     ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeObjective);
+    if(!returnedStruct.isValidTarget) ai_waitingStateEnter(aiIndex); // if no valid targets, just leave
     aiData[aiIndex].targetIndex = returnedStruct.targetIndex;
     aiData[aiIndex].targetType = returnedStruct.targetType;
 }
@@ -206,7 +215,9 @@ void ai_moveToObjectiveState(int aiIndex, float deltaTime, T3DVec3* newDir, floa
         *newDir = tempVec;
 
         // magic number
-        *speed = 0.3175f;
+        //*speed = 1.3175f;
+        *speed = sqrtf(t3d_vec3_len2(newDir));
+        if(*speed > speedModifierDifficulty) *speed = speedModifierDifficulty;
     }
 }
 
@@ -215,9 +226,17 @@ void ai_runningFromGuardStateEnter(int aiIndex)
     aiData[aiIndex].currentState = StateRunningFromGuard;
     aiData[aiIndex].framesRemainingBeforeCheck = rand()%60;
     EntitySearchReturnData returnedStruct;
-    if(playersRef[aiIndex].playerTeam == teamThief) ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeGuard);
+    if(playersRef[aiIndex].playerTeam == teamThief)
+    {
+        ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeGuard);
+        if(!returnedStruct.isValidTarget) ai_waitingStateEnter(aiIndex); // if no valid targets, just leave
+    } 
     // only thieves should ever be in this state, exit the state if a guard
-    if(playersRef[aiIndex].playerTeam == teamGuard) ai_waitingStateEnter(aiIndex);
+    if(playersRef[aiIndex].playerTeam == teamGuard)
+    {
+        ai_waitingStateEnter(aiIndex);
+        if(!returnedStruct.isValidTarget) ai_waitingStateEnter(aiIndex); // if no valid targets, just leave
+    }
     aiData[aiIndex].targetIndex = returnedStruct.targetIndex;
     aiData[aiIndex].targetType = returnedStruct.targetType;
 }
@@ -276,7 +295,9 @@ void ai_runningFromGuardState(int aiIndex, float deltaTime, T3DVec3* newDir, flo
     *newDir = tempVec;
 
     // magic number
-    *speed = 0.3175f;
+    //*speed = 1.3175f;
+    *speed = sqrtf(t3d_vec3_len2(newDir));
+    if(*speed > speedModifierDifficulty) *speed = speedModifierDifficulty;
 }
 
 void ai_findClosestEntityOfType(EntitySearchReturnData* returnStruct, int aiIndex, AITargetType desiredType)
@@ -343,6 +364,7 @@ bool ai_checkForProximityBasedStateChanges(int aiIndex)
     {
         // if there's a thief nearby, enter chasing state
         ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeThief);
+        if(!returnedStruct.isValidTarget) return false;
         t3d_vec3_diff(&tempVec, &playersRef[aiIndex].playerPos, &playersRef[returnedStruct.targetIndex].playerPos);
         if(t3d_vec3_len(&tempVec) <= DEFAULT_DISTANCE_TO_SWITCH_CHASE_STATE)
         {
@@ -356,6 +378,7 @@ bool ai_checkForProximityBasedStateChanges(int aiIndex)
     {
         // if there's a guard nearby, enter running state
         ai_findClosestEntityOfType(&returnedStruct, aiIndex, targetTypeGuard);
+        if(!returnedStruct.isValidTarget) return false;
         t3d_vec3_diff(&tempVec, &playersRef[aiIndex].playerPos, &playersRef[returnedStruct.targetIndex].playerPos);
         if(t3d_vec3_len(&tempVec) <= DEFAULT_DISTANCE_TO_SWITCH_RUNNING_STATE)
         {
