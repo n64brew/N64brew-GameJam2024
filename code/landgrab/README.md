@@ -16,17 +16,8 @@ Players start with -1 point for each square of their unused pieces. When a piece
 - **Flip piece:** R button
 - **Mirror piece:** L / Z button
 - **Next/previous piece:** C-Left / C-Right button
-- **Next/previous value:** C-Up / C-Down button
+- **Increase/decrease value:** C-Up / C-Down button
 - **Pause game:** Start button
-
-## TODOs
-
-### Nice to have
-
-- [ ] Music control in pause menu
-- [ ] Winners get crowns
-- [ ] Party background in win state
-- [ ] Show controls in pause menu
 
 ## Credits
 

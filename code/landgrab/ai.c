@@ -30,7 +30,7 @@ ai_shuffle_pieces (size_t *array, size_t n)
 }
 
 /**
- * Shuffle the AI pieces for Medium difficulty.
+ * Shuffle the AI pieces for Easy difficulty.
  *
  * Buckets the pieces into two groups: 5-2 and 1.
  * Within each group, the pieces will be randomized;
