@@ -1,6 +1,5 @@
+#include "ai.h"
 #include "board.h"
-#include "global.h"
-#include "player.h"
 
 typedef struct
 {
@@ -8,31 +7,22 @@ typedef struct
   int row;
 } AiMove;
 
+static Player *ai_player = NULL;
 static AiMove ai_moves[BOARD_SIZE];
 static size_t ai_move_count;
-
-static int ai_pieces[PIECE_COUNT];
+static size_t ai_move_index;
+static size_t ai_pieces[PIECE_COUNT];
 static size_t ai_piece_count;
 
-void
-ai_init (void)
-{
-}
-
-void
-ai_cleanup (void)
-{
-}
-
 static void
-shuffle (int *array, size_t n)
+ai_shuffle_pieces (size_t *array, size_t n)
 {
   if (n > 1)
     {
       for (size_t i = 0; i < n; i++)
         {
           size_t j = i + rand () / (RAND_MAX / (n - i) + 1);
-          int temp = array[j];
+          size_t temp = array[j];
           array[j] = array[i];
           array[i] = temp;
         }
@@ -45,6 +35,7 @@ shuffle (int *array, size_t n)
  * Buckets the pieces into two groups: 5-2 and 1.
  * Within each group, the pieces will be randomized;
  * Assumes the pieces are currently sorted by value.
+ * Potentially extremely stupid, but not always.
  */
 static void
 ai_shuffle_pieces_easy (void)
@@ -59,14 +50,14 @@ ai_shuffle_pieces_easy (void)
           int piece_value = PIECES[ai_pieces[i]].value;
           if (piece_value == 1 && bucket_value > 1)
             {
-              shuffle (&ai_pieces[bucket_start], bucket_size);
+              ai_shuffle_pieces (&ai_pieces[bucket_start], bucket_size);
               bucket_start = i;
               bucket_size = 0;
               bucket_value = piece_value;
             }
           bucket_size++;
         }
-      shuffle (&ai_pieces[bucket_start], bucket_size);
+      ai_shuffle_pieces (&ai_pieces[bucket_start], bucket_size);
     }
 }
 
@@ -76,7 +67,7 @@ ai_shuffle_pieces_easy (void)
  * Buckets the pieces into three groups: 5-4, 3-2, and 1.
  * Within each group, the pieces will be randomized;
  * Assumes the pieces are currently sorted by value descending.
- *
+ * Slightly stupider than the Hard shuffle, but still competent.
  */
 static void
 ai_shuffle_pieces_medium (void)
@@ -92,14 +83,14 @@ ai_shuffle_pieces_medium (void)
           if ((piece_value <= 3 && bucket_value > 3)
               || (piece_value == 1 && bucket_value > 1))
             {
-              shuffle (&ai_pieces[bucket_start], bucket_size);
+              ai_shuffle_pieces (&ai_pieces[bucket_start], bucket_size);
               bucket_start = i;
               bucket_size = 0;
               bucket_value = piece_value;
             }
           bucket_size++;
         }
-      shuffle (&ai_pieces[bucket_start], bucket_size);
+      ai_shuffle_pieces (&ai_pieces[bucket_start], bucket_size);
     }
 }
 
@@ -108,6 +99,7 @@ ai_shuffle_pieces_medium (void)
  *
  * Randomize the pieces but keep their values in-order.
  * Assumes the pieces are currently sorted by value descending.
+ * The optimal game strategy is to use the highest-value pieces first.
  */
 static void
 ai_shuffle_pieces_hard (void)
@@ -122,14 +114,14 @@ ai_shuffle_pieces_hard (void)
           int piece_value = PIECES[ai_pieces[i]].value;
           if (piece_value < bucket_value)
             {
-              shuffle (&ai_pieces[bucket_start], bucket_size);
+              ai_shuffle_pieces (&ai_pieces[bucket_start], bucket_size);
               bucket_start = i;
               bucket_size = 0;
               bucket_value = piece_value;
             }
           bucket_size++;
         }
-      shuffle (&ai_pieces[bucket_start], bucket_size);
+      ai_shuffle_pieces (&ai_pieces[bucket_start], bucket_size);
     }
 }
 
@@ -306,14 +298,18 @@ ai_try_move (Player *player, const AiMove *loc)
   return false;
 }
 
-bool
-ai_try (Player *player)
+void
+ai_reset (Player *player)
 {
-  if (player->pieces_left == 0)
+  ai_player = player;
+  ai_move_count = 0;
+  ai_move_index = 0;
+  ai_piece_count = 0;
+  if (player == NULL || player->pieces_left == 0)
     {
-      return false;
+      return;
     }
-  else if (player->pieces_left == PIECE_COUNT)
+  else if (player_is_first_turn (player))
     {
       ai_gather_initial_moves (player->plynum);
     }
@@ -325,25 +321,32 @@ ai_try (Player *player)
 
   ai_gather_pieces (player);
 
-  if (core_get_aidifficulty () == DIFF_EASY)
+  AiDiff difficulty = core_get_aidifficulty ();
+  if (difficulty == DIFF_EASY)
     {
       ai_shuffle_pieces_easy ();
     }
-  else if (core_get_aidifficulty () == DIFF_MEDIUM)
+  else if (difficulty == DIFF_MEDIUM)
     {
       ai_shuffle_pieces_medium ();
     }
-  else if (core_get_aidifficulty () == DIFF_HARD)
+  else if (difficulty == DIFF_HARD)
     {
       ai_shuffle_pieces_hard ();
     }
+}
 
-  for (size_t i = 0; i < ai_move_count; i++)
+PlayerTurnResult
+ai_try (Player *player)
+{
+  assert (ai_player != NULL && ai_player == player);
+  if (ai_move_index >= ai_move_count || ai_piece_count == 0)
     {
-      if (ai_try_move (player, &ai_moves[i]))
-        {
-          return true;
-        }
+      return PLAYER_TURN_PASS;
     }
-  return false;
+  if (ai_try_move (player, &ai_moves[ai_move_index++]))
+    {
+      return PLAYER_TURN_END;
+    }
+  return PLAYER_TURN_CONTINUE;
 }

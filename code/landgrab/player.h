@@ -1,20 +1,21 @@
 #ifndef GAMEJAM2024_LANDGRAB_PLAYER_H
 #define GAMEJAM2024_LANDGRAB_PLAYER_H
 
-#include "board.h"
 #include "global.h"
 #include "piece.h"
 
 typedef struct Player
 {
   PlyNum plynum;
-  int pieces_left;
+  int score;
+  bool winner;
+  size_t pieces_left;
   bool monomino_final_piece;
   sprite_t *cursor_sprite;
   float move_delay;
   int cursor_col;
   int cursor_row;
-  int piece_index;
+  size_t piece_index;
   Cell piece_buffer[PIECE_SIZE];
   bool pieces_used[PIECE_COUNT];
   float pulse_sine_x;
@@ -28,8 +29,9 @@ typedef enum
   PLAYER_TURN_PASS,
   PLAYER_TURN_END,
   PLAYER_TURN_PAUSE,
-
 } PlayerTurnResult;
+
+#define player_is_first_turn(p) ((p)->pieces_left == PIECE_COUNT)
 
 void player_init (Player *player, PlyNum plynum);
 

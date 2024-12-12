@@ -8,9 +8,7 @@
 
 #define COLOR_WHITE RGBA32 (255, 255, 255, 255)
 #define COLOR_BLACK RGBA32 (0, 0, 0, 255)
-#define COLOR_GOLD RGBA32 (242, 209, 155, 0xFF)
 #define COLOR_DARK_GRAY RGBA32 (0x31, 0x39, 0x3C, 0xFF)
-#define COLOR_LIGHT_GRAY RGBA32 (0x9F, 0xA2, 0xA4, 0xFF)
 
 static const color_t PLAYER_COLORS[] = {
   PLAYERCOLOR_1,

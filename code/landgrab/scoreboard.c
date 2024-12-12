@@ -1,11 +1,25 @@
 #include "scoreboard.h"
+#include "board.h"
 #include "color.h"
 #include "font.h"
-
-PlayerScore scoreboard[MAXPLAYERS];
-int winners;
+#include "minigame.h"
 
 static sprite_t *star_sprite;
+
+static void
+scoreboard_star_render (PlyNum p, int x, int y)
+{
+  rdpq_mode_push ();
+  {
+    // Draw the star using the player's color
+    rdpq_mode_filter (FILTER_BILINEAR);
+    rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
+    rdpq_mode_combiner (RDPQ_COMBINER1 ((0, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
+    rdpq_set_env_color (PLAYER_COLORS[p]);
+    rdpq_sprite_blit (star_sprite, x, y, NULL);
+  }
+  rdpq_mode_pop ();
+}
 
 void
 scoreboard_init (void)
@@ -17,44 +31,6 @@ void
 scoreboard_cleanup (void)
 {
   sprite_free (star_sprite);
-}
-
-int
-scoreboard_compare (const void *a, const void *b)
-{
-  return (((PlayerScore *)b)->score - ((PlayerScore *)a)->score);
-}
-
-void
-scoreboard_calculate (bool game_over)
-{
-  PLAYER_FOREACH (p)
-  {
-    scoreboard[p].p = p;
-    scoreboard[p].score = player_score (&players[p]);
-  }
-
-  qsort (scoreboard, MAXPLAYERS, sizeof (PlayerScore), scoreboard_compare);
-
-  if (game_over)
-    {
-      winners = 1;
-      for (int i = 1; i < MAXPLAYERS; i++)
-        {
-          if (scoreboard[i].score == scoreboard[0].score)
-            {
-              winners++;
-            }
-        }
-
-      if (winners < MAXPLAYERS)
-        {
-          for (int i = 0; i < winners; i++)
-            {
-              core_set_winner (scoreboard[i].p);
-            }
-        }
-    }
 }
 
 void
@@ -80,31 +56,12 @@ scoreboard_scores_render (void)
   rdpq_text_print (&textparms, FONT_SQUAREWAVE, x, y, "SCORE");
   y += 45;
 
-  for (size_t i = 0; i < MAXPLAYERS; i++)
-    {
-      PlyNum p = scoreboard[i].p;
-      int score = scoreboard[i].score;
-
-      rdpq_text_printf (&textparms, FONT_ANITA, x, y, "^%02X%d", p, score);
-
-      y += 40;
-    }
-}
-
-void
-scoreboard_star_render (PlyNum p, int x, int y)
-{
-  rdpq_mode_push ();
+  PLAYER_FOREACH (p)
   {
-    // Draw the star using the player's color
-    rdpq_mode_filter (FILTER_BILINEAR);
-    rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
-    rdpq_mode_combiner (
-        RDPQ_COMBINER1 ((0, ENV, TEX0, ENV), (0, 0, 0, TEX0)));
-    rdpq_set_env_color (PLAYER_COLORS[p]);
-    rdpq_sprite_blit (star_sprite, x, y, NULL);
+    int score = players[p].score;
+    rdpq_text_printf (&textparms, FONT_ANITA, x, y, "^%02X%d", p, score);
+    y += 40;
   }
-  rdpq_mode_pop ();
 }
 
 void

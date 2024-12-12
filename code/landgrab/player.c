@@ -17,16 +17,12 @@
 void
 player_init (Player *player, PlyNum plynum)
 {
+  memset (player, 0, sizeof (Player));
   player->plynum = plynum;
   player->pieces_left = PIECE_COUNT;
-  player->monomino_final_piece = false;
-  player->move_delay = 0.0f;
-  player->pulse_sine_x = 0.0f;
-  player->pulse_sine_y = 0.0f;
-  memset (player->pieces_used, 0, sizeof (player->pieces_used));
-  player_set_cursor (player, (BOARD_COLS / 2) - (PIECE_COLS / 2),
-                     (BOARD_ROWS / 2) - (PIECE_ROWS / 2));
+  player->score = player_score (player);
   player_change_piece (player, 0);
+  // Start everyone in their corners
   switch (plynum)
     {
     case PLAYER_1:
@@ -62,6 +58,7 @@ int
 player_score (Player *player)
 {
   int score = 0;
+  // Each unused square costs you a point
   for (size_t i = 0; i < PIECE_COUNT; i++)
     {
       if (!player->pieces_used[i])
@@ -70,6 +67,7 @@ player_score (Player *player)
         }
     }
 
+  // Bonuses are applied when the player uses all their pieces
   if (player->pieces_left == 0)
     {
       score += BONUS_USED_ALL_PIECES;
@@ -190,13 +188,9 @@ player_loop_ai (Player *player, bool active, float deltatime)
           player->ai_delay += deltatime;
           return PLAYER_TURN_CONTINUE;
         }
-      else if (ai_try (player))
-        {
-          return PLAYER_TURN_END;
-        }
       else
         {
-          return PLAYER_TURN_PASS;
+          return ai_try (player);
         }
     }
   else
@@ -225,6 +219,10 @@ player_render_piece (Player *player, bool active)
     {
       draw_color.a = 0x20;
     }
+
+  rdpq_set_mode_standard ();
+  rdpq_mode_combiner (RDPQ_COMBINER_FLAT);
+  rdpq_mode_blender (RDPQ_BLENDER_MULTIPLY);
 
   for (size_t i = 0; i < PIECE_SIZE; i++)
     {
@@ -323,7 +321,10 @@ player_render (Player *player, bool active)
 {
   if (player->pieces_left > 0)
     {
-      player_render_piece (player, active);
+      if (!plynum_is_ai (player->plynum))
+        {
+          player_render_piece (player, active);
+        }
       player_render_cursor (player, active);
     }
 }
@@ -423,6 +424,7 @@ player_place_piece (Player *player)
         {
           player->monomino_final_piece = true;
         }
+      player->score = player_score (player);
 
       player_incr_piece (player, 1);
       // The piece was placed on the board
@@ -431,7 +433,7 @@ player_place_piece (Player *player)
   else
     {
       // On the player's first turn, the hint is different
-      if (player->pieces_left == PIECE_COUNT)
+      if (player_is_first_turn (player))
         {
           minigame_set_hint ("Piece must touch a corner");
         }

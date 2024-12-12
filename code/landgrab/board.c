@@ -1,12 +1,11 @@
 #include "board.h"
 #include "color.h"
-#include "player.h"
-
-int board[BOARD_SIZE];
-
-static sprite_t *x_sprite = NULL;
 
 #define TILE_UNCLAIMED 0
+#define TILE_UNCLAIMED_COLOR RGBA32 (160, 160, 160, 64)
+
+static int board[BOARD_SIZE];
+static sprite_t *x_sprite = NULL;
 
 void
 board_init (void)
@@ -81,12 +80,16 @@ board_render_bad_tile_marker (int col, int row)
 bool
 board_is_tile_valid (int col, int row)
 {
+  // Just a simple bounds check
   return col >= 0 && col < BOARD_COLS && row >= 0 && row < BOARD_ROWS;
 }
 
 bool
 board_is_tile_unclaimed (int col, int row)
 {
+  // If it's not in bounds, it's technically not unclaimed.
+  // It is perfectly acceptable to test bogus coordinates.
+  // (AI players will try a ton of bogus moves)
   if (!board_is_tile_valid (col, row))
     {
       return false;
@@ -97,6 +100,9 @@ board_is_tile_unclaimed (int col, int row)
 bool
 board_is_tile_claimed (int col, int row, PlyNum player)
 {
+  // If it's not in bounds, it's technically not claimed either.
+  // It is perfectly acceptable to test bogus coordinates.
+  // (AI players will try a ton of bogus moves)
   if (!board_is_tile_valid (col, row))
     {
       return false;
@@ -115,8 +121,10 @@ board_get_tile_rect (int col, int row)
 void
 board_blit_piece (Player *player)
 {
-  int p = player->plynum;
-  // Actually place the piece on the board
+  PlyNum p = player->plynum;
+  // Actually place the player's piece on the board
+  // Assumes the placement has already been validated.
+  // This will overwrite tiles if the placement is not valid!
   for (int piece_row = 0; piece_row < PIECE_ROWS; piece_row++)
     {
       for (int piece_col = 0; piece_col < PIECE_COLS; piece_col++)
@@ -135,7 +143,7 @@ board_blit_piece (Player *player)
 CheckPieceResult
 board_check_piece (Player *player)
 {
-  int p = player->plynum;
+  PlyNum p = player->plynum;
   // Assume the placement is valid until proven otherwise
   CheckPieceResult result = { .is_available = true };
 
@@ -210,7 +218,7 @@ board_check_piece (Player *player)
 
 board_check_piece_bail:
 
-  if (player->pieces_left == PIECE_COUNT)
+  if (player_is_first_turn (player))
     {
       // SPECIAL CASE: On the player's first turn, there are no pieces to
       // touch, so we instead check to make sure the piece is in a corner of
@@ -219,6 +227,7 @@ board_check_piece_bail:
     }
   else
     {
+      // Standard rule: can only touch corners, not faces
       result.is_valid = result.is_available && result.is_touching_corners
                         && !result.is_touching_faces;
     }

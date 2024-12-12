@@ -3,6 +3,7 @@
 
 #include "../../minigame.h"
 
+#include "ai.h"
 #include "background.h"
 #include "board.h"
 #include "color.h"
@@ -20,6 +21,7 @@ const MinigameDef minigame_def
 
 #define PAUSE_INPUT_DELAY 0.5f
 #define END_INPUT_DELAY 2.0f
+#define RANDOM_HINT_DELAY 10.0f
 
 #define MUSIC_PLAY "rom:/landgrab/15yearsb.xm64"
 #define MUSIC_END "rom:/landgrab/phekkis-4_weeks_of_hysteria.xm64"
@@ -28,12 +30,16 @@ const MinigameDef minigame_def
 
 MinigameState minigame_state;
 Player players[MAXPLAYERS];
-size_t turn_count;
-xm64player_t music;
 
-float menu_input_delay;
-
-PlayerTurnResult last_active_turn[MAXPLAYERS];
+static PlayerTurnResult last_active_turn[MAXPLAYERS];
+static Player *winners[MAXPLAYERS];
+static size_t winner_count;
+static size_t turn_count;
+static float menu_input_delay;
+static xm64player_t music;
+static float random_hint_timer = 0.0f;
+static bool random_hint_paused = false;
+static const char *hint_msg = NULL;
 
 static const char *TURN_MESSAGES[] = {
   FMT_STYLE_P1 "Player 1's Turn",
@@ -72,10 +78,36 @@ static const char *RANDOM_HINTS[] = {
   "Adapt - Improvise - Overcome",
 };
 
-static float random_hint_timer = 0.0f;
-static const float RANDOM_HINT_DELAY = 10.0f;
-static bool random_hint_paused = false;
-static const char *hint_msg = NULL;
+static void
+minigame_crown_winners (void)
+{
+  int high_score = players[0].score;
+  PLAYER_FOREACH (p)
+  {
+    if (players[p].score > high_score)
+      {
+        high_score = players[p].score;
+      }
+  }
+
+  winner_count = 0;
+  PLAYER_FOREACH (p)
+  {
+    if (players[p].score == high_score)
+      {
+        winners[winner_count++] = &players[p];
+      }
+  }
+
+  if (winner_count < MAXPLAYERS)
+    {
+      for (size_t i = 0; i < winner_count; i++)
+        {
+          winners[i]->winner = true;
+          core_set_winner (winners[i]->plynum);
+        }
+    }
+}
 
 static void
 minigame_set_state (MinigameState new_state)
@@ -107,71 +139,19 @@ minigame_set_state (MinigameState new_state)
     {
       xm64player_stop (&music);
       menu_input_delay = PAUSE_INPUT_DELAY;
+      logo_set_alpha (1.0f);
     }
 
   if (new_state == MINIGAME_STATE_END)
     {
       menu_input_delay = END_INPUT_DELAY;
-      scoreboard_calculate (true);
+      minigame_crown_winners ();
     }
 
   minigame_state = new_state;
 }
 
-/*==============================
-    minigame_init
-    The minigame initialization function
-==============================*/
-void
-minigame_init (void)
-{
-  display_init (RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE,
-                FILTERS_RESAMPLE_ANTIALIAS);
-
-  font_init ();
-  logo_init ();
-  background_init ();
-  board_init ();
-  scoreboard_init ();
-
-  PLAYER_FOREACH (p) { player_init (&players[p], p); }
-
-  turn_count = 0;
-  hint_msg = NULL;
-  random_hint_paused = false;
-  random_hint_timer = RANDOM_HINT_DELAY;
-  minigame_set_state (MINIGAME_STATE_PLAY);
-}
-
-/*==============================
-    minigame_cleanup
-    Clean up any memory used by your game just before it ends.
-==============================*/
-void
-minigame_cleanup (void)
-{
-  xm64player_stop (&music);
-  xm64player_close (&music);
-
-  PLAYER_FOREACH (i) { player_cleanup (&players[i]); }
-
-  scoreboard_cleanup ();
-  board_cleanup ();
-  background_cleanup ();
-  logo_cleanup ();
-  font_cleanup ();
-
-  display_close ();
-}
-
-void
-minigame_set_hint (const char *msg)
-{
-  hint_msg = msg;
-  random_hint_paused = msg != NULL;
-}
-
-void
+static void
 minigame_random_hint (void)
 {
   hint_msg = RANDOM_HINTS[rand () % ARRAY_SIZE (RANDOM_HINTS)];
@@ -229,37 +209,40 @@ minigame_lower_msg_print (const char *msg)
 static void
 minigame_play_render (void)
 {
-  PlyNum active_player = turn_count % MAXPLAYERS;
+  PlyNum active_plynum = turn_count % MAXPLAYERS;
 
   surface_t *disp = display_get ();
   rdpq_attach (disp, NULL);
 
   background_render ();
-
   board_render ();
 
   // Render the inactive players under the active player
   PLAYER_FOREACH (p)
   {
-    if (p != active_player)
+    if (p != active_plynum)
       {
         player_render (&players[p], false);
       }
   }
 
-  player_render (&players[active_player], true);
+  player_render (&players[active_plynum], true);
 
-  minigame_upper_msg_print (TURN_MESSAGES[active_player]);
+  scoreboard_pieces_render ();
+  scoreboard_scores_render ();
+  logo_render ();
 
-  if (hint_msg != NULL)
-    {
-      minigame_lower_msg_print (hint_msg);
-    }
-  else if (active_player >= core_get_playercount ())
+  minigame_upper_msg_print (TURN_MESSAGES[active_plynum]);
+
+  if (plynum_is_ai (active_plynum))
     {
       minigame_lower_msg_print ("AI is thinking...");
     }
-  else if (players[active_player].pieces_left == PIECE_COUNT)
+  else if (hint_msg != NULL)
+    {
+      minigame_lower_msg_print (hint_msg);
+    }
+  else if (player_is_first_turn (&players[active_plynum]))
     {
       // Show a specific hint on the player's first turn
       minigame_lower_msg_print ("Place a piece touching a corner!");
@@ -272,39 +255,35 @@ minigame_play_render (void)
       // The random hint will replace this message eventually
     }
 
-  scoreboard_pieces_render ();
-  scoreboard_scores_render ();
-  logo_render ();
-
   rdpq_detach_show ();
 }
 
 static void
 minigame_play_loop (float deltatime)
 {
-  const PlyNum active_player = turn_count % MAXPLAYERS;
+  const PlyNum active_plynum = turn_count % MAXPLAYERS;
   bool turn_ended = false;
 
   logo_loop (deltatime);
 
   PLAYER_FOREACH (p)
   {
-    PlayerTurnResult player_loop_result
-        = p < core_get_playercount ()
-              ? player_loop (&players[p], p == active_player, deltatime)
-              : player_loop_ai (&players[p], p == active_player, deltatime);
+    bool active = p == active_plynum;
+    PlayerTurnResult turn_result
+        = plynum_is_ai (p) ? player_loop_ai (&players[p], active, deltatime)
+                           : player_loop (&players[p], active, deltatime);
 
-    if (player_loop_result == PLAYER_TURN_PAUSE)
+    if (turn_result == PLAYER_TURN_PAUSE)
       {
         minigame_set_state (MINIGAME_STATE_PAUSE);
         break;
       }
     // Only the active player can end the turn
-    if (p == active_player)
+    if (active)
       {
-        turn_ended = player_loop_result == PLAYER_TURN_END
-                     || player_loop_result == PLAYER_TURN_PASS;
-        last_active_turn[p] = player_loop_result;
+        turn_ended = turn_result == PLAYER_TURN_END
+                     || turn_result == PLAYER_TURN_PASS;
+        last_active_turn[p] = turn_result;
       }
   }
 
@@ -318,7 +297,6 @@ minigame_play_loop (float deltatime)
         }
     }
 
-  scoreboard_calculate (false);
   minigame_play_render ();
 
   // Wait until after rendering to "end the turn" so the UI is consistent.
@@ -330,14 +308,19 @@ minigame_play_loop (float deltatime)
 
       PlyNum next_player = turn_count % MAXPLAYERS;
 
-      if (next_player < core_get_playercount ()
-          && players[next_player].pieces_left < PIECE_COUNT)
+      if (!plynum_is_ai (next_player)
+          && !player_is_first_turn (&players[next_player]))
         {
           minigame_random_hint ();
         }
       else
         {
           minigame_set_hint (NULL);
+        }
+
+      if (plynum_is_ai (next_player))
+        {
+          ai_reset (&players[next_player]);
         }
 
       bool all_players_passed = true;
@@ -364,7 +347,7 @@ minigame_pause_render (void)
   rdpq_attach (disp, NULL);
 
   background_render ();
-
+  logo_render ();
   board_render ();
 
   PLAYER_FOREACH (p) { player_render (&players[p], false); }
@@ -381,15 +364,17 @@ minigame_pause_loop (float deltatime)
   joypad_port_t port;
   joypad_buttons_t btn, pressed;
 
+  // Swallow inputs for a moment to prevent accidental input
   if (menu_input_delay > 0.0f)
     {
       menu_input_delay -= deltatime;
     }
   else
     {
+      // Any player can unpause or quit the game
       PLAYER_FOREACH (p)
       {
-        if (p < core_get_playercount ())
+        if (!plynum_is_ai (p))
           {
             port = core_get_playercontroller (p);
             btn = joypad_get_buttons (port);
@@ -417,35 +402,31 @@ minigame_pause_loop (float deltatime)
 static void
 minigame_end_render (void)
 {
-  // Attach and clear the screen
   surface_t *disp = display_get ();
   rdpq_attach (disp, NULL);
 
   background_render ();
-
   board_render ();
-
   scoreboard_pieces_render ();
-
   scoreboard_scores_render ();
 
   char msg[sizeof ("Players A, B, and C win!")];
 
-  if (winners == 1)
+  if (winner_count == 1)
     {
-      sprintf (msg, "Player %d wins!", scoreboard[0].p + 1);
+      sprintf (msg, "Player %d wins!", winners[0]->plynum + 1);
       minigame_upper_msg_print (msg);
     }
-  else if (winners == 2)
+  else if (winner_count == 2)
     {
-      sprintf (msg, "Players %d and %d win!", scoreboard[0].p + 1,
-               scoreboard[1].p + 1);
+      sprintf (msg, "Players %d and %d win!", winners[0]->plynum + 1,
+               winners[1]->plynum + 1);
       minigame_upper_msg_print (msg);
     }
-  else if (winners == 3)
+  else if (winner_count == 3)
     {
-      sprintf (msg, "Players %d, %d, and %d win!", scoreboard[0].p + 1,
-               scoreboard[1].p + 1, scoreboard[2].p + 1);
+      sprintf (msg, "Players %d, %d, and %d win!", winners[0]->plynum + 1,
+               winners[1]->plynum + 1, winners[2]->plynum + 1);
       minigame_upper_msg_print (msg);
     }
   else
@@ -464,6 +445,8 @@ minigame_end_loop (float deltatime)
   joypad_port_t port;
   joypad_buttons_t pressed;
 
+  // Swallow inputs for a moment to prevent accidental input.
+  // We want the players to actually see the victory screen.
   if (menu_input_delay > 0.0f)
     {
       menu_input_delay -= deltatime;
@@ -473,7 +456,7 @@ minigame_end_loop (float deltatime)
 
       PLAYER_FOREACH (p)
       {
-        if (p < core_get_playercount ())
+        if (!plynum_is_ai (p))
           {
             port = core_get_playercontroller (p);
             pressed = joypad_get_buttons_pressed (port);
@@ -487,6 +470,52 @@ minigame_end_loop (float deltatime)
     }
 
   minigame_end_render ();
+}
+
+/*==============================
+    minigame_init
+    The minigame initialization function
+==============================*/
+void
+minigame_init (void)
+{
+  display_init (RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE,
+                FILTERS_RESAMPLE_ANTIALIAS);
+
+  font_init ();
+  logo_init ();
+  background_init ();
+  board_init ();
+  scoreboard_init ();
+
+  PLAYER_FOREACH (p) { player_init (&players[p], p); }
+
+  turn_count = 0;
+  hint_msg = NULL;
+  random_hint_paused = false;
+  random_hint_timer = RANDOM_HINT_DELAY;
+  minigame_set_state (MINIGAME_STATE_PLAY);
+}
+
+/*==============================
+    minigame_cleanup
+    Clean up any memory used by your game just before it ends.
+==============================*/
+void
+minigame_cleanup (void)
+{
+  xm64player_stop (&music);
+  xm64player_close (&music);
+
+  PLAYER_FOREACH (i) { player_cleanup (&players[i]); }
+
+  scoreboard_cleanup ();
+  board_cleanup ();
+  background_cleanup ();
+  logo_cleanup ();
+  font_cleanup ();
+
+  display_close ();
 }
 
 /*==============================
@@ -515,4 +544,11 @@ minigame_loop (float deltatime)
       minigame_end ();
       break;
     }
+}
+
+void
+minigame_set_hint (const char *msg)
+{
+  hint_msg = msg;
+  random_hint_paused = msg != NULL;
 }
