@@ -10,17 +10,18 @@ This is an experimental turret-defense minigame with the Asteroids vibe to it
 Each player will get a turn (4 rounds max) and the player with the max score reached wins
 
 Controls:
+
 for the station player:
-  stick - rotate the view
-  Z - fire main gun
-  L/R - fire rockets (after picking them up)
-  A - activate the shield bonus
-  B - activate the powerup boost
+  * stick - rotate the view
+  * Z - fire main gun
+  * L/R - fire rockets (after picking them up)
+  * A - activate the shield bonus
+  * B - activate the powerup boost
 
 for the spacecraft players:
-  stick - move the spacecraft
-  Z - fire an asteroid
-  D-Pad - aim the asteroid's initial trajectory
-  L/R - fire rockets (after picking them up)
-  A - activate the shield bonus
-  B - activate the powerup boost
+  * stick - move the spacecraft
+  * Z - fire an asteroid
+  * D-Pad - aim the asteroid's initial trajectory
+  * L/R - fire rockets (after picking them up)
+  * A - activate the shield bonus
+  * B - activate the powerup boost
