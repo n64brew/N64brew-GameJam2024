@@ -1,5 +1,5 @@
-#ifndef GAMEJAM2024_RIPPERGAME_H
-#define GAMEJAM2024_RIPPERGAME_H 
+#ifndef GAMEJAM2024_LARCENYGAME_H
+#define GAMEJAM2024_LARCENYGAME_H 
 
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
@@ -99,9 +99,9 @@
     // returns the index of the first unused effect, returns 0 (overwrites the first one) if none free
     int effect_getNextEmptyIndex();
 
-    void rippergame_init();
-    void rippergame_fixedloop(float deltatime);
-    void rippergame_loop(float deltatime);
-    void rippergame_cleanup();
+    void larcenygame_init();
+    void larcenygame_fixedloop(float deltatime);
+    void larcenygame_loop(float deltatime);
+    void larcenygame_cleanup();
 
 #endif

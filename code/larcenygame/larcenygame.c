@@ -1,5 +1,5 @@
 /***************************************************************
-                         rippergame.c
+                         larcenygame.c
                                
 RiPpEr253's entry into the N64Brew 2024 Gamejam
 ***************************************************************/
@@ -7,8 +7,8 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
-#include "rippergame.h"
-#include "rippergameAI.h"
+#include "larcenygame.h"
+#include "larcenygameAI.h"
 
 #define COUNTDOWN_DELAY 4.0f
 #define FINISH_DELAY 10.0f
@@ -79,7 +79,7 @@ player_team winningTeam;
 // You need this function defined somewhere in your project
 // so that the minigame manager can work
 const MinigameDef minigame_def = {
-    .gamename = "RiPpEr's Game",
+    .gamename = "Larceny",
     .developername = "RiPpEr253",
     .description = "This is an example game.",
     .instructions = "Mash A to win."
@@ -566,12 +566,12 @@ void player_init(int playerNumber)
     if(playerNumber == 0 || playerNumber == 2)
     {
         players[playerNumber].playerTeam = teamThief;
-        players[playerNumber].model = t3d_model_load("rom:/rippergame/foxThief.t3dm");
+        players[playerNumber].model = t3d_model_load("rom:/larcenygame/foxThief.t3dm");
     }
     else
     {
         players[playerNumber].playerTeam = teamGuard;
-        players[playerNumber].model = t3d_model_load("rom:/rippergame/dogGuard.t3dm");
+        players[playerNumber].model = t3d_model_load("rom:/larcenygame/dogGuard.t3dm");
     }
 
     switch(playerNumber)
@@ -1059,7 +1059,7 @@ void objective_init()
 {
     objectives[0].isActive = true;
     objectives[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    objectives[0].model = t3d_model_load("rom:/rippergame/testObjective.t3dm");
+    objectives[0].model = t3d_model_load("rom:/larcenygame/testObjective.t3dm");
     rspq_block_begin();
         t3d_matrix_push(objectives[0].modelMatFP);
         rdpq_set_prim_color(RGBA32(0,255,0,255));
@@ -1071,7 +1071,7 @@ void objective_init()
     
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    objectives[1].model = t3d_model_load("rom:/rippergame/testObjective.t3dm");
+    objectives[1].model = t3d_model_load("rom:/larcenygame/testObjective.t3dm");
     rspq_block_begin();
         t3d_matrix_push(objectives[1].modelMatFP);
         rdpq_set_prim_color(RGBA32(255,0,0,255));
@@ -1244,7 +1244,7 @@ void minigame_init()
     t3d_vec3_norm(&lightDirVec);
 
     // load a model from ROM for the map
-    modelMap = t3d_model_load("rom:/rippergame/map.t3dm");
+    modelMap = t3d_model_load("rom:/larcenygame/map.t3dm");
 
     // create a command block/display list to optimise drawing the map
     rspq_block_begin();
@@ -1255,10 +1255,10 @@ void minigame_init()
     dplMap = rspq_block_end();
 
     // load a model from ROM for the stun weapon effect
-    modelWallJumpEffect = t3d_model_load("rom:/rippergame/dustEffect.t3dm");
+    modelWallJumpEffect = t3d_model_load("rom:/larcenygame/dustEffect.t3dm");
 
     // load a model from ROM for the collision square
-    modelCollision = t3d_model_load("rom:/rippergame/collisionSquare.t3dm");
+    modelCollision = t3d_model_load("rom:/larcenygame/collisionSquare.t3dm");
 
     // load sprites from ROM for the HUD
     spriteAButton = sprite_load("rom:/core/AButton.sprite");
