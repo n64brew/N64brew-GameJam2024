@@ -193,9 +193,12 @@ void hydra_ai (uint8_t hydra) {
 			current->x > hydras[hydra].x &&
 			hydras[hydra].animation == HYDRA_ANIMATION_NONE
 		){
-			// Check if we should do something smart
-			if (!(rand() % (HYDRA_AI_DIFFICULTY_MODIFIER * 3 - HYDRA_AI_DIFFICULTY_MODIFIER * core_get_aidifficulty()))) {
-				// Chance to ignore white notes
+			// Check if we should do something smart (and skip sour notes on hard difficulty)
+			if (
+				!(rand() % (HYDRA_AI_DIFFICULTY_MODIFIER * 3 - HYDRA_AI_DIFFICULTY_MODIFIER * core_get_aidifficulty())) &&
+				!(core_get_aidifficulty() == DIFF_HARD && current->type == NOTES_TYPE_SOUR && (rand() % (HYDRA_AI_DIFFICULTY_MODIFIER*6+1)))
+			) {
+				// Chance to ignore white notes and sour notes on high difficulty
 				if (current->player == PLAYER_MAX && (rand() % HYDRA_AI_WHITE_NOTE_MODIFIER)) {
 					return;
 				}
@@ -210,8 +213,6 @@ void hydra_ai (uint8_t hydra) {
 					hydras[hydra].state = (hydras[hydra].state + 1) % HEAD_STATES_MAX;
 				}
 			}
-		} else {
-			//hydras[hydra].state = STATE_MID;
 		}
 		current = current->next;
 	}

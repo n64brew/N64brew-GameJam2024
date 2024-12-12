@@ -1,5 +1,7 @@
 #include "intro.h"
 #include "audio.h"
+#include "notes.h"
+#include "ui.h"
 
 #define INSTRUCTION_MOVE_SPEED 8
 #define CURTAIN_MOVE_SPEED 1
@@ -13,6 +15,18 @@
 #define CURTAIN_GOLD_COUNT 1
 #define CURTAIN_GOLD_Y 15
 
+#define INSTRUCTIONS_TEXT_PADDING_X 15
+#define INSTRUCTIONS_TEXT_PADDING_Y 20
+#define INSTRUCTIONS_TEXT_LEFT_ABS_X (INSTRUCTIONS_PADDING_X - instructions_offset + INSTRUCTIONS_TEXT_PADDING_X)
+#define INSTRUCTIONS_TEXT_RIGHT_ABS_X (320/2 - instructions_offset)
+#define INSTRUCTIONS_ICON_PADDING 3
+#define INSTRUCTIONS_ICON_PADDING_SMALL 1
+#define INSTRUCTIONS_TEXT_NEWLINE_HEIGHT 12
+#define INSTRUCTIONS_NOTE_SCALE 0.5
+#define INSTRUCTIONS_NOTE_TIMER 32
+#define INSTRUCTIONS_NOTE_PLAYER (INSTRUCTIONS_NOTE_TIMER * 4)
+#define INSTRUCTIONS_ANIMATION_STATE (note_timer/INSTRUCTIONS_NOTE_TIMER)%4
+
 static uint8_t intro_state = INTRO_INSTRUCTIONS;
 
 static sprite_t* curtain_sprite;
@@ -21,12 +35,54 @@ static int16_t curtain_offset[CURTAIN_COUNT_Y];
 static uint16_t curtains_timer = 0;
 static uint16_t instructions_offset = 0;
 
+static rdpq_textparms_t inst_title_parms;
+static rdpq_textparms_t inst_left_parms;
+
+static sprite_t* controls_dup_sprite;
+static sprite_t* controls_ddown_sprite;
+static sprite_t* controls_cup_sprite;
+static sprite_t* controls_cdown_sprite;
+static sprite_t* controls_a_sprite;
+static sprite_t* controls_z_sprite;
+static sprite_t* controls_l_sprite;
+static sprite_t* controls_r_sprite;
+
+static uint16_t note_timer = 0;
+
+static char* note_descriptions[NOTES_TYPE_COUNT] = {
+	"Normal: No effect",
+	"Back: Move back",
+	"Front: Move forward",
+	"2-swap: Swap randomly",
+	"4-swap: Swap all players",
+	"Sweet: Worth two points!",
+	"Sour: Lose one point!",
+};
+
 void intro_init (void) {
 	curtain_sprite = sprite_load("rom:/hydraharmonics/curtain.ci4.sprite");
 	curtain_surf = sprite_get_pixels(curtain_sprite);
+
+	controls_dup_sprite = sprite_load("rom:/core/DUp.sprite");
+	controls_ddown_sprite = sprite_load("rom:/core/DDown.sprite");
+	controls_cup_sprite = sprite_load("rom:/core/CUp.sprite");
+	controls_cdown_sprite = sprite_load("rom:/core/CDown.sprite");
+	controls_a_sprite = sprite_load("rom:/core/AButton.sprite");
+	controls_z_sprite = sprite_load("rom:/core/ZTrigger.sprite");
+	controls_l_sprite = sprite_load("rom:/core/LTrigger.sprite");
+	controls_r_sprite = sprite_load("rom:/core/RTrigger.sprite");
 	for (uint8_t i=0; i<CURTAIN_COUNT_Y; i++) {
 		curtain_offset[i] = 0;
 	}
+	inst_title_parms = (rdpq_textparms_t){
+		.width = display_get_width() - INSTRUCTIONS_PADDING_X*2 - INSTRUCTIONS_TEXT_PADDING_X*2,
+		.align = ALIGN_CENTER,
+	};
+	inst_left_parms = (rdpq_textparms_t){
+		.width = (display_get_width() - INSTRUCTIONS_PADDING_X*2 - INSTRUCTIONS_TEXT_PADDING_X*2)/2,
+		.align = ALIGN_LEFT,
+		.wrap = WRAP_WORD,
+	};
 }
 
 void intro_interact (void) {
@@ -35,7 +91,7 @@ void intro_interact (void) {
 			// Player character movement
 			joypad_buttons_t joypad_buttons;
 			joypad_buttons = joypad_get_buttons_pressed(core_get_playercontroller(i));
-			if (1 || joypad_buttons.start || joypad_buttons.a) {
+			if (joypad_buttons.start || joypad_buttons.a || joypad_buttons.l || joypad_buttons.r || joypad_buttons.z) {
 				intro_state = INTRO_INSTRUCTIONS_OUT;
 			}
 		}
@@ -43,7 +99,7 @@ void intro_interact (void) {
 		// Move the instruction boxes vertically
 		instructions_offset += INSTRUCTION_MOVE_SPEED;
 		// Check to see if the instructions have flown off screen
-		if (display_get_height() - INSTRUCTIONS_PADDING_Y < instructions_offset) {
+		if (display_get_width() - INSTRUCTIONS_PADDING_X < instructions_offset) {
 			intro_state = INTRO_CURTAINS_UP;
 			audio_music_play();
 		}
@@ -60,32 +116,176 @@ void intro_interact (void) {
 			}
 		}
 	} else if (intro_state == INTRO_CURTAINS_DOWN) {
+		bool curtain_ready = false;
+		bool signs_ready = false;
 		// Move the bottommost curtain fold down a little bit
 		if (curtain_offset[CURTAIN_COUNT_Y-1] < CURTAIN_BORDER_HEIGHT + CURTAIN_TOP_Y + ((CURTAIN_COUNT_Y-1) * CURTAIN_BORDER_DISTANCE) - CURTAIN_GOLD_Y) {
-			stage = STAGE_GAME;
+			curtain_ready = true;
 		} else {
 			curtain_offset[CURTAIN_COUNT_Y-1] -= CURTAIN_MOVE_SPEED;
 		}
-
+		// Move the signs up
+		if (sign_y_offset >= SIGN_HEIGHT) {
+			sign_y_offset = SIGN_HEIGHT;
+			signs_ready = true;
+		} else {
+			sign_y_offset += CURTAIN_MOVE_SPEED;
+		}
+		if (curtain_ready && signs_ready) {
+			stage = STAGE_GAME;
+		}
 	}
 }
 
 void intro_instructions_draw (void) {
 	if (intro_state == INTRO_INSTRUCTIONS || intro_state == INTRO_INSTRUCTIONS_OUT) {
-		// Draw the rectangles
-		rdpq_set_mode_fill(RGBA32(0xCC, 0xCC, 0xCC, 0));
-		rdpq_fill_rectangle(
-			INSTRUCTIONS_PADDING_X,
-			INSTRUCTIONS_PADDING_Y + instructions_offset,
-			display_get_width()/2 - INSTRUCTIONS_PADDING_X/2,
-			display_get_height() - INSTRUCTIONS_PADDING_Y + instructions_offset
+		rdpq_textmetrics_t textmetrics;
+		uint8_t text_y_offset = 0;
+		uint8_t title_y_offset = 0;
+		// Draw the panel
+		ui_panel_draw (
+			INSTRUCTIONS_PADDING_X - instructions_offset,
+			INSTRUCTIONS_PADDING_Y,
+			display_get_width() - INSTRUCTIONS_PADDING_X - instructions_offset,
+			display_get_height() - INSTRUCTIONS_PADDING_Y
 		);
-		rdpq_fill_rectangle(
-			display_get_width()/2 + INSTRUCTIONS_PADDING_X/2,
-			INSTRUCTIONS_PADDING_Y - instructions_offset,
-			display_get_width() - INSTRUCTIONS_PADDING_X,
-			display_get_height() - INSTRUCTIONS_PADDING_Y - instructions_offset
+		// Header text
+		textmetrics = rdpq_text_printf(
+			&inst_title_parms,
+			FONT_CLARENDON,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y,
+			"Hydra Harmonics\n"
 		);
+		title_y_offset += textmetrics.advance_y;
+		// Left-hand text
+		textmetrics = rdpq_text_printf(
+			&inst_left_parms,
+			FONT_DEFAULT,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset,
+			"Taste the music! Eat the most notes to win.\nControls:"
+		);
+		text_y_offset += textmetrics.advance_y + INSTRUCTIONS_ICON_PADDING;
+		// Icons
+		// "Up" row
+		rdpq_set_mode_copy(true);
+		rdpq_sprite_blit (
+			controls_dup_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		rdpq_sprite_blit (
+			controls_cup_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + INSTRUCTIONS_ICON_PADDING_SMALL,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		textmetrics = rdpq_text_printf(
+			NULL,
+			FONT_DEFAULT,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + controls_cup_sprite->width + INSTRUCTIONS_ICON_PADDING,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT,
+			"Move to top row"
+		);
+		text_y_offset += controls_dup_sprite->height + INSTRUCTIONS_ICON_PADDING;
+		// "Down" row
+		rdpq_set_mode_copy(true);
+		rdpq_sprite_blit (
+			controls_ddown_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		rdpq_sprite_blit (
+			controls_cdown_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + INSTRUCTIONS_ICON_PADDING_SMALL,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		textmetrics = rdpq_text_printf(
+			NULL,
+			FONT_DEFAULT,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + controls_cup_sprite->width + INSTRUCTIONS_ICON_PADDING,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT,
+			"Move to base row"
+		);
+		text_y_offset += controls_ddown_sprite->height + INSTRUCTIONS_ICON_PADDING;
+		// "Chomp" row
+		rdpq_set_mode_copy(true);
+		rdpq_sprite_blit (
+			controls_l_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		rdpq_sprite_blit (
+			controls_r_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + INSTRUCTIONS_ICON_PADDING_SMALL,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		text_y_offset += controls_l_sprite->height + INSTRUCTIONS_ICON_PADDING;
+		rdpq_sprite_blit (
+			controls_a_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		rdpq_sprite_blit (
+			controls_z_sprite,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + INSTRUCTIONS_ICON_PADDING_SMALL,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			NULL
+		);
+		textmetrics = rdpq_text_printf(
+			NULL,
+			FONT_DEFAULT,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + controls_cup_sprite->width + INSTRUCTIONS_ICON_PADDING,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
+			"Chomp chomp!"
+		);
+		text_y_offset += controls_a_sprite->height + INSTRUCTIONS_ICON_PADDING;
+		textmetrics = rdpq_text_printf(
+			NULL,
+			FONT_DEFAULT,
+			INSTRUCTIONS_TEXT_LEFT_ABS_X,
+			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT + title_y_offset + text_y_offset,
+			"N64 Squid: Lead programmer\nGary Jones III: Art Director, Music\nBrozilla: Audio conversion; StatycTyr: Additional art"
+		);
+		text_y_offset = 0;
+
+		// Right column
+		// Draw the notes
+		rdpq_set_mode_standard();
+		rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+		for (uint8_t i=0; i<NOTES_TYPE_COUNT; i++) {
+			rdpq_sprite_blit(
+				note_sprites[(note_timer/INSTRUCTIONS_NOTE_PLAYER) % NOTES_TOTAL_COUNT],
+				INSTRUCTIONS_TEXT_RIGHT_ABS_X,
+				INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT + title_y_offset + i*NOTE_HEIGHT * INSTRUCTIONS_NOTE_SCALE,
+				&(rdpq_blitparms_t){
+					.width = NOTE_WIDTH,
+					.height = NOTE_HEIGHT,
+					.scale_x = INSTRUCTIONS_NOTE_SCALE,
+					.scale_y = INSTRUCTIONS_NOTE_SCALE,
+					.s0 = NOTE_WIDTH * (INSTRUCTIONS_ANIMATION_STATE == 3 ? 1 : INSTRUCTIONS_ANIMATION_STATE),
+					.t0 = NOTE_HEIGHT * i,
+				}
+			);
+		}
+		note_timer++;
+		// Draw the descriptions
+		for (uint8_t i=0; i<NOTES_TYPE_COUNT; i++) {
+			rdpq_text_printf(
+				NULL,
+				FONT_DEFAULT,
+				INSTRUCTIONS_TEXT_RIGHT_ABS_X + NOTE_WIDTH * INSTRUCTIONS_NOTE_SCALE + INSTRUCTIONS_ICON_PADDING,
+				INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + INSTRUCTIONS_ICON_PADDING + title_y_offset + i*NOTE_HEIGHT * INSTRUCTIONS_NOTE_SCALE,
+				note_descriptions[i]
+			);
+		}
 	}
 }
 
@@ -160,4 +360,12 @@ void intro_draw (void) {
 void intro_clear (void) {
 	sprite_free(curtain_sprite);
 	surface_free(&curtain_surf);
+	sprite_free(controls_dup_sprite);
+	sprite_free(controls_ddown_sprite);
+	sprite_free(controls_cup_sprite);
+	sprite_free(controls_cdown_sprite);
+	sprite_free(controls_a_sprite);
+	sprite_free(controls_z_sprite);
+	sprite_free(controls_l_sprite);
+	sprite_free(controls_r_sprite);
 }

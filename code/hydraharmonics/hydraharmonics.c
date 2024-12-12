@@ -12,7 +12,7 @@
 #include "audio.h"
 
 const MinigameDef minigame_def = {
-	.gamename = "A Hydra Harmonics",
+	.gamename = "Hydra Harmonics",
 	.developername = "Catch-64",
 	.description = "Taste the music! Eat the most notes to win!",
 	.instructions = "Use A to eat and up or down to move."
@@ -127,12 +127,11 @@ void minigame_loop(float deltatime)
 	rdpq_set_mode_standard();
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	hydra_draw();
-	ui_signs_draw();
 	rdpq_set_mode_standard();
 	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 	notes_draw();
+	ui_signs_draw();
 	effects_draw();
-	audio_music_print();
 
 	// Things that should only be drawn at particular stages
 	if (stage == STAGE_GAME) {
@@ -146,7 +145,7 @@ void minigame_loop(float deltatime)
 		outro_sign_draw();
 	}
 
-	rdpq_text_printf(NULL, FONT_DEFAULT, 200, 180, "Timer: %f\nRemaining:%i\nStage:%i\n", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL), stage);
+	//rdpq_text_printf(NULL, FONT_DEFAULT, 200, 180, "Timer: %f\nRemaining:%i\nStage:%i\n", timer, notes_get_remaining(NOTES_GET_REMAINING_ALL), stage);
 
 	rdpq_detach_show();
 	hydra_adjust_hats();

@@ -3,7 +3,7 @@
 
 #include "hydraharmonics.h"
 
-#define INSTRUCTIONS_PADDING_Y (PADDING_TOP*2)
+#define INSTRUCTIONS_PADDING_Y (PADDING_TOP*2-28)
 #define INSTRUCTIONS_PADDING_X (PADDING_LEFT*2)
 
 typedef enum {
