@@ -1,5 +1,5 @@
-#ifndef GAMEJAM2024_LARCENYGAME_H
-#define GAMEJAM2024_LARCENYGAME_H 
+#ifndef GAMEJAM2024_RIPPERGAME_H
+#define GAMEJAM2024_RIPPERGAME_H 
 
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
@@ -65,9 +65,7 @@
     {
         bool isActive;
         T3DMat4FP* modelMatFP;
-        T3DModel* objectiveModel;
-        T3DModel* ringModel;
-        float objectiveRotationY;
+        T3DModel* model;
         rspq_block_t* dplObjective;
         T3DVec3 objectivePos;
     } objective_data;
@@ -90,24 +88,6 @@
         T3DVec3 intersectionPoint;
     } collisionresult_data;
 
-    typedef struct
-    {
-        T3DVec3 camStartPos;
-        T3DVec3 camEndPos;
-        T3DVec3 lookAtStart;
-        T3DVec3 lookAtEnd;
-        float timeUntilNextKeyframe;
-    } cameraanimation_data;
-
-    typedef struct
-    {
-        cameraanimation_data* currentAnimation;
-        int currentAnimationLength;
-        int currentAnimationKeyframe;
-        float currentAnimationTime;
-        bool currentlyPlaying;
-    } animatedcameraobject_data;
-
 /*********************************
              Functions
 *********************************/
@@ -119,9 +99,9 @@
     // returns the index of the first unused effect, returns 0 (overwrites the first one) if none free
     int effect_getNextEmptyIndex();
 
-    void larcenygame_init();
-    void larcenygame_fixedloop(float deltatime);
-    void larcenygame_loop(float deltatime);
-    void larcenygame_cleanup();
+    void rippergame_init();
+    void rippergame_fixedloop(float deltatime);
+    void rippergame_loop(float deltatime);
+    void rippergame_cleanup();
 
 #endif
