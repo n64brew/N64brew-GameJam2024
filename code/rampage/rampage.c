@@ -186,7 +186,7 @@ void rampage_fixedloop(float deltatime) {
             minigame_set_active(true);
             wav64_set_loop(&rampage_assets_get()->music, true);
             wav64_play(&rampage_assets_get()->music, 1);
-            mixer_ch_set_vol_pan(1, 0.85f, 0.0f);
+            mixer_ch_set_vol_pan(1, 0.85f, 0.5f);
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING) {
         gRampage.delay_timer -= deltatime;

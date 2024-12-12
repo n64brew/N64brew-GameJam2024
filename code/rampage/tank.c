@@ -125,7 +125,7 @@ void rampage_tank_fire(struct RampageTank* tank) {
 void rampage_tank_damage(void* data, int amount, struct Vector3* velocity, int source_id) {
     struct RampageTank* tank = (struct RampageTank*)data;
 
-    if (!is_player(source_id)) {
+    if (!is_player(source_id) || source_id == tank->last_hit_by) {
         return;
     }
 
@@ -138,6 +138,7 @@ void rampage_tank_damage(void* data, int amount, struct Vector3* velocity, int s
 
 void rampage_tank_contact_damage(struct RampageTank* tank) {
     if (vector3MagSqrd(&tank->dynamic_object.velocity) < TANK_DAMAGE_SPEED * TANK_DAMAGE_SPEED || !tank->last_hit_by) {
+        tank->last_hit_by = 0;
         return;
     }
 

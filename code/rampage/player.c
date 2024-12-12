@@ -207,7 +207,7 @@ void rampage_player_damage(void* data, int amount, struct Vector3* velocity, int
         player->is_attacking = 0;
 
         wav64_play(&rampage_assets_get()->roarSounds[randomInRange(0, 2)], 3);
-        mixer_ch_set_vol_pan(3, 0.75f, 0.0f);
+        mixer_ch_set_vol_pan(3, 0.75f, 0.5f);
     }
 }
 
