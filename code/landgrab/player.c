@@ -15,6 +15,119 @@
 #define SPRITE_CURSOR_P3 "rom:/landgrab/cursor_p3.rgba16.sprite"
 #define SPRITE_CURSOR_P4 "rom:/landgrab/cursor_p4.rgba16.sprite"
 
+static void
+player_clear_piece (Player *player)
+{
+  memset (player->piece_buffer, CELL_EMPTY, sizeof (player->piece_buffer));
+}
+
+static void
+player_reconstrain_cursor (Player *player)
+{
+  player_set_cursor (player, player->cursor_col, player->cursor_row);
+}
+
+static void
+player_move_cursor (Player *player, int col, int row, bool active)
+{
+  player_set_cursor (player, col, row);
+  player->move_delay = PLAYER_MOVE_DELAY;
+  if (active)
+    {
+      sfx_play (SFX_CLICK);
+    }
+}
+
+static int
+player_score (Player *player)
+{
+  int score = 0;
+  // Each unused square costs you a point
+  for (size_t i = 0; i < PIECE_COUNT; i++)
+    {
+      if (!player->pieces_used[i])
+        {
+          score -= PIECES[i].value;
+        }
+    }
+
+  // Bonuses are applied when the player uses all their pieces
+  if (player->pieces_left == 0)
+    {
+      score += BONUS_USED_ALL_PIECES;
+      if (player->monomino_final_piece)
+        {
+          score += BONUS_MONOMINO_FINAL_PIECE;
+        }
+    }
+
+  return score;
+}
+
+static void
+player_incr_piece (Player *player, int incr)
+{
+  // Bail if there are no pieces left
+  if (player->pieces_left == 0)
+    {
+      player_clear_piece (player);
+      return;
+    }
+
+  int desired_index = player->piece_index + incr;
+  // Wrap-around negative values
+  while (desired_index < 0)
+    {
+      desired_index += PIECE_COUNT;
+    }
+  // Wrap-around overflowing positive values
+  while (desired_index >= PIECE_COUNT)
+    {
+      desired_index -= PIECE_COUNT;
+    }
+  bool result = player_change_piece (player, desired_index);
+  // The requested piece is unavailable, try the next one
+  if (!result)
+    {
+      player_incr_piece (player, incr + (incr > 0 ? 1 : -1));
+    }
+}
+
+static void
+player_incr_value (Player *player, int incr)
+{
+  // Bail if there are no pieces left
+  if (player->pieces_left == 0)
+    {
+      player_clear_piece (player);
+      return;
+    }
+
+  int value = PIECES[player->piece_index].value;
+  int desired_value = value + incr;
+  // Wrap-around negative values
+  while (desired_value < PIECE_MIN_VALUE)
+    {
+      desired_value += PIECE_MAX_VALUE;
+    }
+  // Wrap-around overflowing positive values
+  while (desired_value > PIECE_MAX_VALUE)
+    {
+      desired_value -= PIECE_MAX_VALUE;
+    }
+  // Attempt to find an unused piece of the requested value
+  for (size_t i = 0; i < PIECE_COUNT; i++)
+    {
+      if (PIECES[i].value == desired_value && !player->pieces_used[i])
+        {
+          player_change_piece (player, i);
+          return;
+        }
+    }
+  // No piece of the requested value was found, try the next value
+  player_incr_value (player, incr + (incr > 0 ? 1 : -1));
+}
+
 void
 player_init (Player *player, PlyNum plynum)
 {
@@ -55,32 +168,6 @@ player_cleanup (Player *player)
   player->cursor_sprite = NULL;
 }
 
-int
-player_score (Player *player)
-{
-  int score = 0;
-  // Each unused square costs you a point
-  for (size_t i = 0; i < PIECE_COUNT; i++)
-    {
-      if (!player->pieces_used[i])
-        {
-          score -= PIECES[i].value;
-        }
-    }
-
-  // Bonuses are applied when the player uses all their pieces
-  if (player->pieces_left == 0)
-    {
-      score += BONUS_USED_ALL_PIECES;
-      if (player->monomino_final_piece)
-        {
-          score += BONUS_MONOMINO_FINAL_PIECE;
-        }
-    }
-
-  return score;
-}
-
 PlayerTurnResult
 player_loop (Player *player, bool active, float deltatime)
 {
@@ -103,32 +190,24 @@ player_loop (Player *player, bool active, float deltatime)
 
       if (JOYPAD_8WAY_IS_UP (d))
         {
-          player_set_cursor (player, player->cursor_col,
-                             player->cursor_row - 1);
-          player->move_delay = PLAYER_MOVE_DELAY;
-          sfx_play (SFX_CLICK);
+          player_move_cursor (player, player->cursor_col,
+                              player->cursor_row - 1, active);
         }
       else if (JOYPAD_8WAY_IS_DOWN (d))
         {
-          player_set_cursor (player, player->cursor_col,
-                             player->cursor_row + 1);
-          player->move_delay = PLAYER_MOVE_DELAY;
-          sfx_play (SFX_CLICK);
+          player_move_cursor (player, player->cursor_col,
+                              player->cursor_row + 1, active);
         }
 
       if (JOYPAD_8WAY_IS_LEFT (d))
         {
-          player_set_cursor (player, player->cursor_col - 1,
-                             player->cursor_row);
-          player->move_delay = PLAYER_MOVE_DELAY;
-          sfx_play (SFX_CLICK);
+          player_move_cursor (player, player->cursor_col - 1,
+                              player->cursor_row, active);
         }
       else if (JOYPAD_8WAY_IS_RIGHT (d))
         {
-          player_set_cursor (player, player->cursor_col + 1,
-                             player->cursor_row);
-          player->move_delay = PLAYER_MOVE_DELAY;
-          sfx_play (SFX_CLICK);
+          player_move_cursor (player, player->cursor_col + 1,
+                              player->cursor_row, active);
         }
     }
   else
@@ -205,7 +284,7 @@ player_loop_ai (Player *player, bool active, float deltatime)
     }
 }
 
-void
+static void
 player_render_piece (Player *player, bool active)
 {
   PlyNum p = player->plynum;
@@ -298,7 +377,7 @@ player_render_piece (Player *player, bool active)
     }
 }
 
-void
+static void
 player_render_cursor (Player *player, bool active)
 {
   const int icon_col = player->cursor_col + (PIECE_COLS / 2);
@@ -388,18 +467,6 @@ player_set_cursor (Player *player, int set_col, int set_row)
   return valid;
 }
 
-void
-player_reconstrain_cursor (Player *player)
-{
-  player_set_cursor (player, player->cursor_col, player->cursor_row);
-}
-
-void
-player_clear_piece (Player *player)
-{
-  memset (player->piece_buffer, CELL_EMPTY, sizeof (player->piece_buffer));
-}
-
 bool
 player_change_piece (Player *player, int piece_index)
 {
@@ -454,70 +521,6 @@ player_place_piece (Player *player)
       sfx_play (SFX_BUZZ);
       return false;
     }
-}
-
-void
-player_incr_piece (Player *player, int incr)
-{
-  // Bail if there are no pieces left
-  if (player->pieces_left == 0)
-    {
-      player_clear_piece (player);
-      return;
-    }
-
-  int desired_index = player->piece_index + incr;
-  // Wrap-around negative values
-  while (desired_index < 0)
-    {
-      desired_index += PIECE_COUNT;
-    }
-  // Wrap-around overflowing positive values
-  while (desired_index >= PIECE_COUNT)
-    {
-      desired_index -= PIECE_COUNT;
-    }
-  bool result = player_change_piece (player, desired_index);
-  // The requested piece is unavailable, try the next one
-  if (!result)
-    {
-      player_incr_piece (player, incr + (incr > 0 ? 1 : -1));
-    }
-}
-
-void
-player_incr_value (Player *player, int incr)
-{
-  // Bail if there are no pieces left
-  if (player->pieces_left == 0)
-    {
-      player_clear_piece (player);
-      return;
-    }
-
-  int value = PIECES[player->piece_index].value;
-  int desired_value = value + incr;
-  // Wrap-around negative values
-  while (desired_value < PIECE_MIN_VALUE)
-    {
-      desired_value += PIECE_MAX_VALUE;
-    }
-  // Wrap-around overflowing positive values
-  while (desired_value > PIECE_MAX_VALUE)
-    {
-      desired_value -= PIECE_MAX_VALUE;
-    }
-  // Attempt to find an unused piece of the requested value
-  for (size_t i = 0; i < PIECE_COUNT; i++)
-    {
-      if (PIECES[i].value == desired_value && !player->pieces_used[i])
-        {
-          player_change_piece (player, i);
-          return;
-        }
-    }
-  // No piece of the requested value was found, try the next value
-  player_incr_value (player, incr + (incr > 0 ? 1 : -1));
 }
 
 void

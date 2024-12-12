@@ -12,7 +12,7 @@ static void
 sfx_set_limits (SFX sound)
 {
   float freq = sfx[sound].wave.frequency;
-  mixer_ch_set_limits (sfx_channel(sound), 0, freq, 0);
+  mixer_ch_set_limits (sfx_channel (sound), 0, freq, 0);
 }
 
 void
@@ -41,5 +41,5 @@ sfx_cleanup (void)
 void
 sfx_play (SFX sound)
 {
-  wav64_play (&sfx[sound], sfx_channel(sound));
+  wav64_play (&sfx[sound], sfx_channel (sound));
 }

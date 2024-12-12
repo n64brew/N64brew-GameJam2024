@@ -1,4 +1,5 @@
 #include "background.h"
+#include "global.h"
 
 static sprite_t *bg_sprite = NULL;
 static rspq_block_t *bg_block = NULL;

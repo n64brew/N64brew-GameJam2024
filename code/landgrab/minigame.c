@@ -29,6 +29,13 @@ const MinigameDef minigame_def
 
 #define COLOR_MSG_BG RGBA32 (0x00, 0x00, 0x00, 0x80)
 
+#define SHOW_STATS_FPS 0
+#define SHOW_STATS_MEM 0
+
+#if SHOW_STATS_MEM
+static heap_stats_t heap_stats;
+#endif
+
 MinigameState minigame_state;
 Player players[MAXPLAYERS];
 
@@ -38,6 +45,7 @@ static size_t winner_count;
 static size_t turn_count;
 static float menu_input_delay;
 static xm64player_t music;
+static bool show_controls;
 static float random_hint_timer = 0.0f;
 static bool random_hint_paused = false;
 static const char *hint_msg = NULL;
@@ -126,6 +134,7 @@ minigame_set_state (MinigameState new_state)
       xm64player_set_loop (&music, true);
       xm64player_set_vol (&music, 0.5f);
       xm64player_play (&music, 0);
+      show_controls = true;
     }
 
   if (old_state == MINIGAME_STATE_PAUSE && new_state == MINIGAME_STATE_PLAY)
@@ -233,8 +242,7 @@ minigame_play_render (void)
 
   player_render (&players[active_plynum], true);
 
-  if (player_is_first_turn (&players[active_plynum])
-      && !plynum_is_ai (active_plynum))
+  if (show_controls)
     {
       scoreboard_controls_render ();
     }
@@ -268,6 +276,16 @@ minigame_play_render (void)
       minigame_lower_msg_print ("Expand diagonally to win!");
       // The random hint will replace this message eventually
     }
+
+#if SHOW_STATS_MEM
+  int mem = heap_stats.used / 1024;
+  rdpq_text_printf (NULL, FONT_SQUAREWAVE, 10, 15, "Mem: %d KiB", mem);
+#endif
+
+#if SHOW_STATS_FPS
+  float fps = display_get_fps ();
+  rdpq_text_printf (NULL, FONT_SQUAREWAVE, 10, 25, "FPS: %.2f", fps);
+#endif
 
   rdpq_detach_show ();
 }
@@ -335,6 +353,11 @@ minigame_play_loop (float deltatime)
       if (plynum_is_ai (next_player))
         {
           ai_reset (&players[next_player]);
+          show_controls = false;
+        }
+      else
+        {
+          show_controls = player_is_first_turn (&players[next_player]);
         }
 
       bool all_players_passed = true;
@@ -543,6 +566,10 @@ minigame_cleanup (void)
 void
 minigame_loop (float deltatime)
 {
+#if SHOW_STATS_MEM
+  sys_get_heap_stats (&heap_stats);
+#endif
+
   switch (minigame_state)
     {
     case MINIGAME_STATE_PLAY:

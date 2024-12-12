@@ -1,8 +1,6 @@
 #ifndef GAMEJAM2024_LANDGRAB_BACKGROUND_H
 #define GAMEJAM2024_LANDGRAB_BACKGROUND_H
 
-#include "global.h"
-
 void background_init (void);
 
 void background_cleanup (void);

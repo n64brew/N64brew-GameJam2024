@@ -20,8 +20,8 @@ typedef enum
 
 typedef struct
 {
-    int value;
-    Cell cells[PIECE_SIZE];
+  int value;
+  Cell cells[PIECE_SIZE];
 } Piece;
 
 extern const Piece PIECES[PIECE_COUNT];

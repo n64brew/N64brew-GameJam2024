@@ -17,6 +17,6 @@ static const color_t PLAYER_COLORS[] = {
   PLAYERCOLOR_4,
 };
 
-color_t color_between(color_t color_a, color_t color_b, float p);
+color_t color_between (color_t color_a, color_t color_b, float p);
 
 #endif // GAMEJAM2024_LANDGRAB_COLOR_H

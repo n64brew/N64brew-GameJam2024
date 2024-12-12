@@ -43,17 +43,11 @@ PlayerTurnResult player_loop_ai (Player *player, bool active, float deltatime);
 
 void player_render (Player *player, bool active);
 
-int player_score (Player *player);
-
 bool player_set_cursor (Player *player, int col, int row);
 
 bool player_change_piece (Player *player, int piece_index);
 
 bool player_place_piece (Player *player);
-
-void player_incr_piece (Player *player, int incr);
-
-void player_incr_value (Player *player, int incr);
 
 void player_flip_piece (Player *player);
 
