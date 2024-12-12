@@ -112,8 +112,8 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
                     rdpq_texture_rectangle(TILE0, xpos - Xb, ypos - Yb, xpos + Xb, ypos + Yb, 0, 0);
                 }
                 else {
-                    xpos = fclampr(xpos, 100, w - 100);
-                    ypos = fclampr(ypos, 100, h - 100);
+                    xpos = fclampr(xpos, 180, w - 180);
+                    ypos = fclampr(ypos, 180, h - 180);
                     rdpq_texture_rectangle(TILE0, xpos, ypos, xpos + 16, ypos + 16, 40, 4);
                 }
             }
@@ -134,8 +134,8 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
                     rdpq_texture_rectangle(TILE0, xpos - Xb, ypos - Yb, xpos + Xb, ypos + Yb, 0, 0);
                 }
                 else {
-                    xpos = fclampr(xpos, 100, w - 100);
-                    ypos = fclampr(ypos, 100, h - 100);
+                    xpos = fclampr(xpos, 180, w - 180);
+                    ypos = fclampr(ypos, 180, h - 180);
                     rdpq_texture_rectangle(TILE0, xpos, ypos, xpos + 16, ypos + 16, 40, 4);
                 }
             }
@@ -156,8 +156,8 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
                         rdpq_texture_rectangle(TILE0, xpos - Xb, ypos - Yb, xpos + Xb, ypos + Yb, 0, 0);
                     }
                     else {
-                        xpos = fclampr(xpos, 100, w - 100);
-                        ypos = fclampr(ypos, 100, h - 100);
+                        xpos = fclampr(xpos, 180, w - 180);
+                        ypos = fclampr(ypos, 180, h - 180);
                         rdpq_texture_rectangle(TILE0, xpos, ypos, xpos + 16, ypos + 16, 40, 4);
                     }
                 }
@@ -176,8 +176,8 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
                         rdpq_texture_rectangle(TILE0, xpos - Xb, ypos - Yb, xpos + Xb, ypos + Yb, 0, 0);
                     }
                     else {
-                        xpos = fclampr(xpos, 100, w - 100);
-                        ypos = fclampr(ypos, 100, h - 100);
+                        xpos = fclampr(xpos, 180, w - 180);
+                        ypos = fclampr(ypos, 180, h - 180);
                         rdpq_texture_rectangle(TILE0, xpos, ypos, xpos + 16, ypos + 16, 40, 4);
                     }
                 }
