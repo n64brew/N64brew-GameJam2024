@@ -14,6 +14,9 @@ ASSETS_LIST += \
 	filesystem/old_gods/white.sprite \
 	filesystem/old_gods/stone.ci4.sprite \
 	filesystem/old_gods/pattern.i8.sprite \
+	filesystem/old_gods/smoke.sprite \
+	filesystem/old_gods/grave.sprite \
+	filesystem/old_gods/pentogram.sprite \
 	filesystem/old_gods/ZenDots-Regular.font64 \
 	filesystem/old_gods/Jumpman_H1.font64 \
 	filesystem/old_gods/Jumpman_H2.font64 \
@@ -30,6 +33,9 @@ ASSETS_LIST += \
 	filesystem/old_gods/torus.t3dm \
 	filesystem/old_gods/shark.t3dm \
 	filesystem/old_gods/attackWave.t3dm \
+	filesystem/old_gods/smoke.t3dm \
+	filesystem/old_gods/alter.t3dm \
+	filesystem/old_gods/grave.t3dm \
 	filesystem/old_gods/bottled_bubbles.xm64 \
 	filesystem/old_gods/Item2A.wav64 \
 	filesystem/old_gods/sandy_seaside.wav64 \

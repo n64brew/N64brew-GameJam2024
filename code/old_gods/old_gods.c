@@ -13,10 +13,10 @@ resolution_t resolution;
 AppData g_appData;
 
 const MinigameDef minigame_def = {
-    .gamename = "Old Gods",
+    .gamename = "Sneks",
     .developername = "mr_J05H",
-    .description = "The old god snek must be fed.",
-    .instructions = "Gather the rats and offer them to the god to ascend as an Exalted Snek Acolyte"
+    .description = "Mother snek must be fed rats.",
+    .instructions = "Watch out for sneaky sharks."
 };
 
     

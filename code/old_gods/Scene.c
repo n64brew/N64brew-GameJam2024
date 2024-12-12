@@ -21,7 +21,13 @@ AF_Entity* camera = NULL;
 // God
 AF_Entity* levelEntity = NULL;
 AF_Entity* godSnekEntity = NULL;
-AF_Entity* mapSeaFoamEntity;
+AF_Entity* mapSeaFoamEntity = NULL;
+
+// Trimmings
+AF_Entity* alterEntity = NULL;
+AF_Entity* graveEntity = NULL;
+AF_Entity* smokeEntity = NULL;
+AF_Entity* ratSpawnPentogramEntity = NULL;
 //AF_Entity* godPedestalEntity = NULL;
 /*
 AF_Entity* godEye1 = NULL;
@@ -62,15 +68,12 @@ AF_Entity* player4Trail = NULL;
 
 // player attackWaves
 AF_Entity* playerWaves[PLAYER_COUNT] = {NULL, NULL, NULL, NULL};
+AF_Entity* playerEatenWave = NULL;
 
 // Gameplay Var
 uint8_t g_currentBucket = 0;
 
-
 #define VILLAGER_CARRY_HEIGHT 1
-
-
-
 
 #define HITBOX_RADIUS       10.f
 
@@ -121,11 +124,14 @@ void TogglePrimativeComponents(AF_Entity* _entity, BOOL _state);
 void UpdateWaterTrails(AppData* appData);
 void UpdatePlayerAttackWaves(AppData* _appData);
 void MonitorPlayerHealth(AppData* _appData);
+void UpdateEffects(AppData* _appData);
 void RespawnPlayer(AF_Entity* _entity);
 
 void OnSharkCollision(AF_Collision* _collision);
 void Scene_SetupSharks(AppData* _appData);
 void RespawnVillager();
+
+void Scene_SetupLevelObjects(AppData* _appData);
 
 void PlayerController_DamageHandler(AppData* _appData){
     for(int i = 0; i < PLAYER_COUNT; ++i){
@@ -195,9 +201,10 @@ void Scene_Update(AppData* _appData){
 
     // TODO
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
-        PlayerController_UpdateAllPlayerMovements(&_appData->input, *_appData->gameplayData.playerEntities, PLAYER_COUNT);
+        PlayerController_UpdateAllPlayerMovements(_appData);
         UpdateWaterTrails(_appData);
         UpdatePlayerAttackWaves(_appData);
+        UpdateEffects(_appData);
 
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
@@ -273,6 +280,34 @@ void Scene_Update(AppData* _appData){
 	}
 
     MonitorPlayerHealth(_appData);
+   
+}
+
+void UpdateEffects(AppData* _appData){
+    // update the smoke
+    AF_CMesh* smokeMesh = smokeEntity->mesh;
+    if(smokeMesh->material.color.a - 10.0f <= 0){
+        smokeMesh->material.color.a = 0.0f;
+    }else{
+        smokeMesh->material.color.a -= 10.0f;
+    }
+
+    // update the spawn pentogram
+    AF_CMesh* spawnPentagramMesh = ratSpawnPentogramEntity->mesh;
+    if(spawnPentagramMesh->material.color.a - 10.0f <= 0){
+        spawnPentagramMesh->material.color.a = 0.0f;
+    }else{
+        spawnPentagramMesh->material.color.a -= 10.0f;
+    }
+
+    // update the eaten attack wave
+    AF_CMesh* eatenWaveMesh = playerEatenWave->mesh;
+    if(eatenWaveMesh->material.color.a - 10.0f <= 0){
+        eatenWaveMesh->material.color.a = 0.0f;
+    }else{
+        eatenWaveMesh->material.color.a -= 10.0f;
+    }
+
 }
 
 void UpdatePlayerAttackWaves(AppData* _appData){
@@ -387,7 +422,7 @@ void Scene_SetupEntities(AppData* _appData){
     // Create Player1 Hat
     // position needs to be thought of as local to the parent it will be inherited by
     
-    Vec3 godSeaFoamPos = {0.0f, -0.0001f, -0.15f};
+    Vec3 godSeaFoamPos = {0.0f, 0.0f, 0.0f};
     Vec3 godSeaFoamScale = {30.0f, 1.0f, 15.0f};
     mapSeaFoamEntity = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
@@ -417,7 +452,7 @@ void Scene_SetupEntities(AppData* _appData){
     // Player shared Vars
     float foamAnimationSpeed = -0.5f;
 	// ---------Create Player1------------------
-	Vec3 player1Pos = {2.0f, 1.5f, 1.0f};
+	Vec3 player1Pos = {2.0f, 0.0f, 1.0f};
 	Vec3 player1Scale = {1.0f,1.0f,1.0f};
     gameplayData->playerEntities[0] = Entity_Factory_CreatePrimative(_ecs, player1Pos, player1Scale, AF_MESH_TYPE_MESH, AABB);
     AF_Entity* player1Entity = gameplayData->playerEntities[0];
@@ -461,7 +496,7 @@ void Scene_SetupEntities(AppData* _appData){
     float aiReactionSpeed = AI_MOVEMENT_SPEED_MOD * ((1+core_get_aidifficulty()) + rand()%((1+core_get_aidifficulty())));
     
     // Create Player2
-	Vec3 player2Pos = {-2.0f, 1.5f, 1.0f};
+	Vec3 player2Pos = {-2.0f, 0.0f, 1.0f};
 	Vec3 player2Scale = {1,1,1};
     
     gameplayData->playerEntities[1] = Entity_Factory_CreatePrimative(_ecs, player2Pos, player2Scale, AF_MESH_TYPE_MESH, AABB);
@@ -497,7 +532,7 @@ void Scene_SetupEntities(AppData* _appData){
     player2Trail->animation->animationSpeed = foamAnimationSpeed;
     
     // Create Player3
-	Vec3 player3Pos = {-2.0f, 1.5f, -1.0f};
+	Vec3 player3Pos = {-2.0f, 0.0f, -1.0f};
 	Vec3 player3Scale = {.75f,.75f,.75f};
     
     gameplayData->playerEntities[2] = Entity_Factory_CreatePrimative(_ecs, player3Pos, player3Scale, AF_MESH_TYPE_MESH, AABB);
@@ -534,7 +569,7 @@ void Scene_SetupEntities(AppData* _appData){
 
 
     // Create Player4
-	Vec3 player4Pos = {2.0f, 1.5f, -1.0f};
+	Vec3 player4Pos = {2.0f, 0.0f, -1.0f};
 	Vec3 player4Scale = {1,1,1};
     
     gameplayData->playerEntities[3] = Entity_Factory_CreatePrimative(_ecs, player4Pos, player4Scale, AF_MESH_TYPE_MESH, AABB);
@@ -613,7 +648,7 @@ void Scene_SetupEntities(AppData* _appData){
     }
     
 	//=========ENVIRONMENT========
-    Vec3 mapBoundingVolume = {15,1, 7.5};
+    Vec3 mapBoundingVolume = {15,0, 7.5};
     Vec3 levelMapPos = {0, 0, 0};
     
     
@@ -632,8 +667,8 @@ void Scene_SetupEntities(AppData* _appData){
     _appData->gameplayData.levelBounds = mapBoundingVolume;
     
     // ============Buckets=============
-    uint8_t offsetX = 4;
-    uint8_t offsetZ = 2;
+    uint8_t offsetX = 5;
+    uint8_t offsetZ = 4;
     Vec3 bucketScale = {5,0.1f,5};
     float bucketY = 0.01f;
     // Bucket 1
@@ -664,7 +699,7 @@ void Scene_SetupEntities(AppData* _appData){
 
     // Bucket 3
     // World pos and scale for bucket
-	Vec3 bucket3Pos =  {-mapBoundingVolume.x + offsetX, bucketY, mapBoundingVolume.z - offsetZ};
+	Vec3 bucket3Pos =  {-mapBoundingVolume.x + offsetX, bucketY, mapBoundingVolume.z - (offsetZ*.5f)};
 	//Vec3 bucket3Scale = {1,1,1};
 	bucket3 = Entity_Factory_CreatePrimative(_ecs, bucket3Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket3->mesh->enabled = AF_Component_SetHas(bucket3->mesh->enabled, FALSE);
@@ -675,7 +710,7 @@ void Scene_SetupEntities(AppData* _appData){
     bucket3->collider->collision.callback = Scene_OnBucket3Trigger;
     // Bucket 4
     // World pos and scale for bucket
-	Vec3 bucket4Pos =  {mapBoundingVolume.x - offsetX, bucketY, mapBoundingVolume.z - offsetZ};
+	Vec3 bucket4Pos =  {mapBoundingVolume.x - offsetX, bucketY, mapBoundingVolume.z - (offsetZ*.5f)};
 	//Vec3 bucket4Scale = {1,1,1};
 	bucket4 = Entity_Factory_CreatePrimative(_ecs, bucket4Pos, bucketScale,AF_MESH_TYPE_MESH, AABB);
     bucket4->mesh->enabled = AF_Component_SetHas(bucket4->mesh->enabled, FALSE);
@@ -708,7 +743,7 @@ void Scene_SetupEntities(AppData* _appData){
     // ==== SHARKS ====
     Scene_SetupSharks(_appData);
     
-
+    Scene_SetupLevelObjects(_appData);
     
 
 	// Scale everything due to strange model sizes exported from blender
@@ -721,6 +756,93 @@ void Scene_SetupEntities(AppData* _appData){
     // ======== AUDIO ========
     wav64_open(&feedGodSoundFX,feedGodSoundFXPath);
     wav64_open(&pickupSoundFX, pickupSoundFXPath);
+}
+
+void Scene_SetupLevelObjects(AppData* _appData){
+    float animationSpeed = -0.5f;
+    // Place the alter
+    Vec3 alterSpawnPos = {0,0.1f,0.1f};
+    Vec3 alterScale = { 30,1,15};
+    alterEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	alterEntity->transform->pos = alterSpawnPos;
+    alterEntity->transform->scale = alterScale;
+	// add a rigidbody to our cube
+	*alterEntity->mesh = AF_CMesh_ADD();
+	alterEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    alterEntity->mesh->material.color = WHITE_COLOR;
+    alterEntity->mesh->material.color.a = 255;
+    alterEntity->mesh->meshID = MODEL_ALTER; 
+    alterEntity->rigidbody->isKinematic = TRUE;
+    alterEntity->rigidbody->inverseMass = 0.0f;
+    
+    
+    // place the grave
+    /*
+    Vec3 graveSpawnPos = {0,0.5f,.1f};
+    Vec3 graveScale = { 30,1,15};
+    graveEntity = AF_ECS_CreateEntity(&_appData->ecs);
+    graveEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	graveEntity->transform->pos = graveSpawnPos;
+    graveEntity->transform->scale = graveScale;
+	// add a rigidbody to our cube
+	*graveEntity->mesh = AF_CMesh_ADD();
+	graveEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    graveEntity->mesh->material.color = WHITE_COLOR;
+    graveEntity->mesh->material.color.a = 255;
+    graveEntity->mesh->meshID = MODEL_GRAVE; 
+    */
+
+    // place the re-usable smoke
+    Vec3 smokeSpawnPos = {7,0,0};
+    Vec3 smokeScale = { 3,3,3};
+    smokeEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	smokeEntity->transform->pos = smokeSpawnPos;
+    smokeEntity->transform->scale = smokeScale;
+	// add a rigidbody to our cube
+	*smokeEntity->mesh = AF_CMesh_ADD();
+	smokeEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    smokeEntity->mesh->material.color = WHITE_COLOR;
+    smokeEntity->mesh->material.color.a = 255;
+    smokeEntity->mesh->meshID = MODEL_SMOKE; 
+    smokeEntity->rigidbody->isKinematic = TRUE;
+    smokeEntity->rigidbody->inverseMass = 0.0f;
+    
+
+    // place the re-usable snake eaten
+    Vec3 playerEatenWavesSpawnPos = {40,0,0};
+    Vec3 playerEatenWavesalterScale = { 1,1,1};
+    playerEatenWave = AF_ECS_CreateEntity(&_appData->ecs);
+	playerEatenWave->transform->pos = playerEatenWavesSpawnPos;
+    playerEatenWave->transform->scale = playerEatenWavesalterScale;
+	// add a rigidbody to our cube
+	*playerEatenWave->mesh = AF_CMesh_ADD();
+	playerEatenWave->mesh->meshType = AF_MESH_TYPE_MESH;
+    playerEatenWave->mesh->material.color = WHITE_COLOR;
+    playerEatenWave->mesh->material.color.a = 150;
+    playerEatenWave->mesh->meshID = MODEL_ATTACK_WAVE; 
+    playerEatenWave->rigidbody->isKinematic = TRUE;
+    playerEatenWave->rigidbody->inverseMass = 0.0f;
+    
+    // Animation
+    *playerEatenWave->animation = AF_CAnimation_ADD();
+    playerEatenWave->animation->animationSpeed = animationSpeed;
+
+    // Place the alter
+    Vec3 ratPentogramSpawnPos = {-5,0.1f,0.1f};
+    Vec3 ratPentogramScale = { 15,1,7.5};
+    ratSpawnPentogramEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	ratSpawnPentogramEntity->transform->pos = ratPentogramSpawnPos;
+    ratSpawnPentogramEntity->transform->scale = ratPentogramScale;
+	// add a rigidbody to our cube
+	*ratSpawnPentogramEntity->mesh = AF_CMesh_ADD();
+	ratSpawnPentogramEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    ratSpawnPentogramEntity->mesh->material.color = WHITE_COLOR;
+    ratSpawnPentogramEntity->mesh->material.color.a = 150;
+    ratSpawnPentogramEntity->mesh->meshID = MODEL_ALTER; 
+    ratSpawnPentogramEntity->rigidbody->isKinematic = TRUE;
+    ratSpawnPentogramEntity->rigidbody->inverseMass = 0.0f;
+    
+    
 }
 
 
@@ -804,8 +926,8 @@ void Scene_SetupSharks(AppData* _appData){
         //debugf("entity: %i hasAI: %i isEnabled: %i\n",i, hasAIBehaviour, aiIsEnabled);
         // Create Player1 Foam Trail
         // position needs to be thought of as local to the parent it will be inherited by
-        Vec3 sharkHunterTrailPos = {0.0f, -.01f, 0.0f};
-        Vec3 sharkHunterTrailScale = {1.5f, 1.0f, 1.5f};
+        //Vec3 sharkHunterTrailPos = {0.0f, -.01f, 0.0f};
+        //Vec3 sharkHunterTrailScale = {1.5f, 1.0f, 1.5f};
         sharkHunterTrails[i] = AF_ECS_CreateEntity(&_appData->ecs);
         AF_Entity* sharkHunterTrail = sharkHunterTrails[i];
         //move the position up a little
@@ -871,7 +993,18 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
         *_currentBucket = 3;
         Vec3 bucket4Pos = {bucket4->transform->pos.x, bucket4->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket4->transform->pos.z};
         villager1->transform->pos = bucket4Pos;
+
     }
+
+    // move the puff of spawn smoke
+    smokeEntity->transform->pos = villager1->transform->pos;
+    // make the smoke appear. it will disapate over time.
+    smokeEntity->mesh->material.color.a = 255;
+
+    // Move the pentogram to the rat spawn pos
+    ratSpawnPentogramEntity->transform->pos = villager1->transform->pos;
+    // make the smoke appear. it will disapate over time.
+    ratSpawnPentogramEntity->mesh->material.color.a = 255;
 }
 
 // ======== TRIGGERS =========
@@ -1128,6 +1261,8 @@ void OnSharkCollision(AF_Collision* _collision){
         // player yum yum audio
         wav64_play(&pickupSoundFX, 16);
     }
+
+    
 }
 
 
@@ -1362,6 +1497,10 @@ void MonitorPlayerHealth(AppData* _appData){
                 RespawnVillager();
             }
             // start a timer and restart
+            // move the blood red wave to the players death position
+            playerEatenWave->transform->pos = playerEntity->transform->pos;
+            // make it appear again. it will disapate over time.
+            playerEatenWave->mesh->material.color.a = 255;
             RespawnPlayer(playerEntity);
         }
 
@@ -1378,6 +1517,8 @@ void MonitorPlayerHealth(AppData* _appData){
 
 // Respawn player
 void RespawnPlayer(AF_Entity* _entity){
+
+
     // zero velocities
     AF_C3DRigidbody* rigidbody = _entity->rigidbody;
     Vec3 zeroVel = {0,0,0};

@@ -2,8 +2,8 @@
 #include "AF_Physics.h"
 #include "AF_Vec2.h"
 #include <libdragon.h>
-#include "AF_Input.h"
 #include "AF_Renderer.h"
+
 
 #define STICK_DEAD_ZONE 0.01
 #define PLAYER_COUNT 4
@@ -12,20 +12,19 @@
 #define B_KEY 1			// B Button
 #define START_KEY 2		// Start Button
 
-void PlayerController_UpdateAllPlayerMovements(AF_Input* _input, AF_Entity* _entities, uint8_t _entityCount){
-	for(int i = 0; i < _entityCount; ++i){
-		
+// Update all player movements
+// loop through the provided entity array 
+void PlayerController_UpdateAllPlayerMovements(AppData* _appData){
+	for(int i = 0; i < PLAYER_COUNT; ++i){
 		// player 1
-		PlayerController_UpdatePlayerMovement(_input->controlSticks[i], &_entities[i]);
-		PlayerController_UpdatePlayerButtonPress(i, _input, &_entities[i]);
+		PlayerController_UpdatePlayerMovement(_appData->input.controlSticks[i], _appData->gameplayData.playerEntities[i]);
+		PlayerController_UpdatePlayerButtonPress(i, &_appData->input, _appData->gameplayData.playerEntities[i]);
 	}	
 }
 
-
-
+// Update player button press
 void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _input, AF_Entity* _entity){
 	// Handle attack
-	//for(int i = 0; i < PLAYER_COUNT; ++i){
 		AF_CPlayerData* playerData = _entity->playerData;
 
 		
@@ -47,7 +46,6 @@ void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _i
 		}else{
 			playerData->isJumping = FALSE;
 		}
-	//}
 }
 
 void PlayerController_Attack(AF_Entity* _entity){
@@ -58,7 +56,6 @@ void PlayerController_Attack(AF_Entity* _entity){
 	BOOL hasMeshComponent = AF_Component_GetHas(animation->enabled);
 	BOOL isEnabled = AF_Component_GetEnabled(animation->enabled);
 	if(hasMeshComponent == TRUE && isEnabled == TRUE){
-		
 		AF_Renderer_PlayAnimation(animation);
 	}
 }
@@ -66,23 +63,18 @@ void PlayerController_Attack(AF_Entity* _entity){
  void PlayerController_UpdatePlayerMovement(Vec2 _stick, AF_Entity* _entity){
 	int vecX = 0;
 	int vecY = 0;
-
     // Player 1
 	if (_stick.y > STICK_DEAD_ZONE){
 		vecY = -1;
-		//debugf("Stick y %f:\n",y);
 	}
 	if(_stick.y < -STICK_DEAD_ZONE){
 		vecY = 1;
-		//debugf("Stick y %f:\n",y);
 	}
 
 	if(_stick.x > STICK_DEAD_ZONE){
-		//debugf("Stick y %f:\n",y);
 		vecX = 1;
 	}
 	if(_stick.x < -STICK_DEAD_ZONE ){
-		//debugf("Stick x %f:\n",x);
 		vecX = -1;
 	}
 

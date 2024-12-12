@@ -1,49 +1,40 @@
 // ==== HIGH PRIORITY ====
-[x] Allow the minigame to be paused by pressing START, and possibly exit as well
-[x] change debug to be c up button
-[x] Menu button press plays sound effect
-[x] snakes can't leave the boundry area
-[x] put in shark 
-[x] shark moves on the outside circling. 
-[x] Shark eats player who moves beyond outer area.
-[x] player respawns on being eaten
-[] player respawns after delay
+[] fix memory leaks (missing 33kb)
+[] timer doesn't display well, flickerying numbers
 
-[] snakes can attack each other visually
-
-[x] snakes have foam trails
-
-[] god changes color/emerges based on number of rats
+// ======== POLISH ========
+[] dead rats on centre
+[] count down graphic should either animate or hug the number a bit better.
+[] player cards text is a little off centre
 [] rats pile up infront of god 
-[] AI speed is very fast
-[] rats spawn out of the ground with smoke puff
-[] god is on a pedistal
 [] input buttons are a bit sticky
 [] rats jitter around whilst alive
-
-[] count down graphic should either animate or hug the number a bit better.
-[] Winner title font is small
-[] winner font is positioned a little high.
-[] player cards text is a little off centre
-[] player blast becomes stronger with more rats given.
-
-// ==== JUICE ====
-
+[] rats spawn out of the ground with smoke puff
+[] Get new music
+[] look for new sounds that are .xm
 [] make main menu press A wiggle
 [] celebration at end
 [] consider winning player takes the mantle of the old god.
 [] player card flash on recieve points
+[] god changes color/emerges based on number of rats
 
-[] make boundry area
-[] Get new music
-[] look for new sounds that are .xm
+// ============ BUGS ============
+[] USB connection is closing at start
+[] very slow fps with main menu up
 
+// ======== FINAL =========
 [] comment coded
 [] refactor and cleanup code
 [] Create pull request
 [] create itch.io page
 
 // ==== DONE ====
+[x] Winner title font is small
+[x] winner font is positioned a little high.
+[x] update instructions text to be explicit
+[x] main menu press A needs brackets
+[x] Count down font could be larger
+[x] menu exit should exit to jam menu
 [x] make floor water
 [x] make corners sand island
 [x] make centre sand island
@@ -59,14 +50,18 @@
 [x] end screen audio
 [x] pickup audio
 [x] put down audio
-
 [x] fix template project back to original
 [x] put player selection back in to config
-
-
-// ============ BUGS ============
-[] USB connection is closing at start
-[] very slow fps with main menu up
-[] player 2 doesn't work
-[] fix memory leaks (missing 33kb)
-[] timer doesn't display well, flickerying numbers
+[x] Allow the minigame to be paused by pressing START, and possibly exit as well
+[x] change debug to be c up button
+[x] Menu button press plays sound effect
+[x] snakes can't leave the boundry area
+[x] put in shark 
+[x] shark moves on the outside circling. 
+[x] Shark eats player who moves beyond outer area.
+[x] player respawns on being eaten
+[x] player respawns after delay
+[x] snakes can attack each other visually
+[x] snakes have foam trails
+[x] AI speed is very fast
+[x] players 3, 4 are not controllable

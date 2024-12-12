@@ -23,7 +23,10 @@ const char *model_paths[MODEL_COUNT] = {
     "rom:/old_gods/torus.t3dm",
     "rom:/old_gods/sea_trail.t3dm",
     "rom:/old_gods/shark.t3dm",
-    "rom:/old_gods/attackWave.t3dm"
+    "rom:/old_gods/attackWave.t3dm",
+    "rom:/old_gods/alter.t3dm",
+    "rom:/old_gods/grave.t3dm",
+    "rom:/old_gods/smoke.t3dm"
 };
 
 const char* feedGodSoundFXPath = "rom:/old_gods/Ability_Learn.wav64";
