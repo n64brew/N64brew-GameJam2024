@@ -23,21 +23,16 @@
 #define SIGN_SMALL_PADDING_X SIGN_BIG_PADDING_X
 #define SIGN_SMALL_TOTAL_Y (SIGN_SMALL_HEIGHT + SIGN_SMALL_PADDING_Y)
 
-static sprite_t* sign_big_sprite;
-static sprite_t* sign_small_sprite;
-
 uint32_t outro_timer = 0;
 uint8_t sign_x_offset = 0;
 
 void outro_init (void) {
-	sign_big_sprite = sprite_load("rom:/hydraharmonics/sign-big.ci4.sprite");
-	sign_small_sprite = sprite_load("rom:/hydraharmonics/sign-small.ci4.sprite");
 }
 
 void outro_interact (void) {
 	outro_timer++;
 	// Move the signs left
-	if (sign_x_offset <= sign_big_sprite->width) {
+	if (sign_x_offset <= SIGN_BIG_WIDTH) {
 		sign_x_offset += SIGN_SPEED_X;
 	}
 	// Move the winners sign down
@@ -132,6 +127,4 @@ void outro_sign_draw (void) {
 }
 
 void outro_clear (void) {
-	sprite_free(sign_big_sprite);
-	sprite_free(sign_small_sprite);
 }

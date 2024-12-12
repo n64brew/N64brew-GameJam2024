@@ -50,11 +50,11 @@ static sprite_t* controls_r_sprite;
 static uint16_t note_timer = 0;
 
 static char* note_descriptions[NOTES_TYPE_COUNT] = {
-	"Normal: No effect",
-	"Back: Move back",
-	"Front: Move forward",
-	"2-swap: Swap randomly",
-	"4-swap: Swap all players",
+	"Normal: Eat these!",
+	"Back: Move backwards!",
+	"Front: Move forwards!",
+	"2-swap: Swap with one!",
+	"4-swap: Swap with all!",
 	"Sweet: Worth two points!",
 	"Sour: Lose one point!",
 };
@@ -62,15 +62,14 @@ static char* note_descriptions[NOTES_TYPE_COUNT] = {
 void intro_init (void) {
 	curtain_sprite = sprite_load("rom:/hydraharmonics/curtain.ci4.sprite");
 	curtain_surf = sprite_get_pixels(curtain_sprite);
-
-	controls_dup_sprite = sprite_load("rom:/core/DUp.sprite");
-	controls_ddown_sprite = sprite_load("rom:/core/DDown.sprite");
-	controls_cup_sprite = sprite_load("rom:/core/CUp.sprite");
-	controls_cdown_sprite = sprite_load("rom:/core/CDown.sprite");
-	controls_a_sprite = sprite_load("rom:/core/AButton.sprite");
-	controls_z_sprite = sprite_load("rom:/core/ZTrigger.sprite");
-	controls_l_sprite = sprite_load("rom:/core/LTrigger.sprite");
-	controls_r_sprite = sprite_load("rom:/core/RTrigger.sprite");
+	controls_dup_sprite = sprite_load("rom:/hydraharmonics/button-dup.ci4.sprite");
+	controls_ddown_sprite = sprite_load("rom:/hydraharmonics/button-ddown.ci4.sprite");
+	controls_cup_sprite = sprite_load("rom:/hydraharmonics/button-cup.ci4.sprite");
+	controls_cdown_sprite = sprite_load("rom:/hydraharmonics/button-cdown.ci4.sprite");
+	controls_a_sprite = sprite_load("rom:/hydraharmonics/button-a.ci4.sprite");
+	controls_z_sprite = sprite_load("rom:/hydraharmonics/button-z.ci4.sprite");
+	controls_l_sprite = sprite_load("rom:/hydraharmonics/button-l.ci4.sprite");
+	controls_r_sprite = sprite_load("rom:/hydraharmonics/button-r.ci4.sprite");
 	for (uint8_t i=0; i<CURTAIN_COUNT_Y; i++) {
 		curtain_offset[i] = 0;
 	}
@@ -187,7 +186,7 @@ void intro_instructions_draw (void) {
 			FONT_DEFAULT,
 			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + controls_cup_sprite->width + INSTRUCTIONS_ICON_PADDING,
 			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT,
-			"Move to top row"
+			"Move up!"
 		);
 		text_y_offset += controls_dup_sprite->height + INSTRUCTIONS_ICON_PADDING;
 		// "Down" row
@@ -209,7 +208,7 @@ void intro_instructions_draw (void) {
 			FONT_DEFAULT,
 			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + controls_cup_sprite->width + INSTRUCTIONS_ICON_PADDING,
 			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT,
-			"Move to base row"
+			"Move down!"
 		);
 		text_y_offset += controls_ddown_sprite->height + INSTRUCTIONS_ICON_PADDING;
 		// "Chomp" row
@@ -244,7 +243,7 @@ void intro_instructions_draw (void) {
 			FONT_DEFAULT,
 			INSTRUCTIONS_TEXT_LEFT_ABS_X + controls_dup_sprite->width + controls_cup_sprite->width + INSTRUCTIONS_ICON_PADDING,
 			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + title_y_offset + text_y_offset,
-			"Chomp chomp!"
+			"Chomp!"
 		);
 		text_y_offset += controls_a_sprite->height + INSTRUCTIONS_ICON_PADDING;
 		textmetrics = rdpq_text_printf(
@@ -252,7 +251,7 @@ void intro_instructions_draw (void) {
 			FONT_DEFAULT,
 			INSTRUCTIONS_TEXT_LEFT_ABS_X,
 			INSTRUCTIONS_PADDING_Y + INSTRUCTIONS_TEXT_PADDING_Y + INSTRUCTIONS_TEXT_NEWLINE_HEIGHT + title_y_offset + text_y_offset,
-			"N64 Squid: Lead programmer\nGary Jones III: Art Director, Music\nBrozilla: Audio conversion; StatycTyr: Additional art"
+			"N64 Squid: Lead programmer\nGary Jones III: Art director, music\nBrozilla: Audio conversion; StatycTyr: Additional art"
 		);
 		text_y_offset = 0;
 

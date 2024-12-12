@@ -222,36 +222,4 @@ static const hydra_animation_t animation_db [HYDRA_ANIMATION_COUNT] = {
 	{	animation_db_swap_wait,		HYDRA_ANIMATION_LENGTH_SWAP_WAIT,		HYDRA_ANIMATION_SWAP_WAIT},
 	{	animation_db_grin,			HYDRA_ANIMATION_LENGTH_GRIN,			HYDRA_ANIMATION_GRIN},
 };
-/*
-// DB of head animations
-typedef enum {
-	ANIMATION_DB_X,
-	ANIMATION_DB_Y,
-	ANIMATION_DB_LENGTH,
-	ANIMATION_DB_FRAME_DURATION,
-	ANIMATION_DB_X_OFFSET,
-	ANIMATION_DB_NEXT,
-	ANIMATION_DB_COUNT,
-} animation_offsets_t;
-
-static const int8_t animation_offsets[HYDRA_ANIMATION_COUNT][ANIMATION_DB_COUNT] = {
-		{0,	0,	1,	1,	0,	HYDRA_ANIMATION_NONE},			// Idle
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE},			// Open
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_NONE},			// Close
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_SUCCESS},	// Open success
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW},			// Close success
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_TO_SWAP},	// Open to swap
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW_TO_SWAP},	// Close to swap
-		{0,	0,	11,	1,	0,	HYDRA_ANIMATION_CLOSE_TO_STUN},	// Open to stun
-		{0,	1,	11,	1,	0,	HYDRA_ANIMATION_CHEW_TO_STUN},	// Close to stun
-		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_NONE},			// Chew
-		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_SWAP_DOWN},		// Chew to swap
-		{0,	2,	4,	5,	-4,	HYDRA_ANIMATION_STUN},			// Chew to swap
-		{4,	2,	3,	40,	0,	HYDRA_ANIMATION_SLEEP},			// Sleep
-		{7,	2,	1,	65,	0,	HYDRA_ANIMATION_NONE},			// Stun
-		{8,	2,	1,	1,	0,	HYDRA_ANIMATION_SWAP_DOWN},		// Swap downwards
-		{9,	2,	1,	1,	0,	HYDRA_ANIMATION_SWAP_UP},		// Swap downwards
-		{10,2,	1,	1,	0,	HYDRA_ANIMATION_SWAP_WAIT},		// Swap downwards
-	};
-*/
 #endif

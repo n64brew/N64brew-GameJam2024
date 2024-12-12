@@ -63,8 +63,14 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/panel-corner-bot.ci4.sprite \
 	filesystem/hydraharmonics/panel-bg.ci4.sprite \
 	filesystem/hydraharmonics/panel-rope.ci4.sprite \
-	filesystem/hydraharmonics/sign-big.ci4.sprite \
-	filesystem/hydraharmonics/sign-small.ci4.sprite \
+	filesystem/hydraharmonics/button-a.ci4.sprite \
+	filesystem/hydraharmonics/button-l.ci4.sprite \
+	filesystem/hydraharmonics/button-r.ci4.sprite \
+	filesystem/hydraharmonics/button-z.ci4.sprite \
+	filesystem/hydraharmonics/button-cup.ci4.sprite \
+	filesystem/hydraharmonics/button-cdown.ci4.sprite \
+	filesystem/hydraharmonics/button-dup.ci4.sprite \
+	filesystem/hydraharmonics/button-ddown.ci4.sprite \
 	filesystem/hydraharmonics/Superclarendon-Regular-01.font64 \
 	filesystem/hydraharmonics/slide-whistle-up.wav64 \
 	filesystem/hydraharmonics/slide-whistle-down.wav64 \
