@@ -149,7 +149,7 @@ ai_shuffle_moves (void)
 }
 
 static void
-ai_locate_initial_moves (PlyNum p)
+ai_gather_initial_moves (PlyNum p)
 {
   int index = 0;
   const AiMove corners[] = {
@@ -183,7 +183,7 @@ ai_locate_initial_moves (PlyNum p)
 }
 
 static void
-ai_locate_next_moves (PlyNum p)
+ai_gather_next_moves (PlyNum p)
 {
   size_t move_index = 0;
   for (size_t board_row = 0; board_row < BOARD_ROWS; board_row++)
@@ -259,6 +259,17 @@ ai_try_move (Player *player, const AiMove *loc)
   for (size_t piece_index = 0; piece_index < ai_piece_count; piece_index++)
     {
       player_change_piece (player, ai_pieces[piece_index]);
+
+      // Randomly flip and mirror the piece for variety
+      if (rand () % 2)
+        {
+          player_flip_piece (player);
+        }
+      if (rand () % 2)
+        {
+          player_mirror_piece (player);
+        }
+
       for (size_t orientation = 0; orientation < 4; orientation++)
         {
           if (orientation == 1)
@@ -274,9 +285,11 @@ ai_try_move (Player *player, const AiMove *loc)
               player_mirror_piece (player);
             }
 
-          for (ssize_t offset_y = -PIECE_ROWS; offset_y <= PIECE_ROWS; offset_y++)
+          for (ssize_t offset_y = -PIECE_ROWS; offset_y <= PIECE_ROWS;
+               offset_y++)
             {
-              for (ssize_t offset_x = -PIECE_COLS; offset_x <= PIECE_COLS; offset_x++)
+              for (ssize_t offset_x = -PIECE_COLS; offset_x <= PIECE_COLS;
+                   offset_x++)
                 {
                   player_set_cursor (player, loc->col + offset_x,
                                      loc->row + offset_y);
@@ -302,11 +315,11 @@ ai_try (Player *player)
     }
   else if (player->pieces_left == PIECE_COUNT)
     {
-      ai_locate_initial_moves (player->plynum);
+      ai_gather_initial_moves (player->plynum);
     }
   else
     {
-      ai_locate_next_moves (player->plynum);
+      ai_gather_next_moves (player->plynum);
       ai_shuffle_moves ();
     }
 
