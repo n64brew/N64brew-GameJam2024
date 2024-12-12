@@ -27,9 +27,6 @@
     void minigame_cleanup(){main_close();};
 
     void main_init(){
-        debug_init_isviewer();
-        debug_init_usblog();
-
         intro();
 
         display_init(
@@ -82,6 +79,7 @@
             xm64player_close(&xmplayer);
             xmplayeropen = false;
         }
+        unregister_VI_handler((void(*)())rand);
 
         gfx_close();
         world_close();

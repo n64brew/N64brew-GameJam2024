@@ -91,9 +91,12 @@ void intro(void)
 
 		nframes++;
 
+
 		rspq_wait();
 	}
-    
+	yuv_blitter_free(&yuv);
+    mpeg2_close(video_track);
+
     display_close();
     yuv_close();
 }
