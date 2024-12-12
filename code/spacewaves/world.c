@@ -27,8 +27,9 @@ inline int randr(int min, int max){
 }
 
 void world_reinit(){
-  world.space.main = RGBA32(randm(255), randm(255),randm(255), 0xFF);
-  world.space.back = RGBA32(randm(255), randm(255),randm(255), 0xFF);
+  bool overflow = true;
+  world.space.main = RGBA32(randm(180), randm(180),randm(180), 0xFF);
+  world.space.back = RGBA32(randm(180), randm(180),randm(180), 0xFF);
   world.space.stars = RGBA32(randr(200, 255), randr(200, 255), randr(200, 255), 0xFF);
   world.space.fog  = RGBA32(randr(50, 128), randr(50, 128), randr(50, 128), 0xFF);
   world.space.galaxytype = rand() % 3;

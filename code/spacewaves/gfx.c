@@ -52,7 +52,12 @@ const char *texture_path[SPRITE_COUNT] = {
     "rom://spacewaves/ui.crosshair2.ia4.sprite",
     "rom://spacewaves/ui.target.ia8.sprite",
 
-    "rom://spacewaves/exp3d.rgba32.sprite"
+    "rom://spacewaves/exp3d.rgba32.sprite",
+
+    "rom://spacewaves/machinegun_new_01.i4.sprite",
+    "rom://spacewaves/machinegun_new_02.i4.sprite",
+    "rom://spacewaves/machinegun_new_03.ci4.sprite",
+    "rom://spacewaves/machinegun_new_04.ci4.sprite"
 };
 
 
@@ -69,7 +74,7 @@ const char *model_path[MODEL_COUNT] = {
 	"rom://spacewaves/enemycraft.t3dm",
     "rom://spacewaves/asteroid.t3dm",
     "rom://spacewaves/rocket.t3dm",
-	"rom://spacewaves/machinegun.t3dm",
+	"rom://spacewaves/machinegun_new.t3dm",
 	"rom://spacewaves/rocketgun.t3dm",
 	"rom://spacewaves/station.t3dm",
     "rom://spacewaves/explosion3d.t3dm"

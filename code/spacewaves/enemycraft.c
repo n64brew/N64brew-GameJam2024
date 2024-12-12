@@ -192,8 +192,8 @@ void crafts_update(){
                 if(held.d_down) crafts[c].arm.asteroids[b].yspeed -= 0.03;
                 if(held.d_right) crafts[c].arm.asteroids[b].xspeed += 0.03;
                 if(held.d_left) crafts[c].arm.asteroids[b].xspeed -= 0.03;
-                crafts[c].arm.asteroids[b].hp = randr(5, 25);
-                crafts[c].arm.asteroidnexttime = CURRENT_TIME + 10.0f;
+                crafts[c].arm.asteroids[b].hp = randr(5, 20);
+                crafts[c].arm.asteroidnexttime = CURRENT_TIME + 13.0f;
             }
 
             if((held.l || held.r) && CURRENT_TIME >= crafts[c].arm.rocketnexttime && crafts[c].arm.rocketcount > 0){
@@ -363,6 +363,8 @@ void crafts_draw(){
                     crafts[c].arm.rocketdl = rspq_block_end();
                 } else rspq_block_run(crafts[c].arm.rocketdl);
                 t3d_matrix_pop(1);
+                            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
             }
         }
     amb = RGBA32(0x00, 0x00,0x00,0xFF);
@@ -395,6 +397,8 @@ void crafts_draw(){
                     crafts[c].arm.asteroiddl = rspq_block_end();
                 } else rspq_block_run(crafts[c].arm.asteroiddl);
                 t3d_matrix_pop(1);
+                            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
             }
         }
 }

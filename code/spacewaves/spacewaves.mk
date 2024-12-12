@@ -32,7 +32,7 @@ ASSETS_LIST += \
 	filesystem/spacewaves/enemycraft.t3dm \
     filesystem/spacewaves/asteroid.t3dm \
     filesystem/spacewaves/rocket.t3dm \
-	filesystem/spacewaves/machinegun.t3dm \
+	filesystem/spacewaves/machinegun_new.t3dm \
 	filesystem/spacewaves/rocketgun.t3dm \
 	filesystem/spacewaves/station.t3dm \
 	filesystem/spacewaves/explosion3d.t3dm \
@@ -55,7 +55,10 @@ ASSETS_LIST += \
     filesystem/spacewaves/shoot_rocket.wav64 \
 	filesystem/spacewaves/use_powerup.wav64 \
     filesystem/spacewaves/use_shield.wav64 \
+    filesystem/spacewaves/machinegun_new_01.i4.sprite \
+    filesystem/spacewaves/machinegun_new_02.i4.sprite \
+    filesystem/spacewaves/machinegun_new_03.ci4.sprite \
+    filesystem/spacewaves/machinegun_new_04.ci4.sprite \
 
 filesystem/spacewaves/JupiteroidBoldItalic.font64: MKFONT_FLAGS=--size 16
 filesystem/spacewaves/Jupiteroid.font64: MKFONT_FLAGS=--size 32
-

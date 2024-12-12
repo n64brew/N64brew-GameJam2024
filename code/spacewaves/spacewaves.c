@@ -57,7 +57,7 @@ int main()
       dither = DITHER_BAYER_BAYER;
     else dither = DITHER_SQUARE_INVSQUARE;
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(75.0f), 10.0f, 220.0f);
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(75.0f), 1.0f, 220.0f);
 
     // slowly rotate model, for more information on matrices and how to draw objects
     // see the example: "03_objects"

@@ -15,7 +15,7 @@
 #define FONT_TEXT           1
 #define FONT_HEADING        2
 #define STYLE_DEFAULT       0
-#define SPRITE_COUNT	    26
+#define SPRITE_COUNT	    30
 #define MODEL_COUNT         9
 #define MUSIC_COUNT         4
 #define SOUND_COUNT         13

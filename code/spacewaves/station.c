@@ -329,6 +329,15 @@ void station_draw(){
         else rdpq_set_env_color(RGBA32(0x00,0x00,0x00,0xFF));
         while(t3d_model_iter_next(&it))
         {
+            rdpq_set_mode_standard();
+            rdpq_mode_dithering(dither);
+            rdpq_mode_filter(FILTER_BILINEAR);
+            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+            rdpq_mode_zbuf(false, false);
+            rdpq_mode_mipmap(MIPMAP_NONE,0);
+            rdpq_mode_persp(true);
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
             if(i == ROCKETGUN){
                 t3d_mat4fp_from_srt_euler(station.arm.rocketgunmatx, 
                 (float[3]){1.0f, 1.0f, 1.0f},
@@ -336,11 +345,14 @@ void station_draw(){
                 (float[3]){station.arm.rocketgunoffset,0,0});
                 t3d_matrix_push(station.arm.rocketgunmatx);
                 t3d_model_draw_material(it.object->material, NULL);
+                rdpq_sprite_upload(TILE0, sprites[spr_spacecraft], &(rdpq_texparms_t){.s.mirror = true, .s.repeats = REPEAT_INFINITE, .t.mirror = true, .t.repeats = REPEAT_INFINITE} );
                 rdpq_mode_zbuf(false, false);
                 rdpq_mode_antialias(AA_STANDARD);
                 rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_model_draw_object(it.object, NULL);
+                rdpq_sync_pipe(); // Hardware crashes otherwise
+                rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_matrix_pop(1);}
             else if(i == MACHINEGUN){
                 t3d_mat4fp_from_srt_euler(station.arm.machinegunmatx, 
@@ -355,16 +367,24 @@ void station_draw(){
                 rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_model_draw_object(it.object, NULL);
+                rdpq_sync_pipe(); // Hardware crashes otherwise
+                rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_matrix_pop(1); } 
             else {
                 t3d_model_draw_material(it.object->material, NULL);
+                rdpq_sprite_upload(TILE0, sprites[spr_station], &(rdpq_texparms_t){.s.scale_log = 1, .t.scale_log = 1, .s.mirror = true, .s.repeats = REPEAT_INFINITE, .t.mirror = true, .t.repeats = REPEAT_INFINITE} );
                 rdpq_mode_zbuf(false, false);
                 rdpq_mode_antialias(AA_STANDARD);
                 rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_model_draw_object(it.object, NULL);
+                rdpq_sync_pipe(); // Hardware crashes otherwise
+                rdpq_sync_tile(); // Hardware crashes otherwise
             }
         }
     }
+    
+    rdpq_sync_pipe(); // Hardware crashes otherwise
+    rdpq_sync_tile(); // Hardware crashes otherwise
     t3d_matrix_pop(1);
 }

@@ -51,11 +51,11 @@ void userinterface_playerdraw(PlyNum player, float hppercent, int points, int ro
     if(powerup > 0) rdpq_sprite_blit(sprites[spr_ui_bonus2], offset + 40, 60, NULL);
     if(shield > 0)  rdpq_sprite_blit(sprites[spr_ui_bonus3], offset + 80, 60, NULL);
 
-    rdpq_text_printf(NULL, FONT_TEXT, offset, 30, "%s %i - %.1f%%", playernum <= playercount? "PLAYER" : "BOT", playernum, hppercent);
-    rdpq_text_printf(NULL, FONT_TEXT, offset, 50, "%06i PTS", points);
-    rdpq_text_printf(NULL, FONT_TEXT, offset + 20, 90, "%i", rockets);
-    rdpq_text_printf(NULL, FONT_TEXT, offset + 60, 90, "%.1f", powerup);
-    rdpq_text_printf(NULL, FONT_TEXT, offset + 100, 90, "%.1f", shield);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, offset, 30, "%s %i - %.1f%%", playernum <= playercount? "PLAYER" : "BOT", playernum, hppercent);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, offset, 50, "%06i PTS", points);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, offset + 20, 90, "%i", rockets);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, offset + 60, 90, "%.1f", powerup);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, offset + 100, 90, "%.1f", shield);
     
 }
 
@@ -74,8 +74,8 @@ void userinterface_draw(){
     sys_get_heap_stats(&heap_stats);
     rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-    rdpq_text_printf(NULL, FONT_TEXT, 20, h - 40, "FPS: %.2f", fps);
-    rdpq_text_printf(NULL, FONT_TEXT, 20, h - 20, "Mem: %d KiB", heap_stats.used/1024);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, 20, h - 40, "FPS: %.2f", fps);
+    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, 20, h - 20, "Mem: %d KiB", heap_stats.used/1024);
 rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
     if(gamestatus.state == GAMESTATE_PLAY){
@@ -185,7 +185,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
         if(targinfo.enabled){
             rdpq_sync_pipe(); // Hardware crashes otherwise
             rdpq_sync_tile(); // Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+            rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true, .align = ALIGN_CENTER, .width = 600}, 
             FONT_TEXT, w2 - 300, h - 20, 
             "Target in sight. Type: %s, Distance: %.2f, Health: %.2f", 
             targnames[targinfo.type], targinfo.distance, targinfo.hp);
@@ -213,7 +213,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
     else    {
         rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-        rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+        rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
         FONT_TEXT, w2 - 300, h - 40, 
         "%02i:%02i", (int)gamestatus.statetime / 60, (int)gamestatus.statetime % 60);
         rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -223,7 +223,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
         {
         rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-        rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+        rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2, 
         "Paused. Press Start to continue...");
         rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -234,14 +234,14 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
         {
         rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-        rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+        rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2 - 100, 
         "Player %i is now in Defense.\nPress Start to get ready!", station.currentplayer + 1);
         }
         for(int i = 0; i < MAXPLAYERS; i++){
             rdpq_sync_pipe(); // Hardware crashes otherwise
             rdpq_sync_tile(); // Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+            rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
             FONT_HEADING, w2 - 300, h2 + 40 * i + 40, 
             "%s %i score is %06i PTS", i < playercount? "Player" : "BOT", i + 1, gamestatus.playerscores[i]);
             rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -252,7 +252,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
         {
         rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-        rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+        rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2, 
         "Match will begin in %.1f...", gamestatus.statetime);
         rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -262,7 +262,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
     if(gamestatus.state == GAMESTATE_TRANSITION){
         rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-        rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+        rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2 - 100, 
         "Match has ended!\nMoving to the next galaxy in %.2f...", gamestatus.statetime);
         rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -270,7 +270,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
         for(int i = 0; i < MAXPLAYERS; i++){
             rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+            rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
             FONT_HEADING, w2 - 300, h2 + 40 * i + 40, 
             "%s %i score is %06i PTS", i < playercount? "Player" : "BOT", i + 1, gamestatus.playerscores[i]);
             rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -281,7 +281,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
         for(int i = 0; i < MAXPLAYERS; i++){
             rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+            rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
             FONT_HEADING, w2 - 300, h2 + 40 * i + 40, 
             "%s %i score is %06i PTS", i < playercount? "Player" : "BOT", i + 1, gamestatus.playerscores[i]);
             rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -290,7 +290,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
 
 rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-        rdpq_text_printf(&(rdpq_textparms_t){.align = ALIGN_CENTER, .width = 600}, 
+        rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true,.align = ALIGN_CENTER, .width = 600}, 
         FONT_HEADING, w2 - 300, h2 - 100, 
         "Game over!\nThe winner is %s %i", gamestatus.winner < playercount? "Player" : "BOT", gamestatus.winner + 1);
         rdpq_sync_pipe(); // Hardware crashes otherwise
