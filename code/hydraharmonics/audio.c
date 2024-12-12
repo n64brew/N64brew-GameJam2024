@@ -107,17 +107,6 @@ void audio_music_stop (void) {
 	xm64player_stop(&hh_xm);
 }
 
-void audio_music_print (void) {
-	int pattern;
-	int row;
-	float secs;
-	xm64player_tell(&hh_xm, &pattern, &row, &secs);
-	rdpq_text_printf(NULL, FONT_DEFAULT, 20, 20,
-		"%i\t%i\n%f\nSpeed: %i\n%i\t%i\t%i\t%i\t%i\t%i", pattern, row, secs, game_speed,
-		AUDIO_SFX_CHANNELS_GULP_START, AUDIO_SFX_CHANNELS_AAH_START, AUDIO_SFX_CHANNELS_DRUMROLL_START, AUDIO_SFX_CHANNELS_WINNER_START, AUDIO_SFX_CHANNELS_START, AUDIO_MUSIC_CHANNEL_START
-	);
-}
-
 int audio_music_get_pattern (void) {
 	int pattern;
 	xm64player_tell(&hh_xm, &pattern, NULL, NULL);

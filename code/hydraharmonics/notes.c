@@ -11,8 +11,6 @@
 #define NOTE_ANIMATION_BOUNCE 0x1
 #define NOTE_ANIMATION_ROTATE 0x2
 #define NOTE_ANIMATION_PULSE 0x4
-#define NOTE_WIDTH 32
-#define NOTE_HEIGHT 32
 #define NOTE_ANIMATION_SPEED 8
 #define NOTE_ANIMATION_OFFSET_Y NOTE_Y_OFFSET_AMPLITUDE * 0.35
 #define NOTE_SPARKLE_CHANCE 16
@@ -21,13 +19,13 @@
 #define NOTE_PLAYER_MAX_RETRIES 4
 #define NOTE_CHANCE_DOUBLE 4
 #define NOTE_CHANCE_TRIPLE 2
-#define NOTE_CHANCE_NON_STANDARD 3
+#define NOTE_CHANCE_NON_STANDARD (4-core_get_aidifficulty())
 #define NOTE_CHANCE_FIXED 2
 
 // Global vars
 static note_ll_t notes;
-static sprite_t* note_sprites[NOTES_TOTAL_COUNT];
 static uint8_t sparkle_timer = 0;
+sprite_t* note_sprites[NOTES_TOTAL_COUNT];
 
 const float note_speeds[NOTE_SPEED_COUNT] = {
 	2.5,
@@ -138,8 +136,8 @@ void notes_add_more (void) {
 		}
 		// Give everyone some notes
 		for (uint8_t i=0; i<NOTES_TOTAL_COUNT; i++) {
-			notes.notes_left[i].regular++;
-			notes.notes_left[i].special++;
+			notes.notes_left[i].regular += 1;
+			notes.notes_left[i].special += 1 + core_get_aidifficulty();
 		}
 		return;
 	}

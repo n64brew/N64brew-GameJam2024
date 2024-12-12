@@ -272,7 +272,7 @@ void hydra_move (void) {
 			}
 
 			if (hydras[i].animation == HYDRA_ANIMATION_NONE) {
-				if (joypad.btn.a) {
+				if (joypad.btn.a || joypad.btn.l || joypad.btn.r || joypad.btn.z) {
 					audio_sfx_play(SFX_AAH_MIN + i);
 					hydra_animate (i, HYDRA_ANIMATION_OPEN);
 				}

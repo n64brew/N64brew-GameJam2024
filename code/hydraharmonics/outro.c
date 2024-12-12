@@ -1,6 +1,7 @@
 #include "outro.h"
 #include "hydra.h"
 #include "audio.h"
+#include "ui.h"
 
 #define HYDRA_OUTRO_SHUFFLE_TIME 100
 #define HYDRA_OUTRO_WINNER_DROP_TIME 25
@@ -9,11 +10,18 @@
 
 #define SIGN_SPEED_X 2
 #define SIGN_SPEED_Y 2
-#define SIGN_PADDING_BIG_X 15
-#define SIGN_PADDING_BIG_Y 35
-#define SIGN_PADDING_SMALL_X SIGN_PADDING_BIG_X
 #define SIGN_PADDING_SMALL_Y 20
 
+#define SIGN_BIG_WIDTH 112
+#define SIGN_BIG_HEIGHT 91
+#define SIGN_BIG_PADDING_Y 14
+#define SIGN_BIG_PADDING_X 3
+#define SIGN_BIG_TOTAL_Y (SIGN_BIG_HEIGHT + SIGN_BIG_PADDING_Y)
+#define SIGN_SMALL_WIDTH SIGN_BIG_WIDTH
+#define SIGN_SMALL_HEIGHT 30
+#define SIGN_SMALL_PADDING_Y 3
+#define SIGN_SMALL_PADDING_X SIGN_BIG_PADDING_X
+#define SIGN_SMALL_TOTAL_Y (SIGN_SMALL_HEIGHT + SIGN_SMALL_PADDING_Y)
 
 static sprite_t* sign_big_sprite;
 static sprite_t* sign_small_sprite;
@@ -35,10 +43,10 @@ void outro_interact (void) {
 	// Move the winners sign down
 	if (outro_timer >= HYDRA_OUTRO_SHUFFLE_TIME) {
 		for (uint8_t i=0; i<winners->length; i++) {
-			if (winners->y_offset[i] < sign_small_sprite->height * (i+1)) {
+			if (winners->y_offset[i] < SIGN_SMALL_TOTAL_Y * (i+1) + SIGN_SMALL_PADDING_Y) {
 				winners->y_offset[i] += SIGN_SPEED_Y;
 			} else {
-				winners->y_offset[i] = sign_small_sprite->height * (i+1);
+				winners->y_offset[i] = SIGN_SMALL_TOTAL_Y * (i+1) + SIGN_SMALL_PADDING_Y;
 			}
 
 		}
@@ -85,8 +93,8 @@ void outro_results_draw (scores_results_draw_t type) {
 	rdpq_text_printf(
 		NULL,
 		FONT_CLARENDON,
-		display_get_width() - sign_x_offset + SIGN_PADDING_BIG_X,
-		SIGN_PADDING_BIG_Y,
+		display_get_width() - sign_x_offset + PANEL_TEXT_PADDING_X - SIGN_BIG_PADDING_X,
+		SIGN_BIG_PADDING_Y + PANEL_TEXT_PADDING_Y,
 		"Hats off to...\n%s", scores_buffer
 	);
 }
@@ -94,31 +102,27 @@ void outro_results_draw (scores_results_draw_t type) {
 void outro_sign_draw (void) {
 	// Draw the little signs
 	for (int8_t i=winners->length-1; i>=0; i--) {
-		rdpq_set_mode_standard();
-		rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-		rdpq_sprite_blit (
-			sign_small_sprite,
-			display_get_width() - sign_x_offset,
-			sign_big_sprite->height - sign_small_sprite->height + winners->y_offset[i],
-			NULL
+		ui_panel_draw (
+			display_get_width() - sign_x_offset - SIGN_SMALL_PADDING_X,
+			SIGN_BIG_TOTAL_Y - SIGN_SMALL_HEIGHT - SIGN_SMALL_PADDING_Y + winners->y_offset[i],
+			display_get_width() - sign_x_offset + SIGN_SMALL_WIDTH - SIGN_SMALL_PADDING_X,
+			SIGN_BIG_TOTAL_Y - SIGN_SMALL_HEIGHT - SIGN_SMALL_PADDING_Y + winners->y_offset[i] + SIGN_SMALL_HEIGHT
 		);
 		rdpq_text_printf(
 			NULL,
 			FONT_CLARENDON,
-			display_get_width() - sign_x_offset + SIGN_PADDING_SMALL_X,
-			sign_big_sprite->height - sign_small_sprite->height + winners->y_offset[i] + SIGN_PADDING_SMALL_Y,
+			display_get_width() - sign_x_offset - SIGN_SMALL_PADDING_X + PANEL_TEXT_PADDING_X,
+			SIGN_BIG_TOTAL_Y - SIGN_SMALL_HEIGHT - SIGN_SMALL_PADDING_Y + winners->y_offset[i] + PANEL_TEXT_PADDING_Y,
 			"Player %i!", winners->winners[i]+1
 		);
 	}
 
 	// Draw the big sign
-	rdpq_set_mode_standard();
-	rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-	rdpq_sprite_blit (
-		sign_big_sprite,
-		display_get_width() - sign_x_offset,
-		0,
-		NULL
+	ui_panel_draw (
+		display_get_width() - sign_x_offset - SIGN_SMALL_PADDING_X,
+		SIGN_BIG_PADDING_Y,
+		display_get_width() - sign_x_offset + SIGN_BIG_WIDTH - SIGN_SMALL_PADDING_X,
+		SIGN_BIG_PADDING_Y + SIGN_BIG_HEIGHT
 	);
 	if (outro_timer < HYDRA_OUTRO_SHUFFLE_TIME) {
 		outro_results_draw (SCORES_RESULTS_SHUFFLE);

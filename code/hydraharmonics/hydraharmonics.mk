@@ -46,13 +46,23 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/note-2.ci4.sprite \
 	filesystem/hydraharmonics/note-3.ci4.sprite \
 	filesystem/hydraharmonics/note-4.ci4.sprite \
-	filesystem/hydraharmonics/signs.ci4.sprite \
-	filesystem/hydraharmonics/background.ci4.sprite \
+	filesystem/hydraharmonics/sign-0.ci4.sprite \
+	filesystem/hydraharmonics/sign-1.ci4.sprite \
+	filesystem/hydraharmonics/sign-2.ci4.sprite \
+	filesystem/hydraharmonics/sign-3.ci4.sprite \
+	filesystem/hydraharmonics/hill-0.ci4.sprite \
+	filesystem/hydraharmonics/hill-1.ci4.sprite \
+	filesystem/hydraharmonics/hill-2.ci4.sprite \
+	filesystem/hydraharmonics/hill-3.ci4.sprite \
 	filesystem/hydraharmonics/floor.ci4.sprite \
 	filesystem/hydraharmonics/floor-bottom.ci4.sprite \
 	filesystem/hydraharmonics/floor-light.ci4.sprite \
 	filesystem/hydraharmonics/floor-dark.ci4.sprite \
 	filesystem/hydraharmonics/curtain.ci4.sprite \
+	filesystem/hydraharmonics/panel-corner-top.ci4.sprite \
+	filesystem/hydraharmonics/panel-corner-bot.ci4.sprite \
+	filesystem/hydraharmonics/panel-bg.ci4.sprite \
+	filesystem/hydraharmonics/panel-rope.ci4.sprite \
 	filesystem/hydraharmonics/sign-big.ci4.sprite \
 	filesystem/hydraharmonics/sign-small.ci4.sprite \
 	filesystem/hydraharmonics/Superclarendon-Regular-01.font64 \

@@ -35,7 +35,6 @@ uint8_t audio_sfx_get_last_channel (void);
 void audio_sfx_play (audio_sfx_t sound);
 void audio_music_play (void);
 void audio_music_stop (void);
-void audio_music_print (void);
 int audio_music_get_pattern (void);
 void audio_music_monitor (void);
 void audio_sfx_close(void);
