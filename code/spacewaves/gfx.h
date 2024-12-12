@@ -47,8 +47,10 @@ extern const char *sound_path[SOUND_COUNT];
 
 extern xm64player_t xmplayer;
 extern bool xmplayeropen;
+extern int currentmusicindex;
 
 extern const char *music_path[MUSIC_COUNT];
+extern const char *music_credits[MUSIC_COUNT];
 
 enum spritenames_t{
     spr_asteroid1,

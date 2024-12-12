@@ -59,6 +59,12 @@ ASSETS_LIST += \
     filesystem/spacewaves/machinegun_new_02.i4.sprite \
     filesystem/spacewaves/machinegun_new_03.ci4.sprite \
     filesystem/spacewaves/machinegun_new_04.ci4.sprite \
+    filesystem/spacewaves/intro.m1v \
 
 filesystem/spacewaves/JupiteroidBoldItalic.font64: MKFONT_FLAGS=--size 16
 filesystem/spacewaves/Jupiteroid.font64: MKFONT_FLAGS=--size 32
+
+$(FILESYSTEM_DIR)/%.m1v: $(ASSETS_DIR)/%.m1v
+	@mkdir -p $(dir $@)
+	@echo "    [M1V] $@"
+	cp "$<" $@

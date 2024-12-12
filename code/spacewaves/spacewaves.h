@@ -16,6 +16,7 @@
 #include "station.h"
 #include "enemycraft.h"
 #include "effects.h"
+#include "intro.h"
 
     extern int main();
     extern void main_close();
@@ -28,6 +29,8 @@
     void main_init(){
         debug_init_isviewer();
         debug_init_usblog();
+
+        intro();
 
         display_init(
             RESOLUTION_640x480, DEPTH_16_BPP, TRIPLE_BUFFERED, GAMMA_CORRECT_DITHER, FILTERS_RESAMPLE_ANTIALIAS_DEDITHER);

@@ -44,6 +44,7 @@ int main()
   // If you can't allocate uncached memory, remember to flush the cache after writing to it instead.
   float rotation = 0.0f;
   PlyNum playerturn = PLAYER_1;
+  int countdownseconds = 0;
   
   while(true){
     mixer_try_play();
@@ -59,8 +60,7 @@ int main()
 
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(75.0f), 1.0f, 220.0f);
 
-    // slowly rotate model, for more information on matrices and how to draw objects
-    // see the example: "03_objects"
+    // slowly rotate model on start up screen
     t3d_mat4_from_srt_euler(&modelMat,
       (float[3]){modelScale, modelScale, modelScale},
       (float[3]){rotation * 0.2f, rotation, rotation},
@@ -114,7 +114,8 @@ int main()
         gamestatus.paused = true;
         gamestatus.state = GAMESTATE_COUNTDOWN;
         gamestatus.statetime = 5.0f;
-        xm64player_open(&xmplayer, music_path[rand() % MUSIC_COUNT]);
+        currentmusicindex = rand() % MUSIC_COUNT;
+        xm64player_open(&xmplayer, music_path[currentmusicindex]);
         xm64player_play(&xmplayer, SFX_CHANNEL_MUSIC);
         xm64player_set_loop(&xmplayer, true);
         wav64_play(&sounds[snd_button_click1], SFX_CHANNEL_EFFECTS);
@@ -125,6 +126,14 @@ int main()
       gamestatus.state = GAMESTATE_PLAY;
       gamestatus.paused = false;
       gamestatus.statetime = 180.0f;
+      wav64_play(&sounds[snd_button_click3], SFX_CHANNEL_BONUS);
+    }
+    if(gamestatus.state == GAMESTATE_COUNTDOWN){
+      int newcountseconds = (int)gamestatus.statetime;
+      if (newcountseconds != countdownseconds){
+          wav64_play(&sounds[snd_button_click3], SFX_CHANNEL_BONUS);
+          countdownseconds = newcountseconds;
+      }
     }
     
     if(gamestatus.state == GAMESTATE_GETREADY || gamestatus.state == GAMESTATE_TRANSITION)
@@ -145,11 +154,14 @@ int main()
             gamestatus.statetime = 10.0f;
         } else {
             int maxscore = 0;
+            int secondmaxscore = 0;
             for(int pl = 0; pl < MAXPLAYERS; pl++)
             if(gamestatus.playerscores[pl] > maxscore) {
+                secondmaxscore = maxscore;
                 maxscore = gamestatus.playerscores[pl];
                 gamestatus.winner = pl;
             }
+            if(maxscore == secondmaxscore) gamestatus.winner = -1;
             gamestatus.state = GAMESTATE_FINISHED;
             gamestatus.paused = false;
             gamestatus.statetime = 10.0f;

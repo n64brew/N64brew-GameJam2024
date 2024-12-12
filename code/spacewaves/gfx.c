@@ -80,6 +80,7 @@ const char *model_path[MODEL_COUNT] = {
     "rom://spacewaves/explosion3d.t3dm"
 };
 
+int currentmusicindex = 0;
 xm64player_t xmplayer;
 bool xmplayeropen = false;
 T3DMat4FP* modelMatFP;
@@ -89,6 +90,13 @@ const char *music_path[MUSIC_COUNT] = {
     "rom://spacewaves/natural.xm64",
 	"rom://spacewaves/chasingufo.xm64",
     "rom://spacewaves/pinkbats.xm64"
+};
+
+const char *music_credits[MUSIC_COUNT] = {
+    "Biotech by Kokesz, Public Domain license",
+    "Natural Vision by Kokesz, Public Domain license",
+	"Chasing the UFO by JAM, Public Domain license",
+    "Pink Bats in Space by JAM, Public Domain license"
 };
 
 wav64_t sounds[SOUND_COUNT];
