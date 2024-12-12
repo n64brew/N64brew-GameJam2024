@@ -759,5 +759,9 @@ void minigame_cleanup(){
     free_uncached(mapMatFP);
     t3d_destroy();
 
+    // reset mixer channels to default volume
+    mixer_ch_set_vol(CHANNEL_SFX, 1, 1);
+    mixer_ch_set_vol(CHANNEL_MUSIC, 1, 1);
+
     display_close();
 }
