@@ -185,10 +185,10 @@ ai_locate_initial_moves (PlyNum p)
 static void
 ai_locate_next_moves (PlyNum p)
 {
-  int index = 0;
-  for (int board_row = 0; board_row < BOARD_ROWS; board_row++)
+  size_t move_index = 0;
+  for (size_t board_row = 0; board_row < BOARD_ROWS; board_row++)
     {
-      for (int board_col = 0; board_col < BOARD_COLS; board_col++)
+      for (size_t board_col = 0; board_col < BOARD_COLS; board_col++)
         {
           if (board_is_tile_claimed (board_col, board_row, p))
             {
@@ -198,9 +198,9 @@ ai_locate_next_moves (PlyNum p)
                   && !board_is_tile_claimed (board_col, board_row - 1, p)
                   && board_is_tile_unclaimed (board_col - 1, board_row - 1))
                 {
-                  ai_moves[index].col = board_col - 1;
-                  ai_moves[index].row = board_row - 1;
-                  index++;
+                  ai_moves[move_index].col = board_col - 1;
+                  ai_moves[move_index].row = board_row - 1;
+                  move_index++;
                 }
               // Is the cell to the top-right of this cell viable?
               if (board_is_tile_valid (board_col + 1, board_row - 1)
@@ -208,9 +208,9 @@ ai_locate_next_moves (PlyNum p)
                   && !board_is_tile_claimed (board_col, board_row - 1, p)
                   && board_is_tile_unclaimed (board_col + 1, board_row - 1))
                 {
-                  ai_moves[index].col = board_col + 1;
-                  ai_moves[index].row = board_row - 1;
-                  index++;
+                  ai_moves[move_index].col = board_col + 1;
+                  ai_moves[move_index].row = board_row - 1;
+                  move_index++;
                 }
               // Is the cell to the bottom-left of this cell viable?
               if (board_is_tile_valid (board_col - 1, board_row + 1)
@@ -218,9 +218,9 @@ ai_locate_next_moves (PlyNum p)
                   && !board_is_tile_claimed (board_col, board_row + 1, p)
                   && board_is_tile_unclaimed (board_col - 1, board_row + 1))
                 {
-                  ai_moves[index].col = board_col - 1;
-                  ai_moves[index].row = board_row + 1;
-                  index++;
+                  ai_moves[move_index].col = board_col - 1;
+                  ai_moves[move_index].row = board_row + 1;
+                  move_index++;
                 }
               // Is the cell to the bottom-right of this cell viable?
               if (board_is_tile_valid (board_col + 1, board_row + 1)
@@ -228,14 +228,14 @@ ai_locate_next_moves (PlyNum p)
                   && !board_is_tile_claimed (board_col, board_row + 1, p)
                   && board_is_tile_unclaimed (board_col + 1, board_row + 1))
                 {
-                  ai_moves[index].col = board_col + 1;
-                  ai_moves[index].row = board_row + 1;
-                  index++;
+                  ai_moves[move_index].col = board_col + 1;
+                  ai_moves[move_index].row = board_row + 1;
+                  move_index++;
                 }
             }
         }
     }
-  ai_move_count = index;
+  ai_move_count = move_index;
 }
 
 static void
@@ -259,7 +259,7 @@ ai_try_move (Player *player, const AiMove *loc)
   for (size_t piece_index = 0; piece_index < ai_piece_count; piece_index++)
     {
       player_change_piece (player, ai_pieces[piece_index]);
-      for (int orientation = 0; orientation < 4; orientation++)
+      for (size_t orientation = 0; orientation < 4; orientation++)
         {
           if (orientation == 1)
             {
@@ -274,11 +274,9 @@ ai_try_move (Player *player, const AiMove *loc)
               player_mirror_piece (player);
             }
 
-          for (int offset_y = -(PIECE_ROWS / 2); offset_y <= (PIECE_ROWS / 2);
-               offset_y++)
+          for (ssize_t offset_y = -PIECE_ROWS; offset_y <= PIECE_ROWS; offset_y++)
             {
-              for (int offset_x = -(PIECE_ROWS / 2);
-                   offset_x <= (PIECE_ROWS / 2); offset_x++)
+              for (ssize_t offset_x = -PIECE_COLS; offset_x <= PIECE_COLS; offset_x++)
                 {
                   player_set_cursor (player, loc->col + offset_x,
                                      loc->row + offset_y);
