@@ -32,8 +32,9 @@
         player_team playerTeam;
         T3DMat4FP* modelMatFP;
         T3DModel* model;
-    //    T3DAnim animAttack;
-    //    T3DAnim animWalk;
+        T3DAnim animAbility;
+        bool animAbilityPlaying;
+        T3DAnim animWalk;
         T3DAnim animIdle;
         T3DSkeleton skelBlend;
         T3DSkeleton skel;
@@ -47,9 +48,6 @@
         int aiIndex;    // index of the AI controller, passed to all AI commands
         float stunTimer; // stunTimer stops players from taking action while count is != 0
         float abilityTimer; // cooldown timer for abilities
-        // TODO: Remove, temp AI variable
-        //int framesRemainingAi;
-        //T3DVec3 aiDir;
     } player_data;
     
     typedef struct
@@ -59,6 +57,7 @@
         T3DVec3 effectPos;
         bool isActive;
         float remainingTimer; // self removing timer
+        float effectRotationY;
         float effectSize;
     } effect_data;
     
@@ -74,7 +73,7 @@
     typedef struct
     {
         T3DMat4FP* modelMatFP;
-        // rspq_block_t* dplCollision;
+        rspq_block_t* dplCollision;
         T3DVec3 collisionCentrePos;
         collision_type collisionType;
         int sizeX;
@@ -86,6 +85,7 @@
         bool didCollide;
         collision_type collisionType;
         int indexOfCollidedObject;
+        T3DVec3 intersectionPoint;
     } collisionresult_data;
 
 /*********************************
@@ -95,6 +95,9 @@
 // forward declarations
     void player_guardAbility(float deltaTime, int playerNumber);
     void player_theifAbility(float deltaTime, int playerNumber);
+
+    // returns the index of the first unused effect, returns 0 (overwrites the first one) if none free
+    int effect_getNextEmptyIndex();
 
     void rippergame_init();
     void rippergame_fixedloop(float deltatime);
