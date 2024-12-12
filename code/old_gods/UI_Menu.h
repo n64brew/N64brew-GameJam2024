@@ -7,7 +7,7 @@ Contains functions and code relating to the scene including all the entities tha
 #include "AF_Time.h"
 #include "Game.h"
 
-// Forward Declare
+// Function Definitions
 void UI_Menu_Start(AppData* _appData);
 void UI_Menu_Awake(AppData* _appData);
 void UI_Menu_Update(AppData* _appData);

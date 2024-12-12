@@ -6,22 +6,22 @@ Contains paths to the assets to be loaded
 #define ASSETS_H
 
 // ================ MODELS ==============
-#define MODEL_COUNT 14
+#define MODEL_COUNT 12
 extern const char *model_paths[MODEL_COUNT];
 #define MODEL_BOX 0         //"rom:/old_gods/box.t3dm",        
-#define MODEL_FOOD 1        //"rom:/old_gods/food.t3dm",       
-#define MODEL_MAP 2         //"rom:/old_gods/map.t3dm",       
-#define MODEL_SNAKE 3       //"rom:/old_gods/snake.t3dm",     
-#define MODEL_RAT 4
-#define MODEL_FOAM 5
-#define MODEL_CYLINDER 6
-#define MODEL_TORUS 7
-#define MODEL_TRAIL 8
-#define MODEL_SHARK 9
-#define MODEL_ATTACK_WAVE 10
-#define MODEL_ALTER 11
-#define MODEL_GRAVE 12
-#define MODEL_SMOKE 13
+//#define MODEL_FOOD 1        //"rom:/old_gods/food.t3dm",       
+#define MODEL_MAP 1        //"rom:/old_gods/map.t3dm",       
+#define MODEL_SNAKE 2       //"rom:/old_gods/snake.t3dm",     
+#define MODEL_RAT 3
+#define MODEL_FOAM 4
+//#define MODEL_CYLINDER 6
+#define MODEL_TORUS 5
+#define MODEL_TRAIL 6
+#define MODEL_SHARK 7
+#define MODEL_ATTACK_WAVE 8
+#define MODEL_ALTER 9
+#define MODEL_GRAVE 10
+#define MODEL_SMOKE 11
 
 
 // ================ TEXTURES ==============
@@ -39,11 +39,14 @@ extern const char *texture_path[TEXTURE_COUNT];
 extern const char* animatedSpritePath;
 
 // ================ AUDIO ==============
-//extern const char* cannonFXPath;
-//extern const char* laserFXPath;
-//extern const char* musicFXPath;
 extern const char* feedGodSoundFXPath;
 extern const char* pickupSoundFXPath;
+
+#define AUDIO_START_FX "rom:/core/Start.wav64"
+#define AUDIO_COUNTDOWN_FX "rom:/core/Countdown.wav64"
+#define AUDIO_STOP_FX "rom:/core/Stop.wav64"
+#define AUDIO_WINNER_FX "rom:/core/Winner.wav64"
+#define AUDIO_BUTTON_PRESS_FX "rom:/old_gods/Item2A.wav64"
 
 // ================ FONT ==============
 extern const char* fontPath2;
