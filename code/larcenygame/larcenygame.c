@@ -92,7 +92,7 @@ player_team winningTeam;
 // so that the minigame manager can work
 const MinigameDef minigame_def = {
     .gamename = "Larceny",
-    .developername = "RiPpEr253",
+    .developername = "RiPpEr253, music by drozerix",
     .description = "A 2v2 game pitting Thieves against Guards and their treasures, hold r on start for hires",
     .instructions = "Stick: Move, A: Thief: Wall Jump, Guard: Stun Thief"
 };
@@ -586,6 +586,8 @@ void end_game(player_team victoriousTeam)
     gameStarting = false;
     gamePaused = false;
     gamePauseDebounce = 0.0f;
+
+    xm64player_stop(&xm_music);
 
     wav64_play(&sfx_winner, 31);
     mixer_ch_set_vol(31, 0.75f, 0.75f);
@@ -1143,7 +1145,6 @@ void objective_init()
         t3d_model_draw(objectives[0].ringModel);
         t3d_matrix_pop(1);
     objectives[0].dplObjective = rspq_block_end();
-    //objectives[0].objectivePos = (T3DVec3){{96, 0.0f, 96}};
     objectives[0].objectiveRotationY = 0.0f;
     objectives[0].objectivePos = (T3DVec3){{-70.0f, 0.0f, -70.0f}};
     
@@ -1160,7 +1161,6 @@ void objective_init()
         t3d_matrix_pop(1);
     objectives[1].dplObjective = rspq_block_end();
     objectives[1].objectiveRotationY = 0.0f;
-    //objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
     objectives[1].objectivePos = (T3DVec3){{70.0f, 0.0f, 70}};
 }
 
@@ -1424,7 +1424,7 @@ void minigame_init()
     wav64_open(&sfx_thiefJumpAbility, "rom:/larcenygame/thiefJump.wav64");
     wav64_open(&sfx_thiefCaught, "rom:/larcenygame/thiefCaught.wav64");
 
-    xm64player_open(&xm_music, "rom:/snake3d/bottled_bubbles.xm64");
+    xm64player_open(&xm_music, "rom:/larcenygame/drozerix-poppy_flower_girls.xm64");
     
     // set up the ambient light colour and the directional light colour
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
@@ -1502,7 +1502,8 @@ void minigame_fixedloop(float deltatime)
 
             // TODO: start playing music
             xm64player_play(&xm_music, 0);
-            mixer_ch_set_vol(0, 0.5f, 0.5f);
+            xm64player_set_loop(&xm_music, true);
+            xm64player_set_vol(&xm_music, 0.5f);
         }
     }
 
