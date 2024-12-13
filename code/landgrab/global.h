@@ -39,7 +39,7 @@ typedef struct { int x0; int y0; int x1; int y1; } Rect;
  *
  * (This should probably be included in LibDragon's joypad subsystem.)
  */
-#define JOYPAD_8WAY_IS_UP(d)                                                  \
+#define JOYPAD_8WAY_ANY_UP(d)                                                  \
   (d == JOYPAD_8WAY_UP || d == JOYPAD_8WAY_UP_LEFT                            \
    || d == JOYPAD_8WAY_UP_RIGHT)
 
@@ -48,7 +48,7 @@ typedef struct { int x0; int y0; int x1; int y1; } Rect;
  *
  * (This should probably be included in LibDragon's joypad subsystem.)
  */
-#define JOYPAD_8WAY_IS_DOWN(d)                                                \
+#define JOYPAD_8WAY_ANY_DOWN(d)                                                \
   (d == JOYPAD_8WAY_DOWN || d == JOYPAD_8WAY_DOWN_LEFT                        \
    || d == JOYPAD_8WAY_DOWN_RIGHT)
 
@@ -57,7 +57,7 @@ typedef struct { int x0; int y0; int x1; int y1; } Rect;
  *
  * (This should probably be included in LibDragon's joypad subsystem.)
  */
-#define JOYPAD_8WAY_IS_LEFT(d)                                                \
+#define JOYPAD_8WAY_ANY_LEFT(d)                                                \
   (d == JOYPAD_8WAY_LEFT || d == JOYPAD_8WAY_UP_LEFT                          \
    || d == JOYPAD_8WAY_DOWN_LEFT)
 
@@ -66,7 +66,7 @@ typedef struct { int x0; int y0; int x1; int y1; } Rect;
  *
  * (This should probably be included in LibDragon's joypad subsystem.)
  */
-#define JOYPAD_8WAY_IS_RIGHT(d)                                               \
+#define JOYPAD_8WAY_ANY_RIGHT(d)                                               \
   (d == JOYPAD_8WAY_RIGHT || d == JOYPAD_8WAY_UP_RIGHT                        \
    || d == JOYPAD_8WAY_DOWN_RIGHT)
 

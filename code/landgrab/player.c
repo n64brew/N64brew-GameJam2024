@@ -96,6 +96,12 @@ player_incr_piece (Player *player, int incr)
 static void
 player_shuffle_piece (Player *player)
 {
+  if (player->pieces_left == 0)
+    {
+      player_clear_piece (player);
+      return;
+    }
+
   int value = PIECES[player->piece_index].value;
   size_t shuffle_indexes[PIECE_COUNT];
   size_t shuffle_count = 0;
@@ -126,6 +132,29 @@ player_shuffle_piece (Player *player)
     {
       player_mirror_piece (player);
     }
+}
+
+static void
+player_maximize_value (Player *player)
+{
+  if (player->pieces_left == 0)
+    {
+      player_clear_piece (player);
+      return;
+    }
+
+  int highest_value = 0;
+  size_t highest_value_index = 0;
+  for (size_t i = 0; i < PIECE_COUNT; i++)
+    {
+      if (PIECES[i].value > highest_value && !player->pieces_used[i])
+        {
+          highest_value = PIECES[i].value;
+          highest_value_index = i;
+        }
+    }
+
+  player_change_piece (player, highest_value_index);
 }
 
 static void
@@ -222,23 +251,23 @@ player_loop (Player *player, bool active, float deltatime)
   if (player->move_delay <= 0.0f)
     {
 
-      if (JOYPAD_8WAY_IS_UP (d))
+      if (JOYPAD_8WAY_ANY_UP (d))
         {
           player_move_cursor (player, player->cursor_col,
                               player->cursor_row - 1, active);
         }
-      else if (JOYPAD_8WAY_IS_DOWN (d))
+      else if (JOYPAD_8WAY_ANY_DOWN (d))
         {
           player_move_cursor (player, player->cursor_col,
                               player->cursor_row + 1, active);
         }
 
-      if (JOYPAD_8WAY_IS_LEFT (d))
+      if (JOYPAD_8WAY_ANY_LEFT (d))
         {
           player_move_cursor (player, player->cursor_col - 1,
                               player->cursor_row, active);
         }
-      else if (JOYPAD_8WAY_IS_RIGHT (d))
+      else if (JOYPAD_8WAY_ANY_RIGHT (d))
         {
           player_move_cursor (player, player->cursor_col + 1,
                               player->cursor_row, active);
@@ -288,7 +317,6 @@ player_loop (Player *player, bool active, float deltatime)
   if (active && pressed.b)
     {
       // Player has passed their turn
-      // TODO: Make the player hold for a second to confirm?
       return PLAYER_TURN_PASS;
     }
 
@@ -531,13 +559,22 @@ player_place_piece (Player *player)
         }
       player->score = player_score (player);
 
-      player_shuffle_piece (player);
-      // The piece was placed on the board
+      // Audible feedback
       sfx_play (SFX_POP);
+
+      // Switch to the next highest-value piece available
+      player_maximize_value (player);
+      // Shuffle the new piece to make it more interesting
+      player_shuffle_piece (player);
+
+      // The piece was placed successfully
       return true;
     }
   else
     {
+      // Audible feedback
+      sfx_play (SFX_BUZZ);
+
       // On the player's first turn, the hint is different
       if (player_is_first_turn (player))
         {
@@ -551,8 +588,8 @@ player_place_piece (Player *player)
         {
           minigame_set_hint ("Pieces must touch diagonally");
         }
+
       // The piece could not be placed
-      sfx_play (SFX_BUZZ);
       return false;
     }
 }
