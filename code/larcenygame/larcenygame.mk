@@ -5,7 +5,9 @@ ASSETS_LIST += \
 	filesystem/larcenygame/foxThief.t3dm \
 	filesystem/larcenygame/dogGuard.t3dm \
 	filesystem/larcenygame/dustEffect.t3dm \
-	filesystem/larcenygame/firstObjective.t3dm \
+	filesystem/larcenygame/ringObjective.t3dm \
+	filesystem/larcenygame/diamondObjective.t3dm \
+	filesystem/larcenygame/theKilogramObjective.t3dm \
 	filesystem/larcenygame/testActor.t3dm \
 	filesystem/larcenygame/testActorGuard.t3dm \
 	filesystem/larcenygame/testObjective.t3dm \
@@ -14,5 +16,6 @@ ASSETS_LIST += \
 	filesystem/larcenygame/stone.ci4.sprite \
 	filesystem/larcenygame/test32.ci4.sprite \
 	filesystem/larcenygame/test32Inverted.ci4.sprite \
+	filesystem/larcenygame/thiefEye.ci4.sprite \
 	filesystem/larcenygame/floorTest.ci4.sprite \
 	filesystem/larcenygame/wallTest.ci4.sprite

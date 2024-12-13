@@ -48,10 +48,13 @@ void ai_waitingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed
     }
     else
     {
-        *newDir = playersRef[aiIndex].playerPos;
-        *speed = 0.0f;
+        if(!ai_checkForProximityBasedStateChanges(aiIndex))
+        {
+            *newDir = playersRef[aiIndex].playerPos;
+            *speed = 0.0f;
 
-        aiData[aiIndex].framesRemainingBeforeCheck--;
+            aiData[aiIndex].framesRemainingBeforeCheck--;
+        }
     }
 }
 
@@ -189,7 +192,10 @@ void ai_moveToObjectiveState(int aiIndex, float deltaTime, T3DVec3* newDir, floa
     // if the timer has elapsed, find us a new thing to do
     if(aiData[aiIndex].framesRemainingBeforeCheck <= 0)
     {
-        ai_findNewState(aiIndex);
+        if(!ai_checkForProximityBasedStateChanges(aiIndex))
+        {
+            ai_findNewState(aiIndex);
+        }
         return;
     }
     else
