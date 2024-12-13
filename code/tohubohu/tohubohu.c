@@ -33,7 +33,7 @@
 *********************************/
 
 const MinigameDef minigame_def = {
-    .gamename = "Tohu-bohu",
+    .gamename = "Le tohu-bohu",
     .developername = "tfmoe__",
     .description = "Find the key and be the first to open the correct safe!",
     .instructions = "A: rummage through the furniture B: steal the key"
