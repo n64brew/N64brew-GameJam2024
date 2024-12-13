@@ -10,7 +10,7 @@ Definition gameplay data struct
 #define GAMEPLAYDATA_H
 
 // Gameplay variables
-#define COUNT_DOWN_TIME 60
+#define COUNT_DOWN_TIME 5
 #define GODS_EAT_COUNT 500
 #define MAX_OBSERVERS 10
 #define PLAYER_COUNT 4
@@ -43,6 +43,7 @@ typedef struct GameplayData {
     int currentBucket;
     AF_Entity* playerEntities[PLAYER_COUNT];
     AF_Entity* enemyEntities[ENEMY_POOL_COUNT];
+    AF_Entity* rat;
     Vec3 levelPos;
     Vec3 levelBounds;
     //Observer observers[MAX_OBSERVERS];

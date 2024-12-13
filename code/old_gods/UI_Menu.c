@@ -128,6 +128,7 @@ rdpq_font_t* font2Ptr = NULL;
 rdpq_font_t* font3Ptr = NULL;
 rdpq_font_t* font4Ptr = NULL;
 rdpq_font_t* font5Ptr = NULL;
+rdpq_font_t* font6Ptr = NULL;
 
 // ==== FORWARDS DECLARED FUNCTIONS ====
 void UI_Menu_RenderGameOverScreen(AppData* _appData);
@@ -180,6 +181,7 @@ void UI_Menu_Start(AppData* _appData){
     font3Ptr = (rdpq_font_t*)AF_LoadFont(FONT3_ID, fontPath3, whiteColor);
     font4Ptr = (rdpq_font_t*)AF_LoadFont(FONT4_ID, fontPath4, pink); 
     font5Ptr = (rdpq_font_t*)AF_LoadFont(FONT5_ID, fontPath5, whiteColor);
+    font6Ptr = (rdpq_font_t*)AF_LoadFont(FONT6_ID, fontPath4, whiteColor);
 
     // COUNTDOWN TIMER
     UI_Menu_SetupCountdownTimer(_appData);
@@ -214,6 +216,7 @@ void UI_Menu_Update(AppData* _appData){
     {
         case GAME_STATE_MAIN_MENU:
             UI_Menu_RenderMainMenu(_appData);
+            //UI_Menu_RenderGameOverScreen(_appData);
         break;
 
         case GAME_STATE_COUNTDOWN:
@@ -262,6 +265,7 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
     rdpq_text_unregister_font(FONT3_ID);
     rdpq_text_unregister_font(FONT4_ID);
     rdpq_text_unregister_font(FONT5_ID);
+    rdpq_text_unregister_font(FONT6_ID);
 
     
     // ===== free the font ===== 
@@ -269,6 +273,7 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
     rdpq_font_free(font3Ptr);
     rdpq_font_free(font4Ptr);
     rdpq_font_free(font5Ptr);
+    rdpq_font_free(font6Ptr);
 
     // Free the loaded sprites in memory
     for(int i = 0; i < _ecs->entitiesCount; ++i){
@@ -321,6 +326,7 @@ void UI_Menu_SetupGameOverMenu(AppData* _appData){
     // title background elements
     Vec2 titleSpriteScale = {1.5f, 0.25f};
     Vec2 gameOverTitleSpriteSize = {256,256};
+    Vec2 gameOverTitleSpriteScale = {.75f, 0.25f};
     Vec2 gameOverSpriteScale = {1.25f, 0.25f};
     Vec2 titleSpriteSize = {256, 256};
 
@@ -328,22 +334,22 @@ void UI_Menu_SetupGameOverMenu(AppData* _appData){
     Vec2 gameOverSubTitleBoxSize = {SCREEN_WIDTH, 0};
 
 
-    Vec2 gameOverTitleBackgroundPos = {SCREEN_HALF_WIDTH- ((titleSpriteSize.x*titleSpriteScale.x)* 0.4f), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
-    Vec2 gameOverSubTitleBackgroundPos = {gameOverTitleBackgroundPos.x+48, SCREEN_HALF_HEIGHT + (titleSpriteSize.y*titleSpriteScale.y)* 0.5f};//gameOverSubTitlePos.y - 32};
+    Vec2 gameOverTitleBackgroundPos = {SCREEN_HALF_WIDTH- ((titleSpriteSize.x*titleSpriteScale.x)* 0.25f), titlePos.y - ((titleSpriteSize.y*titleSpriteScale.y)* 0.55f)};
+    Vec2 gameOverSubTitleBackgroundPos = {gameOverTitleBackgroundPos.x -32, SCREEN_HALF_HEIGHT + (titleSpriteSize.y*titleSpriteScale.y)* 0.5f};//gameOverSubTitlePos.y - 32};
     
-
-    Vec2 gameOverTitleTextPos = {SCREEN_HALF_WIDTH- ((titleSpriteSize.x*titleSpriteScale.x)* 0.2f ), titlePos.y +4};//- ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
+    Vec2 gameOverTitleTextPos = {SCREEN_HALF_WIDTH- ((titleSpriteSize.x*titleSpriteScale.x)* 0.1f ), titlePos.y +4};//- ((titleSpriteSize.y*titleSpriteScale.y)* 0.75f)};
     Vec2 gameOverSubTitleTextPos = {SCREEN_HALF_WIDTH- (((titleSpriteSize.x*titleSpriteScale.x)* 0.15f) ), gameOverSubTitleBackgroundPos.y + 44};//subTitlePos.y};
     
     //gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, gameOverTitleTextPos, mainMenuTitleSize);
     // TODO: setting the colour here does nothing
-    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath4, whiteColor, gameOverTitleTextPos, gameOverTitleBoxSize);
+    //gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT3_ID, fontPath3, whiteColor, gameOverTitleTextPos, gameOverTitleBoxSize);
+    gameOverTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverTitleCharBuffer, FONT6_ID, fontPath4, whiteColor, gameOverTitleTextPos, gameOverTitleBoxSize);
     gameOverSubTitleEntity = Entity_Factory_CreateUILabel(&_appData->ecs, gameOverSubTitle, FONT4_ID, fontPath4, whiteColor, gameOverSubTitleTextPos, gameOverSubTitleBoxSize);
 
     gameOverTitleEntity->text->isShowing = FALSE;
     gameOverSubTitleEntity->text->isShowing = FALSE;
 
-    gameOverTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],gameOverTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSpriteSize,whiteColor,0,gameOverTitleBoxSize);
+    gameOverTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_1],gameOverTitleBackgroundPos, gameOverTitleSpriteScale,gameOverTitleSpriteSize,whiteColor,0,gameOverTitleBoxSize);
     gameOverSubTitleBackground = Entity_Factory_CreateSprite(&_appData->ecs, texture_path[TEXTURE_ID_0],gameOverSubTitleBackgroundPos, gameOverSpriteScale,gameOverTitleSpriteSize,pink,0,gameOverSubTitleBoxSize);
     gameOverTitleBackground->sprite->spriteRotation = 0.1f;
     gameOverSubTitleBackground->sprite->spriteRotation = -.1f;
@@ -555,10 +561,14 @@ Set State for Game Over UI
  ================ */
 void UI_Menu_GameOverUISetShowing(BOOL _state){
     // Game Over
+    
     gameOverTitleEntity->text->isShowing = _state;
+     
     gameOverSubTitleEntity->text->isShowing = _state;
+   
     gameOverTitleBackground->sprite->enabled= AF_Component_SetEnabled(gameOverTitleBackground->sprite->enabled, _state);
     gameOverSubTitleBackground->sprite->enabled =AF_Component_SetEnabled(gameOverSubTitleBackground->sprite->enabled, _state);
+    /**/
     
 }
 
@@ -691,6 +701,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     UI_Menu_CountdownState(FALSE);
     UI_Menu_PauseMenuSetShowing(FALSE);
     
+    
     GameplayData* gameplayData = &_appData->gameplayData;
     int highestScore = 0;
     int playerWithHighestScore = 0;
@@ -701,6 +712,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
         playerWithHighestScore = i;
        }
     }
+    
     // count is from 0, but for UX we add 1
     sprintf(gameOverSubTitle, "Player %i ",playerWithHighestScore+1);
      if(gameplayData->gameState == GAME_STATE_GAME_OVER_WIN){
@@ -714,6 +726,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
      Vec3 winnerSpawnSpot = {0,0,1.1};
      winningPlayer->transform->pos = winnerSpawnSpot;
 
+    
     
      UI_Menu_GameOverUISetShowing(TRUE);
     

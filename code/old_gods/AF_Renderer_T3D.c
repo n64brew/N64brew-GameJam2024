@@ -82,6 +82,7 @@ float lastTime;
 rspq_syncpoint_t syncPoint;
 rspq_block_t* skinnedBufferList;
 rspq_block_t* staticBufferList;
+//rspq_block_t* scrollingBufferUVList;
 
 typedef struct RendererDebugData {
     //rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 16, 220, "[STICK] Speed : %.2f", baseSpeed);
@@ -97,6 +98,7 @@ RendererDebugData rendererDebugData;
 float newTime;
 float deltaTime;
 
+//float* testScrollValue;
 
 
 // forward declare
@@ -193,6 +195,8 @@ AF_Renderer_Init
 ====================
 */
 void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
+    //testScrollValue = malloc_uncached(sizeof(float));
+    //*testScrollValue = 0;
     assert(_ecs != NULL && "AF_Renderer_T3D: Renderer_Init has null ecs referenced passed in \n");   	
 	debugf("InitRendering\n");
 
@@ -347,10 +351,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
     }
     debugf("TotalDraw Commands: %i\nTotal Skinned mesh commands: %i\nTotal normal Mesh commands: %i\n", totalDrawCommands, totalSkinnedMeshCommands, totalNormalMeshCommands);
     staticBufferList = rspq_block_end();
-
 }
-
-
 /*
 ====================
 AF_Renderer_Update
@@ -384,15 +385,15 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     
    
     for(int i = 0; i < _ecs->entitiesCount; ++i){
-       
-       
         // show debug
         AF_CMesh* mesh = &_ecs->meshes[i];
-        
-        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+        BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
+        BOOL isEnabled = AF_Component_GetEnabled(_ecs->entities[i].mesh->enabled);
+        if((hasMesh == TRUE) && (isEnabled == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
             // update the total meshes and tris
             rendererDebugData.totalMeshes += 1;
             rendererDebugData.totalTris += models[mesh->meshID]->totalVertCount;
+            
             // ======== ANIMATION ========
             AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
             assert(skeletalAnimation != NULL);
@@ -423,6 +424,45 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
         
         }
     }
+
+
+    
+    //scrollingBufferUVList = rspq_block_end();
+
+    // only way to make the foam scroll is force it.
+    /*
+    for(int i  = 0; i < _ecs->entitiesCount; ++i){
+        AF_CMesh* mesh = _ecs->entities[i].mesh;
+        AF_CAnimation* animation = _ecs->entities[i].animation;
+        BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
+        BOOL isEnabled = AF_Component_GetEnabled(_ecs->entities[i].mesh->enabled);
+        BOOL hasAnimation = AF_Component_GetHas(_ecs->entities[i].animation->enabled);
+        if(hasMesh == TRUE && hasAnimation == TRUE && isEnabled == TRUE){
+            if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || MODEL_ATTACK_WAVE){
+               
+                // do special drawing for foam.
+                T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
+                t3d_matrix_push(meshMat);
+                
+                // make the trail speed based off the animation component
+                float adjustedTileOffset = _time->currentFrame * animation->animationSpeed;
+                if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || mesh->meshID == MODEL_ATTACK_WAVE){
+                    adjustedTileOffset  = adjustedTileOffset * 2;
+                }
+
+                color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
+                rdpq_set_prim_color(color);
+                 
+                t3d_model_draw_custom(models[mesh->meshID], (T3DModelDrawConf){
+                                .userData = &adjustedTileOffset,
+                                //.matrices = meshMat,
+                                .tileCb = Tile_Scroll,
+                                });
+                                
+                t3d_matrix_pop(1);
+            }
+        }
+    }*/
      /**/
    
     if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
@@ -442,40 +482,49 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     t3d_screen_clear_color(RGBA32(skyColor[0], skyColor[1], skyColor[2], 0xFF));
     t3d_screen_clear_depth();
     
+    
+    
      // Tell the RSP to draw our command list
     rspq_block_run(skinnedBufferList);
     rspq_block_run(staticBufferList);
-
-    // only way to make the foam scroll is force it.
-    for(int i  = 0; i < _ecs->entitiesCount; ++i){
-        AF_CMesh* mesh = _ecs->entities[i].mesh;
-        AF_CAnimation* animation = _ecs->entities[i].animation;
-        BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
-        BOOL isEnabled = AF_Component_GetEnabled(_ecs->entities[i].mesh->enabled);
-        BOOL hasAnimation = AF_Component_GetHas(_ecs->entities[i].animation->enabled);
-        if(hasMesh == TRUE && hasAnimation == TRUE && isEnabled == TRUE){
-            if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || MODEL_ATTACK_WAVE || mesh->meshID == MODEL_SMOKE){
-                // do special drawing for foam.
-                T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
-                t3d_matrix_push(meshMat);
-                
-                // make the trail speed based off the animation component
-                float adjustedTileOffset = _time->currentFrame * animation->animationSpeed;
-                if(mesh->meshID == MODEL_TRAIL || mesh->meshID == MODEL_TRAIL || mesh->meshID == MODEL_ATTACK_WAVE || mesh->meshID == MODEL_SMOKE){
-                    adjustedTileOffset  = adjustedTileOffset * 2;
+    // ==== UV Scrolling Drawing ====
+    // TODO:
+    // I really don't like this
+    // stacking up calls to the display list in the setup just didn't show the uv scrolling/callback being called.
+    // even though i tested with malloc_uncached values, so had to resort to this slow implementation similar to UV scrolling found in lava example
+    //rspq_block_begin();
+    /*
+    for(int i=0; i<_ecs->entitiesCount; ++i) {
+        AF_CMesh* mesh = &_ecs->meshes[i];
+        
+        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+            AF_CAnimation* animation = _ecs->entities[i].animation;
+            BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
+            BOOL isEnabled = AF_Component_GetEnabled(_ecs->entities[i].mesh->enabled);
+            BOOL hasAnimation = AF_Component_GetHas(_ecs->entities[i].animation->enabled);
+            if(hasMesh == TRUE && hasAnimation == TRUE && isEnabled == TRUE){
+                if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || MODEL_ATTACK_WAVE){
+                    // do special drawing for foam.
+                    T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
+                    t3d_matrix_push(meshMat);
+                    animation->uvScrollingSpeed  = fm_fmodf((_time->currentFrame * animation->animationSpeed), 32.0f);
+                    color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
+                    rdpq_set_prim_color(color);
+                    t3d_model_draw_custom(models[mesh->meshID], (T3DModelDrawConf){
+                                    .userData = &animation->uvScrollingSpeed,//adjustedTileOffset,
+                                    //.matrices = meshMat,
+                                    .tileCb = Tile_Scroll,
+                                    });
+                                    
+                    t3d_matrix_pop(1);
                 }
-
-                color_t color = {mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
-                rdpq_set_prim_color(color);
-                t3d_model_draw_custom(models[mesh->meshID], (T3DModelDrawConf){
-                                .userData = &adjustedTileOffset,
-                                //.matrices = meshMat,
-                                .tileCb = Tile_Scroll,
-                                });
-                t3d_matrix_pop(1);
             }
         }
     }
+    */
+    //scrollingBufferUVList = rspq_block_end();
+
+    //rspq_block_run(scrollingBufferUVList);
 
 
     // ======== DRAW PARTICLES ========
@@ -505,8 +554,6 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     if(debugCam == DEBUG_CAM_ON){
         Renderer_DebugCam(&rendererDebugData);
     }
-     
-
 }
 
 /*
@@ -655,6 +702,7 @@ void AF_Renderer_Shutdown(AF_ECS* _ecs){
     // Free the display buffers
     rspq_block_free(skinnedBufferList);
     rspq_block_free(staticBufferList);
+    //rspq_block_free(scrollingBufferUVList);
 
     for (int i = 0; i < MODEL_COUNT; ++i){
       //free(models[i]);
@@ -692,6 +740,7 @@ void AF_Renderer_Shutdown(AF_ECS* _ecs){
     }
 
         
+    //free_uncached(testScrollValue);
 
     t3d_destroy();
 }
@@ -865,15 +914,25 @@ Tile_Scroll
 */
 void Tile_Scroll(void* userData, rdpq_texparms_t *tileParams, rdpq_tile_t tile) {
 
+ 
   float offset = *(float*)userData;
+   
   if(tile == TILE0) {
     tileParams->s.translate = 0.0f;//offset * 0.5f;
+    
     tileParams->t.translate = offset *2.0f;
+    
     //tileParams->s.translate = offset * 0.5f;
+    
     //tileParams->t.translate = offset * 0.8f;
+    
     tileParams->s.translate = fm_fmodf(tileParams->s.translate, 32.0f);
+    
     tileParams->t.translate = fm_fmodf(tileParams->t.translate, 32.0f);
+    
   }
+  /**/
+  /**/
   
 
 }

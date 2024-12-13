@@ -28,10 +28,10 @@ AF_Entity* godSnekEntity = NULL;
 AF_Entity* mapSeaFoamEntity = NULL;
 
 // Environment Trimmings
-AF_Entity* alterEntity = NULL;
-AF_Entity* graveEntity = NULL;
-AF_Entity* smokeEntity = NULL;
-AF_Entity* ratSpawnPentogramEntity = NULL;
+//AF_Entity* alterEntity = NULL;
+//AF_Entity* graveEntity = NULL;
+//AF_Entity* smokeEntity = NULL;
+AF_Entity* ratSpawnEntity = NULL;
 
 // Island Spawn points
 AF_Entity* bucket1 = NULL;
@@ -40,7 +40,7 @@ AF_Entity* bucket3 = NULL;
 AF_Entity* bucket4 = NULL;
 
 // Rat
-AF_Entity* rat1 = NULL;
+//AF_Entity* rat1 = NULL;
 
 // Shark
 AF_Entity* sharkEntity = NULL;
@@ -64,6 +64,7 @@ AF_Entity* playerEatenWave = NULL;
 
 // Gameplay Vars
 uint8_t currentBucket = 0;
+AF_Entity* g_ratPtr = NULL;
 
 #define VILLAGER_CARRY_HEIGHT 1
 #define ATTACK_RADIUS       5.0f
@@ -103,6 +104,7 @@ void OnSharkCollision(AF_Collision* _collision);
 void Scene_UpdateWaterTrails(AppData* appData);
 void Scene_UpdatePlayerAttackWaves(AppData* _appData);
 void Scene_UpdateEffects(AppData* _appData);
+void Scene_UpdateSharkEffects(AppData* _appData);
 
 // ==== SPAWNING ====
 void RespawnPlayer(AF_Entity* _entity);
@@ -141,7 +143,7 @@ void Scene_OnBucket3Trigger(AF_Collision* _collision);
 void Scene_OnBucket4Trigger(AF_Collision* _collision);
 
 void Scene_OnCollision(AF_Collision* _collision);
-void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision, AF_Entity* _villager, AF_Entity* _godEntity);
+void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision);
 
 
 // ================ SCENE GENERIC FUNCTIONS =================
@@ -170,6 +172,7 @@ Scene gameplay update loop
 // TODO: clean this up
  ================ */
 void Scene_Update(AppData* _appData){
+    AF_Entity* rat = _appData->gameplayData.rat;
     // handle restart/mainMenu
     if(_appData->gameplayData.gameState == GAME_STATE_GAME_RESTART){
         // do restart things
@@ -180,7 +183,7 @@ void Scene_Update(AppData* _appData){
             entity->playerData->isCarrying = FALSE;
             // reset the player posotions
             entity->transform->pos = entity->playerData->startPosition;
-            rat1->playerData->isCarried = FALSE;
+            rat->playerData->isCarried = FALSE;
         }
         _appData->gameplayData.godEatCount = 0;
         _appData->gameplayData.gameState = GAME_STATE_MAIN_MENU;
@@ -193,6 +196,7 @@ void Scene_Update(AppData* _appData){
         Scene_UpdateWaterTrails(_appData);
         Scene_UpdatePlayerAttackWaves(_appData);
         Scene_UpdateEffects(_appData);
+        Scene_UpdateSharkEffects(_appData);
 
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
@@ -212,7 +216,8 @@ void Scene_Update(AppData* _appData){
         if(AF_Component_GetHas(playerData->enabled) == TRUE && playerData->isCarrying == TRUE){
             // make villager match player transform
             Vec3 villagerCarryPos = {entity->transform->pos.x, entity->transform->pos.y+VILLAGER_CARRY_HEIGHT, entity->transform->pos.z};
-            rat1->transform->pos = villagerCarryPos;
+            AF_Entity* rat = _appData->gameplayData.rat;
+            rat->transform->pos = villagerCarryPos;
             
             //debugf("entity carrying villager: x: %f y: %f x: %f \n", villagerCarryPos.x, villagerCarryPos.y, villagerCarryPos.z);
         }
@@ -333,6 +338,35 @@ void PlayerController_DamageHandler(AppData* _appData){
 // ================ SCENE VISUAL EFFECTS =================
 
 /* ================
+Scene_UpdateSharkEffects
+Update the visual effects e.g. shark trails
+ ================ */
+void Scene_UpdateSharkEffects(AppData* _appData){
+    // turn the shark trails on or off depending if they are visible
+    for(int i = 0; i < PLAYER_COUNT; ++i){
+        Vec3 levelBounds = _appData->gameplayData.levelBounds;
+            Vec3 pos = sharkHunterEntities[i]->transform->pos;
+            Vec3 adjustedSharkPos = Vec3_MINUS(pos, _appData->gameplayData.levelPos);
+            //AF_Entity* hunterShark = sharkHunterEntities[i];
+            AF_CMesh* sharkMesh = sharkHunterEntities[i]->mesh;
+            AF_CMesh* sharkTrail = sharkHunterTrails[i]->mesh;
+            // if inside the bounds, turn on the visibilty of the shark and trails, otherwise turn off.
+            if (adjustedSharkPos.x < -levelBounds.x - 5 ||
+                adjustedSharkPos.x > levelBounds.x+ 5  ||
+                adjustedSharkPos.z < -levelBounds.z- 5  ||
+                adjustedSharkPos.z > levelBounds.z+ 5 ){
+                
+                sharkTrail->enabled = AF_Component_SetEnabled(sharkTrail->enabled, FALSE);
+                sharkMesh->enabled = AF_Component_SetEnabled(sharkMesh->enabled, FALSE);
+            
+            }else{
+                sharkMesh->enabled = AF_Component_SetEnabled(sharkMesh->enabled, TRUE);
+                sharkTrail->enabled = AF_Component_SetEnabled(sharkTrail->enabled, TRUE);
+            }
+    }
+}
+
+/* ================
 Scene_UpdateEffects
 Update the visual effects e.g. player eaten waves, spawning the pentagon ect.
  ================ */
@@ -348,7 +382,7 @@ void Scene_UpdateEffects(AppData* _appData){
     }
 
     // update the spawn pentogram
-    AF_CMesh* spawnPentagramMesh = ratSpawnPentogramEntity->mesh;
+    AF_CMesh* spawnPentagramMesh = ratSpawnEntity->mesh;
     if(spawnPentagramMesh->material.color.a - 10.0f <= 0){
         spawnPentagramMesh->material.color.a = 0.0f;
     }else{
@@ -360,8 +394,12 @@ void Scene_UpdateEffects(AppData* _appData){
     AF_CMesh* eatenWaveMesh = playerEatenWave->mesh;
     if(eatenWaveMesh->material.color.a - 10.0f <= 0){
         eatenWaveMesh->material.color.a = 0.0f;
+        // disable the renderer when we are finished
+        eatenWaveMesh->enabled = AF_Component_SetEnabled(eatenWaveMesh->enabled, FALSE);
     }else{
+        eatenWaveMesh->enabled = AF_Component_SetEnabled(eatenWaveMesh->enabled, TRUE);
         eatenWaveMesh->material.color.a -= 10.0f;
+        
     }
 
 }
@@ -373,15 +411,19 @@ Update the visual effects e.g. player attack waves
 void Scene_UpdatePlayerAttackWaves(AppData* _appData){
     // TODO: disable this object once it can't be seen
     for(int i = 0; i < PLAYER_COUNT; ++i){
+        AF_CMesh* mesh = playerWaves[i]->mesh;
         if(_appData->gameplayData.playerEntities[i]->playerData->isAttacking == TRUE){
-            playerWaves[i]->mesh->material.color.a = 255;
+            mesh->material.color.a = 255;
         }else{
             // it will solwly fade away
              // don't overflow
-            if(playerWaves[i]->mesh->material.color.a - 10.0f <= 0){
-                playerWaves[i]->mesh->material.color.a = 0.0f;
+            if(mesh->material.color.a - 10.0f <= 0){
+                // disable the renderer when we are finished
+                mesh->enabled = AF_Component_SetEnabled(mesh->enabled, FALSE);
+                mesh->material.color.a = 0.0f;
             }else{
-                playerWaves[i]->mesh->material.color.a -= 10.0f;
+                mesh->enabled = AF_Component_SetEnabled(mesh->enabled, TRUE);
+                mesh->material.color.a -= 10.0f;
             }
             
             //playerWaves[i]->mesh->enabled = AF_Component_SetEnabled(playerWaves[i]->mesh->enabled, FALSE);
@@ -401,6 +443,12 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency1 = Vec3_MAGNITUDE(player1Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player1TrailMesh->material.color.a = foamTransparency1 * 255;
+    if(player1TrailMesh->material.color.a == 0.0f){
+        // disable the renderer when we are finished
+        player1TrailMesh->enabled = AF_Component_SetEnabled(player1TrailMesh->enabled, FALSE);
+    }else{
+        player1TrailMesh->enabled = AF_Component_SetEnabled(player1TrailMesh->enabled, TRUE);
+    }
 
     // Player 2
     AF_C3DRigidbody* player2Rigidbody = _appData->gameplayData.playerEntities[1]->rigidbody;
@@ -408,6 +456,12 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency2 = Vec3_MAGNITUDE(player2Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player2TrailMesh->material.color.a = foamTransparency2 * 255;
+    if(player2TrailMesh->material.color.a == 0.0f){
+        // disable the renderer when we are finished
+        player2TrailMesh->enabled = AF_Component_SetEnabled(player2TrailMesh->enabled, FALSE);
+    }else{
+        player2TrailMesh->enabled = AF_Component_SetEnabled(player2TrailMesh->enabled, TRUE);
+    }
 
     // Player 3
     AF_C3DRigidbody* player3Rigidbody = _appData->gameplayData.playerEntities[2]->rigidbody;
@@ -415,6 +469,12 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency3 = Vec3_MAGNITUDE(player3Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player3TrailMesh->material.color.a = foamTransparency3 * 255;
+    if(player3TrailMesh->material.color.a == 0.0f){
+        // disable the renderer when we are finished
+        player3TrailMesh->enabled = AF_Component_SetEnabled(player3TrailMesh->enabled, FALSE);
+    }else{
+        player3TrailMesh->enabled = AF_Component_SetEnabled(player3TrailMesh->enabled, TRUE);
+    }
 
     // Player 4
     AF_C3DRigidbody* player4Rigidbody = _appData->gameplayData.playerEntities[3]->rigidbody;
@@ -422,6 +482,12 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency4 = Vec3_MAGNITUDE(player4Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player4TrailMesh->material.color.a = foamTransparency4 * 255;
+    if(player4TrailMesh->material.color.a == 0.0f){
+        // disable the renderer when we are finished
+        player4TrailMesh->enabled = AF_Component_SetEnabled(player4TrailMesh->enabled, FALSE);
+    }else{
+        player4TrailMesh->enabled = AF_Component_SetEnabled(player4TrailMesh->enabled, TRUE);
+    }
 }
 
 
@@ -455,9 +521,6 @@ void Scene_SetupEntities(AppData* _appData){
 	//========= SPAWN SPOTS ========
     Scene_Setup_RatSpawnPoints(_appData);
     
-    // ======== RATS ========
-    Scene_Setup_Rats(_appData);
-
     // ==== SHARKS ====
     Scene_SetupSharks(_appData);
     
@@ -540,7 +603,7 @@ void Scene_Setup_LevelMap(AppData* _appData){
     //levelEntity->mesh->meshID = MODEL_SNAKE;
     //levelEntity->mesh->material.color = WHITE_COLOR;
     levelEntity->rigidbody->inverseMass = 0.0f;
-    //levelEntity->rigidbody->isKinematic = TRUE;
+    levelEntity->rigidbody->isKinematic = TRUE;
     levelEntity->collider->collision.callback = Scene_OnGodTrigger;
     levelEntity->collider->boundingVolume = godBoundingScale;
     levelEntity->collider->showDebug = TRUE;
@@ -560,8 +623,6 @@ void Scene_Setup_LevelMap(AppData* _appData){
     mapSeaFoamEntity->mesh->meshID = MODEL_FOAM;
     *mapSeaFoamEntity->animation = AF_CAnimation_ADD();
     mapSeaFoamEntity->animation->animationSpeed = 0.1f;
-
-    
 }
 
 /* ================
@@ -733,7 +794,8 @@ void Scene_Setup_Players(AppData* _appData){
         //debugf("player hasAI: %i isEnabled: %i\n",hasAI, isEnabled);
 
         // First behaviour is to go for the villager
-        AI_CreateFollow_Action(aiPlayerEntity, rat1,  Scene_AIStateMachine);
+        AF_Entity* rat = _appData->gameplayData.rat;
+        AI_CreateFollow_Action(aiPlayerEntity, rat,  Scene_AIStateMachine);
         // second behaviour is go for the god 
         AI_CreateFollow_Action(aiPlayerEntity, levelEntity,  Scene_AIStateMachine);
     }
@@ -843,11 +905,16 @@ void Scene_Setup_Rats(AppData* _appData){
     // Rats
 	Vec3 rat1Pos = {-1000.0f, 0, 0};
 	Vec3 rat1Scale = {0.5f,0.5f,0.5f};
-    rat1 = Entity_Factory_CreatePrimative(&_appData->ecs, rat1Pos, rat1Scale, AF_MESH_TYPE_MESH, AABB);
-    rat1->mesh->meshID = MODEL_RAT;
-	rat1->rigidbody->inverseMass = 0.0f;
-	rat1->rigidbody->isKinematic = TRUE;
-    rat1->collider->collision.callback = Scene_OnCollision;
+    _appData->gameplayData.rat = Entity_Factory_CreatePrimative(&_appData->ecs, rat1Pos, rat1Scale, AF_MESH_TYPE_MESH, AABB);
+    AF_Entity* rat = _appData->gameplayData.rat;
+    // save a global ptr copy 
+    // TODO: i don't like this, fix it later
+    g_ratPtr = rat;
+    rat->mesh->meshID = MODEL_RAT;
+	rat->rigidbody->inverseMass = 0.0f;
+	rat->rigidbody->isKinematic = TRUE;
+    rat->collider->collision.callback = Scene_OnCollision;
+    debugf("Rat init: %p \n", rat);
 
     // TODO: re-introduce the rats into the population
     /*
@@ -877,6 +944,8 @@ Setup additional level objects such as alter, smoke and pentogram
  ================ */
 void Scene_SetupLevelObjects(AppData* _appData){
     float animationSpeed = -0.5f;
+
+ /*
     // Place the alter
     Vec3 alterSpawnPos = {0,0.1f,0.1f};
     Vec3 alterScale = { 30,1,15};
@@ -894,7 +963,7 @@ void Scene_SetupLevelObjects(AppData* _appData){
     
     
     // TODO: get these back in
-    /*
+    
     Vec3 graveSpawnPos = {0,0.5f,.1f};
     Vec3 graveScale = { 30,1,15};
     graveEntity = AF_ECS_CreateEntity(&_appData->ecs);
@@ -947,17 +1016,17 @@ void Scene_SetupLevelObjects(AppData* _appData){
     // Place the alter
     Vec3 ratPentogramSpawnPos = {-5,0.1f,0.1f};
     Vec3 ratPentogramScale = { 15,1,7.5};
-    ratSpawnPentogramEntity = AF_ECS_CreateEntity(&_appData->ecs);
-	ratSpawnPentogramEntity->transform->pos = ratPentogramSpawnPos;
-    ratSpawnPentogramEntity->transform->scale = ratPentogramScale;
+    ratSpawnEntity = AF_ECS_CreateEntity(&_appData->ecs);
+	ratSpawnEntity->transform->pos = ratPentogramSpawnPos;
+    ratSpawnEntity->transform->scale = ratPentogramScale;
 	// add a rigidbody to our cube
-	*ratSpawnPentogramEntity->mesh = AF_CMesh_ADD();
-	ratSpawnPentogramEntity->mesh->meshType = AF_MESH_TYPE_MESH;
-    ratSpawnPentogramEntity->mesh->material.color = WHITE_COLOR;
-    ratSpawnPentogramEntity->mesh->material.color.a = 150;
-    ratSpawnPentogramEntity->mesh->meshID = MODEL_ALTER; 
-    ratSpawnPentogramEntity->rigidbody->isKinematic = TRUE;
-    ratSpawnPentogramEntity->rigidbody->inverseMass = 0.0f;
+	*ratSpawnEntity->mesh = AF_CMesh_ADD();
+	ratSpawnEntity->mesh->meshType = AF_MESH_TYPE_MESH;
+    ratSpawnEntity->mesh->material.color = WHITE_COLOR;
+    ratSpawnEntity->mesh->material.color.a = 150;
+    ratSpawnEntity->mesh->meshID = MODEL_ALTER; 
+    ratSpawnEntity->rigidbody->isKinematic = TRUE;
+    ratSpawnEntity->rigidbody->inverseMass = 0.0f;
     
     
 }
@@ -1003,7 +1072,7 @@ void Scene_SetupSharks(AppData* _appData){
     *sharkTrail->animation = AF_CAnimation_ADD();
     sharkTrail->animation->animationSpeed = sharkFoamAnimationSpeed;
 
-    Vec3 sharkHunterSpawnPos = {-20, 0, 0};
+    Vec3 sharkHunterSpawnPos = {-30, 0, 0};
     // create the shark home
     sharkHomeEntity = AF_ECS_CreateEntity(&_appData->ecs);
     sharkHomeEntity->transform->pos = sharkHunterSpawnPos;
@@ -1097,25 +1166,29 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
     AF_Entity* bucket4 = GetBucket4();
 
     
+    AF_Entity* rat = g_ratPtr;//_appData->gameplayData.rat;
+    assert(rat != NULL);
     if(randomNum == 0){
         *_currentBucket = 0;
         Vec3 bucket1Pos = {bucket1->transform->pos.x, bucket1->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket1->transform->pos.z};
-        rat1->transform->pos = bucket1Pos;
+        
+        rat->transform->pos = bucket1Pos;
+
 
     }else if( randomNum == 1){
         *_currentBucket = 1;
         Vec3 bucket2Pos = {bucket2->transform->pos.x, bucket2->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket2->transform->pos.z};
-        rat1->transform->pos = bucket2Pos;
+        rat->transform->pos = bucket2Pos;
 
     }else if( randomNum == 2){
         *_currentBucket = 2;
         Vec3 bucket3Pos = {bucket3->transform->pos.x, bucket3->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket3->transform->pos.z};
-        rat1->transform->pos = bucket3Pos;
+        rat->transform->pos = bucket3Pos;
 
     }else if( randomNum == 3){
         *_currentBucket = 3;
         Vec3 bucket4Pos = {bucket4->transform->pos.x, bucket4->transform->pos.y + VILLAGER_CARRY_HEIGHT, bucket4->transform->pos.z};
-        rat1->transform->pos = bucket4Pos;
+        rat->transform->pos = bucket4Pos;
 
     }
 
@@ -1125,9 +1198,9 @@ void Scene_SpawnBucket(uint8_t* _currentBucket){
     //smokeEntity->mesh->material.color.a = 255;
 
     // Move the pentogram to the rat spawn pos
-    ratSpawnPentogramEntity->transform->pos = rat1->transform->pos;
+    ratSpawnEntity->transform->pos = rat->transform->pos;
     // make the smoke appear. it will disapate over time.
-    ratSpawnPentogramEntity->mesh->material.color.a = 255;
+    ratSpawnEntity->mesh->material.color.a = 255;
 }
 
 // ======== TRIGGERS =========
@@ -1183,6 +1256,8 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         collidedEntity->playerData->score ++;
         collidedEntity->playerData->isCarrying = FALSE;
         collidedEntity->playerData->carryingEntity = 0;
+        
+        // TODO Move this:
         RespawnRat();
         // play sound
         wav64_play(&feedGodSoundFX, 16);
@@ -1196,8 +1271,9 @@ Respawn the rat
  ================ */
 void RespawnRat(){
     Vec3 poolLocation = {100, 0,0};
-    rat1->transform->pos = poolLocation;
-    rat1->playerData->isCarried = FALSE;
+    AF_Entity* rat = g_ratPtr;//_appData->gameplayData.rat;
+    rat->transform->pos = poolLocation;
+    rat->playerData->isCarried = FALSE;
     // randomly call for a colour bucket
     Scene_SpawnBucket(&currentBucket);
 }
@@ -1207,7 +1283,7 @@ void RespawnRat(){
 Scene_BucketCollisionBehaviour
 Perform gameplay logic if bucket has been collided with by a player character
  ================ */
-void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision, AF_Entity* _villager, AF_Entity* _godEntity){
+void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision){
     
      //debugf("Scene_BucketCollisionBehaviour \n ");
     // Don't react if this bucket isn't activated
@@ -1229,13 +1305,17 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
     if(playerData2->faction != PLAYER){
         return;
     }
-    // attatch the villager to this player
-    if(_villager->playerData->isCarried == FALSE){
-        playerData2->carryingEntity = _villager->id_tag;
-        _villager->mesh->material.textureID = _godEntity->mesh->material.textureID;
+
+
+    // Move this
+    // attatch the rat to this player
+    
+    if(g_ratPtr->playerData->isCarried == FALSE){
+        playerData2->carryingEntity = g_ratPtr->id_tag;
+        //_rat->mesh->material.textureID = _godEntity->mesh->material.textureID;
         //debugf("carry villager \n");
         playerData2->isCarrying = TRUE;
-        _villager->playerData->isCarried = TRUE;
+        g_ratPtr->playerData->isCarried = TRUE;
 
         // play sound
         wav64_play(&pickupSoundFX, 16);
@@ -1253,7 +1333,7 @@ void Scene_OnBucket1Trigger(AF_Collision* _collision){
         return;
     }
     
-    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision, rat1, levelEntity);
+    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision);
 }
 
 /* ================
@@ -1265,7 +1345,7 @@ void Scene_OnBucket2Trigger(AF_Collision* _collision){
     if(currentBucket != bucketID){
         return;
     }
-    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision, rat1, levelEntity);
+    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision);
 }
 
 /* ================
@@ -1277,7 +1357,7 @@ void Scene_OnBucket3Trigger(AF_Collision* _collision){
     if(currentBucket != bucketID){
         return;
     }
-    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision, rat1, levelEntity);
+    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision);
 }
 
 /* ================
@@ -1289,7 +1369,7 @@ void Scene_OnBucket4Trigger(AF_Collision* _collision){
     if(currentBucket != bucketID){
         return;
     }
-    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision, rat1, levelEntity);
+    Scene_BucketCollisionBehaviour(currentBucket, bucketID, _collision);
 }
 
 
@@ -1385,6 +1465,7 @@ void OnSharkCollision(AF_Collision* _collision){
         return;
     }
 
+    // disable the renderer when we are finished
     // if the collider entity is of player faction
     if(playerData->faction == PLAYER){
         playerData->isAlive = FALSE;
@@ -1410,6 +1491,8 @@ void Scene_AIStateMachine(AF_AI_Action* _aiAction){
 
     AF_Entity* sourceEntity = (AF_Entity*)_aiAction->sourceEntity;
     AF_Entity* targetEntity = (AF_Entity*)_aiAction->targetEntity;
+    //debugf("scene ai state machine:  entity:%p \n", targetEntity);
+        
     assert(sourceEntity != NULL);
     assert(targetEntity != NULL);
 
@@ -1460,7 +1543,6 @@ void Scene_AIStateMachine(AF_AI_Action* _aiAction){
         break;
     }
     
-
     Scene_AIFollowEntity(_aiAction);
 }
 
@@ -1480,10 +1562,13 @@ void Scene_AIFollowEntity(AF_AI_Action* _aiAction){
     AF_Entity* targetEntity = (AF_Entity*)_aiAction->targetEntity;
     assert(sourceEntity != NULL);
     assert(targetEntity != NULL);
+
     // Move towards 
     Vec3 startPos = sourceEntity->transform->pos;
+
     Vec3 destination = targetEntity->transform->pos;
-    
+    //debugf("source entity:%p  \n", _aiAction->sourceEntity);
+    //debugf("target entity:%p x:%f y:%f z:%f \n", _aiAction->targetEntity, destination.x, destination.y, destination.z);
     // stap at distance from object
     float stopAtDistance = 0.5f;
     float distance = Vec3_DISTANCE(startPos, destination);

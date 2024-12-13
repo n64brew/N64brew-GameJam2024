@@ -34,3 +34,4 @@ const char* fontPath2 = "rom:/old_gods/ZenDots-Regular.font64";
 const char* fontPath3 = "rom:/old_gods/Jumpman_H1.font64"; 
 const char* fontPath4 = "rom:/old_gods/Jumpman_H2.font64";
 const char* fontPath5 = "rom:/old_gods/Jumpman_P.font64";
+const char* fontPath6 = "rom:/old_gods/Jumpman_H1.font64"; 

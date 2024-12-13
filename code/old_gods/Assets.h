@@ -53,6 +53,7 @@ extern const char* fontPath2;
 extern const char* fontPath3;
 extern const char* fontPath4;
 extern const char* fontPath5;
+extern const char* fontPath6;
 #define FONT2_ID 2
 #define FONT3_ID 3
 #define FONT4_ID 4
