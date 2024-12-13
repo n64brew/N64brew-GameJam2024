@@ -33,7 +33,7 @@
 *********************************/
 
 const MinigameDef minigame_def = {
-    .gamename = "Rummage",
+    .gamename = "Tohu-bohu",
     .developername = "tfmoe__",
     .description = "Find the key and be the first to open the correct safe!",
     .instructions = "A: rummage through the furniture B: steal the key"
@@ -106,14 +106,14 @@ void minigame_init()
     // Init fonts
     fontdbg = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
     rdpq_text_register_font(FONT_DEBUG, fontdbg);
-    fonttext = rdpq_font_load("rom:/rummage/thickhead.font64");
+    fonttext = rdpq_font_load("rom:/tohubohu/thickhead.font64");
     rdpq_text_register_font(FONT_TEXT, fonttext);
     rdpq_font_style(fonttext, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
 #endif
 
 #if ENABLE_MUSIC
     // Init and play music
-    wav64_open(&music, "rom:/rummage/music.wav64");
+    wav64_open(&music, "rom:/tohubohu/music.wav64");
 	wav64_set_loop(&music, true);
     mixer_ch_set_vol(1, 0.75f, 0.75f);
     wav64_play(&music, 1);

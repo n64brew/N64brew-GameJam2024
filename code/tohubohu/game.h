@@ -1,5 +1,5 @@
-#ifndef GAMEJAM2024_RUMMAGE_GAME_H
-#define GAMEJAM2024_RUMMAGE_GAME_H
+#ifndef GAMEJAM2024_TOHUBOHU_GAME_H
+#define GAMEJAM2024_TOHUBOHU_GAME_H
 
 #include <libdragon.h>
 #include "../../core.h"

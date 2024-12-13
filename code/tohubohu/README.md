@@ -1,4 +1,4 @@
-# N64brew Game Jam #5
+# Tohu-bohu
 
 This minigame is my entry to the N64brew Game Jam #5.
 

@@ -511,7 +511,7 @@ void game_init()
     room.w = 4.8 * ROOM_SCALE * T3D_MODEL_SCALE;
     room.h = 4.8 * ROOM_SCALE * T3D_MODEL_SCALE;
     room.max_y = 1.81f * ROOM_SCALE * T3D_MODEL_SCALE;
-    room.model = t3d_model_load("rom:/rummage/room.t3dm");
+    room.model = t3d_model_load("rom:/tohubohu/room.t3dm");
     room.mat_fp = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(room.mat_fp, room.scale.v, room.rotation.v, room.position.v);
     rspq_block_begin();
@@ -524,7 +524,7 @@ void game_init()
     // Place furnitures
     int hideout = rand() % FURNITURES_COUNT;
     debugf("Key is in furniture #%d!\n", hideout);
-    T3DModel* furniture_model = t3d_model_load("rom:/rummage/furniture.t3dm");
+    T3DModel* furniture_model = t3d_model_load("rom:/tohubohu/furniture.t3dm");
     for (int i=0; i<FURNITURES_COUNT; i++) {
         furnitures[i].w = 0.92f * FURNITURE_SCALE * T3D_MODEL_SCALE;
         furnitures[i].h = 0.42f * FURNITURE_SCALE * T3D_MODEL_SCALE;
@@ -562,7 +562,7 @@ void game_init()
     // Place vaults
     int target = rand() % VAULTS_COUNT;
     debugf("Target is vault #%d!\n", target);
-    T3DModel* vault_model = t3d_model_load("rom:/rummage/vault.t3dm");
+    T3DModel* vault_model = t3d_model_load("rom:/tohubohu/vault.t3dm");
     for (int i=0; i<VAULTS_COUNT; i++) {
         vaults[i].w = 1.09f * T3D_MODEL_SCALE;
         vaults[i].h = 0.11f * T3D_MODEL_SCALE;
@@ -619,7 +619,7 @@ void game_init()
         PLAYERCOLOR_3,
         PLAYERCOLOR_4
     };
-    T3DModel* player_model = t3d_model_load("rom:/rummage/player.t3dm");
+    T3DModel* player_model = t3d_model_load("rom:/tohubohu/player.t3dm");
     for (int i=0; i<MAXPLAYERS; i++) {
         players[i].w = 1.42f * PLAYER_SCALE * T3D_MODEL_SCALE;
         players[i].h = players[i].w;    // Player is expected to be a square for collisions and pathfinding
@@ -671,10 +671,10 @@ void game_init()
             t3d_model_draw_skinned(players[i].model, &players[i].skel);
             t3d_matrix_pop(1);
         players[i].dpl = rspq_block_end();
-        wav64_open(&players[i].sfx_rummage, "rom:/rummage/rummage.wav64");
-        wav64_open(&players[i].sfx_open, "rom:/rummage/open.wav64");
-        wav64_open(&players[i].sfx_attack, "rom:/rummage/attack.wav64");
-        wav64_open(&players[i].sfx_hurt, "rom:/rummage/hurt.wav64");
+        wav64_open(&players[i].sfx_rummage, "rom:/tohubohu/rummage.wav64");
+        wav64_open(&players[i].sfx_open, "rom:/tohubohu/open.wav64");
+        wav64_open(&players[i].sfx_attack, "rom:/tohubohu/attack.wav64");
+        wav64_open(&players[i].sfx_hurt, "rom:/tohubohu/hurt.wav64");
         players[i].sfx_channel = 20 + i;
         players[i].plynum = i;
         players[i].is_human = (i < playercount);
@@ -715,7 +715,7 @@ void game_init()
     key.w = 0.4f * T3D_MODEL_SCALE;
     key.h = 0.4f * T3D_MODEL_SCALE;
     key.max_y = 0.42f * T3D_MODEL_SCALE;
-    key.model = t3d_model_load("rom:/rummage/key.t3dm");
+    key.model = t3d_model_load("rom:/tohubohu/key.t3dm");
     key.mat_fp = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(key.mat_fp, key.scale.v, key.rotation.v, key.position.v);
     rspq_block_begin();
@@ -726,7 +726,7 @@ void game_init()
     key.hidden = true;
 
     // Sound FX
-    wav64_open(&sfx_key, "rom:/rummage/key.wav64");
+    wav64_open(&sfx_key, "rom:/tohubohu/key.wav64");
 
 #if ENABLE_TEXT
     // Init fonts
