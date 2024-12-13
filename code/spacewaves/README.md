@@ -4,13 +4,21 @@
 
 ### SpaceWaves
 
-This is an experimental turret-defense minigame with the Asteroids vibe to it
+This is an experimental turret-defense minigame with the Asteroids vibe to it. 
 
-3 players are throwing objects at you and trying to avoid your shots at them, all players can pick up different gameplay bonuses
+A station defense is set in various galaxies. Defend yourself from other player's spacecrafts.
+Destroy objects to win points! Each player will get a turn (4 rounds max) in a station, and the player with the max score reached wins.
+Other 3 players are throwing objects at you and trying to avoid your shots at them, all players can pick up different gameplay bonuses!
 
-Each player will get a turn (4 rounds max) and the player with the max score reached wins
+## Premise:
 
-Controls:
+In the age of space travel across different galaxies the possibility oh a hostile alien invasion on far outposts is incredibly high!
+Using the latest innovations in technology and strategy, the homeplanet Earth decided to launch a special training mission 
+for the station defenders across all of its systems, while its best pilots are tasked to destroy you at all costs!
+
+### Take the seat and get the best equipment you can see, because the stakes are out of this world!
+
+## Controls:
 
 for the station player:
   * stick - rotate the view
