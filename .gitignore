@@ -3,3 +3,10 @@ build/
 filesystem/
 *.z64
 .vscode/
+
+# Blender backup files
+*.blend[0-9]
+
+cmake-*
+.idea
+CMakeLists.txt

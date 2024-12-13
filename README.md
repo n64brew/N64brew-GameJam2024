@@ -77,5 +77,5 @@ Here's some suggestions of QOL things you should do for minigames, they are **no
 * In the examples, we are also using `assets/core/Stop.wav` when the minigame ends, and then `assets/core/Winner.wav` when the winner is announced.
 * Allow the minigame to be paused by pressing START, and possibly exit as well
 * It's recommended to keep player colors consistent between games. We set some definitions in `core.h` which you should use. 
-* We have button icons available in `assets/core` (we're missing some, working on it)
+* We have button icons available in `assets/core`
 * Try to keep your (compressed) assets under 2 MiB, since everyone needs to share the ROM space. Not a big deal if you MUST go over.

@@ -1,15 +1,19 @@
 #ifndef GAMEJAM2024_CORE_H
 #define GAMEJAM2024_CORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
     /***************************************************************
                          Public Core Constants
     ***************************************************************/
 
     // Use this to standardize player colors
-    #define PLAYERCOLOR_1  0xFF0000
-    #define PLAYERCOLOR_2  0x00FF00
-    #define PLAYERCOLOR_3  0x0000FF
-    #define PLAYERCOLOR_4  0xFFFF00
+    #define PLAYERCOLOR_1  RGBA32(255, 0, 0, 255)
+    #define PLAYERCOLOR_2  RGBA32(0, 255, 0, 255)
+    #define PLAYERCOLOR_3  RGBA32(0, 0, 255, 255)
+    #define PLAYERCOLOR_4  RGBA32(255, 255, 0, 255)
 
     // Player number definition
     typedef enum {
@@ -58,8 +62,9 @@
     /*==============================
         core_get_subtick
         Gets the current subtick. Use this to help smooth
-        movements in your draw loop
-        @return The current subtick
+        movements in your draw loop. 
+        @return The current subtick, as a 
+                percentage (0.0f to 1.0f)
     ==============================*/
     double core_get_subtick();
 
@@ -86,5 +91,9 @@
     void core_set_aidifficulty(AiDiff difficulty);
     void core_set_subtick(double subtick);
     void core_reset_winners();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
