@@ -58,7 +58,6 @@ static const char *TURN_MESSAGES[] = {
 };
 
 static const char *RANDOM_HINTS[] = {
-  "Press A to place your piece",
   "Press B to skip your turn",
   "Press B to skip your turn",
   "Change pieces with C-Left/C-Right",
