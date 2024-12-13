@@ -90,6 +90,8 @@
         T3DVec3 intersectionPoint;
     } collisionresult_data;
 
+    
+
 /*********************************
              Functions
 *********************************/

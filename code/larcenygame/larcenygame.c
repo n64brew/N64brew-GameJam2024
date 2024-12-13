@@ -9,6 +9,8 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #include "../../minigame.h"
 #include "larcenygame.h"
 #include "larcenygameAI.h"
+// TODO: debug stuff
+#include <inttypes.h>
 
 #define COUNTDOWN_DELAY 4.0f
 #define FINISH_DELAY 10.0f
@@ -22,7 +24,6 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define CONTROLLER_LOWER_DEADZONE 4
 #define CONTROLLER_UPPER_DEADZONE 50
 #define CONTROLLER_DEFAULT_DEBOUNCE 0.5f
-
 
 #define FONT_DEBUG 1
 #define FONT_BILLBOARD 2
@@ -96,6 +97,16 @@ const MinigameDef minigame_def = {
     .instructions = "Stick: Move, A: Thief: Wall Jump, Guard: Stun Thief"
 };
 
+// Debug accumulators
+uint64_t startTime, endTime;
+uint64_t aiTime = 0;
+uint64_t fixedUpdateTime = 0;
+uint64_t updateTime = 0;
+uint64_t colTime = 0;
+uint64_t playerUpdate = 0;
+uint64_t drawTime = 0;
+uint64_t subDrawTime = 0;
+uint64_t totalFrameTime = 0;
 
 //TODO remove:
 float tempSpeed;
@@ -115,6 +126,28 @@ void debugInfoDraw(float deltaTime)
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+10, "Test Debug");
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+20, "FPS: %f", 1.0f/deltaTime);
+
+    rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+30, "\
+    startTime=%"PRId64"\n\
+    endTime=%"PRId64"\n\
+    aiTime=%"PRId64"\n\
+    updateTime=%"PRId64"\n\
+    colTime=%"PRId64"\n\
+    fixedUpdate=%"PRId64"\n\
+    playerUpdate=%"PRId64"\n\
+    drawTime=%"PRId64"\n\
+    subDrawTime=%"PRId64"\n\
+    totalFrameTime=%"PRId64"\n",
+    startTime,
+    endTime,
+    aiTime,
+    updateTime,
+    colTime,
+    fixedUpdateTime,
+    playerUpdate,
+    drawTime,
+    subDrawTime,
+    totalFrameTime);
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+30, "AI Statuses: P1: %i P2: %i P3: %i P4: %i", ai_getCurrentStateAsInt(0), ai_getCurrentStateAsInt(1), ai_getCurrentStateAsInt(2), ai_getCurrentStateAsInt(3));
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+40, "Intersection point: %f, %f", tempIntersectionPoint.x, tempIntersectionPoint.z);
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+50, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
@@ -180,6 +213,13 @@ void HUD_draw()
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
+    // TODO: Debug stuff
+    //uint64_t subDrawStart = get_ticks();
+
+    
+    rdpq_textparms_t playerHUDTextParms = {.align = ALIGN_LEFT, .indent = 20, .line_spacing = -1, .style_id = 0, .disable_aa_fix = true, };
+
+
     // iterate through all the players and draw what we need
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
     {
@@ -188,11 +228,13 @@ void HUD_draw()
         {
             continue;
         }
-        
+
+        playerHUDTextParms.style_id = iDx;
+
         // set up some basic vectors for reverse picking
         T3DVec3 billboardPos = (T3DVec3){{
             players[iDx].playerPos.v[0],
-            players[iDx].playerPos.v[1],
+            players[iDx].playerPos.v[1]+10.0f,
             players[iDx].playerPos.v[2]
         }};
 
@@ -207,12 +249,15 @@ void HUD_draw()
         rdpq_sync_tile();
         rdpq_sync_pipe(); // Hardware crashes otherwise
 
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, x-5, y-16, "P%d", iDx+1);
+        //rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, x-5, y-16, "P%d", iDx+1);
         
         if(players[iDx].stunTimer > 0.0f)
         {
-            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, x-35, y-26, "Stunned: %.2f", players[iDx].stunTimer);
+            rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, x-25, y-16, "Stunned: %.2f", players[iDx].stunTimer);
+        }
+        else
+        {
+            rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, x-25, y-16, "P%d", iDx+1);
         }
 
         // draw the rest of the text for the HUD
@@ -226,17 +271,17 @@ void HUD_draw()
         rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 16, &(rdpq_blitparms_t){ .scale_x = 1.0f,  .scale_y = 1.0f});
         if(players[iDx].playerTeam == teamThief)
         {
+            //rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
+            //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Jump Wall");
             rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Jump Wall");
-            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] + 10, "Player %i: Thief", iDx + 1);
+            rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1]-5, "Jump Wall\nPlayer %i: Thief", iDx + 1);
         }
         else if(players[iDx].playerTeam == teamGuard)
         {
+            //rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
+            //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Stun Attack");
             rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Stun Attack");
-            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] + 10, "Player %i: Guard", iDx + 1);
+            rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1]-5, "Stun Attack\nPlayer %i: Guard", iDx + 1);
         }
 
         // make sure the RDP is sync'd
@@ -251,6 +296,9 @@ void HUD_draw()
         rdpq_fill_rectangle(HUDOffsets[iDx].v[0] - 2, HUDOffsets[iDx].v[1] + 12, HUDOffsets[iDx].v[0] + t3d_lerp(85, -2, (players[iDx].abilityTimer / DEFAULT_ABILITY_COOLDOWN) ) , HUDOffsets[iDx].v[1] + 15);
         
     }
+
+    // TODO: Debug stuff
+    //subDrawTime += get_ticks() - subDrawStart;
 }
 
 /*==============================
@@ -396,6 +444,9 @@ void collision_draw()
 
 void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
 {
+    // TODO: debug stuff
+    //uint64_t colStart = get_ticks();
+
     returnStruct->didCollide = false; returnStruct->collisionType = collisionAll; returnStruct->indexOfCollidedObject = 0; returnStruct->intersectionPoint = (T3DVec3){{0}};
 
     int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
@@ -409,9 +460,14 @@ void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
             pos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2))
         {
             returnStruct->didCollide = true; returnStruct->collisionType = collisionObjects[iDx].collisionType; returnStruct->indexOfCollidedObject = iDx;
+            // TODO: debug stuff
+            //colTime += get_ticks() - colStart;
             return;
         }
     }
+
+    // TODO: debug stuff
+    //colTime += get_ticks() - colStart;
     return;
 }
 
@@ -739,9 +795,13 @@ void player_fixedloop(float deltaTime, int playerNumber)
 
     if(players[playerNumber].isAi && !(players[playerNumber].stunTimer > 0.0f)) // is an AI
     {
+        // TODO: debug stuff
+        //uint64_t aiStart = get_ticks();
         // run the generic ai update function to let the AI state machine worry about it
         newDir.x = 0.0f; newDir.y = 0.0f; newDir.z = 0.0f; speed = 0.0f;
         ai_update(players[playerNumber].aiIndex, deltaTime, &newDir, &speed);
+        // TODO: debug stuff
+        //aiTime += get_ticks() - aiStart;
     }
 
     //TODO: Remove
@@ -768,7 +828,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
     tempPosition.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
 
     //TODO: remove this
-    if(playerNumber == 0) tempIntersectionPoint = (T3DVec3){{0}};
+    //if(playerNumber == 0) tempIntersectionPoint = (T3DVec3){{0}};
 
     // do collision checks here
     collisionresult_data collisionResult;
@@ -778,7 +838,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
     collision_check_intersect(&collisionResult, &players[playerNumber].playerPos, &tempPosition);
 
     //TODO: remove this
-    if(playerNumber == 0) tempIntersectionPoint = collisionResult.intersectionPoint;
+    //if(playerNumber == 0) tempIntersectionPoint = collisionResult.intersectionPoint;
     
     // use collisionResult data to determine if to apply simulated move
     if(collisionResult.didCollide && !(collisionResult.intersectionPoint.v[0] == 0.0f && collisionResult.intersectionPoint.v[2] == 0.0f))
@@ -942,7 +1002,6 @@ void player_thiefAbility(float deltaTime, int playerNumber)
             effectPool[effectPoolIndex].effectSize = 20.0f;
 
             // move the player
-            // TODO: make it a destination and do an animation over to it
             players[playerNumber].playerPos = tempvec;
 
             // play sound effect here
@@ -1000,8 +1059,6 @@ void player_stopAnimations(float deltaTime, int playerNumber)
 
     t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
 
-    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
-
     t3d_skeleton_update(&players[playerNumber].skel);
     // update matrix
     t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
@@ -1039,10 +1096,6 @@ void player_loop(float deltaTime, int playerNumber)
         t3d_anim_set_speed(&players[playerNumber].animIdle, 0.0f);
         t3d_anim_set_speed(&players[playerNumber].animWalk, 0.0f);
         t3d_anim_set_speed(&players[playerNumber].animAbility, 0.0f);
-
-        //t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
-        //t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
-        //if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
 
         // check for someone pressing start to unpause
         btn = joypad_get_buttons_held(controllerPort);
@@ -1083,8 +1136,6 @@ void player_loop(float deltaTime, int playerNumber)
             gamePauseDebounce = CONTROLLER_DEFAULT_DEBOUNCE;
             gamePaused = true;
         }
-        if(btn.c_left) end_game(teamThief);
-        if(btn.c_right) end_game(teamGuard);
 
         // if A button pressed and player team is guard, then use guard ability
         if((btn.a || btn.b) && players[playerNumber].playerTeam == teamGuard)
@@ -1113,8 +1164,6 @@ void player_loop(float deltaTime, int playerNumber)
     if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
 
     t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
-
-    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
 
     t3d_skeleton_update(&players[playerNumber].skel);
     // update matrix
@@ -1439,6 +1488,15 @@ void minigame_init()
     xm64player_open(&xm_music, "rom:/snake3d/bottled_bubbles.xm64");
     
     mixer_ch_set_vol(31, 0.5f, 0.5f);
+    
+    // set up the ambient light colour and the directional light colour
+    uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
+    uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
+    
+    // set the lighting details
+    t3d_light_set_ambient(colorAmbient);
+    t3d_light_set_directional(0, colorDir, &lightDirVec);
+    t3d_light_set_count(1);
 
     // ensure AI init is done before player_init, otherwise no AI to be assigned to
     ai_init(players, MAXPLAYERS, objectives, sizeof(objectives)/sizeof(objectives[0]), 
@@ -1472,6 +1530,11 @@ void minigame_init()
 
 void minigame_fixedloop(float deltatime)
 {
+    // TODO: fixedloop update debug stuff
+    //fixedUpdateTime = 0;
+    //aiTime = 0;
+    //uint64_t fixedUpdateStart = get_ticks();
+    
     // update the player entities
     for(int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1519,6 +1582,9 @@ void minigame_fixedloop(float deltatime)
             minigame_end();
         }
     }
+    
+    // TODO: debug stuff
+    //fixedUpdateTime += get_ticks() - fixedUpdateStart;
     return;
 }
 
@@ -1530,15 +1596,32 @@ void minigame_fixedloop(float deltatime)
 
 void minigame_loop(float deltatime)
 {
+    // TODO: Debug timers
+    // reset timers
+    /*startTime = 0, endTime = 0;
+    updateTime = 0;
+    colTime = 0;
+    playerUpdate = 0;
+    drawTime = 0;
+    subDrawTime = 0;
+    totalFrameTime = 0;*/
+    // Start timing
+    //startTime = get_ticks();
+    
+    if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
 
+    // TODO: debug stuff
+    //uint64_t updateStart = get_ticks();
+    //uint64_t playerUpdateStart = get_ticks();
     // update the player entities
-    for(int i = 0; i < MAXPLAYERS; i++)
+    for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
     {
-        player_loop(deltatime, i);
+        player_loop(deltatime, iDx);
     }
 
     // run objective updates
     objective_update(deltatime);
+    //playerUpdate += get_ticks() - playerUpdateStart;
 
     // Check for victory conditions
     if(!gameStarting && !gameEnding && !gamePaused)
@@ -1570,15 +1653,16 @@ void minigame_loop(float deltatime)
         if(tempGameEndFlag) end_game(teamGuard);
     }
 
-    // set up the ambient light colour and the directional light colour
-    uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
-    uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
 
     // set the projection matrix for the viewport
     float aspectRatio = (float)viewport.size[0] / ((float)viewport.size[1]);//*2);
     t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), aspectRatio, 20.0f, 260.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
+    // TODO: debug stuff
+    //updateTime += get_ticks() - updateStart;
+    // Before drawing anything start the timer
+    //uint64_t drawStart = get_ticks();
     // Draw our 3D frame
     // grab the colour and depth buffers and attach
     // the rdp queue in order to dispatch commands to the RDP
@@ -1593,11 +1677,6 @@ void minigame_loop(float deltatime)
     t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
     t3d_screen_clear_depth();
 
-    // set the lighting details
-    t3d_light_set_ambient(colorAmbient);
-    t3d_light_set_directional(0, colorDir, &lightDirVec);
-    t3d_light_set_count(1);
-
     // draw collision squares
     collision_draw();
 
@@ -1607,6 +1686,7 @@ void minigame_loop(float deltatime)
         player_draw(i);
     }
 
+
     // run the displaylist containing the map draw routine
     rspq_block_run(dplMap);
 
@@ -1615,19 +1695,9 @@ void minigame_loop(float deltatime)
 
     // draw the effects
     effect_draw();
-
-    // set a sync point
-    syncPoint = rspq_syncpoint_new();
-
-    // draws RDP text on top of the scene showing debug info
-    debugInfoDraw(deltatime);
-
+    
     // draws the main game HUD
     HUD_draw();
-
-    // make sure the RDP is sync'd
-    rdpq_sync_tile();
-    rdpq_sync_pipe(); // Hardware crashes otherwise
 
     // game starting countdown text draw
     if(gameStarting)
@@ -1662,8 +1732,20 @@ void minigame_loop(float deltatime)
     rdpq_sync_tile();
     rdpq_sync_pipe(); // Hardware crashes otherwise
     
+    //drawTime += get_ticks() - drawStart;
+
+    // End timing
+    endTime = get_ticks();
+    totalFrameTime = endTime - startTime;
+    
+    // draws RDP text on top of the scene showing debug info
+    //debugInfoDraw(deltatime);
+    
     // detach the queue to flip the buffers and show it on screen
     rdpq_detach_show();
+
+    // set a sync point
+    syncPoint = rspq_syncpoint_new();
 
     return;
 }
