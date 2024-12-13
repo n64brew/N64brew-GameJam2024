@@ -10,6 +10,7 @@ the game jam.
 #include "../../minigame.h"
 #include "64beats.h"
 
+#define DEBUG 1
 
 #define FONT_TEXT 1
 
@@ -188,8 +189,10 @@ void minigame_loop(float deltatime)
     }
 
     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 10, "FPS: %f", 1.0 / deltatime);
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 230, "TIME: %ld,\t\tGS: %d", songTime, gameState);
+    if (DEBUG) {
+        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 10, "FPS: %f", 1.0 / deltatime);
+        rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 230, "TIME: %ld,\t\tGS: %d", songTime, gameState);
+    }
     
     
     rdpq_detach_show();
