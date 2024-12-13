@@ -174,10 +174,10 @@ void HUD_Update(float deltaTime)
 void HUD_draw()
 {
     const T3DVec3 HUDOffsets[] = {
-    (T3DVec3){{16.0f, resolutionDisplayY - 32.0f, 0.0f}},
-    (T3DVec3){{resolutionDisplayX - 96.0f, resolutionDisplayY - 32.0f, 0.0f}},
-    (T3DVec3){{resolutionDisplayX - 96.0f, 16.0f, 0.0f}},
-    (T3DVec3){{16.0f, 16.0f, 0.0f}},
+    (T3DVec3){{16.0f, resolutionDisplayY - 24.0f, 0.0f}},
+    (T3DVec3){{resolutionDisplayX - 96.0f, resolutionDisplayY - 24.0f, 0.0f}},
+    (T3DVec3){{resolutionDisplayX - 96.0f, 24.0f, 0.0f}},
+    (T3DVec3){{16.0f, 24.0f, 0.0f}},
     };
 
     const color_t colours[] = {
@@ -1139,13 +1139,13 @@ void objective_init()
         t3d_matrix_push(objectives[0].modelMatFP);
         rdpq_set_prim_color(RGBA32(255,255,255,255));
         t3d_model_draw(objectives[0].objectiveModel);
-        rdpq_set_prim_color(RGBA32(0,255,0,255));
+        rdpq_set_prim_color(PLAYERCOLOR_4);
         t3d_model_draw(objectives[0].ringModel);
         t3d_matrix_pop(1);
     objectives[0].dplObjective = rspq_block_end();
     //objectives[0].objectivePos = (T3DVec3){{96, 0.0f, 96}};
     objectives[0].objectiveRotationY = 0.0f;
-    objectives[0].objectivePos = (T3DVec3){{0.0f, 0.0f, 128}};
+    objectives[0].objectivePos = (T3DVec3){{-70.0f, 0.0f, -70.0f}};
     
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
@@ -1155,13 +1155,13 @@ void objective_init()
         t3d_matrix_push(objectives[1].modelMatFP);
         rdpq_set_prim_color(RGBA32(255,255,255,255));
         t3d_model_draw(objectives[1].objectiveModel);
-        rdpq_set_prim_color(RGBA32(255,0,0,255));
+        rdpq_set_prim_color(PLAYERCOLOR_2);
         t3d_model_draw(objectives[1].ringModel);
         t3d_matrix_pop(1);
     objectives[1].dplObjective = rspq_block_end();
     objectives[1].objectiveRotationY = 0.0f;
     //objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
-    objectives[1].objectivePos = (T3DVec3){{0.0f, 0.0f, -128}};
+    objectives[1].objectivePos = (T3DVec3){{70.0f, 0.0f, 70}};
 }
 
 /*==============================
@@ -1382,8 +1382,8 @@ void minigame_init()
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0,0,-10});
 
     // set camera position and target vectors
-    camPos = (T3DVec3){{0, 235.0f, 65.0f}};
-    camTarget = (T3DVec3){{0, 0, 20}};
+    camPos = (T3DVec3){{0, 255.0f, 45.0f}};
+    camTarget = (T3DVec3){{0, 0, -5}};
 
     // set up a vector for the directional light
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
