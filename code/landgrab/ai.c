@@ -337,7 +337,7 @@ ai_reset (Player *player)
 PlayerTurnResult
 ai_try (Player *player)
 {
-  assert (ai_player != NULL && ai_player == player);
+  assert (ai_player == NULL || ai_player == player);
 
   if (ai_piece_count == 0)
     {

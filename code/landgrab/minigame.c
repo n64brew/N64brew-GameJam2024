@@ -352,7 +352,15 @@ minigame_play_loop (float deltatime)
 
       if (plynum_is_ai (next_player))
         {
-          ai_reset (&players[next_player]);
+          if (last_active_turn[next_player] == PLAYER_TURN_PASS)
+            {
+              ai_reset (NULL);
+            }
+          else
+            {
+              ai_reset (&players[next_player]);
+            }
+
           show_controls = false;
         }
       else
