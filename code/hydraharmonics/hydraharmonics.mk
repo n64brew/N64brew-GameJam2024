@@ -54,7 +54,6 @@ ASSETS_LIST += \
 	filesystem/hydraharmonics/hill-1.ci4.sprite \
 	filesystem/hydraharmonics/hill-2.ci4.sprite \
 	filesystem/hydraharmonics/hill-3.ci4.sprite \
-	filesystem/hydraharmonics/floor.ci4.sprite \
 	filesystem/hydraharmonics/floor-bottom.ci4.sprite \
 	filesystem/hydraharmonics/floor-light.ci4.sprite \
 	filesystem/hydraharmonics/floor-dark.ci4.sprite \
