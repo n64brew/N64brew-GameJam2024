@@ -138,18 +138,8 @@ uint32_t get_music_playtime_ms() {
 
 void minigame_loop(float deltatime)
 {
+    static long counter = 0;
     float seconds;
-    if (music.playing) {
-        songTime = get_music_playtime_ms() - myTrack.introLength;
-    }
-    if (songTime < 0) {
-        gameState = INTRO;
-    } else if (!music.playing) {
-        gameState = OUTRO;
-    } else {
-        gameState = RUNNING;
-    }
-
 
     // Render the Background
     rdpq_attach(display_get(), NULL);
@@ -163,19 +153,28 @@ void minigame_loop(float deltatime)
 
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    
+   
     switch (gameState)
     {
     case INTRO:
-        checkInputs();  
+        songTime = get_music_playtime_ms() - myTrack.introLength;
+        checkInputs();
         drawArrows();
         drawUI();
+        if (songTime >= -ACCURACY) {
+            gameState = RUNNING;
+        }
         break;
     case RUNNING:
-
-        checkInputs();  
+        songTime = get_music_playtime_ms() - myTrack.introLength;
+        checkInputs();
+        AIButtons(songTime, deltatime);
         drawArrows();
         drawUI();
+        
+        if (!music.playing) {
+            gameState = OUTRO;
+        }
         break;
     case OUTRO:
         renderOutro();
@@ -191,8 +190,6 @@ void minigame_loop(float deltatime)
     rdpq_set_prim_color(color_from_packed32(0xFFFFFFFF));
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 10, "FPS: %f", 1.0 / deltatime);
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 10, 230, "TIME: %ld,\t\tGS: %d", songTime, gameState);
-    
-    
     
     
     rdpq_detach_show();
@@ -215,8 +212,8 @@ void renderOutro() {
             currentHighest = players;
         }
     }
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, 160, 120, "Player %d wins!", currentHighest+1);
 
-    debugf("Player %d wins", currentHighest+1);
     
 }
 void checkInputs()
@@ -274,11 +271,39 @@ void checkInputs()
         
     }
 
-    // iteration über alle aktuellen pfeile (currentTargetArrow + 30)
-    // einmal pro spieler
-    // wenn pfeilrichtung auf aktuell gedrückten controller passt:
-    // abstand zum ziel berechnen
-    // punkte geben + pfeil ausblenden oder nicht
+}
+
+void AIButtons(int songTime, float deltatime) {
+    static int lastArrow = -1;
+    int nextArrow = findNextTimestamp(songTime);
+    if (nextArrow == lastArrow) {
+        return;
+    }
+    if (nextArrow - ACCURACY > songTime) {
+        return;
+    }
+    debugf("ST: %d, LA: %d, NA: %d\n", songTime, lastArrow, nextArrow);
+    lastArrow = nextArrow;
+    uint32_t playercount = core_get_playercount();
+    debugf ("playercount: %ld", playercount);
+    for (size_t i = playercount; i < playercount; i++)
+    {
+        float random = (float)rand() / (RAND_MAX / ACCURACY);
+        points[i] += (int)random;
+    }
+
+}
+int findNextTimestamp(int songTime) {
+	int32_t nextTime = INT32_MAX;
+
+	for (int i = 0; i < myTrack.arrowNum; i++) {
+		int arrowTime = myTrack.arrows[i].time;
+		if (arrowTime > songTime && arrowTime < nextTime) {
+			nextTime = arrowTime;
+		}
+	}
+
+	return (nextTime == INT32_MAX) ? -1 : nextTime; // return -1 if no valid time is found
 }
 int countValidEntries()
 {

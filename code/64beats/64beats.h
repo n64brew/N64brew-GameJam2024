@@ -75,6 +75,8 @@ void drawUIForPlayer(uint8_t playerNum, uint8_t dir);
 int countValidEntries();
 void updateArrowList();
 void loadSong();
+void AIButtons(int songTime, float deltatime);
+int findNextTimestamp(int songTime);
 
 void renderOutro();
 void drawArrows();
