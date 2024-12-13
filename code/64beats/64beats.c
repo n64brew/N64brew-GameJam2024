@@ -262,13 +262,17 @@ void checkInputs()
                 const int addScore = ACCURACY - abs(deltaTime);
                 multi[i]++;
                 points[i] += addScore * getMulti(i);
-                debugf("P%d: scored %d points for a total of %d (DT: %d, Multi: %d)\n", i, addScore, points[i], deltaTime, getMulti(i));
+                if (DEBUG) {
+                    debugf("P%d: scored %d points for a total of %d (DT: %d, Multi: %d)\n", i, addScore, points[i], deltaTime, getMulti(i));
+                }
                 myTrack.arrows[currentArrow].hit[i] = true;
                 directionsPressed[myTrack.arrows[currentArrow].direction] = false;
             }
             if (directionsPressed[0] + directionsPressed[1] + directionsPressed[2] + directionsPressed[3] > 0) {
                 multi[i] = 0;
-                debugf("P%dDPressed: %d %d %d %d\n", i, directionsPressed[0], directionsPressed[1], directionsPressed[2], directionsPressed[3]);
+                if (DEBUG) {
+                    debugf("P%dDPressed: %d %d %d %d\n", i, directionsPressed[0], directionsPressed[1], directionsPressed[2], directionsPressed[3]);
+                }
             }
         }
         
@@ -287,7 +291,10 @@ void AIButtons(int songTime, float deltatime) {
     }
     int cutOff = DIFF_HARD - core_get_aidifficulty();
     cutOff = ((cutOff+1) * (ACCURACY/4)) / 4;
-    debugf("ST: %d, LA: %d, NA: %d, CO: %d\n", songTime, lastArrow, nextArrow, cutOff);
+    if (DEBUG) {
+
+        debugf("ST: %d, LA: %d, NA: %d, CO: %d\n", songTime, lastArrow, nextArrow, cutOff);
+    }
     lastArrow = nextArrow;
     uint32_t playercount = core_get_playercount();
     for (size_t i = playercount; i < 4; i++)
