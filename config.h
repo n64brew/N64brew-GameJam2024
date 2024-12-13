@@ -20,9 +20,9 @@
     #define AI_DIFFICULTY  DIFF_MEDIUM
 
     // Skip the minigame selection and boot straight into MINIGAME_TO_TEST
-    #define SKIP_MINIGAMESELECTION  1
+    #define SKIP_MINIGAMESELECTION  0
 
     // The current minigame you want to test
-    #define MINIGAME_TO_TEST  "old_gods"
+    #define MINIGAME_TO_TEST  "examplegame"
 
 #endif

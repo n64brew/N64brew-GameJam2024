@@ -3,14 +3,6 @@ build/
 filesystem/
 *.z64
 .vscode/
-tiny3d
-libdragon
-AF_Lib
-AF_Math
-UNFLoader
-.DS_Store
-.idea/
-
 
 # Blender backup files
 *.blend[0-9]
