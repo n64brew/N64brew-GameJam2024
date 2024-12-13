@@ -1359,6 +1359,8 @@ void minigame_init()
     }
     depthBuffer = display_get_zbuf();
 
+    //rdpq_debug_start();
+
     // start tiny3d
     t3d_init((T3DInitParams){});
 
