@@ -286,10 +286,17 @@ void AIButtons(int songTime, float deltatime) {
     lastArrow = nextArrow;
     uint32_t playercount = core_get_playercount();
     debugf ("playercount: %ld", playercount);
-    for (size_t i = playercount; i < playercount; i++)
+    for (size_t i = playercount; i < 4; i++)
     {
+
         float random = (float)rand() / (RAND_MAX / ACCURACY);
-        points[i] += (int)random;
+        if (random > ACCURACY / 2) {
+
+            multi[i]++;
+            points[i] += (int)random * getMulti(i);
+        } else {
+            multi[i] = 0;
+        }
     }
 
 }
