@@ -276,9 +276,9 @@ void hydra_move (void) {
 					audio_sfx_play(SFX_AAH_MIN + i);
 					hydra_animate (i, HYDRA_ANIMATION_OPEN);
 				}
-				if (joypad.btn.d_up || joypad.stick_y > HYDRA_STICK_THRESHOLD) {
+				if (joypad.btn.d_up || joypad.btn.c_up || joypad.stick_y > HYDRA_STICK_THRESHOLD) {
 					hydras[i].state = STATE_UP;
-				} else if (joypad.btn.d_down || joypad.stick_y < -HYDRA_STICK_THRESHOLD) {
+				} else if (joypad.btn.d_down || joypad.btn.c_down || joypad.stick_y < -HYDRA_STICK_THRESHOLD) {
 					hydras[i].state = STATE_DOWN;
 				} else {
 					hydras[i].state = STATE_MID;
