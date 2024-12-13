@@ -23,11 +23,13 @@ IMAGE_LIST = $(wildcard $(ASSETS_DIR)/*.png) $(wildcard $(ASSETS_DIR)/core/*.png
 FONT_LIST  = $(wildcard $(ASSETS_DIR)/*.ttf)
 MODEL_LIST  = $(wildcard $(ASSETS_DIR)/*.glb)
 SOUND_LIST  = $(wildcard $(ASSETS_DIR)/*.wav) $(wildcard $(ASSETS_DIR)/core/*.wav)
+SOUND2_LIST  = $(wildcard $(ASSETS_DIR)/*.mp3) $(wildcard $(ASSETS_DIR)/core/*.mp3)
 MUSIC_LIST  = $(wildcard $(ASSETS_DIR)/*.xm)
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(IMAGE_LIST:%.png=%.sprite))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(FONT_LIST:%.ttf=%.font64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MODEL_LIST:%.glb=%.t3dm))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(SOUND_LIST:%.wav=%.wav64))
+ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(SOUND2_LIST:%.mp3=%.wav64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MUSIC_LIST:%.xm=%.xm64))
 
 ifeq ($(DEBUG), 1)
@@ -56,6 +58,11 @@ $(FILESYSTEM_DIR)/%.t3dm: $(ASSETS_DIR)/%.glb
 	$(N64_BINDIR)/mkasset -c 2 -o $(dir $@) $@
 
 $(FILESYSTEM_DIR)/%.wav64: $(ASSETS_DIR)/%.wav
+	@mkdir -p $(dir $@)
+	@echo "    [SFX] $@"
+	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o $(dir $@) "$<"
+
+$(FILESYSTEM_DIR)/%.wav64: $(ASSETS_DIR)/%.mp3
 	@mkdir -p $(dir $@)
 	@echo "    [SFX] $@"
 	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o $(dir $@) "$<"
@@ -91,6 +98,6 @@ $(BUILD_DIR)/$(ROMNAME).msym: $(BUILD_DIR)/$(ROMNAME).elf
 clean:
 	rm -rf $(BUILD_DIR) $(FILESYSTEM_DIR) $(DSO_LIST) $(ROMNAME).z64 
 
--include $(wildcard $(BUILD_DIR)/*.d)
+-include $(wildcard $(BUILD_DIR)/*.d) $(wildcard $(BUILD_DIR)/*/*.d) $(wildcard $(BUILD_DIR)/*/*/*.d) $(wildcard $(BUILD_DIR)/*/*/*/*.d)
 
 .PHONY: all clean

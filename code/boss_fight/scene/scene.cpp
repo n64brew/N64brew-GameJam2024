@@ -161,10 +161,12 @@ void Scene::update(float deltaTime) {
   collScene.ticksBVH = 0;
   collScene.raycastCount = 0;
 
-  switch(state) {
-    case State::INTRO    : cutsceneIntro.update(deltaTime); break;
-    case State::GAME     : cutsceneGame.update(deltaTime);  break;
-    case State::GAME_OVER: cutsceneOutro.update(deltaTime); break;
+  if(!pauseMenu.isPaused) {
+    switch(state) {
+      case State::INTRO    : cutsceneIntro.update(deltaTime); break;
+      case State::GAME     : cutsceneGame.update(deltaTime);  break;
+      case State::GAME_OVER: cutsceneOutro.update(deltaTime); break;
+    }
   }
 
   cam.update(viewport);

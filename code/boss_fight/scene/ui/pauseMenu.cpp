@@ -5,6 +5,7 @@
 #include "pauseMenu.h"
 #include "../scene.h"
 #include "../../main.h"
+#include "../../debug/debugDraw.h"
 
 namespace {
   constexpr color_t COLOR_ACTIVE{0xFF, 0xF5, 0xEE, 0xFF};
@@ -177,6 +178,7 @@ void PauseMenu::update(Scene &scene, float deltaTime)
 void PauseMenu::draw()
 {
   if(!isPaused)return;
+  Debug::printStart(); // Why? text broken otherwise
   rspq_block_run(setupDPL);
 
   rdpq_blitparms_t paramDef{};
