@@ -139,6 +139,7 @@ void crafts_update(){
                 effects_add_exp3d(gfx_worldpos_from_polar( crafts[c].pitchoff, crafts[c].yawoff, crafts[c].distanceoff * 25), crafts[c].color);
                 effects_add_rumble(crafts[c].currentplayerport, 1.25f);
                 effects_add_shake(1.25f);
+                effects_add_ambientlight(RGBA32(50,50,25,0));
             }
             joypad_inputs_t input = {0};
             joypad_buttons_t pressed = {0}, held = {0};
@@ -170,6 +171,7 @@ void crafts_update(){
             if((pressed.a && crafts[c].arm.shield == 10.0f)){
                 crafts[c].arm.shield -= DELTA_TIME;
                 wav64_play(&sounds[snd_use_shield], SFX_CHANNEL_BONUS);
+                effects_add_ambientlight(RGBA32(0,0,100,0));
             }
             if(crafts[c].arm.shield < 10.0f) crafts[c].arm.shield -= DELTA_TIME;
             crafts[c].arm.shield = fclampr(crafts[c].arm.shield, 0.0f, 10.0f);
@@ -177,6 +179,7 @@ void crafts_update(){
             if((pressed.b && crafts[c].arm.powerup == 10.0f)){
                 crafts[c].arm.powerup -= DELTA_TIME;
                 wav64_play(&sounds[snd_use_powerup], SFX_CHANNEL_BONUS);
+                effects_add_ambientlight(RGBA32(0,100,0,0));
             }
             if(crafts[c].arm.powerup < 10.0f) crafts[c].arm.powerup -= DELTA_TIME;
             crafts[c].arm.powerup = fclampr(crafts[c].arm.powerup, 0.0f, 10.0f);
@@ -205,6 +208,7 @@ void crafts_update(){
                 crafts[c].arm.rocketcount--;
                 wav64_play(&sounds[snd_shoot_rocket], SFX_CHANNEL_ROCKET);
                 effects_add_rumble(crafts[c].currentplayerport, 0.45f);
+                effects_add_ambientlight(RGBA32(50,50,25,0));
             }
 
             for(int b = 0; b < MAX_BONUSES; b++){
@@ -240,6 +244,7 @@ void crafts_update(){
                             RGBA32(255,255,255,255));
                         effects_add_rumble(station.currentplayerport, 0.45f);
                         effects_add_shake(0.75f);
+                        effects_add_ambientlight(RGBA32(50,50,25,0));
                     }
                     if(crafts[c].arm.asteroids[b].polarpos.v[2] < 2.0f){
                         crafts[c].arm.asteroids[b].enabled = false;
@@ -250,6 +255,7 @@ void crafts_update(){
                             RGBA32(255,255,255,255));
                             effects_add_rumble(station.currentplayerport, 0.75f);
                             effects_add_shake(1.00f);
+                            effects_add_ambientlight(RGBA32(50,50,25,0));
                         float damage = 50;
                         if(!(station.arm.shield > 0.0f && station.arm.shield < 10.0f)){
                             station.hp -= damage;
@@ -267,6 +273,7 @@ void crafts_update(){
                             crafts[c].arm.rockets[b].polarpos.v[2] * 25), 
                             RGBA32(255,255,255,255));
                         effects_add_rumble(station.currentplayerport, 0.45f);
+                        effects_add_ambientlight(RGBA32(25,25,5,0));
                     }
                     if(crafts[c].arm.rockets[b].polarpos.v[2] < 2.0f){
                         crafts[c].arm.rockets[b].enabled = false;
@@ -277,6 +284,7 @@ void crafts_update(){
                             RGBA32(255,255,255,255));
                         effects_add_rumble(station.currentplayerport, 0.65f);
                         effects_add_shake(1.00f);
+                        effects_add_ambientlight(RGBA32(50,50,25,0));
                         float damage = 65;
                         if(!(station.arm.shield > 0.0f && station.arm.shield < 10.0f)){
                             station.hp -= damage;
@@ -368,8 +376,7 @@ void crafts_draw(){
             rdpq_sync_tile(); // Hardware crashes otherwise
             }
         }
-    amb = RGBA32(0x00, 0x00,0x00,0xFF);
-    t3d_light_set_ambient((uint8_t*)&amb);
+    t3d_light_set_ambient((uint8_t*)&world.sun.ambient);
     mat =  t3d_model_get_material(models[ASTEROID], "f3d.rock");
     obj = t3d_model_get_object_by_index(models[ASTEROID], 0);
     t3d_model_draw_material(mat, NULL);

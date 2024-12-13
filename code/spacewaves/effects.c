@@ -46,6 +46,13 @@ void effects_update(){
     if(effects.screenshaketime > 0){
         effects.screenshaketime -= DELTA_TIME;
     } else effects.screenshaketime = 0.0f;
+    for(int i = 0; i < 4; i++){
+        if(effects.ambientlight.r > 3) effects.ambientlight.r -=3;
+        if(effects.ambientlight.g > 3) effects.ambientlight.g -=3;
+        if(effects.ambientlight.b > 3) effects.ambientlight.b -=3;
+        if(effects.ambientlight.a > 3) effects.ambientlight.a -=3;
+    }
+    world.sun.ambient = effects.ambientlight;
 }
 
 void effects_add_exp3d(T3DVec3 pos, color_t color){
@@ -74,6 +81,13 @@ void effects_add_rumble(joypad_port_t port, float time){
 
 void effects_add_shake(float time){
     effects.screenshaketime += time;
+}
+
+void effects_add_ambientlight(color_t light){
+    effects.ambientlight.r += light.r;
+    effects.ambientlight.g += light.g;
+    effects.ambientlight.b += light.b;
+    effects.ambientlight.a += light.a;
 }
 
 void effects_draw(){

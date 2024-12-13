@@ -31,6 +31,7 @@ typedef struct effectdata_s{
 
     float rumbletime[MAXPLAYERS];
     float screenshaketime;
+    color_t ambientlight;
 } effectdata_t;
 
 extern effectdata_t effects;
@@ -45,5 +46,7 @@ void effects_add_exp2d(T3DVec3 pos, color_t color);
 
 void effects_add_rumble(joypad_port_t port, float time);
 void effects_add_shake(float time);
+void effects_add_ambientlight(color_t light);
+
 
 #endif

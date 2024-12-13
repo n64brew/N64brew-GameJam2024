@@ -58,7 +58,6 @@ void world_reinit(){
   }
 
   world.sun.color = RGBA32(randr(128, 255), randr(128, 255), randr(128, 255), 0xFF);
-  world.sun.ambient = RGBA32(0,0,0,0);
   world.sun.lensflareangles = (T3DVec3){{frandr(0.0f, 6.28f), frandr(0.0f, 6.28f), frandr(0.0f, 6.28f)}};
   world.sun.direction = gfx_t3d_dir_from_euler2((world.sun.lensflareangles.v[0]), (world.sun.lensflareangles.v[1]));
   world.sun.lensflarealpha = 0.0f;
@@ -135,7 +134,8 @@ void world_draw(){
         world.space.dlblock = rspq_block_end();
     } else rspq_block_run(world.space.dlblock);
 
-    t3d_light_set_ambient((uint8_t*)&world.sun.ambient);
+    amb = RGBA32(0,0,0,0xFF);
+    t3d_light_set_ambient((uint8_t*)&amb);
     t3d_light_set_directional(0, (uint8_t*)&world.sun.color, &world.sun.direction);
     t3d_light_set_count(1);
 
@@ -199,6 +199,7 @@ rdpq_sync_pipe(); // Hardware crashes otherwise
             t3d_matrix_pop(1);
         }
     world.space.offsettime += DELTA_TIME;
+    t3d_light_set_ambient((uint8_t*)&world.sun.ambient);
 }
 
 

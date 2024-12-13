@@ -80,6 +80,7 @@ void station_update(){
         station.arm.machinegunoffset = -150;
         wav64_play(&sounds[snd_shoot], SFX_CHANNEL_MACHINEGUN);
         effects_add_rumble(station.currentplayerport, 0.1f);
+        effects_add_ambientlight(RGBA32(0,25,50,0));
     }
 
     if((held.l || held.r) && CURRENT_TIME >= station.arm.rocketnexttime && station.arm.rocketcount > 0){
@@ -93,6 +94,7 @@ void station_update(){
         station.arm.rocketgunoffset = -150;
         wav64_play(&sounds[snd_shoot_rocket], SFX_CHANNEL_ROCKET);
         effects_add_rumble(station.currentplayerport, 0.25f);
+        effects_add_ambientlight(RGBA32(50,50,25,0));
     }
 
     station.arm.machinegunoffset = lerp(station.arm.machinegunoffset, 0, 0.1f);
@@ -169,6 +171,7 @@ void station_update(){
                     }
                     station.arm.rockets[b].enabled = false;
                     wav64_play(&sounds[snd_hit], SFX_CHANNEL_HIT);
+                    effects_add_ambientlight(RGBA32(50,50,25,0));
                 }
             }
         }
@@ -284,8 +287,7 @@ void station_draw(){
             t3d_matrix_pop(1);
         }
     }
-    amb = RGBA32(0x00, 0x00,0x00,0xFF);
-    t3d_light_set_ambient((uint8_t*)&amb);
+    t3d_light_set_ambient((uint8_t*)&world.sun.ambient);
 
     rdpq_set_mode_standard();
     rdpq_mode_dithering(dither);
