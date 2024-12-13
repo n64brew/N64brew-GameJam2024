@@ -152,28 +152,6 @@ void debugInfoDraw(float deltaTime)
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+40, "Intersection point: %f, %f", tempIntersectionPoint.x, tempIntersectionPoint.z);
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+50, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+60, "Debounce Status: %f", gamePauseDebounce);
-    /*joypad_port_t controllerPort = core_get_playercontroller(0);
-    
-    if(!joypad_is_connected(controllerPort))
-    {
-        return;
-    }
-    else
-    {
-        joypad_inputs_t joypad = joypad_get_inputs(controllerPort);
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+40, "p1 stick x: %i, p1 stick y: %i, p1 speed: %f", joypad.stick_x, joypad.stick_y, tempSpeed);
-        
-        // TODO: remove
-        // linear algebra tests
-        T3DVec3 tempvec = {0};
-        tempvec = (T3DVec3){{0,0,1}};
-        tempvec.v[0] = -sinf(players[0].rotY);
-        tempvec.v[2] = cosf(players[0].rotY);
-
-        t3d_vec3_add(&tempvec, &tempvec, &players[0].playerPos);
-
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+50, "rotation of player: %f, vector position test X: %f, Z: %f",players[0].rotY,tempvec.x, tempvec.z);
-    }*/
 }
 
 /*==============================
@@ -271,15 +249,11 @@ void HUD_draw()
         rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 16, &(rdpq_blitparms_t){ .scale_x = 1.0f,  .scale_y = 1.0f});
         if(players[iDx].playerTeam == teamThief)
         {
-            //rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Jump Wall");
             rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1]-5, "Jump Wall\nPlayer %i: Thief", iDx + 1);
         }
         else if(players[iDx].playerTeam == teamGuard)
-        {
-            //rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-            //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Stun Attack");
+        { 
             rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&playerHUDTextParms, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1]-5, "Stun Attack\nPlayer %i: Guard", iDx + 1);
         }
@@ -614,6 +588,7 @@ void end_game(player_team victoriousTeam)
     gamePauseDebounce = 0.0f;
 
     wav64_play(&sfx_winner, 31);
+    mixer_ch_set_vol(31, 0.75f, 0.75f);
 
     // interate through teams and set a winner
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
@@ -889,6 +864,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
                 objectives[iDx].isActive = false;
                 
                 wav64_play(&sfx_objectiveCompleted, 30);
+                mixer_ch_set_vol(30, 0.5f, 0.5f);
             }
         }
     }
@@ -910,6 +886,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
 
                 
                 wav64_play(&sfx_thiefCaught, 27);
+                mixer_ch_set_vol(27, 0.5f, 0.5f);
             }
         }
     }
@@ -947,7 +924,9 @@ void player_guardAbility(float deltaTime, int playerNumber)
 
     // play sound effects here
     wav64_play(&sfx_guardStunAbility, 29);
+    mixer_ch_set_vol(29, 0.5f, 0.5f);
     if(tempHasHitSomeone) wav64_play(&sfx_guardStunAbilityHit, 28);
+    mixer_ch_set_vol(28, 0.5f, 0.5f);
 }
 
 /*==============================
@@ -1006,6 +985,7 @@ void player_thiefAbility(float deltaTime, int playerNumber)
 
             // play sound effect here
             wav64_play(&sfx_thiefJumpAbility, 26);
+            mixer_ch_set_vol(26, 0.5f, 0.5f);
 
             break;
         }
@@ -1479,15 +1459,13 @@ void minigame_init()
     wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
     
     // TODO: Own sounds
-    wav64_open(&sfx_objectiveCompleted, "rom:/core/Countdown.wav64");
-    wav64_open(&sfx_guardStunAbility, "rom:/core/Countdown.wav64");
-    wav64_open(&sfx_guardStunAbilityHit, "rom:/core/Countdown.wav64");
-    wav64_open(&sfx_thiefJumpAbility, "rom:/core/Countdown.wav64");
-    wav64_open(&sfx_thiefCaught, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_objectiveCompleted, "rom:/larcenygame/objectiveTouch.wav64");
+    wav64_open(&sfx_guardStunAbility, "rom:/larcenygame/guardSwing.wav64");
+    wav64_open(&sfx_guardStunAbilityHit, "rom:/larcenygame/guardStunHit.wav64");
+    wav64_open(&sfx_thiefJumpAbility, "rom:/larcenygame/thiefJump.wav64");
+    wav64_open(&sfx_thiefCaught, "rom:/larcenygame/thiefCaught.wav64");
 
     xm64player_open(&xm_music, "rom:/snake3d/bottled_bubbles.xm64");
-    
-    mixer_ch_set_vol(31, 0.5f, 0.5f);
     
     // set up the ambient light colour and the directional light colour
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
@@ -1554,15 +1532,18 @@ void minigame_fixedloop(float deltatime)
         {
             lastCountdownNumber = countdownTimer;
             wav64_play(&sfx_countdown, 31);
+            mixer_ch_set_vol(31, 0.5f, 0.5f);
         }
 
         if(countdownTimer < 1.0f)
         {
             wav64_play(&sfx_start, 31);
+            mixer_ch_set_vol(31, 0.75f, 0.75f);
             gameStarting = false;
 
             // TODO: start playing music
             xm64player_play(&xm_music, 0);
+            mixer_ch_set_vol(0, 0.5f, 0.5f);
         }
     }
 
