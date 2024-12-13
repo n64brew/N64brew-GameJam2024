@@ -5,6 +5,7 @@ ASSETS_LIST += \
 	filesystem/larcenygame/foxThief.t3dm \
 	filesystem/larcenygame/dogGuard.t3dm \
 	filesystem/larcenygame/dustEffect.t3dm \
+	filesystem/larcenygame/firstObjective.t3dm \
 	filesystem/larcenygame/testActor.t3dm \
 	filesystem/larcenygame/testActorGuard.t3dm \
 	filesystem/larcenygame/testObjective.t3dm \
