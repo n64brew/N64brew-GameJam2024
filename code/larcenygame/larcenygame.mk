@@ -14,8 +14,7 @@ ASSETS_LIST += \
 	filesystem/larcenygame/thiefJump.wav64 \
 	filesystem/larcenygame/objectiveTouch.wav64 \
 	filesystem/larcenygame/objectiveGradient.ia8.sprite \
-	filesystem/larcenygame/test32.ci4.sprite \
-	filesystem/larcenygame/test32Inverted.ci4.sprite \
 	filesystem/larcenygame/thiefEye.ci4.sprite \
 	filesystem/larcenygame/floorTest.ci4.sprite \
-	filesystem/larcenygame/wallTest.ci4.sprite
+	filesystem/larcenygame/wallTest.ci4.sprite \
+	filesystem/larcenygame/drozerix-poppy_flower_girls.xm64
