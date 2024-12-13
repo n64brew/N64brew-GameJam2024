@@ -65,7 +65,9 @@
     {
         bool isActive;
         T3DMat4FP* modelMatFP;
-        T3DModel* model;
+        T3DModel* objectiveModel;
+        T3DModel* ringModel;
+        float objectiveRotationY;
         rspq_block_t* dplObjective;
         T3DVec3 objectivePos;
     } objective_data;

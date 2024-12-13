@@ -14,10 +14,15 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define FINISH_DELAY 10.0f
 #define STARTING_GAME_TIME 60.0f
 #define DEFAULT_ABILITY_COOLDOWN 2.0f
+#define GUARD_ABILITY_RANGE 50
+#define THIEF_ABILITY_RANGE 28
+#define THIEF_ABILITY_STRIDE 2.0f
+#define OBJECTIVE_TOUCH_DISTANCE 27
 
 #define CONTROLLER_LOWER_DEADZONE 4
 #define CONTROLLER_UPPER_DEADZONE 50
 #define CONTROLLER_DEFAULT_DEBOUNCE 0.5f
+
 
 #define FONT_DEBUG 1
 #define FONT_BILLBOARD 2
@@ -52,6 +57,8 @@ collisionobject_data collisionObjects[9];
 // drawing variables
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
+int resolutionDisplayX;
+int resolutionDisplayY;
 
 // fonts
 rdpq_font_t* fontDebug;
@@ -84,7 +91,7 @@ player_team winningTeam;
 const MinigameDef minigame_def = {
     .gamename = "Larceny",
     .developername = "RiPpEr253",
-    .description = "A 2v2 game pitting Thieves against Guards and their treasures",
+    .description = "A 2v2 game pitting Thieves against Guards and their treasures, hold r on start for hires",
     .instructions = "Stick: Move, A: Thief: Wall Jump, Guard: Stun Thief"
 };
 
@@ -103,7 +110,7 @@ void debugInfoDraw(float deltaTime)
     rdpq_sync_pipe(); // Hardware crashes otherwise
     rdpq_sync_tile(); // Hardware crashes otherwise
 
-    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = resolutionDisplayX, .disable_aa_fix = true, };
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+10, "Test Debug");
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+20, "FPS: %f", 1.0f/deltaTime);
@@ -155,9 +162,9 @@ void HUD_Update(float deltaTime)
 void HUD_draw()
 {
     const T3DVec3 HUDOffsets[] = {
-    (T3DVec3){{16.0f, 208.0f, 0.0f}},
-    (T3DVec3){{RESOLUTION_WIDTH - 96.0f, 208.0f, 0.0f}},
-    (T3DVec3){{RESOLUTION_WIDTH - 96.0f, 16.0f, 0.0f}},
+    (T3DVec3){{16.0f, resolutionDisplayY - 32.0f, 0.0f}},
+    (T3DVec3){{resolutionDisplayX - 96.0f, resolutionDisplayY - 32.0f, 0.0f}},
+    (T3DVec3){{resolutionDisplayX - 96.0f, 16.0f, 0.0f}},
     (T3DVec3){{16.0f, 16.0f, 0.0f}},
     };
 
@@ -168,7 +175,7 @@ void HUD_draw()
     PLAYERCOLOR_4,
     };
 
-    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
@@ -798,7 +805,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
             // get the vector offset between the player and the objective positions
             t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &objectives[iDx].objectivePos);
             // if objective is closer than 10 units, then count as having been completed
-            if(t3d_vec3_len(&tempVec) < 10)
+            if(t3d_vec3_len(&tempVec) < OBJECTIVE_TOUCH_DISTANCE)
             {
                 objectives[iDx].isActive = false;
                 
@@ -845,7 +852,7 @@ void player_guardAbility(float deltaTime, int playerNumber)
         }
         T3DVec3 tempVec = {0};
         t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
-        if(t3d_vec3_len(&tempVec) < 50 && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 1.0f;
+        if(t3d_vec3_len(&tempVec) < GUARD_ABILITY_RANGE && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 1.0f;
     }
     // set the ability timer
     players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
@@ -873,7 +880,7 @@ void player_thiefAbility(float deltaTime, int playerNumber)
     tempUnitisedRotatedVector.v[0] = -sinf(players[playerNumber].rotY);
     tempUnitisedRotatedVector.v[2] = cosf(players[playerNumber].rotY);
 
-    for(float fDx = 1.0f; fDx < 24; fDx+= 2.0)
+    for(float fDx = 1.0f; fDx < THIEF_ABILITY_RANGE; fDx+= THIEF_ABILITY_STRIDE)
     {
         t3d_vec3_scale(&tempvec, &tempUnitisedRotatedVector, fDx);
         t3d_vec3_add(&tempvec, &tempvec, &players[playerNumber].playerPos);
@@ -1101,40 +1108,56 @@ void objective_init()
 {
     objectives[0].isActive = true;
     objectives[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    objectives[0].model = t3d_model_load("rom:/larcenygame/firstObjective.t3dm");
+    objectives[0].objectiveModel = t3d_model_load("rom:/larcenygame/diamondObjective.t3dm");
+    objectives[0].ringModel = t3d_model_load("rom:/larcenygame/ringObjective.t3dm");
     rspq_block_begin();
         t3d_matrix_push(objectives[0].modelMatFP);
+        rdpq_set_prim_color(RGBA32(255,255,255,255));
+        t3d_model_draw(objectives[0].objectiveModel);
         rdpq_set_prim_color(RGBA32(0,255,0,255));
-        t3d_model_draw(objectives[0].model);
+        t3d_model_draw(objectives[0].ringModel);
         t3d_matrix_pop(1);
     objectives[0].dplObjective = rspq_block_end();
     //objectives[0].objectivePos = (T3DVec3){{96, 0.0f, 96}};
+    objectives[0].objectiveRotationY = 0.0f;
     objectives[0].objectivePos = (T3DVec3){{0.0f, 0.0f, 128}};
     
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    objectives[1].model = t3d_model_load("rom:/larcenygame/firstObjective.t3dm");
+    objectives[1].objectiveModel = t3d_model_load("rom:/larcenygame/theKilogramObjective.t3dm");
+    objectives[1].ringModel = t3d_model_load("rom:/larcenygame/ringObjective.t3dm");
     rspq_block_begin();
         t3d_matrix_push(objectives[1].modelMatFP);
+        rdpq_set_prim_color(RGBA32(255,255,255,255));
+        t3d_model_draw(objectives[1].objectiveModel);
         rdpq_set_prim_color(RGBA32(255,0,0,255));
-        t3d_model_draw(objectives[1].model);
+        t3d_model_draw(objectives[1].ringModel);
         t3d_matrix_pop(1);
     objectives[1].dplObjective = rspq_block_end();
+    objectives[1].objectiveRotationY = 0.0f;
     //objectives[1].objectivePos = (T3DVec3){{-96, 0.0f, -96}};
     objectives[1].objectivePos = (T3DVec3){{0.0f, 0.0f, -128}};
 }
 
-void objective_update()
+void objective_update(float deltaTime)
 {
+    if(objectives[0].isActive)
+    {
+    objectives[0].objectiveRotationY += deltaTime;
     // update matricies
     t3d_mat4fp_from_srt_euler(objectives[0].modelMatFP,
         (float[3]){0.125f, 0.125f, 0.125f},
-        (float[3]){0.0f, 0.0f, 0.0f},
+        (float[3]){0.0f, objectives[0].objectiveRotationY, 0.0f},
         objectives[0].objectivePos.v);
-    t3d_mat4fp_from_srt_euler(objectives[1].modelMatFP,
-        (float[3]){0.125f, 0.125f, 0.125f},
-        (float[3]){0.0f, 0.0f, 0.0f},
-        objectives[1].objectivePos.v);  
+    }
+    if(objectives[1].isActive)
+    {
+        objectives[1].objectiveRotationY += deltaTime;
+        t3d_mat4fp_from_srt_euler(objectives[1].modelMatFP,
+            (float[3]){0.125f, 0.125f, 0.125f},
+            (float[3]){0.0f, objectives[1].objectiveRotationY, 0.0f},
+            objectives[1].objectivePos.v);  
+    }
 }
 
 void objective_draw()
@@ -1147,11 +1170,13 @@ void objective_draw()
 void objective_cleanup()
 {
     rspq_block_free(objectives[0].dplObjective);
-    t3d_model_free(objectives[0].model);
+    t3d_model_free(objectives[0].objectiveModel);
+    t3d_model_free(objectives[0].ringModel);
     free_uncached(objectives[0].modelMatFP);
 
     rspq_block_free(objectives[1].dplObjective);
-    t3d_model_free(objectives[1].model);
+    t3d_model_free(objectives[1].objectiveModel);
+    t3d_model_free(objectives[1].ringModel);
     free_uncached(objectives[1].modelMatFP);
 }
 
@@ -1252,7 +1277,20 @@ void minigame_init()
     gameTimeRemaining = STARTING_GAME_TIME;
 
     // initialise the display, setting resolution, colour depth and AA
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    joypad_buttons_t btn;
+    btn = joypad_get_buttons_held(0);
+    if(btn.r)
+    {
+        resolutionDisplayX = 640;
+        resolutionDisplayY = 480;
+        display_init(RESOLUTION_640x480, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    }
+    else
+    {  
+        resolutionDisplayX = 320;
+        resolutionDisplayY = 240;
+        display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    }
     depthBuffer = display_get_zbuf();
 
     // start tiny3d
@@ -1420,7 +1458,7 @@ void minigame_loop(float deltatime)
     }
 
     // run objective updates
-    objective_update();
+    objective_update(deltatime);
 
     // Check for victory conditions
     if(!gameStarting && !gameEnding && !gamePaused)
@@ -1514,29 +1552,29 @@ void minigame_loop(float deltatime)
     // game starting countdown text draw
     if(gameStarting)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Starting in %i...", (int)countdownTimer);
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Starting in %i...", (int)countdownTimer);
     }
 
     if(gamePaused)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
-        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Game Paused \n Press L to Quit");
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Game Paused \n Press L to Quit");
     }
 
     if(gameEnding)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         if(winningTeam == teamThief)
         {
-            rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Thieves Win!");
+            rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Thieves Win!");
         }
         else
         {
-            rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Guards Win!");
+            rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Guards Win!");
         }
     }
     
