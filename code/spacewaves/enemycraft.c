@@ -207,6 +207,24 @@ void crafts_update(){
                 effects_add_rumble(crafts[c].currentplayerport, 0.45f);
             }
 
+            for(int b = 0; b < MAX_BONUSES; b++){
+                if(bonuses[b].enabled){
+                    T3DVec3 ast_worldpos, encraft_worldpos;
+                    ast_worldpos = gfx_worldpos_from_polar(
+                        bonuses[b].polarpos.v[0],
+                        bonuses[b].polarpos.v[1],
+                        bonuses[b].polarpos.v[2]);
+                    encraft_worldpos = gfx_worldpos_from_polar(
+                        crafts[c].pitchoff,
+                        crafts[c].yawoff,
+                        bonuses[b].polarpos.v[2]);
+                    float dist = t3d_vec3_distance(&ast_worldpos, &encraft_worldpos);
+                    if(dist < 5.0f)
+                        bonus_apply(b, crafts[c].currentplayer, NULL, c);
+                }
+            }
+        }
+
             for(int b = 0; b < MAX_PROJECTILES; b++){
                 if(crafts[c].arm.asteroids[b].enabled){
                     crafts[c].arm.asteroids[b].polarpos.v[0] += DELTA_TIME * crafts[c].arm.asteroids[b].xspeed;
@@ -268,23 +286,6 @@ void crafts_update(){
                 }
             }
 
-            for(int b = 0; b < MAX_BONUSES; b++){
-                if(bonuses[b].enabled){
-                    T3DVec3 ast_worldpos, encraft_worldpos;
-                    ast_worldpos = gfx_worldpos_from_polar(
-                        bonuses[b].polarpos.v[0],
-                        bonuses[b].polarpos.v[1],
-                        bonuses[b].polarpos.v[2]);
-                    encraft_worldpos = gfx_worldpos_from_polar(
-                        crafts[c].pitchoff,
-                        crafts[c].yawoff,
-                        bonuses[b].polarpos.v[2]);
-                    float dist = t3d_vec3_distance(&ast_worldpos, &encraft_worldpos);
-                    if(dist < 5.0f)
-                        bonus_apply(b, crafts[c].currentplayer, NULL, c);
-                }
-            }
-        }
     }  
 }
 
