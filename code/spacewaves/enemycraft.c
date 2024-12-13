@@ -193,7 +193,7 @@ void crafts_update(){
                 if(held.d_right) crafts[c].arm.asteroids[b].xspeed += 0.03;
                 if(held.d_left) crafts[c].arm.asteroids[b].xspeed -= 0.03;
                 crafts[c].arm.asteroids[b].hp = randr(5, 25);
-                crafts[c].arm.asteroidnexttime = CURRENT_TIME + 13.0f;
+                crafts[c].arm.asteroidnexttime = CURRENT_TIME + 12.0f;
             }
 
             if((held.l || held.r) && CURRENT_TIME >= crafts[c].arm.rocketnexttime && crafts[c].arm.rocketcount > 0){
