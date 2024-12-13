@@ -69,8 +69,8 @@ AF_Entity* g_ratPtr = NULL;
 #define VILLAGER_CARRY_HEIGHT 1
 #define ATTACK_RADIUS       5.0f
 #define ATTACK_FORCE_STRENGTH 10.0f
-#define PLAYER_MOVEMENT_SPEED 0.75f
-#define AI_MOVEMENT_SPEED_MOD 0.1f
+#define PLAYER_MOVEMENT_SPEED 1.0f
+#define AI_MOVEMENT_SPEED_MOD 0.075f
 #define AI_TARGET_DISTANCE 1.0f
 #define RAT_MOVEMENT_SPEED 0.5f
 
@@ -193,16 +193,18 @@ void Scene_Update(AppData* _appData){
     // TODO
     if(_appData->gameplayData.gameState == GAME_STATE_PLAYING){
         PlayerController_UpdateAllPlayerMovements(_appData);
-        Scene_UpdateWaterTrails(_appData);
-        Scene_UpdatePlayerAttackWaves(_appData);
-        Scene_UpdateEffects(_appData);
-        Scene_UpdateSharkEffects(_appData);
+        
 
         // Check if any players are "attatcking" if yes, then deal damage.
         PlayerController_DamageHandler(_appData);
         RatAIBehaviourUpdate(_appData);
         SharkAIBehaviourUpdate(_appData);
     }
+
+    Scene_UpdateWaterTrails(_appData);
+    Scene_UpdatePlayerAttackWaves(_appData);
+    Scene_UpdateEffects(_appData);
+    Scene_UpdateSharkEffects(_appData);
 
     AF_ECS* ecs = &_appData->ecs;
     // carry villages
@@ -342,6 +344,7 @@ Scene_UpdateSharkEffects
 Update the visual effects e.g. shark trails
  ================ */
 void Scene_UpdateSharkEffects(AppData* _appData){
+    
     // turn the shark trails on or off depending if they are visible
     for(int i = 0; i < PLAYER_COUNT; ++i){
         Vec3 levelBounds = _appData->gameplayData.levelBounds;
@@ -350,6 +353,12 @@ void Scene_UpdateSharkEffects(AppData* _appData){
             //AF_Entity* hunterShark = sharkHunterEntities[i];
             AF_CMesh* sharkMesh = sharkHunterEntities[i]->mesh;
             AF_CMesh* sharkTrail = sharkHunterTrails[i]->mesh;
+
+            if(_appData->gameplayData.gameState != GAME_STATE_PLAYING)
+            {
+                sharkTrail->enabled = AF_Component_SetEnabled(sharkTrail->enabled, FALSE);
+                continue;
+            }
             // if inside the bounds, turn on the visibilty of the shark and trails, otherwise turn off.
             if (adjustedSharkPos.x < -levelBounds.x - 5 ||
                 adjustedSharkPos.x > levelBounds.x+ 5  ||
@@ -391,7 +400,19 @@ void Scene_UpdateEffects(AppData* _appData){
 
    // TODO: disable this object once it can't be seen
     // update the eaten attack wave
+    // if we are not playing, don't animate. helps with poor performance when menu is shown
     AF_CMesh* eatenWaveMesh = playerEatenWave->mesh;
+    AF_CMesh* mapSeaFoamEntityMesh = mapSeaFoamEntity->mesh;
+    if(_appData->gameplayData.gameState != GAME_STATE_PLAYING)
+    {
+        eatenWaveMesh->enabled = AF_Component_SetEnabled(eatenWaveMesh->enabled, FALSE);
+        mapSeaFoamEntityMesh->enabled = AF_Component_SetEnabled(mapSeaFoamEntityMesh->enabled, FALSE);
+        return;
+    }else{
+        eatenWaveMesh->enabled = AF_Component_SetEnabled(eatenWaveMesh->enabled, TRUE);
+        mapSeaFoamEntityMesh->enabled = AF_Component_SetEnabled(mapSeaFoamEntityMesh->enabled, TRUE);
+    }
+    
     if(eatenWaveMesh->material.color.a - 10.0f <= 0){
         eatenWaveMesh->material.color.a = 0.0f;
         // disable the renderer when we are finished
@@ -412,6 +433,13 @@ void Scene_UpdatePlayerAttackWaves(AppData* _appData){
     // TODO: disable this object once it can't be seen
     for(int i = 0; i < PLAYER_COUNT; ++i){
         AF_CMesh* mesh = playerWaves[i]->mesh;
+        // disable whilst not playing to improve performance
+        if(_appData->gameplayData.gameState != GAME_STATE_PLAYING)
+            {
+                mesh->enabled = AF_Component_SetEnabled(mesh->enabled, FALSE);
+                continue;
+            }
+
         if(_appData->gameplayData.playerEntities[i]->playerData->isAttacking == TRUE){
             mesh->material.color.a = 255;
         }else{
@@ -443,7 +471,7 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency1 = Vec3_MAGNITUDE(player1Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player1TrailMesh->material.color.a = foamTransparency1 * 255;
-    if(player1TrailMesh->material.color.a == 0.0f){
+    if(player1TrailMesh->material.color.a == 0.1f || _appData->gameplayData.gameState != GAME_STATE_PLAYING){
         // disable the renderer when we are finished
         player1TrailMesh->enabled = AF_Component_SetEnabled(player1TrailMesh->enabled, FALSE);
     }else{
@@ -456,7 +484,7 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency2 = Vec3_MAGNITUDE(player2Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player2TrailMesh->material.color.a = foamTransparency2 * 255;
-    if(player2TrailMesh->material.color.a == 0.0f){
+    if(player2TrailMesh->material.color.a == 0.1f || _appData->gameplayData.gameState != GAME_STATE_PLAYING){
         // disable the renderer when we are finished
         player2TrailMesh->enabled = AF_Component_SetEnabled(player2TrailMesh->enabled, FALSE);
     }else{
@@ -469,7 +497,7 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency3 = Vec3_MAGNITUDE(player3Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player3TrailMesh->material.color.a = foamTransparency3 * 255;
-    if(player3TrailMesh->material.color.a == 0.0f){
+    if(player3TrailMesh->material.color.a == 0.1f || _appData->gameplayData.gameState != GAME_STATE_PLAYING){
         // disable the renderer when we are finished
         player3TrailMesh->enabled = AF_Component_SetEnabled(player3TrailMesh->enabled, FALSE);
     }else{
@@ -482,7 +510,7 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     float foamTransparency4 = Vec3_MAGNITUDE(player4Rigidbody->velocity) / 25;
     // normalised 0-1 will mult against color range of alpha value
     player4TrailMesh->material.color.a = foamTransparency4 * 255;
-    if(player4TrailMesh->material.color.a == 0.0f){
+    if(player4TrailMesh->material.color.a == 0.1f || _appData->gameplayData.gameState != GAME_STATE_PLAYING){
         // disable the renderer when we are finished
         player4TrailMesh->enabled = AF_Component_SetEnabled(player4TrailMesh->enabled, FALSE);
     }else{
@@ -560,7 +588,7 @@ void Scene_Setup_SnekGod(AppData* _appData){
     godSnekEntity->mesh->meshID = MODEL_SNAKE;
     godSnekEntity->mesh->material.color = WHITE_COLOR;
     godSnekEntity->rigidbody->inverseMass = 0.0f;
-    //levelEntity->rigidbody->isKinematic = TRUE;
+    levelEntity->rigidbody->isKinematic = TRUE;
     godSnekEntity->collider->collision.callback = Scene_OnGodTrigger;
     godSnekEntity->collider->boundingVolume = godBoundingScale;
     godSnekEntity->collider->showDebug = TRUE;
@@ -639,12 +667,13 @@ void Scene_Setup_Players(AppData* _appData){
     AF_Entity* player1Entity = _appData->gameplayData.playerEntities[0];
     player1Entity->mesh->meshID = MODEL_SNAKE;
     player1Entity->mesh->material.color = PLAYER1_COLOR;
-    player1Entity->rigidbody->inverseMass = 1.0f;
+    player1Entity->rigidbody->inverseMass = 0.0f;
 	player1Entity->rigidbody->isKinematic = TRUE;
     *player1Entity->playerData = AF_CPlayerData_ADD();
     player1Entity->playerData->faction = PLAYER;
     player1Entity->playerData->startPosition = player1Pos;
-    player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
+    // For some reason player 1 is faster. not sure so halving the speed
+    player1Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED * .25f;
     *player1Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
 
     
@@ -681,10 +710,11 @@ void Scene_Setup_Players(AppData* _appData){
     AF_Entity* player2Entity = _appData->gameplayData.playerEntities[1];
     player2Entity->mesh->meshID = MODEL_SNAKE;
     player2Entity->mesh->material.color = PLAYER2_COLOR;
-    player2Entity->rigidbody->inverseMass = 1.0f;
+    player2Entity->rigidbody->inverseMass =  0.0f;
 	player2Entity->rigidbody->isKinematic = TRUE;
     *player2Entity->playerData = AF_CPlayerData_ADD();
     player2Entity->playerData->faction = PLAYER;
+    player2Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     player2Entity->playerData->startPosition = player2Pos;
     player2Entity->playerData->movementSpeed = aiReactionSpeed;
     *player2Entity->skeletalAnimation = AF_CSkeletalAnimation_ADD();
@@ -718,8 +748,9 @@ void Scene_Setup_Players(AppData* _appData){
     player3Entity->mesh->meshID = MODEL_SNAKE;
     player3Entity->mesh->material.color = PLAYER3_COLOR;
 	player3Entity->rigidbody->isKinematic = TRUE;
-    player3Entity->rigidbody->inverseMass = 1.0f;
+    player3Entity->rigidbody->inverseMass =  0.0f;
     *player3Entity->playerData = AF_CPlayerData_ADD();
+    player3Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     player3Entity->playerData->faction = PLAYER;
     player3Entity->playerData->startPosition = player3Pos;
     player3Entity->playerData->movementSpeed = aiReactionSpeed;
@@ -755,8 +786,9 @@ void Scene_Setup_Players(AppData* _appData){
     player4Entity->mesh->meshID = MODEL_SNAKE;
     player4Entity->mesh->material.color = PLAYER4_COLOR;
 	player4Entity->rigidbody->isKinematic = TRUE;
-    player4Entity->rigidbody->inverseMass = 1.0f;
+    player4Entity->rigidbody->inverseMass =  0.0f;
     *player4Entity->playerData = AF_CPlayerData_ADD();
+    player4Entity->playerData->movementSpeed = PLAYER_MOVEMENT_SPEED;
     player4Entity->playerData->faction = PLAYER;
     player4Entity->playerData->startPosition = player4Pos;
     player4Entity->playerData->movementSpeed = aiReactionSpeed;

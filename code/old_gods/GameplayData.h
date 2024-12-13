@@ -10,7 +10,7 @@ Definition gameplay data struct
 #define GAMEPLAYDATA_H
 
 // Gameplay variables
-#define COUNT_DOWN_TIME 5
+#define COUNT_DOWN_TIME 120
 #define GODS_EAT_COUNT 500
 #define MAX_OBSERVERS 10
 #define PLAYER_COUNT 4

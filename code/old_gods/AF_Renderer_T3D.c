@@ -493,7 +493,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     // stacking up calls to the display list in the setup just didn't show the uv scrolling/callback being called.
     // even though i tested with malloc_uncached values, so had to resort to this slow implementation similar to UV scrolling found in lava example
     //rspq_block_begin();
-    /*
+    
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
         
@@ -521,7 +521,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
             }
         }
     }
-    */
+    
     //scrollingBufferUVList = rspq_block_end();
 
     //rspq_block_run(scrollingBufferUVList);
