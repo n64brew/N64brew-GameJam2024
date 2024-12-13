@@ -10,7 +10,7 @@ the game jam.
 #include "../../minigame.h"
 #include "64beats.h"
 
-#define DEBUG 1
+#define DEBUG false
 
 #define FONT_TEXT 1
 
@@ -285,15 +285,17 @@ void AIButtons(int songTime, float deltatime) {
     if (nextArrow - ACCURACY > songTime) {
         return;
     }
-    debugf("ST: %d, LA: %d, NA: %d\n", songTime, lastArrow, nextArrow);
+    int cutOff = DIFF_HARD - core_get_aidifficulty();
+    cutOff = ((cutOff+1) * (ACCURACY/4)) / 4;
+    debugf("ST: %d, LA: %d, NA: %d, CO: %d\n", songTime, lastArrow, nextArrow, cutOff);
     lastArrow = nextArrow;
     uint32_t playercount = core_get_playercount();
-    debugf ("playercount: %ld", playercount);
     for (size_t i = playercount; i < 4; i++)
     {
 
         float random = (float)rand() / (RAND_MAX / ACCURACY);
-        if (random > ACCURACY / 2) {
+
+        if (random > cutOff) {
 
             multi[i]++;
             points[i] += (int)random * getMulti(i);
