@@ -1,16 +1,20 @@
 #ifndef GAMEJAM2024_MINIGAME_H
 #define GAMEJAM2024_MINIGAME_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
     /***************************************************************
                        Public Minigame Constants
     ***************************************************************/
 
     // You need to have one of these structs defined globally for the minigame manager to detect it
     typedef struct {
-        char* gamename;
-        char* developername;
-        char* description;
-        char* instructions;
+        const char* gamename;
+        const char* developername;
+        const char* description;
+        const char* instructions;
     } MinigameDef;
 
 
@@ -50,5 +54,9 @@
     void      minigame_cleanup();
     Minigame* minigame_get_game();
     bool      minigame_get_ended();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif 
