@@ -215,13 +215,13 @@ void HUD_draw()
         }
 
         // draw the rest of the text for the HUD
-        // draw the A button sprite
         rdpq_set_mode_standard();
         rdpq_mode_alphacompare(128);
         rdpq_sync_load();
         
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
 
+        // draw the A button sprite
         rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 16, &(rdpq_blitparms_t){ .scale_x = 1.0f,  .scale_y = 1.0f});
         if(players[iDx].playerTeam == teamThief)
         {
@@ -257,6 +257,7 @@ void HUD_draw()
     Initialises collision objects array manually
     with positions, sizes and collision types
 ==============================*/
+
 void collision_init()
 {
     collisionObjects[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
@@ -366,6 +367,7 @@ void collision_init()
     Could be more optimised with display lists,
     but it's intended for debugging
 ==============================*/
+
 void collision_draw()
 {
     int numberOfObjects = sizeof(collisionObjects) / sizeof(collisionObjects[0]);
@@ -394,6 +396,7 @@ void collision_draw()
     pass in a collisionresult_data struct
     and a position to check if intersecting
 ==============================*/
+
 void collision_check(collisionresult_data* returnStruct, T3DVec3* pos)
 {
     returnStruct->didCollide = false; returnStruct->collisionType = collisionAll; returnStruct->indexOfCollidedObject = 0; returnStruct->intersectionPoint = (T3DVec3){{0}};
@@ -444,8 +447,11 @@ bool lineLineIntersectTest(T3DVec3* AB, T3DVec3* CD, T3DVec3* XZ)
         return true;
     }
 }
+/*==============================
+    collision_check_intersect
+    a version of collision check that handles intersecting points
+==============================*/
 
-// a version of collision check that handles intersecting points
 void collision_check_intersect(collisionresult_data* returnStruct, T3DVec3* startingPos, T3DVec3* endingPos)
 {
     returnStruct->didCollide = false; returnStruct->collisionType = collisionAll; returnStruct->indexOfCollidedObject = 0; returnStruct->intersectionPoint = (T3DVec3){{0}};
@@ -524,7 +530,6 @@ void collision_cleanup()
 /*==============================
     end_game
     Sets the game state to ending and performs any tasks that are related
-    
     Call when game is entirely over as this starts a timer to send us back to the main menu
 
     @param the winning team passed in as an enum
@@ -959,8 +964,11 @@ void player_thiefAbility(float deltaTime, int playerNumber)
     // 51.363, 16.363
     // 52.070, 17.070
 }
+/*==============================
+    player_stopAnimations
+    stops player animations, usually called when game ends
+==============================*/
 
-// stops player animations, usually called when game ends
 void player_stopAnimations(float deltaTime, int playerNumber)
 {
     players[playerNumber].animBlend = 0.0f;
@@ -1097,12 +1105,22 @@ void player_loop(float deltaTime, int playerNumber)
         players[playerNumber].playerPos.v);
 }
 
+/*==============================
+    player_draw
+    simple function to draw the chosen player
+==============================*/
+
 void player_draw(int playerNumber)
 {
     if(!players[playerNumber].isActive) return;
 
     rspq_block_run(players[playerNumber].dplPlayer);
 }
+
+/*==============================
+    objective_init
+    Initialises and configures the chosen objectives
+==============================*/
 
 void objective_init()
 {
@@ -1139,6 +1157,12 @@ void objective_init()
     objectives[1].objectivePos = (T3DVec3){{0.0f, 0.0f, -128}};
 }
 
+/*==============================
+    objective_update
+    Non-time critical update function for the objectives,
+    just rotates and transforms them
+==============================*/
+
 void objective_update(float deltaTime)
 {
     if(objectives[0].isActive)
@@ -1160,12 +1184,22 @@ void objective_update(float deltaTime)
     }
 }
 
+/*==============================
+    objective_draw
+    Simple drawing function of all objectives
+==============================*/
+
 void objective_draw()
 {
     // if objective is active, then go ahead and draw it
     if(objectives[0].isActive) rspq_block_run(objectives[0].dplObjective);
     if(objectives[1].isActive) rspq_block_run(objectives[1].dplObjective);
 }
+
+/*==============================
+    objective_cleanup
+    Cleans and frees all allocated memory
+==============================*/
 
 void objective_cleanup()
 {
@@ -1179,6 +1213,11 @@ void objective_cleanup()
     t3d_model_free(objectives[1].ringModel);
     free_uncached(objectives[1].modelMatFP);
 }
+
+/*==============================
+    effect_init
+    Initialises the pool of effects
+==============================*/
 
 void effect_init()
 {
@@ -1194,7 +1233,12 @@ void effect_init()
     }
 }
 
-// returns the index of the first unused effect, returns 0 (overwrites the first one) if none free
+/*==============================
+    effect_getNextEmptyIndex
+    returns the index of the first unused effect,
+    returns 0 (overwrites the first one) if none free
+==============================*/
+
 int effect_getNextEmptyIndex()
 {
     int tempReturnValue = 0;
@@ -1211,6 +1255,11 @@ int effect_getNextEmptyIndex()
     return tempReturnValue;
 }
 
+/*==============================
+    effect_update
+    Updates the full effects pool
+==============================*/
+
 void effect_update(float deltaTime)
 {
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
@@ -1226,6 +1275,11 @@ void effect_update(float deltaTime)
         }
     }
 }
+
+/*==============================
+    effect_draw
+    Draws the full effects pool
+==============================*/
 
 void effect_draw()
 {
@@ -1245,6 +1299,11 @@ void effect_draw()
         }
     }
 }
+
+/*==============================
+    effect_cleanup
+    Free's and cleans all memory allocated by the effects
+==============================*/
 
 void effect_cleanup()
 {

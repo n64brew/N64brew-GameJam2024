@@ -33,11 +33,22 @@ int stunAbilityUseDistance;
         State functions
 *********************************/
 
+/*==============================
+    ai_waitingStateEnter
+    Called to enter the waiting state,
+    picks a random amount of time to wait
+==============================*/
+
 void ai_waitingStateEnter(int aiIndex)
 {
     aiData[aiIndex].currentState = StateWaiting;
     aiData[aiIndex].framesRemainingBeforeCheck = rand()%30;
 }
+
+/*==============================
+    ai_waitingState
+    Main logic for the waiting state
+==============================*/
 
 void ai_waitingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed)
 {
@@ -58,6 +69,13 @@ void ai_waitingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed
     }
 }
 
+/*==============================
+    ai_wanderingStateEnter
+    Called to enter the wandering state,
+    picks a random amount of time to wait
+    as well as a random direction and speed
+==============================*/
+
 void ai_wanderingStateEnter(int aiIndex)
 {
     aiData[aiIndex].currentState = StateWandering;
@@ -66,6 +84,11 @@ void ai_wanderingStateEnter(int aiIndex)
     aiData[aiIndex].destination.v[0] = (rand()%170-85) * 0.05f;
     aiData[aiIndex].destination.v[2] = (rand()%170-85) * 0.05f;
 }
+
+/*==============================
+    ai_wanderingState
+    Main logic for the wandering state
+==============================*/
 
 void ai_wanderingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed)
 {
@@ -90,6 +113,12 @@ void ai_wanderingState(int aiIndex, float deltaTime, T3DVec3* newDir, float* spe
     }
 }
 
+/*==============================
+    ai_followingOtherPlayerStateEnter
+    Called to enter the following state,
+    finds the closest other player to follow
+==============================*/
+
 void ai_followingOtherPlayerStateEnter(int aiIndex)
 {
     aiData[aiIndex].currentState = StateFollowingOtherPlayer;
@@ -105,6 +134,11 @@ void ai_followingOtherPlayerStateEnter(int aiIndex)
     aiData[aiIndex].targetIndex = returnedStruct.targetIndex;
     aiData[aiIndex].targetType = returnedStruct.targetType;
 }
+
+/*==============================
+    ai_followingOtherPlayerState
+    Main logic for the following state
+==============================*/
 
 void ai_followingOtherPlayerState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed)
 {
@@ -168,6 +202,12 @@ void ai_followingOtherPlayerState(int aiIndex, float deltaTime, T3DVec3* newDir,
     if(*speed > speedModifierDifficulty) *speed = speedModifierDifficulty;
 }
 
+/*==============================
+    ai_moveToObjectiveStateEnter
+    Called to enter the moveToObjective state,
+    finds the closest objective to move to and camp
+==============================*/
+
 void ai_moveToObjectiveStateEnter(int aiIndex)
 {
     //TODO: Finish this function
@@ -179,6 +219,11 @@ void ai_moveToObjectiveStateEnter(int aiIndex)
     aiData[aiIndex].targetIndex = returnedStruct.targetIndex;
     aiData[aiIndex].targetType = returnedStruct.targetType;
 }
+
+/*==============================
+    ai_moveToObjectiveState
+    Main logic for the moveToObjective state
+==============================*/
 
 void ai_moveToObjectiveState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed)
 {
@@ -227,6 +272,12 @@ void ai_moveToObjectiveState(int aiIndex, float deltaTime, T3DVec3* newDir, floa
     }
 }
 
+/*==============================
+    ai_runningFromGuardStateEnter
+    Called to enter the runningFromGuard state,
+    finds the closest guard and begins to run away
+==============================*/
+
 void ai_runningFromGuardStateEnter(int aiIndex)
 {
     aiData[aiIndex].currentState = StateRunningFromGuard;
@@ -246,6 +297,11 @@ void ai_runningFromGuardStateEnter(int aiIndex)
     aiData[aiIndex].targetIndex = returnedStruct.targetIndex;
     aiData[aiIndex].targetType = returnedStruct.targetType;
 }
+
+/*==============================
+    ai_runningFromGuardState
+    Main logic for the runningFromGuard state
+==============================*/
 
 void ai_runningFromGuardState(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed)
 {
@@ -306,6 +362,12 @@ void ai_runningFromGuardState(int aiIndex, float deltaTime, T3DVec3* newDir, flo
     if(*speed > speedModifierDifficulty) *speed = speedModifierDifficulty;
 }
 
+/*==============================
+    ai_findClosestEntityOfType
+    Is passed in a type of entity to look for
+    and returns its information in the returnStruct
+==============================*/
+
 void ai_findClosestEntityOfType(EntitySearchReturnData* returnStruct, int aiIndex, AITargetType desiredType)
 {
     // first zero out the returnStruct
@@ -360,7 +422,12 @@ void ai_findClosestEntityOfType(EntitySearchReturnData* returnStruct, int aiInde
     return;
 }
 
-// returns true if state changed, false if not
+/*==============================
+    ai_checkForProximityBasedStateChanges
+    Checks for if guard/thieves are too close to each other,
+    returns true if state changed, false if not
+==============================*/
+
 bool ai_checkForProximityBasedStateChanges(int aiIndex)
 {
     EntitySearchReturnData returnedStruct;
@@ -397,7 +464,12 @@ bool ai_checkForProximityBasedStateChanges(int aiIndex)
     return false;
 }
 
-// handles randomly selecting a new state to enter
+/*==============================
+    ai_checkForProximityBasedStateChanges
+    Handles randomly selecting a new state to enter,
+    puts all logic for it in one place
+==============================*/
+
 void ai_findNewState(int aiIndex)
 {
     // time for a new state, time to pick one randomly
@@ -414,6 +486,12 @@ void ai_findNewState(int aiIndex)
             break;
     }
 }
+
+/*==============================
+    ai_getCurrentStateAsInt
+    Returns an int that corresponds with 
+    the state, used for debug info only
+==============================*/
 
 int  ai_getCurrentStateAsInt(int aiIndex)
 {
@@ -446,7 +524,12 @@ int  ai_getCurrentStateAsInt(int aiIndex)
     return -1;
 }
 
-// pass in player, objective and collision pointers
+/*==============================
+    ai_init
+    Sets the local references to needed object arrays
+    pass in player, objective and collision pointers
+==============================*/
+
 void ai_init(player_data* a_players, int a_playerDataSize, objective_data* a_objectives, 
         int a_objectiveDataSize, collisionobject_data* a_collisionObjects, int a_collisionObjectSize)
 {
@@ -475,7 +558,6 @@ void ai_init(player_data* a_players, int a_playerDataSize, objective_data* a_obj
             break;
     }
     
-
     // initialise the AI data structs
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
     {
@@ -492,12 +574,23 @@ void ai_init(player_data* a_players, int a_playerDataSize, objective_data* a_obj
     return;
 }
 
-int ai_assign(int a_playerNumber) // returns an index to the AI to be passed back in for ai_update
+/*==============================
+    ai_assign
+    Returns an index to the AI to be passed back in for ai_update
+==============================*/
+
+int ai_assign(int a_playerNumber)
 {
     aiData[a_playerNumber].controlledEntityIndex = a_playerNumber;
     aiData[a_playerNumber].isAnAI = true;
     return a_playerNumber;
 }
+
+/*==============================
+    ai_update
+    Checks the current state of the FSM and executes
+    the applicable functions
+==============================*/
 
 void ai_update(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed) // main update function that traverses the state machine, pass in index and deltaTime
 {
@@ -529,7 +622,12 @@ void ai_update(int aiIndex, float deltaTime, T3DVec3* newDir, float* speed) // m
     return;
 }
 
-void ai_cleanup() // ensures anything that needs to be freed, is
+/*==============================
+    ai_cleanup
+    Ensures anything that needs to be freed, is
+==============================*/
+
+void ai_cleanup() 
 {
     return;
 }
