@@ -70,6 +70,7 @@ wav64_t sfx_countdown;
 wav64_t sfx_winner;
 wav64_t sfx_objectiveCompleted;
 wav64_t sfx_guardStunAbility;
+wav64_t sfx_guardStunAbilityHit;
 wav64_t sfx_thiefJumpAbility;
 wav64_t sfx_thiefCaught;
 
@@ -387,10 +388,6 @@ void collision_draw()
     }
 }
 
-// pass in position to check if intersecting
-// adjust the passed in vector accordingly
-// return true if colliding
-
 /*==============================
     collision_check
     pass in a collisionresult_data struct
@@ -466,48 +463,60 @@ void collision_check_intersect(collisionresult_data* returnStruct, T3DVec3* star
             endingPos->v[2] > collisionObjects[iDx].collisionCentrePos.v[2] - (collisionObjects[iDx].sizeZ / 2) &&
             endingPos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2))
         {
-            // fill return struct as normal
+            // did collide, now figure out which side
+            // need an escape check by checking for collision again on the modified point?
+            // if starting pos X is lesser outside and ending pos X is inside, then hit on left side
+            if( startingPos->v[0] < collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2) &&
+                endingPos->v[0] > collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2))
+            {
+                // hit the left side
+                // set the X to the box wall, and the Z to the normal end point
+                returnStruct->intersectionPoint.v[0] = startingPos->v[0];
+                returnStruct->intersectionPoint.v[2] = endingPos->v[2];
+            }
+            // if starting pos X is greater and outside and ending pos X is inside, then hit on right side
+            if( startingPos->v[0] > collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2) &&
+                endingPos->v[0] < collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2))
+            {
+                // hit the right side
+                // set the X to the box wall, and the Z to the normal end point
+                returnStruct->intersectionPoint.v[0] = startingPos->v[0];
+                returnStruct->intersectionPoint.v[2] = endingPos->v[2];
+            }
+            // if starting pos Z is lesser and outside and ending pos X is inside, then hit on right side
+            if( startingPos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] - (collisionObjects[iDx].sizeZ / 2) &&
+                endingPos->v[2] > collisionObjects[iDx].collisionCentrePos.v[2] - (collisionObjects[iDx].sizeZ / 2))
+            {
+                // hit the top side
+                // set the Z to the box wall, and the X to the normal end point
+                returnStruct->intersectionPoint.v[0] = endingPos->v[0];
+                returnStruct->intersectionPoint.v[2] = startingPos->v[2];
+            }
+            // if starting pos Z is greater and outside and ending pos X is inside, then hit on right side
+            if( startingPos->v[2] > collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2) &&
+                endingPos->v[2] < collisionObjects[iDx].collisionCentrePos.v[2] + (collisionObjects[iDx].sizeZ / 2))
+            {
+                // hit the bottom side
+                // set the Z to the box wall, and the X to the normal end point
+                returnStruct->intersectionPoint.v[0] = endingPos->v[0];
+                returnStruct->intersectionPoint.v[2] = startingPos->v[2];
+            }
+
+            // make sure the intersection point, if any, makes sense
+            if(!(returnStruct->intersectionPoint.v[0] == 0.0f && returnStruct->intersectionPoint.v[2] == 0.0f))
+            {
+                collisionresult_data tempCollisionInfo;
+                collision_check(&tempCollisionInfo, &returnStruct->intersectionPoint);
+                if(tempCollisionInfo.didCollide)
+                {
+                    returnStruct->intersectionPoint = *startingPos;
+                }
+            }
+
             returnStruct->didCollide = true; returnStruct->collisionType = collisionObjects[iDx].collisionType; returnStruct->indexOfCollidedObject = iDx;
-            // determine the intersection point of the box
-            T3DVec3 IntersectionLine[2]; // line made up of collision checker movement
-            IntersectionLine[0] = *endingPos; IntersectionLine[1] = *startingPos;
-            // create lines of each of the four sides
-            T3DVec3 Line1[2]; // top line
-            // use mini arrays to determine the 4 points, counter clockwise wrapped starting top-right
-            Line1[0].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line1[0].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
-            Line1[1].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line1[1].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
-            T3DVec3 Line2[2]; // left line
-            Line2[0].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line2[0].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
-            Line2[1].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line2[1].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
-            T3DVec3 Line3[2]; // bottom line
-            Line3[0].x = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeX / 2); Line3[0].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
-            Line3[1].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line3[1].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
-            T3DVec3 Line4[2]; // right line
-            Line4[0].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line4[0].z = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeZ / 2);
-            Line4[1].x = collisionObjects[iDx].collisionCentrePos.v[0] + (collisionObjects[iDx].sizeX / 2); Line4[1].z = collisionObjects[iDx].collisionCentrePos.v[0] - (collisionObjects[iDx].sizeZ / 2);
-
-            T3DVec3 intersectionResult;
-            if(lineLineIntersectTest(Line1, IntersectionLine, &intersectionResult))
-            {
-                returnStruct->intersectionPoint = intersectionResult;
-            }
-            else if(lineLineIntersectTest(Line2, IntersectionLine, &intersectionResult))
-            {
-                returnStruct->intersectionPoint = intersectionResult;
-            }
-            else if(lineLineIntersectTest(Line3, IntersectionLine, &intersectionResult))
-            {
-                returnStruct->intersectionPoint = intersectionResult;
-            }
-            else if(lineLineIntersectTest(Line4, IntersectionLine, &intersectionResult))
-            {
-                returnStruct->intersectionPoint = intersectionResult;
-            }
-
             return;
         }
     }
-    return;
 }
 
 /*==============================
@@ -759,19 +768,24 @@ void player_fixedloop(float deltaTime, int playerNumber)
     tempPosition.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
 
     //TODO: remove this
-    //if(playerNumber == 0) tempIntersectionPoint = (T3DVec3){{0}};
+    if(playerNumber == 0) tempIntersectionPoint = (T3DVec3){{0}};
 
     // do collision checks here
     collisionresult_data collisionResult;
 
-    collision_check(&collisionResult, &tempPosition);
+    //collision_check(&collisionResult, &tempPosition);
     
-    //collision_check_intersect(&collisionResult, &players[playerNumber].playerPos, &tempPosition);
+    collision_check_intersect(&collisionResult, &players[playerNumber].playerPos, &tempPosition);
 
     //TODO: remove this
-    //if(playerNumber == 0) tempIntersectionPoint = collisionResult.intersectionPoint;
-
+    if(playerNumber == 0) tempIntersectionPoint = collisionResult.intersectionPoint;
+    
     // use collisionResult data to determine if to apply simulated move
+    if(collisionResult.didCollide && !(collisionResult.intersectionPoint.v[0] == 0.0f && collisionResult.intersectionPoint.v[2] == 0.0f))
+    {
+        players[playerNumber].playerPos = collisionResult.intersectionPoint;
+    }
+
     if(!collisionResult.didCollide)
     {
         players[playerNumber].playerPos = tempPosition;
@@ -835,7 +849,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
                 players[iDx].isActive = false;
 
                 
-                wav64_play(&sfx_thiefCaught, 28);
+                wav64_play(&sfx_thiefCaught, 27);
             }
         }
     }
@@ -848,6 +862,7 @@ void player_fixedloop(float deltaTime, int playerNumber)
 
 void player_guardAbility(float deltaTime, int playerNumber)
 {
+    bool tempHasHitSomeone = false;
     // stun in an AoE
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
     {
@@ -857,7 +872,11 @@ void player_guardAbility(float deltaTime, int playerNumber)
         }
         T3DVec3 tempVec = {0};
         t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
-        if(t3d_vec3_len(&tempVec) < GUARD_ABILITY_RANGE && players[iDx].stunTimer == 0.0f) players[iDx].stunTimer = 1.0f;
+        if(t3d_vec3_len(&tempVec) < GUARD_ABILITY_RANGE && players[iDx].stunTimer == 0.0f) 
+        {
+            players[iDx].stunTimer = 1.0f;
+            tempHasHitSomeone = true;
+        }
     }
     // set the ability timer
     players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
@@ -866,8 +885,9 @@ void player_guardAbility(float deltaTime, int playerNumber)
     t3d_anim_set_playing(&players[playerNumber].animAbility, true);
     t3d_anim_set_time(&players[playerNumber].animAbility, 0.0f);
 
-    // play sound effect here
+    // play sound effects here
     wav64_play(&sfx_guardStunAbility, 29);
+    if(tempHasHitSomeone) wav64_play(&sfx_guardStunAbilityHit, 28);
 }
 
 /*==============================
@@ -926,8 +946,7 @@ void player_thiefAbility(float deltaTime, int playerNumber)
             players[playerNumber].playerPos = tempvec;
 
             // play sound effect here
-            // TODO: make this its own sound effect
-            wav64_play(&sfx_guardStunAbility, 29);
+            wav64_play(&sfx_thiefJumpAbility, 26);
 
             break;
         }
@@ -1410,8 +1429,10 @@ void minigame_init()
     wav64_open(&sfx_countdown, "rom:/core/Countdown.wav64");
     wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
     
+    // TODO: Own sounds
     wav64_open(&sfx_objectiveCompleted, "rom:/core/Countdown.wav64");
     wav64_open(&sfx_guardStunAbility, "rom:/core/Countdown.wav64");
+    wav64_open(&sfx_guardStunAbilityHit, "rom:/core/Countdown.wav64");
     wav64_open(&sfx_thiefJumpAbility, "rom:/core/Countdown.wav64");
     wav64_open(&sfx_thiefCaught, "rom:/core/Countdown.wav64");
 
@@ -1675,6 +1696,7 @@ void minigame_cleanup()
     wav64_close(&sfx_winner);
     wav64_close(&sfx_objectiveCompleted);
     wav64_close(&sfx_guardStunAbility);
+    wav64_close(&sfx_guardStunAbilityHit);
     wav64_close(&sfx_thiefJumpAbility);
     wav64_close(&sfx_thiefCaught);
     
