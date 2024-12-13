@@ -349,7 +349,7 @@ void station_draw(){
                 rdpq_mode_zbuf(false, false);
                 rdpq_mode_antialias(AA_STANDARD);
                 rdpq_sync_pipe(); // Hardware crashes otherwise
-        rdpq_sync_tile(); // Hardware crashes otherwise
+                rdpq_sync_tile(); // Hardware crashes otherwise
                 t3d_model_draw_object(it.object, NULL);
                 rdpq_sync_pipe(); // Hardware crashes otherwise
                 rdpq_sync_tile(); // Hardware crashes otherwise

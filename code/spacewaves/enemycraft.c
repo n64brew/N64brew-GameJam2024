@@ -413,13 +413,4 @@ void crafts_close(){
         }
     }
 
-    for(int c = 0; c < NUM_CRAFTS; c++){
-            T3DModelIter it = t3d_model_iter_create(models[ENEMYCRAFT], T3D_CHUNK_TYPE_OBJECT);
-            while(t3d_model_iter_next(&it)){
-                if(it.object->material) {
-                    T3DMaterialTexture *tex = &(it.object->material->textureA);
-                    if(tex->texture) sprite_free(tex->texture);
-                }
-            }
-    }
 }

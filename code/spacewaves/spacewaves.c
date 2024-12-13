@@ -115,7 +115,8 @@ int main()
         gamestatus.state = GAMESTATE_COUNTDOWN;
         gamestatus.statetime = 5.0f;
         currentmusicindex = rand() % MUSIC_COUNT;
-        xm64player_open(&xmplayer, music_path[currentmusicindex]);
+        if(!xmplayeropen)
+          xm64player_open(&xmplayer, music_path[currentmusicindex]);
         xm64player_play(&xmplayer, SFX_CHANNEL_MUSIC);
         xm64player_set_loop(&xmplayer, true);
         wav64_play(&sounds[snd_button_click1], SFX_CHANNEL_EFFECTS);
