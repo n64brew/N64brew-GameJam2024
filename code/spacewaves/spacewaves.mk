@@ -68,3 +68,6 @@ $(FILESYSTEM_DIR)/%.m1v: $(ASSETS_DIR)/%.m1v
 	@mkdir -p $(dir $@)
 	@echo "    [M1V] $@"
 	cp "$<" $@
+
+filesystem/spacewaves/machinegun_new_01.i4.sprite: MKSPRITE_FLAGS=--format I8
+filesystem/spacewaves/machinegun_new_02.i4.sprite: MKSPRITE_FLAGS=--format I8
