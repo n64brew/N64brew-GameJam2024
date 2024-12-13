@@ -94,6 +94,41 @@ player_incr_piece (Player *player, int incr)
 }
 
 static void
+player_shuffle_piece (Player *player)
+{
+  int value = PIECES[player->piece_index].value;
+  size_t shuffle_indexes[PIECE_COUNT];
+  size_t shuffle_count = 0;
+  for (size_t i = 0; i < PIECE_COUNT; i++)
+    {
+      if (PIECES[i].value == value && !player->pieces_used[i])
+        {
+          shuffle_indexes[shuffle_count++] = i;
+        }
+    }
+
+  if (shuffle_count == 0)
+    {
+      player_incr_piece (player, +1);
+    }
+  else
+    {
+      size_t random_index = shuffle_indexes[rand () % shuffle_count];
+      player_change_piece (player, random_index);
+    }
+
+  if (rand () % 2)
+    {
+      player_flip_piece (player);
+    }
+
+  if (rand () % 2)
+    {
+      player_mirror_piece (player);
+    }
+}
+
+static void
 player_incr_value (Player *player, int incr)
 {
   // Bail if there are no pieces left
@@ -121,6 +156,7 @@ player_incr_value (Player *player, int incr)
       if (PIECES[i].value == desired_value && !player->pieces_used[i])
         {
           player_change_piece (player, i);
+          player_shuffle_piece (player);
           return;
         }
     }
@@ -135,7 +171,7 @@ player_init (Player *player, PlyNum plynum)
   player->plynum = plynum;
   player->pieces_left = PIECE_COUNT;
   player->score = player_score (player);
-  player_change_piece (player, 0);
+  player_shuffle_piece (player);
   // Start everyone in their corners
   switch (plynum)
     {
@@ -145,12 +181,10 @@ player_init (Player *player, PlyNum plynum)
       break;
     case PLAYER_2:
       player->cursor_sprite = sprite_load (SPRITE_CURSOR_P2);
-      player_mirror_piece (player);
       player_set_cursor (player, BOARD_COLS + PIECE_COLS, -PIECE_ROWS);
       break;
     case PLAYER_3:
       player->cursor_sprite = sprite_load (SPRITE_CURSOR_P3);
-      player_mirror_piece (player);
       player_set_cursor (player, -PIECE_COLS, BOARD_ROWS + PIECE_ROWS);
       break;
     case PLAYER_4:
@@ -497,7 +531,7 @@ player_place_piece (Player *player)
         }
       player->score = player_score (player);
 
-      player_incr_piece (player, 1);
+      player_shuffle_piece (player);
       // The piece was placed on the board
       sfx_play (SFX_POP);
       return true;
