@@ -29,10 +29,10 @@ enum GAME_STATE{
 };
 
 
-/*================
+/* ================
 GameData 
 Struct to hold game data to pass around to functions that need it
-*/
+================ */
 typedef struct GameplayData {
     BOOL isDebug;
     // Gameplay Vars
@@ -49,7 +49,10 @@ typedef struct GameplayData {
     //int observerCount;
 } GameplayData;
 
-// Factor function to initialise the gameplay data
+/*==============================
+    GameplayData_INIT
+    Factor function to initialise the gameplay data
+==============================*/
 static inline GameplayData GameplayData_INIT(){
     GameplayData gameplayData = {
         .isDebug = FALSE,
@@ -62,20 +65,4 @@ static inline GameplayData GameplayData_INIT(){
     return gameplayData;
 }
 
-/*
-// Function to register an observer
-static inline void GameState_RegisterObserver(GameplayData* gameState, EventCallback callback) {
-    if (gameState->observerCount < MAX_OBSERVERS) {
-        gameState->observers[gameState->observerCount++].callback = callback;
-    }
-}
-
-static inline void GameState_NotifyObservers(GameplayData* gameState, GameEventType event, int playerId, int score) {
-    for (int i = 0; i < gameState->observerCount; i++) {
-        if (gameState->observers[i].callback != NULL) {
-            gameState->observers[i].callback(event, playerId, score, gameState);
-        }
-    }
-}
-*/
 #endif

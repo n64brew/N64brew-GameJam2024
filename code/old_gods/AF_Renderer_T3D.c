@@ -98,31 +98,6 @@ float newTime;
 float deltaTime;
 
 
-// temp for scrolling
-// Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
-//static T3DModel *snakeModel;// = t3d_model_load("rom:/snake.t3dm");
-
-
-
-// TODO: move this into the app data, perhaps under "RenderData"
-// Global Camera
-//static camera_t camera;
-
-// Gloab frame counter
-//static uint64_t frames = 0;
-
-// Global shader settings
-//static GLenum shade_model = GL_SMOOTH;
-//static bool fog_enabled = false;
-
-//static const GLfloat environment_color[] = { 0.2f, 0.2f, 0.2f, 1.f };
-// Define the RGBA values for the ambient light (e.g., soft white light)
-//static const GLfloat ambientLight[] = {0.75f, 0.75f, 0.75f, 1.0f};  // R, G, B, A
-
-
-// Textures
-//static GLuint textures[TEXTURE_COUNT];
-//static sprite_t *sprites[TEXTURE_COUNT];
 
 // forward declare
 void Renderer_RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt);
@@ -146,45 +121,30 @@ Steps:
 4. Apply texture data and parameters.
 
 =================*/
+
+/*
+====================
+AF_LoadTexture
+Load texture functions
+unused
+====================
+*/
 uint32_t AF_LoadTexture(const char* _texturePath){
-    /*
-    sprite_t* textureData;
-    textureData = sprite_load(_texturePath);
-    if(textureData == NULL)
-    {
-        debugf("Renderer:Init: Failed to load texture\n");
-    }
-
-    GLuint textureID = 0;
-    glGenTextures(1, &textureID);
-    debugf("defaultTextureID %li \n", textureID);
-    if(textureID == 0)
-    {
-        debugf("Renderer:Init: Failed to create texture buffer in glGenTextures\n");
-    }
-
-    // Default texture
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // Bind texture to textureData and set texture parameters
-    glSpriteTextureN64(GL_TEXTURE_2D, textureData, &(rdpq_texparms_t){.s.repeats = REPEAT_INFINITE, .t.repeats = REPEAT_INFINITE});
-    return (uint32_t)textureID;
-    */
+    
    debugf("AF_Renderer_T3D: AF_LoadTexture: To be implemented\n");
    return 0;
 }
 
+/*
+====================
+AF_Renderer_LoadAnimation
 // TODO: turn the params into a struct to pass in
+====================
+*/
 void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){  
 
     // return if model doesn't have a skeleton
     // TODO: fix this
-   
-    //assert(_animation->animIdlePath != NULL);
-    //assert(_animation->animWalkPath != NULL);
-    //assert(_animation->animAttackPath != NULL);
 
    // First instantiate skeletons, they will be used to draw models in a specific pose
    // model skeleton)
@@ -226,7 +186,12 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
     // model blend
 }
 
+/*
+====================
+AF_Renderer_Init
 // Init Rendering
+====================
+*/
 void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
     assert(_ecs != NULL && "AF_Renderer_T3D: Renderer_Init has null ecs referenced passed in \n");   	
 	debugf("InitRendering\n");
@@ -245,20 +210,6 @@ void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
 
     lastTime = get_time_s() - (1.0f / 60.0f);
     syncPoint = 0;
-    
-  
-    // if mesh has animations
-    //AF_Renderer_LoadAnimation(//MODEL_SNAKE);
-    //debugf("AF_Renderer_T3d: Renderer_Init: loading animat again.\n");
-    //AF_Renderer_LoadAnimation(MODEL_SNAKE);
-    
-
-    // ===========Animation models
-    //modelMap = models[MODEL_MAP];
-    //modelShadow = models[MODEL_SHADOW];
-
-    // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
-    //snakeModel = models[MODEL_SNAKE];
 
     t3d_vec3_norm(&lightDirVec);
 
@@ -283,12 +234,15 @@ void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
     
 }
 
+/*
+====================
+AF_Renderer_LateStart
 // rendering stuff that needs to happen after game start or awake
+====================
+*/
 void AF_Renderer_LateStart(AF_ECS* _ecs){
 
-    // ========= Animation stuff
-    
-
+    // ========= Animation stuff ========= 
     // TODO: render this based off the entities with models.
     // Render a model based on the model loaded by referencing its ID found in the mesh->modelID
     int totalSkinnedMeshCommands = 0;
@@ -397,9 +351,13 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
 }
 
 
-
+/*
+====================
+AF_Renderer_Update
 // Update Renderer
 // TODO: take in an array of entities 
+====================
+*/
 void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 	assert(_ecs != NULL && "AF_Renderer_T3D: AF_Renderer_Update has null ecs referenced passed in \n");
     
@@ -551,6 +509,12 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
 
 }
 
+/*
+====================
+Renderer_UpdateAnimations
+Update the animations
+====================
+*/
 void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     if(AF_Component_GetHas(_animation->enabled) == FALSE && AF_Component_GetEnabled(_animation->enabled) == FALSE){
       return;
@@ -566,6 +530,7 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     //animBlend = currSpeed / 0.51f;
    
     //_animation->animationBlend = _animation->animationSpeed / 0.51f;
+    // 1.9607843137254901f; used instead of division
     _animation->animationBlend = _animation->animationSpeed * 1.9607843137254901f;
 
     if(_animation->animationBlend  > 1.0f){
@@ -576,14 +541,6 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     T3DAnim* animIdleData = (T3DAnim*)_animation->idleAnimationData;
     T3DAnim* animWalkData = (T3DAnim*)_animation->walkAnimationData;
     
-    // if we are not moving then we can update the idle anim, otherwise skip it
-    //if(_animation->animationSpeed < 1.0f){
-        // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
-        
-   // }else{
-        
-    //}
-    
     if(animIdleData->isPlaying == TRUE ){
         t3d_anim_update(animIdleData, _dt);
     }
@@ -593,15 +550,13 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
         t3d_anim_update(animWalkData, _dt);
     }
        
-     
-    //t3d_anim_update(&animWalk, deltaTime);
+    
     // disabled attack anim for now
     //if attacking
     
     if(animAttackData->isPlaying){
         //debugf("Update animation %f \n", _dt);
         t3d_anim_update(animAttackData, _dt);
-        //animAttackData->isPlaying = false;
     }
     
     
@@ -619,8 +574,13 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
 }
 
 
-
+/*
+====================
+Renderer_RenderMesh
 // Mesh rendering switching
+Render the mesh
+====================
+*/
 void Renderer_RenderMesh(AF_CMesh* _mesh, AF_CTransform3D* _transform, float _dt){
     assert(_mesh != NULL && "AF_Renderer_T3D: Renderer_RenderMesh has null ecs referenced passed in \n");
     //debugf("AF_Renderer_T3D: Renderer_RenderMesh: To be implemented\n");
@@ -683,7 +643,12 @@ void AF_Renderer_Finish(){
 }
 
 
-// Shutdown Renderer
+/*
+====================
+AF_Renderer_Shutdown
+Do shutdown things
+====================
+*/
 void AF_Renderer_Shutdown(AF_ECS* _ecs){
    debugf("AF_Renderer_T3D: Shutdown\n");
 
@@ -739,6 +704,12 @@ int16_t clamp_to_int16(float value) {
     return (int16_t)value;
 }
 
+/*
+====================
+AF_Renderer_PlayAnimation
+Play animations
+====================
+*/
 void AF_Renderer_PlayAnimation(AF_CSkeletalAnimation* _animation){
     //debugf("AF_Renderer_PlayAnimation: 1\n");
     assert(_animation != NULL);
@@ -752,50 +723,10 @@ void AF_Renderer_PlayAnimation(AF_CSkeletalAnimation* _animation){
       //return;
     }
 
-    //if(animAttackData->isPlaying == false) {//animAttacks[MODEL_SNAKE].isPlaying == false) {
-      
-      //debugf("AF_Renderer_PlayAnimation: 1\n");
-      //t3d_anim_set_playing(animAttackData, true);
-      //t3d_anim_set_time(animAttackData, 0.0f);
-      //t3d_anim_set_playing(animAttackData,true);//&animAttacks[MODEL_SNAKE], true);
-      //t3d_anim_set_time(animAttackData, 0.0f);//&animAttacks[MODEL_SNAKE], 0.0f);
-      //animAttackData->isPlaying = true;
-      //animAttacks[MODEL_SNAKE].isPlaying = true;
       
       t3d_anim_set_playing(animAttackData, true);
       t3d_anim_set_time(animAttackData, 0.0f);
-      //animAttackData->isPlaying = true;
-      //player->isAttack = true;
-      //player->attackTimer = 0;
-    //}
-
-  /*
-  // play animation
-  AF_Animation* animation = &_entity->animation;
-
-  // Move towards the direction of the target
-  float dist, norm;
-  newDir.v[0] = (target->playerPos.v[0] - player->playerPos.v[0]);
-  newDir.v[2] = (target->playerPos.v[2] - player->playerPos.v[2]);
-  dist = sqrtf(newDir.v[0]*newDir.v[0] + newDir.v[2]*newDir.v[2]);
-  norm = 1/dist;
-  newDir.v[0] *= norm;
-  newDir.v[2] *= norm;
-  speed = 20;
-
-  // Attack if close, and the reaction time has elapsed
-  if (dist < 25 && !player->isAttack) {
-    if (player->ai_reactionspeed <= 0) {
-      t3d_anim_set_playing(&player->animAttack, true);
-      t3d_anim_set_time(&player->animAttack, 0.0f);
-      player->isAttack = true;
-      player->attackTimer = 0;
-      player->ai_reactionspeed = (2-core_get_aidifficulty())*5 + rand()%((3-core_get_aidifficulty())*3);
-    } else {
-      player->ai_reactionspeed--;
-    }
-  }
-  */
+      
 }
 
 
@@ -867,6 +798,13 @@ void Renderer_DebugCam(RendererDebugData* _rendererDebugData){
     rdpq_text_printf(NULL, FONT2_ID, 50, 70, "FPS   : %.2f", display_get_fps());
 }
 
+/*
+====================
+AF_Renderer_DrawParticles
+Draw Particles
+Not currently implemented
+====================
+*/
 void AF_Renderer_DrawParticles(AF_Entity* _entity){
     //float partSizeX = 0;
     //float partSizeY = 0;
@@ -919,7 +857,12 @@ void AF_Renderer_DrawParticles(AF_Entity* _entity){
 
 }
 
+/*
+====================
+Tile_Scroll
 // Hook/callback to modify tile settings set by t3d_model_draw
+====================
+*/
 void Tile_Scroll(void* userData, rdpq_texparms_t *tileParams, rdpq_tile_t tile) {
 
   float offset = *(float*)userData;

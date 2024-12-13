@@ -5,7 +5,7 @@ Contains functions and code relating to the scene including all the entities tha
 #include "ECS/Entities/AF_ECS.h"
 #include "AF_Input.h"
 #include "AF_Time.h"
-#include "Game.h"
+#include "AppData.h"
 
 // Function Definitions
 void UI_Menu_Start(AppData* _appData);

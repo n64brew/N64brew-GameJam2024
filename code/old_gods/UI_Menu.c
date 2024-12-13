@@ -7,6 +7,9 @@ Implmentation of functions and code relating to the UI menu in the game
 #include "Assets.h"
 #include "AF_UI.h"
 #include "EntityFactory.h"
+#include "GameplayData.h"
+
+
 
 #include "../../minigame.h"
 #include "../../core.h"

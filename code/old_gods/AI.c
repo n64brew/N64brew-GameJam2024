@@ -45,6 +45,12 @@ void AI_Update(AppData* _appData){
     //AF_Entity* playerToFollow = _appData->gameplayData.playerEntities[0];
 }
 
+/*
+====================
+ExecuteAIBehaviours
+execute the listed ai behaviours
+====================
+*/
 void ExecuteAIBehaviours(AF_Entity* _entity){
      AF_CAI_Behaviour* aiBehaviour = _entity->aiBehaviour;
      BOOL hasAI = AF_Component_GetHas(aiBehaviour->enabled);
@@ -83,11 +89,17 @@ void ExecuteAIBehaviours(AF_Entity* _entity){
     }
 }
 
+/*
+====================
+AI_CreateFollow_Action
+Create a follow action
+====================
+*/
 void AI_CreateFollow_Action(AF_Entity* _entity, AF_Entity* _entityToFollow, void* _aiActionFunctionPtr){
     AF_CAI_Behaviour* entityAIBehaviour = _entity->aiBehaviour;
     // check if we have components and they are enabled
     if(entityAIBehaviour->nextAvailableActionSlot >= AF_AI_ACTION_ARRAY_SIZE-1){
-        debugf("AI: AI_CreateFollow_Action: out of ai acition slots\n");
+        debugf("AI: AI_CreateFollow_Action: out of ai action slots\n");
         return;
     }
     
@@ -102,8 +114,6 @@ void AI_CreateFollow_Action(AF_Entity* _entity, AF_Entity* _entityToFollow, void
     // progress the action slot counter
     entityAIBehaviour->nextAvailableActionSlot++;
 }
-
-
 
 
 /*

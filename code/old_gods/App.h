@@ -10,19 +10,18 @@ App will handle communication between the main entry point, update, input, rende
 #include "ECS/Entities/AF_ECS.h"
 #include "AF_Time.h"
 #include "GameplayData.h"
+#include "AppData.h"
 
-typedef struct AppData {
-    uint16_t windowWidth;
-    uint16_t windowHeight;
-    AF_Time gameTime;
-    AF_Input input;
-    GameplayData gameplayData;
-    AF_ECS ecs;
-}AppData;
+void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeight);
+void App_Init(AppData* _appData);
+void App_Update(AppData* _appData);
+void App_Render_Update(AppData* _appData);
+void App_Shutdown(AppData* _appData);
 
-
-
-
+/*================
+PrintAppDataSize
+Until function to print out the amount of memory the app data takes up
+==================*/
 static inline void PrintAppDataSize(AppData* _appData){
     size_t windowSize = sizeof(_appData->windowWidth) + sizeof(_appData->windowHeight);
     size_t gameTimeSize = sizeof(_appData->gameTime);
@@ -49,11 +48,4 @@ static inline void PrintAppDataSize(AppData* _appData){
     debugf("Size of ecs: %lu bytes (%.3f KB)\n", (unsigned long)ecsSize, ecsSizeKB);
     debugf("Total size of AppData: %lu bytes (%.3f KB, %.6f MB)\n", (unsigned long)totalSize, totalSizeKB, totalSizeMB);
 }
-
-void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeight);
-void App_Init(AppData* _appData);
-void App_Update(AppData* _appData);
-//void App_Update_Wrapper(int _ovfl);
-void App_Render_Update(AppData* _appData);
-void App_Shutdown(AppData* _appData);
 #endif

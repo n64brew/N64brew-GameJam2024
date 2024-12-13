@@ -19,8 +19,6 @@ const MinigameDef minigame_def = {
     .instructions = "Watch out for sneaky sharks."
 };
 
-    
-
 
 /*==============================
     minigame_init

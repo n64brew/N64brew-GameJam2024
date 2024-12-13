@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <libdragon.h>
 #include "AF_Renderer.h"
-#include "Game.h"
 #include "AF_Input.h"
 #include "AF_Physics.h"
 #include "AF_UI.h"
@@ -14,9 +13,12 @@
 
 
 // forward declare
-void App_Update_Wrapper(int _ovfl);
 void PrintHeapStatus(const char* _message);
 
+/* ===============
+PlayerController_UpdatePlayerButtonPress
+// Update player button press
+================ */
 void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeight){
     _appData->windowWidth = _windowWidth;
     _appData->windowHeight = _windowHeight;
@@ -29,6 +31,10 @@ void AppData_Init(AppData* _appData, uint16_t _windowWidth, uint16_t _windowHeig
     
 }
 
+/* ===============
+App_Init
+Init function
+================ */
 void App_Init(AppData* _appData){
     assert(_appData != NULL && "App_Init: argument is null");
     debug_initialize();
@@ -105,15 +111,10 @@ void App_Init(AppData* _appData){
 }
 
 
-
-/*
-void App_Update_Wrapper(int _ovfl){
-    App_Update(&input, &ecs, timerPtr);
-    //App_Measure(App_Update,&input, &ecs);
-    //debugf("App_Update_Mesure(%f)\n", updateMeasure);
-}*/
-
-
+/* ===============
+App_Update
+Update function
+================ */
 void App_Update(AppData* _appData){
     assert(_appData != NULL && "App: App_Update: argument is null");
     //debugf("App_Update\n");
@@ -151,9 +152,13 @@ void App_Update(AppData* _appData){
     //curTick++;
 }
 
+
+/* ===============
+App_Render_Update
 // Game Render Loop
 // NOTE: this is indipendent from the other update functions which are operating on CPU Tick
 // This render loop runs from a while loop in sandbox64.c
+================ */
 void App_Render_Update(AppData* _appData){
     assert(_appData != NULL && "App: App_Render_Update: argument is null");
     AF_Time* time = &_appData->gameTime;
@@ -173,6 +178,10 @@ void App_Render_Update(AppData* _appData){
 }
 
 
+/* ===============
+App_Shutdown
+Shutdown function
+================ */
 void App_Shutdown(AppData* _appData){
     assert(_appData != NULL && "App: App_Shutdown: argument is null");
 	debugf("App_Shutdown\n");
@@ -219,8 +228,12 @@ void App_Shutdown(AppData* _appData){
 }
 
 
+
+/* ===============
+PrintHeapStatus
 // Print the N64 Heap status to the console
 // Helpful for checking for memory leaks
+================ */
 void PrintHeapStatus(const char* _message){
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);

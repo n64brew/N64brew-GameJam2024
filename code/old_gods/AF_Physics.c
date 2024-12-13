@@ -9,7 +9,13 @@ n64 implementation of AF_Physics
 #include "ECS/Entities/AF_ECS.h"
 
 float collisionColor[4] = {255,0, 0, 1};
-// Physics Init
+
+/*
+====================
+AF_Physics_Init
+Implementation of Init
+====================
+*/
 void AF_Physics_Init(AF_ECS* _ecs){
 	assert(_ecs != NULL && "Physics: Physics_Init pass in a null reference\n");
 	debugf("Physics_Init: \n");
@@ -36,7 +42,12 @@ void AF_Physics_Init(AF_ECS* _ecs){
 }
 
 
-// Physics Update
+/*
+====================
+AF_Physics_Update
+Implementation of update
+====================
+*/
 void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
 	assert(_ecs != NULL && "Physics: AF_Physics_Update pass in a null reference\n");
 	// loop through and update all transforms based on their velocities
@@ -53,12 +64,7 @@ void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
 	AF_C3DRigidbody* rigidbody = &_ecs->rigidbodies[i];
 	if((AF_Component_GetHas(rigidbody->enabled) == TRUE) && (AF_Component_GetEnabled(rigidbody->enabled) == TRUE)){
 		
-		
-
-		// Negate the velocities before adding more
-		//Vec3 zeroVelocity = {0,0,0};
-		//rigidbody->velocity = zeroVelocity;
-		
+	
 		
 		//debgf("Physics: upate: velocity x: %f y: %f z: %f\n", rigidbody->velocity.x, rigidbody->velocity.y, rigidbody->velocity.z);
 		// if the object isn't static
@@ -66,7 +72,6 @@ void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
 				AF_Physics_IntegrateAccell(rigidbody, _dt);
 				AF_Physics_IntegrateVelocity(transform, rigidbody, _dt);
 		}
-		//_ecs->transforms[i].pos = Vec3_ADD(_ecs->rigidbodies[i].velocity, _ecs->transforms[i].pos);
 
 		}
 
@@ -79,6 +84,12 @@ void AF_Physics_Update(AF_ECS* _ecs, const float _dt){
 	}
 }
 
+/*
+====================
+AF_Physics_LateUpdate
+Implementation of late update
+====================
+*/
 void AF_Physics_LateUpdate(AF_ECS* _ecs){
 	assert(_ecs != NULL && "Physics: AF_Physics_LateUpdate pass in a null reference\n");
 
@@ -90,6 +101,12 @@ void AF_Physics_LateUpdate(AF_ECS* _ecs){
 	// Resolve collision between two objects
 }
 
+/*
+====================
+AF_Physics_LateRenderUpdate
+Implementation of late render update
+====================
+*/
 void AF_Physics_LateRenderUpdate(AF_ECS* _ecs){
 	assert(_ecs != NULL && "Physics: AF_Physics_LateRenderUpdate pass in a null reference\n");
 	for(int i = 0; i < _ecs->entitiesCount; ++i){
@@ -110,7 +127,12 @@ void AF_Physics_LateRenderUpdate(AF_ECS* _ecs){
 
 
 
-//Physics Shutdown
+/*
+====================
+AF_Physics_Shutdown
+Do shutdown things
+====================
+*/
 void AF_Physics_Shutdown(void){
 	debugf("Physics: Shutdown\n");
 }

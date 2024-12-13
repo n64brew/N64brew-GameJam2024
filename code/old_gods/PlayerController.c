@@ -12,8 +12,11 @@
 #define B_KEY 1			// B Button
 #define START_KEY 2		// Start Button
 
+/*===============
+PlayerController_UpdateAllPlayerMovements
 // Update all player movements
 // loop through the provided entity array 
+================*/
 void PlayerController_UpdateAllPlayerMovements(AppData* _appData){
 	for(int i = 0; i < PLAYER_COUNT; ++i){
 		// player 1
@@ -22,7 +25,10 @@ void PlayerController_UpdateAllPlayerMovements(AppData* _appData){
 	}	
 }
 
+/*===============
+PlayerController_UpdatePlayerButtonPress
 // Update player button press
+================*/
 void PlayerController_UpdatePlayerButtonPress(uint8_t _playerIndex, AF_Input* _input, AF_Entity* _entity){
 	// Handle attack
 		AF_CPlayerData* playerData = _entity->playerData;
@@ -60,6 +66,11 @@ void PlayerController_Attack(AF_Entity* _entity){
 	}
 }
 
+/*===============
+PlayerController_UpdatePlayerMovement
+convert the input into directions on velocity
+apply physics
+================*/
  void PlayerController_UpdatePlayerMovement(Vec2 _stick, AF_Entity* _entity){
 	int vecX = 0;
 	int vecY = 0;

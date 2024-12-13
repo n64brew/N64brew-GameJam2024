@@ -9,6 +9,10 @@ Will find helper factory functions that create an AF_Enity and initialise key va
 #include <libdragon.h>
 #include "ECS/Entities/AF_ECS.h"
 
+/*==============================
+Entity_Factory_CreatePrimative
+Factory function to create mesh primative entities
+==============================*/
 static inline AF_Entity* Entity_Factory_CreatePrimative(AF_ECS* _ecs, Vec3 _pos, Vec3 _scale, enum AF_MESH_TYPE _meshType, enum CollisionVolumeType _collisionType){
 	AF_Entity* entity = AF_ECS_CreateEntity(_ecs);
 	//move the position up a little
@@ -23,6 +27,10 @@ static inline AF_Entity* Entity_Factory_CreatePrimative(AF_ECS* _ecs, Vec3 _pos,
 	return entity;
 }
 
+/*==============================
+Entity_Factory_CreateSprite
+Factory function to create sprite entities
+==============================*/
 static inline AF_Entity* Entity_Factory_CreateSprite(AF_ECS* _ecs, const char* _spritePath, Vec2 _screenPos,Vec2 _scale, Vec2 _size, uint8_t _color[4], char _animationFrames, Vec2 _spriteSheetSize){
 	AF_Entity* entity = AF_ECS_CreateEntity(_ecs);
 
@@ -50,7 +58,10 @@ static inline AF_Entity* Entity_Factory_CreateSprite(AF_ECS* _ecs, const char* _
 	return entity;
 }
 
-
+/*==============================
+Entity_Factory_CreateAudio
+Factory function to create audio entities
+==============================*/
 static inline AF_Entity* Entity_Factory_CreateAudio(AF_ECS* _ecs, AF_AudioClip _audioClip, uint8_t _channel, void* _wavData, BOOL _isLooping){
 	// NULL checks
 	if(_ecs == NULL){
@@ -78,11 +89,13 @@ static inline AF_Entity* Entity_Factory_CreateAudio(AF_ECS* _ecs, AF_AudioClip _
 
 	wav64_open((wav64_t*)audioSource->clipData, audioSource->clip.clipPath);
 	wav64_set_loop((wav64_t*)audioSource->clipData, audioSource->loop);
-	
-
 	return returnEntity;
 }
 
+/*==============================
+Entity_Factory_CreateUILabel
+Factory function to create UI Font/Text entities
+==============================*/
 static inline AF_Entity* Entity_Factory_CreateUILabel(AF_ECS* _ecs, char* _textBuff, int _fontID, const char* _fontPath, uint8_t _color[4], Vec2 _pos, Vec2 _size){
    
     AF_Entity* entity = AF_ECS_CreateEntity(_ecs);
