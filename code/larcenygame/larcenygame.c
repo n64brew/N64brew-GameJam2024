@@ -17,8 +17,8 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define STARTING_GAME_TIME 60.0f
 #define DEFAULT_ABILITY_COOLDOWN 2.0f
 #define GUARD_ABILITY_RANGE 50
-#define THIEF_ABILITY_RANGE 28
-#define THIEF_ABILITY_STRIDE 2.0f
+#define THIEF_ABILITY_RANGE 45
+#define THIEF_ABILITY_STRIDE 4.0f
 #define OBJECTIVE_TOUCH_DISTANCE 27
 
 #define CONTROLLER_LOWER_DEADZONE 4
@@ -286,8 +286,8 @@ void collision_init()
     collisionObjects[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     collisionObjects[0].collisionCentrePos = (T3DVec3){{0.0f, 1.0f, 0.0f}};
     collisionObjects[0].collisionType = collisionAll;
-    collisionObjects[0].sizeX = 100;
-    collisionObjects[0].sizeZ = 20;
+    collisionObjects[0].sizeX = 120;
+    collisionObjects[0].sizeZ = 40;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[0].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -295,10 +295,10 @@ void collision_init()
     collisionObjects[0].dplCollision = rspq_block_end();
     
     collisionObjects[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[1].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, 106.0f}};
+    collisionObjects[1].collisionCentrePos = (T3DVec3){{-75.0f, 1.0f, 106.0f}};
     collisionObjects[1].collisionType = collisionAll;
-    collisionObjects[1].sizeX = 60;
-    collisionObjects[1].sizeZ = 12;
+    collisionObjects[1].sizeX = 80;
+    collisionObjects[1].sizeZ = 22;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[1].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -306,10 +306,10 @@ void collision_init()
     collisionObjects[1].dplCollision = rspq_block_end();
 
     collisionObjects[2].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[2].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, -80.0f}};
+    collisionObjects[2].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, -75.0f}};
     collisionObjects[2].collisionType = collisionAll;
-    collisionObjects[2].sizeX = 12;
-    collisionObjects[2].sizeZ = 60;
+    collisionObjects[2].sizeX = 22;
+    collisionObjects[2].sizeZ = 75;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[2].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -317,10 +317,10 @@ void collision_init()
     collisionObjects[2].dplCollision = rspq_block_end();
 
     collisionObjects[3].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[3].collisionCentrePos = (T3DVec3){{-80.0f, 1.0f, -106.0f}};
+    collisionObjects[3].collisionCentrePos = (T3DVec3){{-75.0f, 1.0f, -106.0f}};
     collisionObjects[3].collisionType = collisionAll;
-    collisionObjects[3].sizeX = 60;
-    collisionObjects[3].sizeZ = 12;
+    collisionObjects[3].sizeX = 80;
+    collisionObjects[3].sizeZ = 22;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[3].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -328,10 +328,10 @@ void collision_init()
     collisionObjects[3].dplCollision = rspq_block_end();
 
     collisionObjects[4].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[4].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, -80.0f}};
+    collisionObjects[4].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, -75.0f}};
     collisionObjects[4].collisionType = collisionAll;
-    collisionObjects[4].sizeX = 12;
-    collisionObjects[4].sizeZ = 60;
+    collisionObjects[4].sizeX = 22;
+    collisionObjects[4].sizeZ = 75;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[4].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -339,10 +339,10 @@ void collision_init()
     collisionObjects[4].dplCollision = rspq_block_end();
 
     collisionObjects[5].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[5].collisionCentrePos = (T3DVec3){{80.0f, 1.0f, -106.0f}};
+    collisionObjects[5].collisionCentrePos = (T3DVec3){{75.0f, 1.0f, -106.0f}};
     collisionObjects[5].collisionType = collisionAll;
-    collisionObjects[5].sizeX = 60;
-    collisionObjects[5].sizeZ = 12;
+    collisionObjects[5].sizeX = 80;
+    collisionObjects[5].sizeZ = 22;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[5].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -350,10 +350,10 @@ void collision_init()
     collisionObjects[5].dplCollision = rspq_block_end();
 
     collisionObjects[6].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[6].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, 80.0f}};
+    collisionObjects[6].collisionCentrePos = (T3DVec3){{106.0f, 1.0f, 75.0f}};
     collisionObjects[6].collisionType = collisionAll;
-    collisionObjects[6].sizeX = 12;
-    collisionObjects[6].sizeZ = 60;
+    collisionObjects[6].sizeX = 22;
+    collisionObjects[6].sizeZ = 75;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[6].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -361,10 +361,10 @@ void collision_init()
     collisionObjects[6].dplCollision = rspq_block_end();
 
     collisionObjects[7].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[7].collisionCentrePos = (T3DVec3){{80.0f, 1.0f, 106.0f}};
+    collisionObjects[7].collisionCentrePos = (T3DVec3){{75.0f, 1.0f, 106.0f}};
     collisionObjects[7].collisionType = collisionAll;
-    collisionObjects[7].sizeX = 60;
-    collisionObjects[7].sizeZ = 12;
+    collisionObjects[7].sizeX = 80;
+    collisionObjects[7].sizeZ = 22;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[7].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -372,10 +372,10 @@ void collision_init()
     collisionObjects[7].dplCollision = rspq_block_end();
 
     collisionObjects[8].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    collisionObjects[8].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, 80.0f}};
+    collisionObjects[8].collisionCentrePos = (T3DVec3){{-106.0f, 1.0f, 75.0f}};
     collisionObjects[8].collisionType = collisionAll;
-    collisionObjects[8].sizeX = 12;
-    collisionObjects[8].sizeZ = 60;
+    collisionObjects[8].sizeX = 22;
+    collisionObjects[8].sizeZ = 75;
         rspq_block_begin();
         t3d_matrix_push(collisionObjects[8].modelMatFP);
         t3d_model_draw(modelCollision);
@@ -779,9 +779,6 @@ void player_fixedloop(float deltaTime, int playerNumber)
         //aiTime += get_ticks() - aiStart;
     }
 
-    //TODO: Remove
-    //if(playerNumber == 0) tempSpeed = speed;
-
     if(speed > 0.15f)
     {
         newDir.v[0] /= speed;
@@ -802,18 +799,10 @@ void player_fixedloop(float deltaTime, int playerNumber)
     tempPosition.v[0] += players[playerNumber].moveDir.v[0] * players[playerNumber].currSpeed;
     tempPosition.v[2] += players[playerNumber].moveDir.v[2] * players[playerNumber].currSpeed;
 
-    //TODO: remove this
-    //if(playerNumber == 0) tempIntersectionPoint = (T3DVec3){{0}};
-
     // do collision checks here
     collisionresult_data collisionResult;
-
-    //collision_check(&collisionResult, &tempPosition);
     
     collision_check_intersect(&collisionResult, &players[playerNumber].playerPos, &tempPosition);
-
-    //TODO: remove this
-    //if(playerNumber == 0) tempIntersectionPoint = collisionResult.intersectionPoint;
     
     // use collisionResult data to determine if to apply simulated move
     if(collisionResult.didCollide && !(collisionResult.intersectionPoint.v[0] == 0.0f && collisionResult.intersectionPoint.v[2] == 0.0f))
@@ -970,15 +959,15 @@ void player_thiefAbility(float deltaTime, int playerNumber)
             effectPool[effectPoolIndex].remainingTimer = 0.25f;
             effectPool[effectPoolIndex].effectPos = players[playerNumber].playerPos;
             effectPool[effectPoolIndex].effectRotationY = players[playerNumber].rotY;
-            effectPool[effectPoolIndex].effectSize = 20.0f;
+            effectPool[effectPoolIndex].effectSize = 30.0f;
 
             // make a second effect on the other side of the wall
             effectPoolIndex = effect_getNextEmptyIndex();
             effectPool[effectPoolIndex].isActive = true;
             effectPool[effectPoolIndex].remainingTimer = 0.25f;
             effectPool[effectPoolIndex].effectPos = tempvec;
-            effectPool[effectPoolIndex].effectRotationY = players[playerNumber].rotY;
-            effectPool[effectPoolIndex].effectSize = 20.0f;
+            effectPool[effectPoolIndex].effectRotationY = -players[playerNumber].rotY;
+            effectPool[effectPoolIndex].effectSize = 30.0f;
 
             // move the player
             players[playerNumber].playerPos = tempvec;
@@ -990,38 +979,8 @@ void player_thiefAbility(float deltaTime, int playerNumber)
             break;
         }
     }
-
-
-    // take out current position
-    // Get current location
-        //get a vector of 1,1
-        // X = Cos(Th), Y = Sin(Th)
-        // ex.  Cos(45) = 0.707, Sin(45) = 0.707
-        // rotation Th in degrees (not rads)
-        // result should be a unitised vector for direction
-        // can use this to iterate
-	// Get direction
-	// loop like X amount of times with difference between current location and direction times length
-	// see if the spot is open, if it is, set is as a destination and teleport to the other side
-    // if teleported, set abilitytimer
-
-    // scratchpad
-    // starting position: 45,10
-    // rotation of 45 degrees
-    // unitised rotated vector = 0.707, 0.707
-    // starting position += (URV * steps)
-    // 45.000, 10.000
-    // 45.707, 10.707
-    // 46.414, 11.414
-    // 47.121, 12.121
-    // 47.828, 12.828
-    // 48.535, 13.535
-    // 49.242, 14.242
-    // 49.949, 14.949
-    // 50.656, 15.656
-    // 51.363, 16.363
-    // 52.070, 17.070
 }
+
 /*==============================
     player_stopAnimations
     stops player animations, usually called when game ends
@@ -1423,7 +1382,7 @@ void minigame_init()
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0,0,-10});
 
     // set camera position and target vectors
-    camPos = (T3DVec3){{0, 215.0f, 65.0f}};
+    camPos = (T3DVec3){{0, 235.0f, 65.0f}};
     camTarget = (T3DVec3){{0, 0, 20}};
 
     // set up a vector for the directional light
@@ -1655,11 +1614,12 @@ void minigame_loop(float deltatime)
     t3d_viewport_attach(&viewport);
 
     // clear the colour and depth buffers
-    t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    //t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+    t3d_screen_clear_color(RGBA32(32, 32, 32, 0xFF));
     t3d_screen_clear_depth();
 
     // draw collision squares
-    collision_draw();
+    //collision_draw();
 
     // draw the player entities
     for(int i = 0; i < MAXPLAYERS; i++)
