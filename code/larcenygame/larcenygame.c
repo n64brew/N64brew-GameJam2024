@@ -17,6 +17,7 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 
 #define CONTROLLER_LOWER_DEADZONE 4
 #define CONTROLLER_UPPER_DEADZONE 50
+#define CONTROLLER_DEFAULT_DEBOUNCE 0.5f
 
 #define FONT_DEBUG 1
 #define FONT_BILLBOARD 2
@@ -72,6 +73,8 @@ int lastCountdownNumber;
 float countdownTimer;
 bool gameStarting;
 bool gameEnding;
+bool gamePaused;
+float gamePauseDebounce;
 float gameTimeRemaining;
 
 player_team winningTeam;
@@ -81,8 +84,8 @@ player_team winningTeam;
 const MinigameDef minigame_def = {
     .gamename = "Larceny",
     .developername = "RiPpEr253",
-    .description = "This is an example game.",
-    .instructions = "Mash A to win."
+    .description = "A 2v2 game pitting Thieves against Guards and their treasures",
+    .instructions = "Stick: Move, A: Thief: Wall Jump, Guard: Stun Thief"
 };
 
 
@@ -102,10 +105,12 @@ void debugInfoDraw(float deltaTime)
 
     rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+10, "Test Debug");
+    rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+20, "FPS: %f", 1.0f/deltaTime);
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+30, "AI Statuses: P1: %i P2: %i P3: %i P4: %i", ai_getCurrentStateAsInt(0), ai_getCurrentStateAsInt(1), ai_getCurrentStateAsInt(2), ai_getCurrentStateAsInt(3));
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+40, "Intersection point: %f, %f", tempIntersectionPoint.x, tempIntersectionPoint.z);
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+50, "p1 x: %f, p1 y: %f", players[0].playerPos.v[0], players[0].playerPos.v[2]);
+    //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+60, "Debounce Status: %f", gamePauseDebounce);
     /*joypad_port_t controllerPort = core_get_playercontroller(0);
     
     if(!joypad_is_connected(controllerPort))
@@ -136,7 +141,7 @@ void debugInfoDraw(float deltaTime)
 ==============================*/
 void HUD_Update(float deltaTime)
 {
-    if(!gameStarting && !gameEnding)
+    if(!gameStarting && !gameEnding && !gamePaused)
     {
         // Update anything needed on the HUD (ability timer bar resizing/game time remaining)
         gameTimeRemaining -= deltaTime;
@@ -163,11 +168,8 @@ void HUD_draw()
     PLAYERCOLOR_4,
     };
 
-    // make sure the RDP is sync'd
-    rdpq_sync_tile();
-    rdpq_sync_pipe(); // Hardware crashes otherwise
-
     rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+    rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
     // iterate through all the players and draw what we need
@@ -201,6 +203,7 @@ void HUD_draw()
         
         if(players[iDx].stunTimer > 0.0f)
         {
+            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, x-35, y-26, "Stunned: %.2f", players[iDx].stunTimer);
         }
 
@@ -210,19 +213,21 @@ void HUD_draw()
         rdpq_mode_alphacompare(128);
         rdpq_sync_load();
         
-        // make sure the RDP is sync'd
-        rdpq_sync_tile();
-        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
 
-        rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 8, &(rdpq_blitparms_t){ .scale_x = 0.5f,  .scale_y = 0.5f});
+        rdpq_sprite_blit(spriteAButton, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] - 16, &(rdpq_blitparms_t){ .scale_x = 1.0f,  .scale_y = 1.0f});
         if(players[iDx].playerTeam == teamThief)
         {
+            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Jump Wall");
+            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] + 10, "Player %i: Thief", iDx + 1);
         }
         else if(players[iDx].playerTeam == teamGuard)
         {
+            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0] + 24, HUDOffsets[iDx].v[1], "Stun Attack");
+            rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
             rdpq_text_printf(&(rdpq_textparms_t){ .style_id = iDx, .disable_aa_fix = true, }, FONT_BILLBOARD, HUDOffsets[iDx].v[0], HUDOffsets[iDx].v[1] + 10, "Player %i: Guard", iDx + 1);
         }
 
@@ -504,6 +509,7 @@ void collision_cleanup()
     for(int iDx = 0; iDx < numberOfObjects; iDx++)
     {
         free_uncached(collisionObjects[iDx].modelMatFP);
+        rspq_block_free(collisionObjects[iDx].dplCollision);
     }
 }
 
@@ -527,6 +533,8 @@ void end_game(player_team victoriousTeam)
     // set game state to game ending
     gameEnding = true;
     gameStarting = false;
+    gamePaused = false;
+    gamePauseDebounce = 0.0f;
 
     wav64_play(&sfx_winner, 31);
 
@@ -648,7 +656,7 @@ void player_cleanup(int playerNumber)
 
 void player_fixedloop(float deltaTime, int playerNumber)
 {
-    if(gameStarting || gameEnding)
+    if(gameStarting || gameEnding || gamePaused)
     {
         return;
     }
@@ -979,6 +987,7 @@ void player_loop(float deltaTime, int playerNumber)
     if(!players[playerNumber].isActive) return;
 
     joypad_port_t controllerPort = core_get_playercontroller(playerNumber);
+    joypad_buttons_t btn;
     
     if(!joypad_is_connected(controllerPort))
     {
@@ -988,6 +997,37 @@ void player_loop(float deltaTime, int playerNumber)
     if(gameEnding)
     {
         player_stopAnimations(deltaTime, playerNumber);
+    }
+
+    if(gamePaused)
+    {
+        // first pause all animations
+        t3d_anim_set_speed(&players[playerNumber].animIdle, 0.0f);
+        t3d_anim_set_speed(&players[playerNumber].animWalk, 0.0f);
+        t3d_anim_set_speed(&players[playerNumber].animAbility, 0.0f);
+
+        //t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
+        //t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
+        //if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
+
+        // check for someone pressing start to unpause
+        btn = joypad_get_buttons_held(controllerPort);
+        if(btn.start && gamePauseDebounce <= 0.0f)
+        {
+            gamePaused = false;
+            gamePauseDebounce = CONTROLLER_DEFAULT_DEBOUNCE;
+        }
+
+        if(btn.l && gamePauseDebounce <= 0.0f)
+        {
+            minigame_end();
+        }
+    }
+    else
+    {
+        t3d_anim_set_speed(&players[playerNumber].animIdle, 1.0f);
+        t3d_anim_set_speed(&players[playerNumber].animWalk, players[playerNumber].animBlend);
+        t3d_anim_set_speed(&players[playerNumber].animAbility, 1.0f);
     }
 
     // TODO: Remove this because it's fucked
@@ -1000,11 +1040,15 @@ void player_loop(float deltaTime, int playerNumber)
         }
     }
 
-    if(!players[playerNumber].isAi && !gameStarting && !gameEnding)
+    if(!players[playerNumber].isAi && !gameStarting && !gameEnding && !gamePaused)
     {
-        joypad_buttons_t btn = joypad_get_buttons_held(controllerPort);
+        btn = joypad_get_buttons_held(controllerPort);
 
-        if(btn.start) minigame_end();
+        if(btn.start && gamePauseDebounce <= 0.0f)
+        {
+            gamePauseDebounce = CONTROLLER_DEFAULT_DEBOUNCE;
+            gamePaused = true;
+        }
         if(btn.c_left) end_game(teamThief);
         if(btn.c_right) end_game(teamGuard);
 
@@ -1030,8 +1074,6 @@ void player_loop(float deltaTime, int playerNumber)
     }
 
     t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
-    t3d_anim_set_speed(&players[playerNumber].animIdle, 1.0f);
-    t3d_anim_set_speed(&players[playerNumber].animWalk, players[playerNumber].animBlend);
     t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
 
     if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
@@ -1059,7 +1101,7 @@ void objective_init()
 {
     objectives[0].isActive = true;
     objectives[0].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    objectives[0].model = t3d_model_load("rom:/larcenygame/testObjective.t3dm");
+    objectives[0].model = t3d_model_load("rom:/larcenygame/firstObjective.t3dm");
     rspq_block_begin();
         t3d_matrix_push(objectives[0].modelMatFP);
         rdpq_set_prim_color(RGBA32(0,255,0,255));
@@ -1071,7 +1113,7 @@ void objective_init()
     
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
-    objectives[1].model = t3d_model_load("rom:/larcenygame/testObjective.t3dm");
+    objectives[1].model = t3d_model_load("rom:/larcenygame/firstObjective.t3dm");
     rspq_block_begin();
         t3d_matrix_push(objectives[1].modelMatFP);
         rdpq_set_prim_color(RGBA32(255,0,0,255));
@@ -1343,6 +1385,13 @@ void minigame_fixedloop(float deltatime)
         }
     }
 
+    // if there's any value in the debounce, make sure to address it
+    if(gamePauseDebounce >= 0.0f)
+    {
+        gamePauseDebounce -= deltatime;
+        if(gamePauseDebounce < 0.0f) gamePauseDebounce = 0.0f;
+    }
+
     if(gameEnding)
     {
         countdownTimer -= deltatime;
@@ -1374,7 +1423,7 @@ void minigame_loop(float deltatime)
     objective_update();
 
     // Check for victory conditions
-    if(!gameStarting && !gameEnding)
+    if(!gameStarting && !gameEnding && !gamePaused)
     {
         if(gameTimeRemaining < 0) end_game(teamGuard);
         // start this bool as true and set it false as soon as you get a single active objective
@@ -1466,12 +1515,21 @@ void minigame_loop(float deltatime)
     if(gameStarting)
     {
         rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+        rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Starting in %i...", (int)countdownTimer);
+    }
+
+    if(gamePaused)
+    {
+        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+        rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
+        rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Game Paused \n Press L to Quit");
     }
 
     if(gameEnding)
     {
         rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = RESOLUTION_WIDTH, .disable_aa_fix = true, };
+        rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         if(winningTeam == teamThief)
         {
             rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 117, "Thieves Win!");
