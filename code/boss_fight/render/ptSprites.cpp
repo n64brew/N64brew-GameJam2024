@@ -47,7 +47,8 @@ PTSprites::PTSprites(const char* spritePath, bool isRotating)
   }
   setupDPL = rspq_block_end();
   mirrorPt = 32;
-  if(isRotating) {
+  if(!isRotating) {
+    mirrorPt = 0;
     //mirrorPt = sprite->width / sprite->height * 4;
   }
 }
@@ -134,9 +135,9 @@ void PTSprites::clear() {
 
 void PTSprites::simulateDust(float deltaTime)
 {
-  animTimer += deltaTime;
-  bool isStep = animTimer > 0.75f;
-  if(isStep)animTimer = 0;
+  simTimer += deltaTime;
+  bool isStep = simTimer > 0.75f;
+  if(isStep)simTimer = 0;
 
   for(auto &system : systems)
   {

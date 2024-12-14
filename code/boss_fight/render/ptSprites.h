@@ -19,6 +19,7 @@ class PTSprites
     sprite_t *sprite{};
     rspq_block_t *setupDPL{};
     float animTimer = 0.0f;
+    float simTimer = 0.0f;
     uint16_t mirrorPt = 32;
     color_t color;
 
