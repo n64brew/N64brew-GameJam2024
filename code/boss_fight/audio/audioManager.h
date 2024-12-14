@@ -39,7 +39,7 @@ class AudioManager {
     T3DVec3 currCamPos{0.0f, 0.0f, 0.0f};
     T3DVec3 listenerDir{0.0f, 0.0f, -1.0f};
 
-    float volBGM{0.8f};
+    float volBGM{0.7f};
     float volSFX{0.9f};
     Math::Timer bgmVolume{};
 

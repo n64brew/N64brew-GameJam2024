@@ -217,7 +217,7 @@ void Player::update(const InputState &input, float deltaTime)
       collider.velocity.y = 0.1f;
     }
 
-    scene.getAudio().playSFX("PlSpin"_u64, collider.center, {.volume = 0.5f});
+    scene.getAudio().playSFX("PlSpin"_u64, collider.center, {.volume = 0.65f});
   }
 
   float moveSpeed = isAttacking()
