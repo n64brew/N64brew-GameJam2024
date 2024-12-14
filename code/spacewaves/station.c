@@ -220,25 +220,33 @@ void station_update(){
                 }
             }
         }
-        for(int b = 0; b < MAX_BONUSES; b++)
+    }
+    for(int bonus = 0; bonus < MAX_BONUSES; bonus++)
         for(int p = 0; p < MAX_PROJECTILES; p++){
+            bullet_worldpos = gfx_worldpos_from_polar(
+                station.arm.bullets[p].polarpos.v[0], 
+                station.arm.bullets[p].polarpos.v[1], 
+                station.arm.bullets[p].polarpos.v[2]);
+            rocket_worldpos = gfx_worldpos_from_polar(
+                station.arm.rockets[p].polarpos.v[0], 
+                station.arm.rockets[p].polarpos.v[1], 
+                station.arm.rockets[p].polarpos.v[2]);
             T3DVec3 ast_worldpos;
-            if(bonuses[b].enabled){
+            if(bonuses[bonus].enabled){
                 ast_worldpos = gfx_worldpos_from_polar(
-                    bonuses[b].polarpos.v[0],
-                    bonuses[b].polarpos.v[1],
-                    bonuses[b].polarpos.v[2]);
-                if(station.arm.bullets[b].enabled && t3d_vec3_distance(&ast_worldpos, &bullet_worldpos) < 6.0f){
-                    bonus_apply(b, station.currentplayer, &station, -1);
-                    station.arm.bullets[b].enabled = false;
+                    bonuses[bonus].polarpos.v[0],
+                    bonuses[bonus].polarpos.v[1],
+                    bonuses[bonus].polarpos.v[2]);
+                if(station.arm.bullets[p].enabled && t3d_vec3_distance(&ast_worldpos, &bullet_worldpos) < 8.0f){
+                    bonus_apply(bonus, station.currentplayer, &station, -1);
+                    station.arm.bullets[p].enabled = false;
                 }
-                if(station.arm.rockets[b].enabled && t3d_vec3_distance(&ast_worldpos, &rocket_worldpos) < 8.0f){
-                    bonus_apply(b, station.currentplayer, &station, -1);
-                    station.arm.rockets[b].enabled = false; 
+                if(station.arm.rockets[p].enabled && t3d_vec3_distance(&ast_worldpos, &rocket_worldpos) < 10.0f){
+                    bonus_apply(bonus, station.currentplayer, &station, -1);
+                    station.arm.rockets[p].enabled = false; 
                 }
             }
         }
-    }
 }
 
 void station_apply_camera(){
