@@ -77,7 +77,13 @@ void Actor::Coin::makeStatic() {
 
 void Actor::Coin::update(float deltaTime)
 {
-  if(!checkCulling(120.0f))return;
+  if(!checkCulling(120.0f)) {
+    // sometimes dynamic coins spawn way OOB, @TODO: check why
+    if(isDynamic() && !checkCulling(200.0f)) {
+      requestDelete();
+    }
+    return;
+  }
   if(isDynamic()) {
     auto vel = t3d_vec3_len2(&coll.velocity);
     if(vel < 0.05f) {
