@@ -90,7 +90,23 @@
         T3DVec3 intersectionPoint;
     } collisionresult_data;
 
-    
+    typedef struct
+    {
+        T3DVec3 camStartPos;
+        T3DVec3 camEndPos;
+        T3DVec3 lookAtStart;
+        T3DVec3 lookAtEnd;
+        float timeUntilNextKeyframe;
+    } cameraanimation_data;
+
+    typedef struct
+    {
+        cameraanimation_data* currentAnimation;
+        int currentAnimationLength;
+        int currentAnimationKeyframe;
+        float currentAnimationTime;
+        bool currentlyPlaying;
+    } animatedcameraobject_data;
 
 /*********************************
              Functions

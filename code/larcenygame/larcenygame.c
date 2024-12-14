@@ -55,6 +55,11 @@ effect_data effectPool[MAXPLAYERS];
 objective_data objectives[2];
 collisionobject_data collisionObjects[9];
 
+// camera variables
+cameraanimation_data cameraIntroKeyframes[1];
+cameraanimation_data cameraOutroKeyframes[1];
+animatedcameraobject_data animatedCamera;
+
 // drawing variables
 rspq_block_t* dplMap;
 rspq_syncpoint_t syncPoint;
@@ -155,9 +160,115 @@ void debugInfoDraw(float deltaTime)
 }
 
 /*==============================
+    cameraAnimation_init
+    ensures there's sane defaults in the animated camera
+==============================*/
+
+void cameraAnimation_init()
+{
+    animatedCamera.currentAnimationLength = 0;
+    animatedCamera.currentAnimationKeyframe = 0;
+    animatedCamera.currentAnimationTime = 0.0f;
+    animatedCamera.currentlyPlaying = false;
+}
+
+/*==============================
+    startCameraAnimation
+    takes in a reference to a camera data array and 
+    sets up the animated camera to play the animation
+==============================*/
+
+void startCameraAnimation(cameraanimation_data* newAnimation, int lengthOfAnimation)
+{
+    animatedCamera.currentAnimation = newAnimation;
+    animatedCamera.currentAnimationLength = lengthOfAnimation;
+    animatedCamera.currentAnimationKeyframe = 0;
+    animatedCamera.currentAnimationTime = 0.0f;
+    animatedCamera.currentlyPlaying = true;
+}
+
+/*==============================
+    cameraAnimation_update
+    updates the animated camera if there's any more keyframes left in it
+==============================*/
+
+void cameraAnimation_update(float deltaTime)
+{
+    // if not currently playing, return as pointers will be invalid
+    if(!animatedCamera.currentlyPlaying)
+    {
+        return;
+    }
+
+    // advance the time
+    animatedCamera.currentAnimationTime += deltaTime;
+
+    // if time elapsed > keyframe length, then it's time for the next frame
+    if(animatedCamera.currentAnimationTime >= animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].timeUntilNextKeyframe)
+    {
+        animatedCamera.currentAnimationTime = 0.0f;
+        animatedCamera.currentAnimationKeyframe += 1;
+    }
+
+    // if we've reached the end of the animation, set not playing at return
+    if(animatedCamera.currentAnimationKeyframe >= animatedCamera.currentAnimationLength)
+    {
+        // if an animation is over, make sure the exact end points are set to avoid high deltatimes making the camera crooked
+        camPos = animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe - 1].camEndPos;
+        camTarget = animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe - 1].lookAtEnd;
+        animatedCamera.currentlyPlaying = false;
+        return;
+    }
+
+    // use linear interpolation for all three positions for the camera
+    t3d_vec3_lerp( &camPos,     &animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].camStartPos, 
+                                &animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].camEndPos, 
+                                animatedCamera.currentAnimationTime / animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].timeUntilNextKeyframe);
+    // do the same for the target
+    t3d_vec3_lerp(&camTarget,   &animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].lookAtStart, 
+                                &animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].lookAtEnd, 
+                                animatedCamera.currentAnimationTime / animatedCamera.currentAnimation[animatedCamera.currentAnimationKeyframe].timeUntilNextKeyframe);
+
+}
+
+/*==============================
+    startCameraAnimationIntro
+    populates an animation for the intro and then sends it to the camera animator object
+==============================*/
+
+void startCameraAnimationIntro()
+{
+    cameraIntroKeyframes[0].camStartPos = (T3DVec3){{255.0f, 511.0f, 45.0f}};
+    cameraIntroKeyframes[0].camEndPos = (T3DVec3){{0.0f, 255.0f, 45.0f}};
+    cameraIntroKeyframes[0].lookAtStart = (T3DVec3){{0, 0, -5}};
+    cameraIntroKeyframes[0].lookAtEnd = (T3DVec3){{0, 0, -5}};
+    cameraIntroKeyframes[0].timeUntilNextKeyframe = 2.0f;
+
+    startCameraAnimation(cameraIntroKeyframes, 1);
+}
+
+/*==============================
+    startCameraAnimationOutro
+    populates an animation for the outro and then sends it to the camera animator object
+==============================*/
+
+void startCameraAnimationOutro()
+{
+    
+    cameraOutroKeyframes[0].camStartPos = (T3DVec3){{0, 255.0f, 45.0f}};
+    cameraOutroKeyframes[0].camEndPos = (T3DVec3){{0, 0.0f, 0.0f}};
+    cameraOutroKeyframes[0].lookAtStart = (T3DVec3){{0, 0, -5}};
+    cameraOutroKeyframes[0].lookAtEnd = (T3DVec3){{0, -150, -5}};
+    cameraOutroKeyframes[0].timeUntilNextKeyframe = 1.0f;
+
+    startCameraAnimation(cameraOutroKeyframes, 1);
+}
+
+/*==============================
     HUD_Update
     updates HUD elements outside of the draw loop
 ==============================*/
+
 void HUD_Update(float deltaTime)
 {
     if(!gameStarting && !gameEnding && !gamePaused)
@@ -171,6 +282,7 @@ void HUD_Update(float deltaTime)
     HUD_draw
     draws main HUD info using the RDP
 ==============================*/
+
 void HUD_draw()
 {
     const T3DVec3 HUDOffsets[] = {
@@ -591,6 +703,9 @@ void end_game(player_team victoriousTeam)
 
     wav64_play(&sfx_winner, 31);
     mixer_ch_set_vol(31, 0.75f, 0.75f);
+
+    // set off the outro camera animation
+    startCameraAnimationOutro();
 
     // interate through teams and set a winner
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
@@ -1062,7 +1177,7 @@ void player_loop(float deltaTime, int playerNumber)
     // spam the fuck out of the button
     if(players[playerNumber].isAi && players[playerNumber].playerTeam == teamThief)
     {
-        if(!(players[playerNumber].abilityTimer > 0.0f))
+        if(!(players[playerNumber].abilityTimer > 0.0f) && !(players[playerNumber].stunTimer > 0.0f))
         {
             player_thiefAbility(deltaTime, playerNumber);
         }
@@ -1092,7 +1207,7 @@ void player_loop(float deltaTime, int playerNumber)
         if((btn.a || btn.b) && players[playerNumber].playerTeam == teamThief)
         {
             // check to see if our ability cooldown is not active
-            if(!(players[playerNumber].abilityTimer > 0.0f))
+            if(!(players[playerNumber].abilityTimer > 0.0f) && !(players[playerNumber].stunTimer > 0.0f))
             {
                 player_thiefAbility(deltaTime, playerNumber);
             }
@@ -1383,9 +1498,13 @@ void minigame_init()
     mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
     t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0,0,-10});
 
-    // set camera position and target vectors
+    // set camera position and target vectors to defaults
     camPos = (T3DVec3){{0, 255.0f, 45.0f}};
     camTarget = (T3DVec3){{0, 0, -5}};
+
+    // set off the intro animation system
+    cameraAnimation_init();
+    startCameraAnimationIntro();
 
     // set up a vector for the directional light
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
@@ -1590,7 +1709,9 @@ void minigame_loop(float deltatime)
 
     // set the projection matrix for the viewport
     float aspectRatio = (float)viewport.size[0] / ((float)viewport.size[1]);//*2);
-    t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), aspectRatio, 20.0f, 260.0f);
+    t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), aspectRatio, 20.0f, 600.0f);
+    // update the camera if needed
+    cameraAnimation_update(deltatime);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     // TODO: debug stuff
@@ -1605,6 +1726,10 @@ void minigame_loop(float deltatime)
     // set up the ambient light colour and the directional light colour
     uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
+    
+    // set up a vector for the directional light
+    lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
+    t3d_vec3_norm(&lightDirVec);
     
     // set the lighting details
     t3d_light_set_ambient(colorAmbient);
