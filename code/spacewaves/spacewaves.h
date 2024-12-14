@@ -68,8 +68,9 @@
         effects_init();
 
         for(int i = SFX_CHANNEL_MACHINEGUN; i < SFX_CHANNEL_MUSIC; i+=2)
-            mixer_ch_set_vol(i, 0.5f, 0.5f);
-        
+            mixer_ch_set_vol(i, 0.4f, 0.4f);
+        for(int i = SFX_CHANNEL_MUSIC; i < 32; i+=2)
+            mixer_ch_set_vol(i, 0.7f, 0.7f);
 
     }
 
