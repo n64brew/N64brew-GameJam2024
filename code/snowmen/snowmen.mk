@@ -88,7 +88,7 @@ ASSETS_LIST += \
 	filesystem/snowmen/SnowyMapTest6_4_Collision.col
 
 
-$(FILESYSTEM_DIR)/%.t3dm: $(ASSETS_DIR)/%.glb
+filesystem/snowmen/%.t3dm: assets/snowmen/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [T3D-MODEL] $@"
 	$(T3D_GLTF_TO_3D) "$<" $@
