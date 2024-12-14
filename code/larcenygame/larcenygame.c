@@ -1258,12 +1258,6 @@ void player_loop(float deltaTime, int playerNumber)
 
     t3d_anim_update(&players[playerNumber].animIdle, deltaTime);
     t3d_anim_update(&players[playerNumber].animWalk, deltaTime);
-
-    if(players[playerNumber].animAbility.isPlaying) t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
-
-    t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
-
-    t3d_skeleton_update(&players[playerNumber].skel);
     
 
     if(!players[playerNumber].isAi && !gameStarting && !gameEnding && !gamePaused)
@@ -1296,7 +1290,17 @@ void player_loop(float deltaTime, int playerNumber)
             }
         }
     }
-    
+
+    if(players[playerNumber].animAbility.isPlaying)
+    {
+        t3d_anim_update(&players[playerNumber].animAbility, deltaTime);
+        players[playerNumber].animBlend = 1.0f;
+    }
+
+    t3d_skeleton_blend(&players[playerNumber].skel, &players[playerNumber].skel, &players[playerNumber].skelBlend, players[playerNumber].animBlend);
+
+    t3d_skeleton_update(&players[playerNumber].skel);
+
     // update matrix
     t3d_mat4fp_from_srt_euler(players[playerNumber].modelMatFP,
         (float[3]){DEFAULT_PLAYER_SCALE, DEFAULT_PLAYER_SCALE, DEFAULT_PLAYER_SCALE},
