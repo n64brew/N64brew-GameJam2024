@@ -140,6 +140,8 @@ void Coll::Scene::update(float deltaTime)
     for(uint32_t s2=s+1; s2<spheres.size(); ++s2)
     {
       if(!(sphere->mask & spheres[s2]->mask))continue;
+      // TODO: source & target mask instead of one mask
+      if(sphere->type == CollType::COIN && spheres[s2]->type == CollType::COIN)continue;
 
       auto sphere2 = spheres[s2];
       T3DVec3 dir = sphere->center - sphere2->center;
