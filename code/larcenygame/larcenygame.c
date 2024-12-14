@@ -56,7 +56,7 @@ objective_data objectives[2];
 collisionobject_data collisionObjects[9];
 
 // camera variables
-cameraanimation_data cameraIntroKeyframes[1];
+cameraanimation_data cameraIntroKeyframes[10];
 cameraanimation_data cameraOutroKeyframes[1];
 animatedcameraobject_data animatedCamera;
 
@@ -238,13 +238,77 @@ void cameraAnimation_update(float deltaTime)
 
 void startCameraAnimationIntro()
 {
-    cameraIntroKeyframes[0].camStartPos = (T3DVec3){{255.0f, 511.0f, 45.0f}};
+    // start high and move to centre
+    cameraIntroKeyframes[0].camStartPos = (T3DVec3){{0.0f, 511.0f, 45.0f}};
     cameraIntroKeyframes[0].camEndPos = (T3DVec3){{0.0f, 255.0f, 45.0f}};
     cameraIntroKeyframes[0].lookAtStart = (T3DVec3){{0, 0, -5}};
     cameraIntroKeyframes[0].lookAtEnd = (T3DVec3){{0, 0, -5}};
-    cameraIntroKeyframes[0].timeUntilNextKeyframe = 2.0f;
+    cameraIntroKeyframes[0].timeUntilNextKeyframe = 0.5f;
 
-    startCameraAnimation(cameraIntroKeyframes, 1);
+    // look at objective 1
+    cameraIntroKeyframes[1].camStartPos = (T3DVec3){{0.0f, 255.0f, 45.0f}};
+    cameraIntroKeyframes[1].camEndPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[1].lookAtStart = (T3DVec3){{0, 0, -5}};
+    cameraIntroKeyframes[1].lookAtEnd = objectives[0].objectivePos;
+    cameraIntroKeyframes[1].timeUntilNextKeyframe = 0.5f;
+    
+    // hold camera
+    cameraIntroKeyframes[2].camStartPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[2].camEndPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[2].lookAtStart = objectives[0].objectivePos;
+    cameraIntroKeyframes[2].lookAtEnd = objectives[0].objectivePos;
+    cameraIntroKeyframes[2].timeUntilNextKeyframe = 1.0f;
+    
+    // look at objective 2
+    cameraIntroKeyframes[3].camStartPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[3].camEndPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[3].lookAtStart = objectives[0].objectivePos;
+    cameraIntroKeyframes[3].lookAtEnd = objectives[1].objectivePos;
+    cameraIntroKeyframes[3].timeUntilNextKeyframe = 0.5f;
+    
+    // hold camera
+    cameraIntroKeyframes[4].camStartPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[4].camEndPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[4].lookAtStart = objectives[1].objectivePos;
+    cameraIntroKeyframes[4].lookAtEnd = objectives[1].objectivePos;
+    cameraIntroKeyframes[4].timeUntilNextKeyframe = 1.0f;
+    
+    // look at player 1
+    cameraIntroKeyframes[5].camStartPos = (T3DVec3){{0.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[5].camEndPos = (T3DVec3){{-105.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[5].lookAtStart = objectives[1].objectivePos;
+    cameraIntroKeyframes[5].lookAtEnd = players[0].playerPos;
+    cameraIntroKeyframes[5].timeUntilNextKeyframe = 0.5f;
+
+    // hold camera
+    cameraIntroKeyframes[6].camStartPos = (T3DVec3){{-105.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[6].camEndPos = (T3DVec3){{-105.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[6].lookAtStart = players[0].playerPos;
+    cameraIntroKeyframes[6].lookAtEnd = players[0].playerPos;
+    cameraIntroKeyframes[6].timeUntilNextKeyframe = 1.0f;
+    
+    // look at player 4
+    cameraIntroKeyframes[7].camStartPos = (T3DVec3){{-105.0f, 90.0f, 45.0f}};
+    cameraIntroKeyframes[7].camEndPos = (T3DVec3){{-105.0f, 90.0f, -45.0f}};
+    cameraIntroKeyframes[7].lookAtStart = players[0].playerPos;
+    cameraIntroKeyframes[7].lookAtEnd = players[3].playerPos;
+    cameraIntroKeyframes[7].timeUntilNextKeyframe = 0.5f;
+
+    // hold camera
+    cameraIntroKeyframes[8].camStartPos = (T3DVec3){{-105.0f, 90.0f, -45.0f}};
+    cameraIntroKeyframes[8].camEndPos = (T3DVec3){{-105.0f, 90.0f, -45.0f}};
+    cameraIntroKeyframes[8].lookAtStart = players[3].playerPos;
+    cameraIntroKeyframes[8].lookAtEnd = players[3].playerPos;
+    cameraIntroKeyframes[8].timeUntilNextKeyframe = 1.0f;
+
+    // return to centre
+    cameraIntroKeyframes[9].camStartPos = (T3DVec3){{-105.0f, 90.0f, -45.0f}};
+    cameraIntroKeyframes[9].camEndPos = (T3DVec3){{0.0f, 255.0f, 45.0f}};
+    cameraIntroKeyframes[9].lookAtStart = players[3].playerPos;
+    cameraIntroKeyframes[9].lookAtEnd = (T3DVec3){{0, 0, -5}};
+    cameraIntroKeyframes[9].timeUntilNextKeyframe = 0.5f;
+
+    startCameraAnimation(cameraIntroKeyframes, 10);
 }
 
 /*==============================
@@ -755,15 +819,19 @@ void player_init(int playerNumber)
     {
         case 0:
             players[playerNumber].playerPos = (T3DVec3){{-128, 0.0f, 128}};
+            players[playerNumber].rotY = 3.14f;
         break;
         case 1:
             players[playerNumber].playerPos = (T3DVec3){{128, 0.0f, 128}};
+            players[playerNumber].rotY = 3.14f;
         break;
         case 2:
             players[playerNumber].playerPos = (T3DVec3){{128, 0.0f, -128}};
+            players[playerNumber].rotY = 0.0f;
         break;
         case 3:
             players[playerNumber].playerPos = (T3DVec3){{-128, 0.0f, -128}};
+            players[playerNumber].rotY = 0.0f;
         default:
         break;
     }
@@ -790,7 +858,6 @@ void player_init(int playerNumber)
         t3d_matrix_pop(1);
     players[playerNumber].dplPlayer = rspq_block_end();
     players[playerNumber].moveDir = (T3DVec3){{0,0,0}};
-    players[playerNumber].rotY = 0.0f;
     players[playerNumber].currSpeed = 0.0f;
     players[playerNumber].animBlend = 0.0f;
     players[playerNumber].stunTimer = 0.0f;
@@ -1502,9 +1569,8 @@ void minigame_init()
     camPos = (T3DVec3){{0, 255.0f, 45.0f}};
     camTarget = (T3DVec3){{0, 0, -5}};
 
-    // set off the intro animation system
+    // init the camera system
     cameraAnimation_init();
-    startCameraAnimationIntro();
 
     // set up a vector for the directional light
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
@@ -1566,6 +1632,9 @@ void minigame_init()
     // initialise effect models
     effect_init();
 
+    // set off the intro animation system
+    startCameraAnimationIntro();
+
     return;
 }
 
@@ -1597,7 +1666,7 @@ void minigame_fixedloop(float deltaTime)
     // process pre-game countdown timer
     if(gameStarting)
     {
-        countdownTimer -= deltaTime;
+        countdownTimer -= deltaTime / 2.5;
 
         if(countdownTimer < lastCountdownNumber)
         {
