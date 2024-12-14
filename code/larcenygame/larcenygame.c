@@ -25,11 +25,11 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define CONTROLLER_UPPER_DEADZONE 50
 #define CONTROLLER_DEFAULT_DEBOUNCE 0.5f
 
+#define HUD_SAFE_AREA_X 16.0f
+#define HUD_SAFE_AREA_Y 24.0f
+
 #define FONT_DEBUG 1
 #define FONT_BILLBOARD 2
-
-#define RESOLUTION_WIDTH 320
-#define RESOLUTION_HEIGHT 240
 
 #define DEFAULT_PLAYER_SCALE 0.375f
 
@@ -286,10 +286,10 @@ void HUD_Update(float deltaTime)
 void HUD_draw()
 {
     const T3DVec3 HUDOffsets[] = {
-    (T3DVec3){{16.0f, resolutionDisplayY - 24.0f, 0.0f}},
-    (T3DVec3){{resolutionDisplayX - 96.0f, resolutionDisplayY - 24.0f, 0.0f}},
-    (T3DVec3){{resolutionDisplayX - 96.0f, 24.0f, 0.0f}},
-    (T3DVec3){{16.0f, 24.0f, 0.0f}},
+    (T3DVec3){{HUD_SAFE_AREA_X, resolutionDisplayY - HUD_SAFE_AREA_Y, 0.0f}},
+    (T3DVec3){{resolutionDisplayX - HUD_SAFE_AREA_X - 80.0f, resolutionDisplayY - HUD_SAFE_AREA_Y, 0.0f}},
+    (T3DVec3){{resolutionDisplayX - HUD_SAFE_AREA_X - 80.0f, HUD_SAFE_AREA_Y, 0.0f}},
+    (T3DVec3){{HUD_SAFE_AREA_X, HUD_SAFE_AREA_Y, 0.0f}},
     };
 
     const color_t colours[] = {
@@ -1577,7 +1577,7 @@ void minigame_init()
     @param  The fixed delta time for this tick
 ==============================*/
 
-void minigame_fixedloop(float deltatime)
+void minigame_fixedloop(float deltaTime)
 {
     // TODO: fixedloop update debug stuff
     //fixedUpdateTime = 0;
@@ -1587,17 +1587,17 @@ void minigame_fixedloop(float deltatime)
     // update the player entities
     for(int i = 0; i < MAXPLAYERS; i++)
     {
-        player_fixedloop(deltatime, i);
+        player_fixedloop(deltaTime, i);
     }
 
-    HUD_Update(deltatime);
+    HUD_Update(deltaTime);
 
-    effect_update(deltatime);
+    effect_update(deltaTime);
 
     // process pre-game countdown timer
     if(gameStarting)
     {
-        countdownTimer -= deltatime;
+        countdownTimer -= deltaTime;
 
         if(countdownTimer < lastCountdownNumber)
         {
@@ -1622,13 +1622,13 @@ void minigame_fixedloop(float deltatime)
     // if there's any value in the debounce, make sure to address it
     if(gamePauseDebounce >= 0.0f)
     {
-        gamePauseDebounce -= deltatime;
+        gamePauseDebounce -= deltaTime;
         if(gamePauseDebounce < 0.0f) gamePauseDebounce = 0.0f;
     }
 
     if(gameEnding)
     {
-        countdownTimer -= deltatime;
+        countdownTimer -= deltaTime;
 
         if(countdownTimer < 1.0f)
         {
@@ -1647,7 +1647,7 @@ void minigame_fixedloop(float deltatime)
     @param  The delta time for this tick
 ==============================*/
 
-void minigame_loop(float deltatime)
+void minigame_loop(float deltaTime)
 {
     // TODO: Debug timers
     // reset timers
@@ -1669,11 +1669,11 @@ void minigame_loop(float deltatime)
     // update the player entities
     for(int iDx = 0; iDx < MAXPLAYERS; iDx++)
     {
-        player_loop(deltatime, iDx);
+        player_loop(deltaTime, iDx);
     }
 
     // run objective updates
-    objective_update(deltatime);
+    objective_update(deltaTime);
     //playerUpdate += get_ticks() - playerUpdateStart;
 
     // Check for victory conditions
@@ -1708,10 +1708,11 @@ void minigame_loop(float deltatime)
 
 
     // set the projection matrix for the viewport
+    //float aspectRatio = resolutionDisplayX / resolutionDisplayY;
     float aspectRatio = (float)viewport.size[0] / ((float)viewport.size[1]);//*2);
     t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), aspectRatio, 20.0f, 600.0f);
     // update the camera if needed
-    cameraAnimation_update(deltatime);
+    cameraAnimation_update(deltaTime);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
     // TODO: debug stuff
@@ -1730,7 +1731,7 @@ void minigame_loop(float deltatime)
     // set up a vector for the directional light
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
-    
+
     // set the lighting details
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
@@ -1808,7 +1809,7 @@ void minigame_loop(float deltatime)
     totalFrameTime = endTime - startTime;
     
     // draws RDP text on top of the scene showing debug info
-    //debugInfoDraw(deltatime);
+    //debugInfoDraw(deltaTime);
     
     // detach the queue to flip the buffers and show it on screen
     rdpq_detach_show();
