@@ -40,6 +40,7 @@ void crafts_init(PlyNum currentstation){
             crafts[c].arm.rockets[b].enabled = false;
             crafts[c].arm.asteroids[b].enabled = false;
         }
+        crafts[c].arm.asteroidnexttime = CURRENT_TIME + 0.5f;
         crafts[c].arm.powerup = 0;
         crafts[c].arm.shield = 0;
         crafts[c].enabled = true;
@@ -184,7 +185,7 @@ void crafts_update(){
             if(crafts[c].arm.powerup < 10.0f) crafts[c].arm.powerup -= DELTA_TIME;
             crafts[c].arm.powerup = fclampr(crafts[c].arm.powerup, 0.0f, 10.0f);
 
-            if(held.z && CURRENT_TIME >= crafts[c].arm.asteroidnexttime){
+            if(held.z && CURRENT_TIME >= crafts[c].arm.asteroidnexttime && !gamestatus.paused){
                 int b = 0; while(crafts[c].arm.asteroids[b].enabled && b < MAX_PROJECTILES - 1) b++;
                 crafts[c].arm.asteroids[b].enabled = true;
                 crafts[c].arm.asteroids[b].polarpos = (T3DVec3){{crafts[c].pitchoff, crafts[c].yawoff, crafts[c].distanceoff}};
@@ -197,6 +198,8 @@ void crafts_update(){
                 if(held.d_left) crafts[c].arm.asteroids[b].xspeed -= 0.03;
                 crafts[c].arm.asteroids[b].hp = randr(5, 25);
                 crafts[c].arm.asteroidnexttime = CURRENT_TIME + 12.0f;
+                wav64_play(&sounds[snd_hit], SFX_CHANNEL_EFFECTS);
+                effects_add_ambientlight(RGBA32(50,50,50,0));
             }
 
             if((held.l || held.r) && CURRENT_TIME >= crafts[c].arm.rocketnexttime && crafts[c].arm.rocketcount > 0){

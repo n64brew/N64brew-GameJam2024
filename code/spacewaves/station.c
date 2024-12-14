@@ -30,6 +30,7 @@ void station_init(PlyNum player){
     station.arm.powerup = 0;
     station.pitch = 0;
     station.yaw = 0;
+    station.arm.bulletnexttime = CURRENT_TIME + 0.5f;
     wav64_set_loop(&sounds[snd_machinery], true);
     wav64_play(&sounds[snd_machinery], SFX_CHANNEL_STATION);
     mixer_ch_set_vol(SFX_CHANNEL_STATION, 0.0f, 0.0f);
@@ -70,7 +71,7 @@ void station_update(){
 
     joypad_buttons_t held = joypad_get_buttons_held(station.currentplayerport);
 
-    if(held.z && CURRENT_TIME >= station.arm.bulletnexttime){
+    if(held.z && CURRENT_TIME >= station.arm.bulletnexttime && !gamestatus.paused){
         int b = 0; while(station.arm.bullets[b].enabled && b < MAX_PROJECTILES - 1) b++;
         station.arm.bullets[b].enabled = true;
         station.arm.bullets[b].polarpos = (T3DVec3){{station.pitch, station.yaw, 0.25f}};

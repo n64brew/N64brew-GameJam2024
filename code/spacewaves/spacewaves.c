@@ -25,7 +25,7 @@ const MinigameDef minigame_def = {
     .gamename = "SpaceWaves",
     .developername = "Spooky Iluha",
     .description = "A station-defense minigame set in various galaxies. Defend yourself from other player's spacecrafts.",
-    .instructions = "Pick up bonuses and destroy objects to win points! Each player will get a round in a station."
+    .instructions = "Z, L/R to fire, A,B to activate bonuses. Hit to win points! Each player will get a round in a station."
 };
 
 /**
