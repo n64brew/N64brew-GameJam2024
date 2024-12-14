@@ -142,6 +142,7 @@ void PauseMenu::update(Scene &scene, float deltaTime)
       backupFramebuffer(lastFB);
     } else {
       needsClose = true;
+      scene.getAudio().setBGMVolume(1.0f);
     }
   }
 
