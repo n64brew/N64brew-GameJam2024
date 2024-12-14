@@ -18,7 +18,6 @@ namespace {
 Actor::Coin::Coin(Scene &scene, const T3DVec3 &pos, uint16_t param)
   : Base(scene), param{param}
 {
-  ++sliceIdx;
   drawMask = 0;
   floorPosY = pos.y * COLL_WORLD_SCALE;
 
@@ -64,6 +63,7 @@ void Actor::Coin::onCollision(Coll::Sphere &sphere) {
 
 
 void Actor::Coin::makeDynamic() {
+  ++sliceIdx;
   this->param = 1 + (sliceIdx % TIME_SLICES);
   coll.interactType = (uint8_t)(Coll::InteractType::TRI_MESH | Coll::InteractType::BOUNCY);
   coll.velocity.y = -1;
