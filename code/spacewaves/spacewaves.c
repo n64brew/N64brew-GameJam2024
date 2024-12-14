@@ -70,13 +70,11 @@ int main()
     // ======== Draw ======== //
     framebuffer = display_get();
     rdpq_attach(framebuffer, NULL);
-    mixer_try_play();
     t3d_frame_start();
     if(gamestatus.state == GAMESTATE_PLAY || gamestatus.state == GAMESTATE_COUNTDOWN){
         station_update();
         mixer_try_play();
         crafts_update();
-        mixer_try_play();
         bonus_update();
         effects_update();
     }
@@ -96,7 +94,6 @@ int main()
       effects_draw();
       station_draw();
     }
-    mixer_try_play();
     world_draw_lensflare();
     userinterface_draw();
     t3d_matrix_pop(1);
@@ -169,7 +166,6 @@ int main()
         }
       }
     }
-    mixer_try_play();
     if(gamestatus.state == GAMESTATE_TRANSITION && gamestatus.statetime <= 0.0f){
       gamestatus.state = GAMESTATE_GETREADY;
       gamestatus.paused = false;

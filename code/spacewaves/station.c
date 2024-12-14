@@ -106,6 +106,7 @@ void station_update(){
     if((pressed.a && station.arm.shield == 10.0f)){
         station.arm.shield -= DELTA_TIME;
         wav64_play(&sounds[snd_use_shield], SFX_CHANNEL_BONUS);
+        effects_add_ambientlight(RGBA32(0,0,100,0));
     }
     if(station.arm.shield < 10.0f)
             station.arm.shield -= DELTA_TIME;
@@ -115,6 +116,7 @@ void station_update(){
     if((pressed.b && station.arm.powerup == 10.0f)){
         station.arm.powerup -= DELTA_TIME;
         wav64_play(&sounds[snd_use_powerup], SFX_CHANNEL_BONUS);
+        effects_add_ambientlight(RGBA32(0,100,0,0));
     }
     if(station.arm.powerup < 10.0f)
         station.arm.powerup -= DELTA_TIME;
