@@ -134,7 +134,7 @@ void world_draw(){
         world.space.dlblock = rspq_block_end();
     } else rspq_block_run(world.space.dlblock);
 
-    amb = RGBA32(0,0,0,0xFF);
+    amb = RGBA32(0,0,0,0);
     t3d_light_set_ambient((uint8_t*)&amb);
     t3d_light_set_directional(0, (uint8_t*)&world.sun.color, &world.sun.direction);
     t3d_light_set_count(1);
