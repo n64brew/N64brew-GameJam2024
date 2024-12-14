@@ -57,7 +57,7 @@ collisionobject_data collisionObjects[9];
 
 // camera variables
 cameraanimation_data cameraIntroKeyframes[10];
-cameraanimation_data cameraOutroKeyframes[1];
+cameraanimation_data cameraOutroKeyframes[2];
 animatedcameraobject_data animatedCamera;
 
 // drawing variables
@@ -318,14 +318,20 @@ void startCameraAnimationIntro()
 
 void startCameraAnimationOutro()
 {
-    
+    // hold camera
     cameraOutroKeyframes[0].camStartPos = (T3DVec3){{0, 255.0f, 45.0f}};
-    cameraOutroKeyframes[0].camEndPos = (T3DVec3){{0, 0.0f, 0.0f}};
+    cameraOutroKeyframes[0].camEndPos = (T3DVec3){{0, 255.0f, 45.0f}};
     cameraOutroKeyframes[0].lookAtStart = (T3DVec3){{0, 0, -5}};
-    cameraOutroKeyframes[0].lookAtEnd = (T3DVec3){{0, -150, -5}};
-    cameraOutroKeyframes[0].timeUntilNextKeyframe = 1.0f;
+    cameraOutroKeyframes[0].lookAtEnd = (T3DVec3){{0, 0, -5}};
+    cameraOutroKeyframes[0].timeUntilNextKeyframe = 1.5f;
+    // zoom through map
+    cameraOutroKeyframes[1].camStartPos = (T3DVec3){{0, 255.0f, 45.0f}};
+    cameraOutroKeyframes[1].camEndPos = (T3DVec3){{0, 0.0f, 0.0f}};
+    cameraOutroKeyframes[1].lookAtStart = (T3DVec3){{0, 0, -5}};
+    cameraOutroKeyframes[1].lookAtEnd = (T3DVec3){{0, -150, -5}};
+    cameraOutroKeyframes[1].timeUntilNextKeyframe = 0.5f;
 
-    startCameraAnimation(cameraOutroKeyframes, 1);
+    startCameraAnimation(cameraOutroKeyframes, 2);
 }
 
 /*==============================
@@ -1150,7 +1156,7 @@ void player_thiefAbility(float deltaTime, int playerNumber)
             effectPool[effectPoolIndex].isActive = true;
             effectPool[effectPoolIndex].remainingTimer = 0.25f;
             effectPool[effectPoolIndex].effectPos = tempvec;
-            effectPool[effectPoolIndex].effectRotationY = -players[playerNumber].rotY;
+            effectPool[effectPoolIndex].effectRotationY = players[playerNumber].rotY + 3.14f; // flip the second
             effectPool[effectPoolIndex].effectSize = 30.0f;
 
             // move the player
@@ -1836,7 +1842,7 @@ void minigame_loop(float deltaTime)
     effect_draw();
     
     // draws the main game HUD
-    HUD_draw();
+    if(!gameStarting && !gameEnding && !gamePaused) HUD_draw();
 
     // game starting countdown text draw
     if(gameStarting)
