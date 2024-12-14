@@ -369,7 +369,7 @@ void HUD_draw()
     PLAYERCOLOR_4,
     };
 
-    rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = {.style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
@@ -1556,6 +1556,8 @@ void minigame_init()
     fontDebug = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);
     rdpq_text_register_font(FONT_DEBUG, fontDebug);
 
+    rdpq_font_style(fontDebug, 7, &(rdpq_fontstyle_t){ .color = RGBA32(255,255,255,255) });
+
     // load in the player billboard font
     fontBillboard = rdpq_font_load("rom:/squarewave.font64");
     rdpq_text_register_font(FONT_BILLBOARD, fontBillboard);
@@ -1847,21 +1849,21 @@ void minigame_loop(float deltaTime)
     // game starting countdown text draw
     if(gameStarting)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Starting in %i...", (int)countdownTimer);
     }
 
     if(gamePaused)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Game Paused \n Press L to Quit");
     }
 
     if(gameEnding)
     {
-        rdpq_textparms_t textparms = { .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         if(winningTeam == teamThief)
         {
