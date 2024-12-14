@@ -25,8 +25,8 @@ RiPpEr253's entry into the N64Brew 2024 Gamejam
 #define CONTROLLER_UPPER_DEADZONE 50
 #define CONTROLLER_DEFAULT_DEBOUNCE 0.5f
 
-#define HUD_SAFE_AREA_X 16.0f
-#define HUD_SAFE_AREA_Y 24.0f
+#define HUD_SAFE_AREA_X 22.0f
+#define HUD_SAFE_AREA_Y 28.0f
 
 #define FONT_DEBUG 1
 #define FONT_BILLBOARD 2
