@@ -1427,15 +1427,6 @@ void minigame_init()
     wav64_open(&sfx_thiefCaught, "rom:/larcenygame/thiefCaught.wav64");
 
     xm64player_open(&xm_music, "rom:/larcenygame/drozerix-poppy_flower_girls.xm64");
-    
-    // set up the ambient light colour and the directional light colour
-    uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
-    uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
-    
-    // set the lighting details
-    t3d_light_set_ambient(colorAmbient);
-    t3d_light_set_directional(0, colorDir, &lightDirVec);
-    t3d_light_set_count(1);
 
     // ensure AI init is done before player_init, otherwise no AI to be assigned to
     ai_init(players, MAXPLAYERS, objectives, sizeof(objectives)/sizeof(objectives[0]), 
@@ -1610,6 +1601,15 @@ void minigame_loop(float deltatime)
     // grab the colour and depth buffers and attach
     // the rdp queue in order to dispatch commands to the RDP
     rdpq_attach(display_get(), depthBuffer);
+
+    // set up the ambient light colour and the directional light colour
+    uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
+    uint8_t colorDir[4] = {0xFF, 0xAA, 0xAA, 0xFF};
+    
+    // set the lighting details
+    t3d_light_set_ambient(colorAmbient);
+    t3d_light_set_directional(0, colorDir, &lightDirVec);
+    t3d_light_set_count(1);
 
     // tell tiny3d it's time to start a new frame
     t3d_frame_start();
