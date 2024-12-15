@@ -1,4 +1,4 @@
-#include "assets.h"
+#include "Assets.h"
 
 const char *texture_path[TEXTURE_COUNT] = {
     "rom:/old_gods/panel_white_64_64.sprite",       // TEXTURE_ID_0
