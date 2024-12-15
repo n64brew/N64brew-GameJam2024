@@ -738,8 +738,8 @@ void game_init()
 #endif
 
     // Init pathfinder
-    map_width = room.w/MAP_REDUCTION_FACTOR;
-    map_height = room.h/MAP_REDUCTION_FACTOR;
+    map_width = (room.w/MAP_REDUCTION_FACTOR) + 1;
+    map_height = (room.h/MAP_REDUCTION_FACTOR) + 1;
     origin = (T3DVec3){{-map_width/2.0f, 0, -map_height/2.0f}};
     map = calloc(1, sizeof(char) * map_width * map_height);
     update_obstacles();
