@@ -21,8 +21,4 @@ ASSETS_LIST += \
 
 filesystem/tohubohu/thickhead.font64: MKFONT_FLAGS += --outline 1 --size 36
 
-<<<<<<< HEAD
-N64_CFLAGS += -fms-extensions
-=======
 build/code/tohubohu/%.o: N64_CFLAGS += -fms-extensions
->>>>>>> upstream/main
