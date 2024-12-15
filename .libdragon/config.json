@@ -1,0 +1,5 @@
+{
+  "imageName": "ghcr.io/dragonminded/libdragon:preview",
+  "vendorDirectory": "libdragon",
+  "vendorStrategy": "submodule"
+}

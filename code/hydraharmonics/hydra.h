@@ -1,0 +1,107 @@
+#ifndef HYDRA_H
+#define HYDRA_H
+
+#include "hydraharmonics.h"
+
+#define HYDRA_EATING_FRAMES 22/2
+#define HYDRA_STUN_DURATION 60
+
+typedef enum {
+	HYDRA_ANIMATION_NONE,
+	HYDRA_ANIMATION_OPEN,
+	HYDRA_ANIMATION_CLOSE,
+	HYDRA_ANIMATION_OPEN_SUCCESS,
+	HYDRA_ANIMATION_CLOSE_SUCCESS,
+	HYDRA_ANIMATION_OPEN_TO_SWAP,
+	HYDRA_ANIMATION_CLOSE_TO_SWAP,
+	HYDRA_ANIMATION_OPEN_TO_DIZZY,
+	HYDRA_ANIMATION_CLOSE_TO_DIZZY,
+	HYDRA_ANIMATION_CHEW,
+	HYDRA_ANIMATION_CHEW_TO_SWAP,
+	HYDRA_ANIMATION_CHEW_TO_DIZZY,
+	HYDRA_ANIMATION_SLEEP,
+	HYDRA_ANIMATION_STUN,
+	HYDRA_ANIMATION_STUN_LOOP,
+	HYDRA_ANIMATION_DIZZY,
+	HYDRA_ANIMATION_LOSER,
+	HYDRA_ANIMATION_SWAP_DOWN,
+	HYDRA_ANIMATION_SWAP_UP,
+	HYDRA_ANIMATION_SWAP_WAIT,
+	HYDRA_ANIMATION_GRIN,
+	HYDRA_ANIMATION_COUNT,
+} hydraharmonics_animations_t;
+
+typedef enum {
+	HYDRA_ANIMATION_LENGTH_NONE = 1,
+	HYDRA_ANIMATION_LENGTH_OPEN = 11,
+	HYDRA_ANIMATION_LENGTH_CLOSE = 11,
+	HYDRA_ANIMATION_LENGTH_OPEN_SUCCESS = HYDRA_ANIMATION_LENGTH_OPEN,
+	HYDRA_ANIMATION_LENGTH_CLOSE_SUCCESS = HYDRA_ANIMATION_LENGTH_CLOSE,
+	HYDRA_ANIMATION_LENGTH_OPEN_TO_SWAP = HYDRA_ANIMATION_LENGTH_OPEN,
+	HYDRA_ANIMATION_LENGTH_CLOSE_TO_SWAP = HYDRA_ANIMATION_LENGTH_CLOSE,
+	HYDRA_ANIMATION_LENGTH_OPEN_TO_DIZZY = HYDRA_ANIMATION_LENGTH_OPEN,
+	HYDRA_ANIMATION_LENGTH_CLOSE_TO_DIZZY = HYDRA_ANIMATION_LENGTH_CLOSE,
+	HYDRA_ANIMATION_LENGTH_CHEW = 4,
+	HYDRA_ANIMATION_LENGTH_CHEW_TO_SWAP = HYDRA_ANIMATION_LENGTH_CHEW,
+	HYDRA_ANIMATION_LENGTH_CHEW_TO_DIZZY = HYDRA_ANIMATION_LENGTH_CHEW,
+	HYDRA_ANIMATION_LENGTH_SLEEP = 4,
+	HYDRA_ANIMATION_LENGTH_STUN = 1,
+	HYDRA_ANIMATION_LENGTH_STUN_LOOP = HYDRA_ANIMATION_LENGTH_STUN,
+	HYDRA_ANIMATION_LENGTH_DIZZY = 8,
+	HYDRA_ANIMATION_LENGTH_LOSER = 8,
+	HYDRA_ANIMATION_LENGTH_SWAP_DOWN = 1,
+	HYDRA_ANIMATION_LENGTH_SWAP_UP = HYDRA_ANIMATION_LENGTH_SWAP_DOWN,
+	HYDRA_ANIMATION_LENGTH_SWAP_WAIT = HYDRA_ANIMATION_LENGTH_SWAP_DOWN,
+	HYDRA_ANIMATION_LENGTH_GRIN = 4,
+	HYDRA_ANIMATION_LENGTH_COUNT,
+} hydraharmonics_animations_length_t;
+
+typedef enum {
+	FLAIR_NONE,
+	FLAIR_CHEEK,
+	FLAIR_GRIN,
+	FLAIR_EYELID_0,
+	FLAIR_EYELID_1,
+	FLAIR_EYELID_2,
+	FLAIR_COUNT,
+	FLAIR_EYELID = FLAIR_EYELID_0,
+} hydra_flair_frames_t;
+
+#define HYDRA_ANIMATION_SUCCESS_DIFF (HYDRA_ANIMATION_OPEN_SUCCESS - HYDRA_ANIMATION_OPEN)
+#define HYDRA_ANIMATION_TO_SWAP_DIFF (HYDRA_ANIMATION_OPEN_TO_SWAP - HYDRA_ANIMATION_OPEN)
+#define HYDRA_ANIMATION_TO_DIZZY_DIFF (HYDRA_ANIMATION_OPEN_TO_DIZZY - HYDRA_ANIMATION_OPEN)
+
+typedef struct hydra_s {
+	float x, y, hat_y;
+	hydraharmonics_state_t state;
+	hydraharmonics_animations_t animation;
+	uint8_t frame;
+	uint16_t face_frame;
+	uint8_t pos, shell_pos, leg_offset_y;
+	notes_types_t last_eaten;
+    sprite_t* head_sprite;
+    sprite_t* face_sprite;
+    sprite_t* eyes_sprite;
+    sprite_t* flair_sprite[FLAIR_COUNT];
+    sprite_t* topback_sprite;
+    sprite_t* leg_sprite;
+    sprite_t* shell_sprite;
+    sprite_t* neck_sprite;
+    surface_t neck_surf;
+} hydra_t;
+
+extern hydra_t hydras[PLAYER_MAX];
+
+void hydra_init (void);
+int8_t hydra_get_hat_offset (PlyNum i);
+void hydra_adjust_hats (void);
+bool hydra_get_all_animation_states (hydraharmonics_animations_t a);
+void hydra_move (void);
+void hydra_ai (uint8_t hydra);
+void hydra_swap_start (PlyNum swap_player, notes_types_t note_type);
+void hydra_animate (PlyNum p, hydraharmonics_animations_t a);
+void hydra_shell_bounce (void);
+void hydra_draw (void);
+void hydra_clear (void);
+
+#endif
