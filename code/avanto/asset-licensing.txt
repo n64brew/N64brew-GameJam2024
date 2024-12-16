@@ -1,0 +1,83 @@
+- sauna.sprite
+  CC0
+  Modified from https://www.rawpixel.com/image/5923005
+
+- loyly.wav64
+  CC0
+  Modified from https://freesound.org/people/Nakhas/sounds/522882/
+
+- sj-polkka.xm64
+  Composition: CC0
+    modified from https://musescore.com/user/179734/scores/5907389
+  Samples: Custom open license https://freewavesamples.com/about-us-license
+    modified from samples from https://freewavesamples.com/
+
+- door.wav64
+  CC0 by w.forster.1@gmail.com
+  Modified from https://opengameart.org/content/creaky-door-hinge-spooky
+
+- pine-64-*.sprite
+  CC0 by Yughues
+  Rendered from model from https://opengameart.org/content/freebies-mundo-commissions
+
+- cabin model in map.t3dm
+  CC-BY 4.0 by T Allen Studios
+  Modified from https://opengameart.org/content/low-poly-log-cabin
+
+- cabin.sprite
+  CC-BY 4.0 by T Allen Studios
+  Modified from https://opengameart.org/content/low-poly-log-cabin
+
+- snow.sprite
+  CC0 by CryHam
+  Modified from https://opengameart.org/content/terrain-textures-pack-from-stunt-rally-23
+
+- ice-gs.sprite
+  CC0 by CryHam
+  Modified from https://opengameart.org/content/terrain-textures-pack-from-stunt-rally-23
+
+- planks-gs.sprite
+  CC-BY 3.0 by PamNawi
+  Modified from https://opengameart.org/content/handpainted-wood
+
+- metsa-4-bit-*.sprite
+  Partly C00 by Yughues and multilicense (GPL 2.0, GPL 3.0, and CC-BY-SA 3.0) by Julius
+  Rendered from models from https://opengameart.org/content/freebies-mundo-commissions
+  and https://opengameart.org/content/jkms-tree-set
+
+- water-bg.sprite
+  CC0 by Proxy Games
+  Modified from https://opengameart.org/content/water-texture-pack
+
+- finish.sprite
+  CC0 by Flávio Zavan
+
+- splash.wav64
+  CC0 by rubberduck
+  Modified from https://opengameart.org/content/40-cc0-water-splash-slime-sfx
+
+- tail.sprite
+  CC0 by Flávio Zavan
+
+- balloon.sprite
+  CC0 by Flávio Zavan
+
+- penalty.sprite
+  CC0 by Flávio Zavan
+
+- shadow.*
+  CC0 by Flávio Zavan
+
+- map.t3dm
+  CC0 by Flávio Zavan (except cabin model, see above)
+
+- unit-cube.t3dm
+  CC0 by Flávio Zavan
+
+- kiuas.sprite
+  CC0 by Flávio Zavan
+
+- guy.t3dm
+  CC0 by Flávio Zavan
+  Made with makehuman, using CC0 assets. Some animation are edits from the CMU
+  BVH dataset (license here http://mocap.cs.cmu.edu/faqs.php)
