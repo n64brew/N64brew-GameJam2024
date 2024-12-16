@@ -19,12 +19,13 @@
 #include "./frame_malloc.h"
 #include "./spark_effect.h"
 
-#define HIGH_RES    1
+bool useHighRes = false;
 
-#define HEIGHT_SCALE    1
+#define SCREEN_WIDTH    640
+#define SCREEN_HEIGHT   480
 
-#define SCREEN_WIDTH    (HIGH_RES ? 640 : 320)
-#define SCREEN_HEIGHT   (HIGH_RES ? 480 / HEIGHT_SCALE: 240)
+int screenWidth;
+int screenHeight;
 
 surface_t *depthBuffer;
 T3DViewport viewport;
@@ -86,8 +87,12 @@ void minigame_init_viewport() {
 
 void minigame_init() {
     randomSeed((int)get_ticks_us());
-    display_init(HIGH_RES ? RESOLUTION_640x480 : RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
-    redraw_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+    useHighRes = is_memory_expanded();
+    display_init(useHighRes ? RESOLUTION_640x480 : RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
+    screenWidth = useHighRes ? 640 : 320;
+    screenHeight = useHighRes ? 480 : 240;
+
+    redraw_manager_init(screenWidth, screenHeight);
     t3d_init((T3DInitParams){});
 
     collision_scene_init();
@@ -100,7 +105,7 @@ void minigame_init() {
 
     wav64_play(&rampage_assets_get()->startJingle, 2);
 
-    background_surface = surface_alloc(FMT_RGBA16, SCREEN_WIDTH, SCREEN_HEIGHT);
+    background_surface = surface_alloc(FMT_RGBA16, screenWidth, screenHeight);
 
     last_frame_time = get_ticks_ms() * (1.0f / 1000.0f);
 }
@@ -271,10 +276,10 @@ float pointLightDistance[] = {
 #define MARGIN          40
 
 struct Vector2 scorePosition[] = {
-    {MARGIN, MARGIN / HEIGHT_SCALE},
-    {SCREEN_WIDTH - (MARGIN + NUMBER_WIDTH * 2), MARGIN / HEIGHT_SCALE},
-    {SCREEN_WIDTH - (MARGIN + NUMBER_WIDTH * 2), SCREEN_HEIGHT - (MARGIN + NUMBER_HEIGHT) / HEIGHT_SCALE},
-    {MARGIN, SCREEN_HEIGHT - (MARGIN + NUMBER_HEIGHT) / HEIGHT_SCALE},
+    {MARGIN, MARGIN},
+    {SCREEN_WIDTH - (MARGIN + NUMBER_WIDTH * 2), MARGIN},
+    {SCREEN_WIDTH - (MARGIN + NUMBER_WIDTH * 2), SCREEN_HEIGHT - (MARGIN + NUMBER_HEIGHT)},
+    {MARGIN, SCREEN_HEIGHT - (MARGIN + NUMBER_HEIGHT)},
 };
 
 int get_winner_index(int index) {
@@ -296,6 +301,8 @@ uint8_t clear_shade = 128;
 #define DESTROY_SIZE_X  (348 / 2 + 2)
 #define DESTROY_SIZE_Y  (66 / 2 + 2)
 
+#define RES_SCALE(value)    (useHighRes ? (value) : ((int)((value) + 1) >> 1))
+
 void minigame_redraw_rects() {
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         rampage_player_redraw_rect(&viewport, &gRampage.players[i]);
@@ -305,10 +312,11 @@ void minigame_redraw_rects() {
         }
 
         struct RedrawRect rect;
-        rect.min[0] = scorePosition[i].x;
-        rect.min[1] = scorePosition[i].y;
-        rect.max[0] = scorePosition[i].x + 70;
-        rect.max[1] = scorePosition[i].y + 48;
+        rect.min[0] = RES_SCALE(scorePosition[i].x);
+        rect.min[1] = RES_SCALE(scorePosition[i].y);
+        rect.max[0] = RES_SCALE(scorePosition[i].x + 70);
+        rect.max[1] = RES_SCALE(scorePosition[i].y + 48);
+
         redraw_update_dirty(gRampage.score_redraw[i], &rect);
         gRampage.players[i].score_dirty -= 1;
     }
@@ -325,24 +333,24 @@ void minigame_redraw_rects() {
 
     if (gRampage.state == RAMPAGE_STATE_START) {
         struct RedrawRect rect;
-        rect.min[0] = SCREEN_WIDTH / 2 - 30;
-        rect.min[1] = SCREEN_HEIGHT / 2 - 32;
-        rect.max[0] = SCREEN_WIDTH / 2 + 30;
-        rect.max[1] = SCREEN_HEIGHT / 2 + 32;
+        rect.min[0] = (screenWidth >> 1) - RES_SCALE(30);
+        rect.min[1] = (screenHeight >> 1) - RES_SCALE(32);
+        rect.max[0] = (screenWidth >> 1) + RES_SCALE(30);
+        rect.max[1] = (screenHeight >> 1) + RES_SCALE(32);
         redraw_update_dirty(gRampage.center_text_redraw, &rect);
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
         struct RedrawRect rect;
-        rect.min[0] = SCREEN_WIDTH / 2 - DESTROY_SIZE_X;
-        rect.min[1] = SCREEN_HEIGHT / 2 - DESTROY_SIZE_Y;
-        rect.max[0] = SCREEN_WIDTH / 2 + DESTROY_SIZE_X;
-        rect.max[1] = SCREEN_HEIGHT / 2 + DESTROY_SIZE_Y;
+        rect.min[0] = (screenWidth >> 1) - RES_SCALE(DESTROY_SIZE_X);
+        rect.min[1] = (screenHeight >> 1) - RES_SCALE(DESTROY_SIZE_Y);
+        rect.max[0] = (screenWidth >> 1) + RES_SCALE(DESTROY_SIZE_X);
+        rect.max[1] = (screenHeight >> 1) + RES_SCALE(DESTROY_SIZE_Y);
         redraw_update_dirty(gRampage.center_text_redraw, &rect);
     } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
         struct RedrawRect rect;
-        rect.min[0] = SCREEN_WIDTH / 2 - DESTROY_SIZE_X;
-        rect.min[1] = SCREEN_HEIGHT / 2 - DESTROY_SIZE_Y;
-        rect.max[0] = SCREEN_WIDTH / 2 + DESTROY_SIZE_X;
-        rect.max[1] = SCREEN_HEIGHT / 2 + DESTROY_SIZE_Y;
+        rect.min[0] = (screenWidth >> 1) - RES_SCALE(DESTROY_SIZE_X);
+        rect.min[1] = (screenHeight >> 1) - RES_SCALE(DESTROY_SIZE_Y);
+        rect.max[0] = (screenWidth >> 1) + RES_SCALE(DESTROY_SIZE_X);
+        rect.max[1] = (screenHeight >> 1) + RES_SCALE(DESTROY_SIZE_Y);
         redraw_update_dirty(gRampage.center_text_redraw, &rect);
     }
 
@@ -359,7 +367,7 @@ void minigame_redraw_rects() {
         rdpq_set_scissor(rect->min[0], rect->min[1], rect->max[0], rect->max[1]);
         rspq_block_run(rampage_assets_get()->ground_cover->userBlock);
     }
-    rdpq_set_scissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    rdpq_set_scissor(0, 0, screenWidth, screenHeight);
 
     rdpq_sync_pipe();
     rdpq_sync_tile();
@@ -499,6 +507,7 @@ void minigame_loop(float deltatime) {
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,TEX0), (0,0,0,TEX0)));
+    rdpq_mode_filter(FILTER_BILINEAR);
     
     for (int i = 0; i < PLAYER_COUNT; i += 1) {
         int tens = gRampage.players[i].score / 10;
@@ -506,23 +515,25 @@ void minigame_loop(float deltatime) {
 
         rdpq_sprite_blit(
             rampage_assets_get()->score_digits[i],
-            scorePosition[i].x - 7,
-            scorePosition[i].y,
+            RES_SCALE(scorePosition[i].x - 7),
+            RES_SCALE(scorePosition[i].y),
             &(rdpq_blitparms_t) {
                 .s0 = tens * 48,
                 .width = 48,
-                .scale_y = 1.0f / HEIGHT_SCALE,
+                .scale_y = useHighRes ? 1.0f : 0.5f,
+                .scale_x = useHighRes ? 1.0f : 0.5f,
             }
         );
 
         rdpq_sprite_blit(
             rampage_assets_get()->score_digits[i],
-            scorePosition[i].x + 27.0f,
-            scorePosition[i].y,
+            RES_SCALE(scorePosition[i].x + 27.0f),
+            RES_SCALE(scorePosition[i].y),
             &(rdpq_blitparms_t) {
                 .s0 = ones * 48,
                 .width = 48,
-                .scale_y = 1.0f / HEIGHT_SCALE,
+                .scale_y = useHighRes ? 1.0f : 0.5f,
+                .scale_x = useHighRes ? 1.0f : 0.5f,
             }
         );
     }
@@ -531,43 +542,47 @@ void minigame_loop(float deltatime) {
         if (countdown_number <= 3) {
             rdpq_sprite_blit(
                 rampage_assets_get()->countdown_numbers[countdown_number],
-                SCREEN_WIDTH / 2 - 24,
-                SCREEN_HEIGHT / 2 - 30,
+                (screenWidth >> 1) - RES_SCALE(24),
+                (screenHeight >> 1) - RES_SCALE(30),
                 &(rdpq_blitparms_t) {
-                    .scale_y = 1.0f / HEIGHT_SCALE,
+                    .scale_y = useHighRes ? 1.0f : 0.5f,
+                    .scale_x = useHighRes ? 1.0f : 0.5f,
                 }
             );
         }
     } else if (gRampage.state == RAMPAGE_STATE_PLAYING && gRampage.delay_timer > 0.0f) {
         rdpq_sprite_blit(
             rampage_assets_get()->destroy_image,
-            (SCREEN_WIDTH - 348) / 2 + randomInRange(-2, 3),
-            (SCREEN_HEIGHT - 64) / 2 + randomInRange(-2, 3),
+            (screenWidth - RES_SCALE(348)) / 2 + randomInRange(-2, 3),
+            (screenHeight - RES_SCALE(64)) / 2 + randomInRange(-2, 3),
             &(rdpq_blitparms_t) {
-                .scale_y = 1.0f / HEIGHT_SCALE,
+                    .scale_y = useHighRes ? 1.0f : 0.5f,
+                    .scale_x = useHighRes ? 1.0f : 0.5f,
             }
         );
     } else if (gRampage.state == RAMPAGE_STATE_FINISHED) {
         rdpq_sprite_blit(
             rampage_assets_get()->finish_image,
-            (SCREEN_WIDTH - 237) / 2,
-            (SCREEN_HEIGHT - 62) / 2,
+            (screenWidth - RES_SCALE(237)) / 2,
+            (screenHeight - RES_SCALE(62)) / 2,
             &(rdpq_blitparms_t) {
-                .scale_y = 1.0f / HEIGHT_SCALE,
+                .scale_y = useHighRes ? 1.0f : 0.5f,
+                .scale_x = useHighRes ? 1.0f : 0.5f,
             }
         );
     } else if (gRampage.state == RAMPAGE_STATE_END_SCREEN) {
         for (int i = 0; i < gRampage.winner_count; i += 1) {
-            int x = (SCREEN_WIDTH - 288) / 2;
-            int y = SCREEN_HEIGHT / 2 - gRampage.winner_count * 32 +
-                i * 64;
+            int x = (screenWidth - RES_SCALE(288)) / 2;
+            int y = (screenHeight >> 1) - gRampage.winner_count * RES_SCALE(32) +
+                i * RES_SCALE(64);
 
             rdpq_sprite_blit(
                 rampage_assets_get()->winner_screen[get_winner_index(i)],
                 x,
                 y,
                 &(rdpq_blitparms_t) {
-                    .scale_y = 1.0f / HEIGHT_SCALE,
+                    .scale_y = useHighRes ? 1.0f : 0.5f,
+                    .scale_x = useHighRes ? 1.0f : 0.5f,
                 }
             );
         }
@@ -575,10 +590,11 @@ void minigame_loop(float deltatime) {
         if (gRampage.winner_count == 0) {
             rdpq_sprite_blit(
                 rampage_assets_get()->tie_image,
-                (SCREEN_WIDTH - 124) / 2,
-                (SCREEN_HEIGHT - 64) / 2,
+                (screenWidth - RES_SCALE(124)) / 2,
+                (screenHeight - RES_SCALE(64)) / 2,
                 &(rdpq_blitparms_t) {
-                    .scale_y = 1.0f / HEIGHT_SCALE,
+                    .scale_y = useHighRes ? 1.0f : 0.5f,
+                    .scale_x = useHighRes ? 1.0f : 0.5f,
                 }
             );
         }
