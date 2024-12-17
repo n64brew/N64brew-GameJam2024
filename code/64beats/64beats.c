@@ -10,7 +10,9 @@ the game jam.
 #include "../../minigame.h"
 #include "64beats.h"
 
+#ifndef DEBUG
 #define DEBUG false
+#endif
 
 #define FONT_TEXT 1
 
