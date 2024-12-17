@@ -256,7 +256,7 @@ bool vector3_isUnit(const Vector3 *v)
 
 bool vector3_isFinite(const Vector3 *v)
 {
-    return isfinite(v->x) && isfinite(v->y) && isfinite(v->z);
+    return isFinite(v->x) && isFinite(v->y) && isFinite(v->z);
 }
 
 bool vector3_isZero(const Vector3 *v)

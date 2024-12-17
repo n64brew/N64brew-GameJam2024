@@ -165,7 +165,7 @@ float quaternion_dotProduct(const Quaternion *q, const Quaternion *r)
 /* Checks if the quaternion's values are finite. */
 bool quaternion_isFinite(const Quaternion *q)
 {
-    return isfinite(q->x) && isfinite(q->y) && isfinite(q->z) && isfinite(q->w);
+    return isFinite(q->x) && isFinite(q->y) && isFinite(q->z) && isFinite(q->w);
 }
 
 /* Checks if the quaternion is a unit quaternion. */
