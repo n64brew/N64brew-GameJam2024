@@ -21,7 +21,7 @@ and provides a basic game loop.
 
 int main()
 {
-    #if DEBUG
+    #if DEBUG_LOG == 1
     	debug_init_isviewer();
     	debug_init_usblog();
     #endif
