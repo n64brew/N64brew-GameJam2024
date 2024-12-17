@@ -25,4 +25,7 @@
     // The current minigame you want to test
     #define MINIGAME_TO_TEST  "examplegame"
 
+    // Initialize USB and isViewer logging
+    #define DEBUG 1
+
 #endif
