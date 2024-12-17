@@ -23,7 +23,9 @@ const MinigameDef minigame_def = {
 #define WIN_DELAY		5.0f
 #define WIN_SHOW_DELAY	2.0f
 
-#define DEBUG false;
+#ifndef DEBUG
+#define DEBUG false
+#endif
 
 #define FONT_TEXT           1
 #define TEXT_COLOR          0x6CBB3CFF
