@@ -36,7 +36,8 @@ ifeq ($(DEBUG), 1)
 	N64_CFLAGS += -g -O0
 	N64_LDFLAGS += -g
 else
-	N64_CFLAGS += -O2
+	N64_CFLAGS += -O2 -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function
+	N64_CXXFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function
 endif
 
 all: $(ROMNAME).z64
