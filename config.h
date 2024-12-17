@@ -26,7 +26,7 @@
     #define MINIGAME_TO_TEST  "examplegame"
 
     // Initialize USB and isViewer logging
-    #if DEBUG == 1
+    #if defined(DEBUG) && DEBUG == 1
         #define DEBUG_LOG 1
     #else
         #define DEBUG_LOG 0 // Change this one if you just want debugf enabled
