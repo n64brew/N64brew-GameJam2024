@@ -21,7 +21,7 @@ and provides a basic game loop.
 
 int main()
 {
-    #if DEBUG
+    #if DEBUG_LOG == 1
     	debug_init_isviewer();
     	debug_init_usblog();
     #endif
@@ -30,8 +30,7 @@ int main()
     asset_init_compression(2);
     asset_init_compression(3);
     dfs_init(DFS_DEFAULT_LOCATION);
-    debug_init_usblog();
-    debug_init_isviewer();
+
     joypad_init();
     timer_init();
     rdpq_init();
@@ -104,5 +103,8 @@ int main()
             mixer_ch_stop(i);
         minigame_get_game()->funcPointer_cleanup();
         minigame_cleanup();
+
+        mixer_close();
+        mixer_init(32);
     }
 }

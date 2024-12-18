@@ -1,0 +1,8 @@
+The following images:
+    - `sb_b0.rgba32.png`
+    - `sb_b1.rgba32.png`
+    - `sb_top.rgba32.png`
+
+are attributed to this work:
+    "Juicy Strawberry Cartoon on a Transparent Background Summer Fruit Collection" by Sonika Rud
+    https://www.vecteezy.com/vector-art/19135160-juicy-strawberry-cartoon-on-a-transparent-background-summer-fruit-collection
