@@ -64,10 +64,12 @@ ASSETS_LIST += \
 filesystem/spacewaves/JupiteroidBoldItalic.font64: MKFONT_FLAGS=--size 16
 filesystem/spacewaves/Jupiteroid.font64: MKFONT_FLAGS=--size 32
 
-$(FILESYSTEM_DIR)/%.m1v: $(ASSETS_DIR)/%.m1v
+$(FILESYSTEM_DIR)/spacewaves/%.m1v: $(ASSETS_DIR)/spacewaves/%.m1v
 	@mkdir -p $(dir $@)
 	@echo "    [M1V] $@"
 	cp "$<" $@
 
 filesystem/spacewaves/machinegun_new_01.i4.sprite: MKSPRITE_FLAGS=--format I8
 filesystem/spacewaves/machinegun_new_02.i4.sprite: MKSPRITE_FLAGS=--format I8
+
+$(FILESYSTEM_DIR)/spacewaves/%.wav64: AUDIOCONV_FLAGS= --wav-compress 0
