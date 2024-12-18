@@ -294,7 +294,9 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
     wav64_close(&sfx_countdown);
     wav64_close(&sfx_stop);
     wav64_close(&sfx_winner);
+    mixer_ch_stop(0);
     wav64_close(&music_2);
+    wav64_close(&sfx_startButton);
 }
 
 //======= SETUP HELPERS ========
@@ -734,6 +736,7 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     // only call this once
     // TODO: tidy this up
     if(isDeclaredWinner == FALSE){
+        mixer_ch_stop(0);
         wav64_close(&music_2);
         wav64_play(&sfx_winner, 31);
         //xm64player_stop(&music);
@@ -745,12 +748,14 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     for(int i = 0; i < PLAYER_COUNT; ++i){
         // detect start button pressed to restart the game
         if(_appData->input.keys[i][A_KEY].pressed == TRUE){
-            gameplayData->gameState = GAME_STATE_GAME_RESTART;
+            gameplayData->gameState = GAME_STATE_GAME_END;
+            core_set_winner(playerWithHighestScore);
+            minigame_end(); 
         }
 
         // Let the game jam template handle the game ending
         if(_appData->input.keys[i][START_KEY].pressed == TRUE){
-            debugf("End minigame\n");
+            //debugf("End minigame\n");
             gameplayData->gameState = GAME_STATE_GAME_END;
             core_set_winner(playerWithHighestScore);
             minigame_end(); 

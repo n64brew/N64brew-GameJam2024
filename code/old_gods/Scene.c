@@ -1108,6 +1108,8 @@ void Scene_SetupSharks(AppData* _appData){
     // create the shark home
     sharkHomeEntity = AF_ECS_CreateEntity(&_appData->ecs);
     sharkHomeEntity->transform->pos = sharkHunterSpawnPos;
+    sharkHomeEntity->rigidbody->inverseMass = 0.0f;
+    sharkHomeEntity->rigidbody->isKinematic = TRUE;
     // ==== Hunter Shark ====
     // 1 for each player
     for(int i = 0; i < PLAYER_COUNT; ++i){

@@ -19,13 +19,15 @@ Tiny3D rendering functions
 #include <t3d/t3danim.h>
 #include <t3d/t3ddebug.h>
 #include <t3d/tpx.h>
-#include "Assets.h"
 
 
 #define DEBUG_RDP 0
 #define DEBUG_CAM_ON 1
 #define DEBUG_CAM_OFF 0
 uint8_t debugCam = DEBUG_CAM_OFF;
+
+
+
 
 
 #define RAD_360 6.28318530718f
@@ -133,7 +135,7 @@ unused
 */
 uint32_t AF_LoadTexture(const char* _texturePath){
     
-   debugf("AF_Renderer_T3D: AF_LoadTexture: To be implemented\n");
+   //debugf("AF_Renderer_T3D: AF_LoadTexture: To be implemented\n");
    return 0;
 }
 
@@ -144,7 +146,6 @@ AF_Renderer_LoadAnimation
 ====================
 */
 void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){  
-
     // return if model doesn't have a skeleton
     // TODO: fix this
 
@@ -162,17 +163,17 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
     // Note that tiny3d internally keeps no track of animations, it's up to the user to manage and play them.
     // create idle animation   
 
+    // TODO: for some reason, the animations may not correctly release their memory. Usnure why
+    
     animIdles[_i] = t3d_anim_create((T3DModel*)_animation->model, idlePath);// "Snake_Idle");
     _animation->idleAnimationData = (void*)&animIdles[_i];
     // attatch idle animation
     t3d_anim_attach(&animIdles[_i], &skeletons[_i]); // tells the animation which skeleton to modify
-
     // Create walk animation
     animWalks[_i] = t3d_anim_create((T3DModel*)_animation->model, walkPath);//"Snake_Walk");
     _animation->walkAnimationData = (void*)&animWalks[_i];
     // attatch walk animation
     t3d_anim_attach(&animWalks[_i], &skeletonBlends[_i]);
-
     // multiple animations can attach to the same skeleton, this will NOT perform any blending
     // rather the last animation that updates "wins", this can be useful if multiple animations touch different bones
     // Create attack animation
@@ -181,7 +182,6 @@ void AF_Renderer_LoadAnimation(AF_CSkeletalAnimation* _animation, int _i){
 
     // attatch attack animation
     t3d_anim_attach(&animAttacks[_i], &skeletons[_i]);
-
     // setup attack animation
     t3d_anim_set_looping(&animAttacks[_i], false); // don't loop this animation
     t3d_anim_set_playing(&animAttacks[_i], false); // start in a paused state
@@ -198,12 +198,13 @@ void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
     //testScrollValue = malloc_uncached(sizeof(float));
     //*testScrollValue = 0;
     assert(_ecs != NULL && "AF_Renderer_T3D: Renderer_Init has null ecs referenced passed in \n");   	
-	debugf("InitRendering\n");
+	//debugf("InitRendering\n");
 
     // Tindy 3D Init stuff
-    t3d_init((T3DInitParams){}); // Init library itself, use empty params for default settings
+    //t3d_init((T3DInitParams){}); // Init library itself, use empty params for default settings
    
    
+    
     // bulk load an instance of each model type only once.
     for(int i = 0; i < MODEL_COUNT; ++i){
          models[i] = t3d_model_load(model_paths[i]);
@@ -233,7 +234,7 @@ void AF_Renderer_Init(AF_ECS* _ecs, Vec2 _screenSize){
     //t3d_light_set_directional(0, colorDir, &lightDirVec); 
     t3d_light_set_count(1);
     //dplDraw = NULL;
-
+    
 
     
 }
@@ -253,8 +254,7 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
     int totalNormalMeshCommands = 0;
     int totalDrawCommands = 0;
 
-    rspq_block_begin();
-   
+    // Load the skinned meshes, and setup memory
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
         
@@ -268,14 +268,48 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             
             if(hasSkeletalComponent == TRUE && isEnabled == TRUE){
                 skeletalAnimation->model = (void*)models[mesh->meshID];
-                AF_Renderer_LoadAnimation(skeletalAnimation, i);
+                
+                //if(ENABLE_ANIMATION == TRUE){
+                    AF_Renderer_LoadAnimation(skeletalAnimation, i);
+                //}
+                
                 // ============ MESH ==============
                 // Only process the entities that have mesh componets with a mesh
                 // initialise modelsMat
                 // TODO: i don't like this
+                
                 T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
                 mesh->modelMatrix = (void*)meshMat;
+            }
+        }
+    }
 
+   // Store Skinned Mesh rspq commands
+    rspq_block_begin();
+    for(int i=0; i<_ecs->entitiesCount; ++i) {
+        AF_CMesh* mesh = &_ecs->meshes[i];
+        
+        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+            
+            // ========== ANIMATIONS =========
+            // Process objects that have skeletal animations
+            AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+            BOOL hasSkeletalComponent = AF_Component_GetHas(skeletalAnimation->enabled);
+            BOOL isEnabled = AF_Component_GetEnabled(skeletalAnimation->enabled);
+            
+            if(hasSkeletalComponent == TRUE && isEnabled == TRUE){
+                //skeletalAnimation->model = (void*)models[mesh->meshID];
+                
+                //AF_Renderer_LoadAnimation(skeletalAnimation, i);
+                // ============ MESH ==============
+                // Only process the entities that have mesh componets with a mesh
+                // initialise modelsMat
+                // TODO: i don't like this
+                
+                //T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
+                //mesh->modelMatrix = (void*)meshMat;
+
+               
                 if(hasSkeletalComponent == TRUE){
                     t3d_matrix_push(mesh->modelMatrix);
                     color_t color ={mesh->material.color.r, mesh->material.color.g, mesh->material.color.b, mesh->material.color.a};
@@ -301,15 +335,14 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
             
         }
     }
+
     skinnedBufferList = rspq_block_end();
 
     // ==== STATIC MESH DRAWING ====
-    rspq_block_begin();
+    // Setup the static meshes malloc mesh data
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
-        
         if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
-            
             // ========== ANIMATIONS =========
             // Process objects that have skeletal animations
             AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
@@ -323,6 +356,28 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 // TODO: i don't like this
                 T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
                 mesh->modelMatrix = (void*)meshMat;
+
+            }
+        }
+    }
+
+    rspq_block_begin();
+    for(int i=0; i<_ecs->entitiesCount; ++i) {
+        AF_CMesh* mesh = &_ecs->meshes[i];
+        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+            // ========== ANIMATIONS =========
+            // Process objects that have skeletal animations
+            AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
+            BOOL hasSkeletalComponent = AF_Component_GetHas(skeletalAnimation->enabled);
+            //BOOL isEnabled = AF_Component_GetEnabled(skeletalAnimation->enabled);
+        
+            if(hasSkeletalComponent == FALSE){
+                // ============ MESH ==============
+                // Only process the entities that have mesh componets with a mesh
+                // initialise modelsMat
+                // TODO: i don't like this
+                //T3DMat4FP* meshMat = malloc_uncached(sizeof(T3DMat4FP));
+                //mesh->modelMatrix = (void*)meshMat;
                
                 //rspq_block_begin();
             
@@ -349,8 +404,8 @@ void AF_Renderer_LateStart(AF_ECS* _ecs){
                 //mesh->displayListBuffer = (void*)rspq_block_end();
         }
     }
-    debugf("TotalDraw Commands: %i\nTotal Skinned mesh commands: %i\nTotal normal Mesh commands: %i\n", totalDrawCommands, totalSkinnedMeshCommands, totalNormalMeshCommands);
     staticBufferList = rspq_block_end();
+    
 }
 /*
 ====================
@@ -396,15 +451,22 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
             
             // ======== ANIMATION ========
             AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
-            assert(skeletalAnimation != NULL);
-            
+            //assert(skeletalAnimation != NULL);
+            if(skeletalAnimation == NULL){
+                debugf("AF_Renderer_Update: trying to update a null skeletal animation \n");
+                return;
+            }
+
             if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
                 // update animation speed based on the movement velocity
                 skeletalAnimation->animationSpeed = Vec3_MAGNITUDE(_ecs->rigidbodies[i].velocity);
                 
                 Renderer_UpdateAnimations( skeletalAnimation, _time->timeSinceLastFrame);
                 // this is expensive.
-                t3d_skeleton_update(skeletalAnimation->skeleton);
+                if(skeletalAnimation->skeleton != NULL){
+                    t3d_skeleton_update(skeletalAnimation->skeleton);
+                }
+                
             }
    
             // ======== MODELS ========
@@ -497,12 +559,14 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     for(int i=0; i<_ecs->entitiesCount; ++i) {
         AF_CMesh* mesh = &_ecs->meshes[i];
         
-        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+        //if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+        if((AF_Component_GetHas(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
             AF_CAnimation* animation = _ecs->entities[i].animation;
             BOOL hasMesh = AF_Component_GetHas(_ecs->entities[i].mesh->enabled);
             BOOL isEnabled = AF_Component_GetEnabled(_ecs->entities[i].mesh->enabled);
             BOOL hasAnimation = AF_Component_GetHas(_ecs->entities[i].animation->enabled);
             if(hasMesh == TRUE && hasAnimation == TRUE && isEnabled == TRUE){
+            
                 if(mesh->meshID == MODEL_FOAM || mesh->meshID == MODEL_TRAIL || MODEL_ATTACK_WAVE){
                     // do special drawing for foam.
                     T3DMat4FP* meshMat = (T3DMat4FP*)mesh->modelMatrix;
@@ -541,6 +605,7 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
     rendererDebugData.totalRenderTime = get_time_ms() - rendererDebugData.totalRenderTime;
     
     // ======== DEBUG Editor =========
+    /*
     joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     // TODO: Move this to outside renderer
     if (pressed1.c_up & 1) {
@@ -551,9 +616,10 @@ void AF_Renderer_Update(AF_ECS* _ecs, AF_Time* _time){
         }
     }
 
-    if(debugCam == DEBUG_CAM_ON){
+    if(debugCam == DEBUG_CAM_ON ){
         Renderer_DebugCam(&rendererDebugData);
     }
+    */
 }
 
 /*
@@ -587,6 +653,9 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     T3DAnim* animAttackData = (T3DAnim*)_animation->attackAnimationData;
     T3DAnim* animIdleData = (T3DAnim*)_animation->idleAnimationData;
     T3DAnim* animWalkData = (T3DAnim*)_animation->walkAnimationData;
+    if(animAttackData == NULL || animAttackData == NULL || animWalkData == NULL){
+        return;
+    }
     
     if(animIdleData->isPlaying == TRUE ){
         t3d_anim_update(animIdleData, _dt);
@@ -602,7 +671,6 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     //if attacking
     
     if(animAttackData->isPlaying){
-        //debugf("Update animation %f \n", _dt);
         t3d_anim_update(animAttackData, _dt);
     }
     
@@ -611,6 +679,9 @@ void Renderer_UpdateAnimations(AF_CSkeletalAnimation* _animation, float _dt){
     T3DSkeleton* skeleton = (T3DSkeleton*)_animation->skeleton;
     T3DSkeleton* skeletonBlend = (T3DSkeleton*)_animation->skeletonBlend;
 
+    if(skeleton == NULL || skeletonBlend == NULL){
+        return;
+    }
     t3d_skeleton_blend(skeleton, skeleton, skeletonBlend, _animation->animationBlend);
     
     //if(syncPoint)rspq_syncpoint_wait(syncPoint); // wait for the RSP to process the previous frame
@@ -697,52 +768,73 @@ Do shutdown things
 ====================
 */
 void AF_Renderer_Shutdown(AF_ECS* _ecs){
-   debugf("AF_Renderer_T3D: Shutdown\n");
+   //debugf("AF_Renderer_T3D: Shutdown\n");
 
     // Free the display buffers
-    rspq_block_free(skinnedBufferList);
-    rspq_block_free(staticBufferList);
+    if(skinnedBufferList != NULL && staticBufferList != NULL){
+        rspq_block_free(skinnedBufferList);
+        rspq_block_free(staticBufferList);
+    }else{
+        debugf("AF_Renderer_Shutdown: Freeing NULL rspq buffer\n");
+    }
+    
+    
     //rspq_block_free(scrollingBufferUVList);
 
-    for (int i = 0; i < MODEL_COUNT; ++i){
-      //free(models[i]);
-      debugf("AF_Renderer_T3D: freeing models %i\n", i);
-      t3d_model_free(models[i]);
-    }
+    
     // free the malloc'd mat4s matrix's
     for(int i = 0; i < AF_ECS_TOTAL_ENTITIES; ++i){
         AF_CMesh* mesh = &_ecs->meshes[i];
         
-        if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
-            debugf("AF_Renderer_T3D: freeing model matrix's %i\n", i);
-            free_uncached(mesh->modelMatrix);
+        //if((AF_Component_GetHas(mesh->enabled) == TRUE) && (AF_Component_GetEnabled(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+        if((AF_Component_GetHas(mesh->enabled) == TRUE) && mesh->meshType == AF_MESH_TYPE_MESH){
+
+            //debugf("AF_Renderer_T3D: freeing model matrix's %i\n", i);
+            if(mesh->modelMatrix != NULL){
+                free_uncached(mesh->modelMatrix);
+            }
         }
         
         // Free the skeltons
         AF_CSkeletalAnimation* skeletalAnimation = &_ecs->skeletalAnimations[i];
-        if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
-            debugf("AF_Renderer_T3D: destroying skeltons %i \n", i);
+        BOOL hasSkeletalAnimation = AF_Component_GetHas(skeletalAnimation->enabled);
+        if(hasSkeletalAnimation == TRUE){
+        //if(AF_Component_GetHas(skeletalAnimation->enabled) == TRUE){
+            //debugf("AF_Renderer_T3D: destroying skeltons %i \n", i);
             T3DSkeleton* skelton = (T3DSkeleton*) skeletalAnimation->skeleton;
             T3DSkeleton* skelBlend = (T3DSkeleton*) skeletalAnimation->skeletonBlend;
             T3DAnim* animIdle = (T3DAnim*) skeletalAnimation->idleAnimationData;
             T3DAnim* animAttack = (T3DAnim*) skeletalAnimation->attackAnimationData;
             T3DAnim* animWalk = (T3DAnim*) skeletalAnimation->walkAnimationData;
-
+            /*
+            if(skelton == NULL || skelBlend == NULL || animIdle == NULL || animAttack == NULL || animWalk == NULL){
+                continue;
+            }*/
             // destroy the skeletons
+            //if(skelton != NULL && skelBlend != NULL && animIdle != NULL && animAttack != NULL && animWalk != NULL){
+                
             t3d_skeleton_destroy(skelton);
             t3d_skeleton_destroy(skelBlend);
             
             // Destroy the animations
             t3d_anim_destroy(animIdle);
-            t3d_anim_destroy(animAttack);
+                
             t3d_anim_destroy(animWalk);
+            
+            
+            t3d_anim_destroy(animAttack);
         }
     }
 
-        
-    //free_uncached(testScrollValue);
-
-    t3d_destroy();
+    // Free the models
+    for (int i = 0; i < MODEL_COUNT; ++i){
+      //free(models[i]);
+      //debugf("AF_Renderer_T3D: freeing models %i\n", i);
+      if(models[i] != NULL){
+        t3d_model_free(models[i]);
+      }
+      
+    }
 }
 
 // Chat GPT
@@ -769,7 +861,7 @@ void AF_Renderer_PlayAnimation(AF_CSkeletalAnimation* _animation){
     //debugf("AF_Renderer_PlayAnimation: state %s\n", animAttackData->isPlaying ? "true" : "false");//animAttacks[MODEL_SNAKE].isPlaying ? "true" : "false");
     // Don't progress if animation data isn't setup
     if(animAttackData == NULL){
-      //return;
+      return;
     }
 
       
