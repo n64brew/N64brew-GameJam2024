@@ -2,6 +2,7 @@
 #define __RAMPAGE_ASSETS_H__
 
 #include <t3d/t3dmodel.h>
+#include <stdbool.h>
 
 #define COUNTDOWN_NUMBER_COUNT  6
 
@@ -44,7 +45,7 @@ struct RampageAssets {
     wav64_t startJingle;
 };
 
-void rampage_assets_init();
+void rampage_assets_init(bool useHighRes);
 void rampage_assets_destroy();
 
 struct RampageAssets* rampage_assets_get();

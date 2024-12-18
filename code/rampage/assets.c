@@ -38,7 +38,7 @@ static const char* building_models[] = {
     "rom:/rampage/building_3story.t3dm",
 };
 
-void rampage_assets_init() {
+void rampage_assets_init(bool useHighRes) {
     for (int i = 0; i < BUILDING_HEIGHT_STEPS; i += 1) {
         gRampageAssets.building[i] = t3d_model_load(building_models[i]);
         rampage_model_separate_material(gRampageAssets.building[i], &gRampageAssets.buildingSplit[i]);
@@ -84,17 +84,21 @@ void rampage_assets_init() {
     }
 
     for (int i = 0; i < 4; i += 1) {
-        char filename[32];
+        char filename[64];
         sprintf(filename, "rom:/rampage/score-p%d.sprite", i);
         gRampageAssets.score_digits[i] = sprite_load(filename);
 
-        sprintf(filename, "rom:/rampage/winner-%d.sprite", i);
+        if (useHighRes) {
+            sprintf(filename, "rom:/rampage/winner-%d.sprite", i);
+        } else {
+            sprintf(filename, "rom:/rampage/winner-%d-low.sprite", i);
+        }
         gRampageAssets.winner_screen[i] = sprite_load(filename);
     }
 
-    gRampageAssets.destroy_image = sprite_load("rom:/rampage/destroy.sprite");
+    gRampageAssets.destroy_image = sprite_load(useHighRes ? "rom:/rampage/destroy.sprite" : "rom:/rampage/destroy-low.sprite");
     gRampageAssets.tie_image = sprite_load("rom:/rampage/tie.sprite");
-    gRampageAssets.finish_image = sprite_load("rom:/rampage/finish.sprite");
+    gRampageAssets.finish_image = sprite_load(useHighRes ? "rom:/rampage/finish.sprite" : "rom:/rampage/finish-low.sprite");
 
     wav64_open(&gRampageAssets.music, "rom:/rampage/stompin.wav64");
 
