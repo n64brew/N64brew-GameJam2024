@@ -42,8 +42,8 @@ filesystem/old_gods/Jumpman_P.font64: MKFONT_FLAGS += --outline -1 --size 32 --c
 # UNFLoader files
 UNFLLOADER_DIR = code/old_gods/UNFLoader/
 DEBUGFILES = $(UNFLLOADER_DIR)debug.c $(UNFLLOADER_DIR)usb.c
-CFLAGS += -Icode/old_gods/AF_Math/include -Icode/old_gods/AF_Lib/include -I$(UNFLLOADER_DIR)
-
+CFLAGS += -Icode/old_gods/AF_Math/include -Icode/old_gods/AF_Lib/include 
+#-I$(UNFLLOADER_DIR)
 #==== CREDITS =====
 # SOUNDS
 # pick cup rat Credits: Vinrax (CC-BY 3.0) https://opengameart.org/content/paper-crush-sounds
