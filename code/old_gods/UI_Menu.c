@@ -638,9 +638,8 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
             mixer_ch_stop(UI_MUSIC_CH);
             // play the music
             wav64_play(&music_2, UI_MUSIC_CH);
+            isMusicPlaying = TRUE;
         }
-        
-        isMusicPlaying = TRUE;
     }
     
 
@@ -776,10 +775,9 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
             mixer_ch_stop(UI_FX_CH);
             // play the winner track
             wav64_play(&sfx_winner, UI_FX_CH);
+            isMusicPlaying = FALSE;
         }
-
         isDeclaredWinner = TRUE;
-        isMusicPlaying = FALSE;
     }
    
     
@@ -835,7 +833,7 @@ void UI_Menu_RenderCountdown(AppData* _appData){
     // this will only play once
     if(ENABLE_SOUND == TRUE){
         // stop the music if its already playing
-        mixer_ch_stop(UI_MUSIC_CH);
+        //mixer_ch_stop(UI_MUSIC_CH);
         // incase some other FX is already playing
         mixer_ch_stop(UI_FX_CH);
         // play the start sound
