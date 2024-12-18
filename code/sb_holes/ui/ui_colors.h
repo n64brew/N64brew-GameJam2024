@@ -80,11 +80,11 @@ extern "C"
             0x01009AFF, // N_BLUE
     };
 
-    inline color_t ui_color(int colorIdx);
+    color_t ui_color(int colorIdx);
     uint32_t ui_colorSetAlpha(uint32_t color, uint8_t alpha);
 
     // Creates a color_t from one of the 32-bit packed COLORS.
-    inline color_t ui_color(int colorIdx)
+    color_t ui_color(int colorIdx)
     {
         return color_from_packed32(COLORS[colorIdx]);
     }

@@ -201,3 +201,10 @@ void gfx_close(){
     
     if(modelMatFP) free_uncached(modelMatFP);
 }
+
+/* Extern inline instantiations. */
+extern inline bool gfx_pos_within_viewport(float x, float y);
+extern inline bool gfx_pos_within_rect(float x, float y, float xa, float ya, float xb, float yb);
+extern inline float lerp(float a, float b, float t);
+extern inline float fclampr(float x, float min, float max);
+extern inline float fwrap(float x, float min, float max);
