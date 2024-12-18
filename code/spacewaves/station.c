@@ -45,6 +45,7 @@ void station_close(){
         station.arm.rockets[p].enabled = false;
         station.arm.bullets[p].enabled = false;
     }
+    if(station.arm.rocketdl) rspq_block_free(station.arm.rocketdl);
 }
 
 void station_update(){
