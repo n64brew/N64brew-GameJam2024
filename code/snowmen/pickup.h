@@ -46,12 +46,13 @@ typedef struct PickupStruct{
     struct SpawnLocation *spawnLocationPtr;
     T3DVec3 Rotation;
     float scale;
+    rspq_block_t* dplAltSnowball;
 } PickupStruct;
 
 
 void CreatePickup(struct PickupStruct* pickupStruct);
 
-void PickupInit(struct PickupStruct* pickupStruct, enum EPickUpType pickupType);
+void PickupInit(struct PickupStruct* pickupStruct, enum EDecorationType decoType);
 
 void PickupLoop(struct PickupStruct* pickupStruct, Camera* camera, float deltaTime, T3DViewport* viewport);
 

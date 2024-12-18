@@ -1102,16 +1102,16 @@ void minigame_init()
 
     // Here we allocate multiple viewports to render to different parts of the screen
     // This isn't really any different to other examples, just that we have 3 of them now
-    viewports[0] = t3d_viewport_create();
-    viewports[1] = t3d_viewport_create();
-    viewports[2] = t3d_viewport_create();
-    viewports[3] = t3d_viewport_create();
+    //viewports[0] = t3d_viewport_create();
+    //viewports[1] = t3d_viewport_create();
+    //viewports[2] = t3d_viewport_create();
+    //viewports[3] = t3d_viewport_create();
 
-    t3d_viewport_set_area(&viewports[0], 0,       0,       sizeX/2, sizeY/2);
+    /*t3d_viewport_set_area(&viewports[0], 0,       0,       sizeX/2, sizeY/2);
     t3d_viewport_set_area(&viewports[1], sizeX/2, 0,       sizeX/2, sizeY/2);
     t3d_viewport_set_area(&viewports[2], 0,       sizeY/2, sizeX/2,   sizeY/2-2);
     t3d_viewport_set_area(&viewports[3], sizeX/2,       sizeY/2, sizeX/2,   sizeY/2-2);
-
+*/
     fullScreen = true;
     t3d_init((T3DInitParams){});
     viewportFullScreen = t3d_viewport_create();
@@ -1218,9 +1218,9 @@ void minigame_init()
 
 
     camera1 = CreateCamera();
-    camera2 = CreateCamera();
-    camera3 = CreateCamera();
-    camera4 = CreateCamera();
+    //camera2 = CreateCamera();
+    //camera3 = CreateCamera();
+    //camera4 = CreateCamera();
 
     camera1.cameraFront = (T3DVec3) {{0.f, -1.f, -0.27f}};
     fast_vec3_norm(&camera1.cameraFront);
@@ -1251,15 +1251,12 @@ void minigame_init()
         }
     }
 
-    //players[1].isAI = true;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //players[2].isAI = true;
-    //players[3].isAI = true;
     
 
     for(int i = 0; i < 3; i++)
     {
         CreatePickup(&snowballs[i]);
-        PickupInit(&snowballs[i], EPUT_Snowball);
+        PickupInit(&snowballs[i], EDT_Empty);
         T3DVec3 temp = snowballs[i].pickupActor.Position;
         temp.v[0] += 50.f * i;
         PickupSetLocation(&snowballs[i], &temp);//Does this even do anything???
@@ -1306,9 +1303,9 @@ void minigame_init()
 
     //PlayerInit(&playerStruct1);
     CameraInit(&camera1, &players[0].PlayerActor);
-    CameraInit(&camera2, &players[1].PlayerActor);
-    CameraInit(&camera3, &players[2].PlayerActor);
-    CameraInit(&camera4, &players[3].PlayerActor);
+    //CameraInit(&camera2, &players[1].PlayerActor);
+    //CameraInit(&camera3, &players[2].PlayerActor);
+    //CameraInit(&camera4, &players[3].PlayerActor);
 
 
 
@@ -1522,7 +1519,14 @@ void draw_loop(bool showText, float deltaTime)
                 if (snowballs[i].pickupState != EPUS_Inactive)
                 {
                     PickupUpdateModel(&snowballs[i]);
-                    rspq_block_run(snowballs[i].pickupActor.dpl);
+                    if ((int) GameTimer % 2 == 1 && snowballs[i].pickupState == EPUS_Idle)
+                    {
+                        rspq_block_run(snowballs[i].dplAltSnowball);
+                    }
+                    else
+                    {
+                        rspq_block_run(snowballs[i].pickupActor.dpl);
+                    }
                 }
                 //rspq_block_run(decorations[i].pickupActor.dpl);
             }
@@ -1785,6 +1789,17 @@ void GameOver(float deltatime)
             if (numWinners == -1)
             {
                 numWinners = DecideWinner(points, winners);
+                int tempNumWinners = numWinners;
+                int i = 0;
+                while (tempNumWinners > 0)
+                {
+                    if (winners[i] == true)
+                    {
+                        core_set_winner(i);
+                        tempNumWinners--;
+                    }
+                    i++;
+                }
                 wav64_play(&sfx_winner, 31);
             }
             WinnerDelay -= deltatime;
@@ -1809,20 +1824,21 @@ void minigame_fixedloop(float deltatime)
 {
     if (TitleScreen)
     {
-        joypad_inputs_t joypad[4];
+        //joypad_inputs_t joypad[4];
         joypad_buttons_t btn[4];
-        joypad_buttons_t held[4];
+        //joypad_buttons_t held[4];
 
         for(int i = 0; i < 4; i++)
         {
-            joypad[i] = joypad_get_inputs(core_get_playercontroller(i));
+            //joypad[i] = joypad_get_inputs(core_get_playercontroller(i));
             btn[i] = joypad_get_buttons_pressed(core_get_playercontroller(i));
-            held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
+            //held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
         }
 
         if (btn[0].start || btn[1].start || btn[2].start || btn[3].start)
         {
             TitleScreen = false;
+            //minigame_end();
         }
         return;
     }
@@ -1928,7 +1944,7 @@ void minigame_fixedloop(float deltatime)
             //if active snowballs < 3 then spawn one at random location
             SpawnSnowball();
         }
-        if ((int) GameTimer != (int) (prevTime))//make more complex
+        /*if ((int) GameTimer != (int) (prevTime))//make more complex
         {
             color_t newColor = RGBA32(255, 255, 255, 255);
             if ((int) GameTimer % 2 == 1)
@@ -1941,7 +1957,7 @@ void minigame_fixedloop(float deltatime)
                 if (snowballs[i].pickupState == EPUS_Idle)
                 SnowballSwapColours(&snowballs[i], newColor);
             }
-        }
+        }*/
     }
 
 

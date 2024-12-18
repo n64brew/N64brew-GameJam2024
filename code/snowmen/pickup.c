@@ -41,9 +41,16 @@ pickupStruct->Rotation = (T3DVec3) {{0.f, 0.f, 0.f}};
     pickupStruct->maxSnowballSize = 10.f;
 }
 
-void PickupInit(struct PickupStruct* pickupStruct, enum EPickUpType type)
+void PickupInit(struct PickupStruct* pickupStruct, enum EDecorationType decoType)
 {
-    pickupStruct->pickupType = type;
+    if (decoType == EDT_Empty)
+    {
+        pickupStruct->pickupType = EPUT_Snowball;
+    }
+    else
+    {
+        pickupStruct->pickupType = EPUT_Decoration;
+    }
     pickupStruct->snowballSize = 5.f;
     pickupStruct->maxSnowballSize = 10.f;
     pickupStruct->holdingPlayerStruct = NULL;
@@ -64,18 +71,19 @@ void PickupInit(struct PickupStruct* pickupStruct, enum EPickUpType type)
         
 
 
-    if (pickupStruct->pickupType == EPUT_Decoration)
+    /*if (pickupStruct->pickupType == EPUT_Decoration)
     {
         pickupStruct->decorationType = EDT_Decoration1;
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/box.t3dm");
+        //pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/box.t3dm");
     }
     else
     {
         pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/pickup_snowball.t3dm");
-    }
+    }*/
+   PickupSetType(pickupStruct, decoType);
 
     //Create Display List, only done once for each model.
-    rspq_block_begin();
+    /*rspq_block_begin();
     t3d_matrix_push(pickupStruct->pickupActor.TransformFP);//push the transformation matrix we created, 
         //can alernatively push(1) and then set the mat you want t3d_matrix_set(,)
         if (pickupStruct->pickupType == EPUT_Decoration)
@@ -90,19 +98,19 @@ void PickupInit(struct PickupStruct* pickupStruct, enum EPickUpType type)
         t3d_model_draw(pickupStruct->pickupActor.model);// Draw Static Mesh
         //t3d_model_draw_skinned(playerStruct->PlayerActor.model, &playerStruct->skel);// Draw skinned mesh with main skeleton.  
     t3d_matrix_pop(1);// must also pop it when done
-    pickupStruct->pickupActor.dpl = rspq_block_end();
+    pickupStruct->pickupActor.dpl = rspq_block_end();*/
 
     PickupDeactivate(pickupStruct);
 }
 
 void SnowballSwapColours(struct PickupStruct* pickupStruct, color_t ballColor)
 {
-    rspq_block_begin();
+    /*rspq_block_begin();
     t3d_matrix_push(pickupStruct->pickupActor.TransformFP);
         rdpq_set_prim_color(ballColor);
     t3d_model_draw(pickupStruct->pickupActor.model);// Draw Static Mesh
     t3d_matrix_pop(1);// must also pop it when done
-    pickupStruct->pickupActor.dpl = rspq_block_end();
+    pickupStruct->pickupActor.dpl = rspq_block_end();*/
 }
 
 
@@ -147,7 +155,6 @@ void PickupLoop(struct PickupStruct* pickupStruct, Camera* camera, float deltaTi
                 pickupStruct->pickupActor.Position.v[2] += NewDirection.v[2] * 15.f;
                 //pickupStruct->pickupActor.Position.v[1]+=20.f;
                 //debugf("")
-
             }
         }
         else
@@ -486,54 +493,91 @@ void PickupSetType(struct PickupStruct* pickupStruct, enum EDecorationType decor
 
     color_t color = color_from_packed32(0x000000<<8);
 
-    switch (pickupStruct->decorationType)
+    /*if (pickupStruct->pickupActor.model != NULL)
     {
-    case EDT_Decoration1:
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_rock_1.t3dm");
-        color = color_from_packed32(0x4a4a4a<<8);
-        break;
-    case EDT_Decoration2:
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_carrot.t3dm");
-        color = color_from_packed32(0xdb741a<<8);
-        break;
-    case EDT_Decoration3:
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_mitt.t3dm");
-        color = color_from_packed32(0xc75292<<8);
-        break;
-    case EDT_Decoration4:
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_hat.t3dm");
-        color = color_from_packed32(0xffffff<<8);
-        break;
-    case EDT_Decoration5:
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_scarf.t3dm");
-        color = color_from_packed32(0xb02e20<<8);
-        break;
-    case EDT_Decoration6:
-        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_stick.t3dm");
-        color = color_from_packed32(0x704022<<8);
-        break;
-    
-    default:
-        break;
+        t3d_model_free(pickupStruct->pickupActor.model);
+    }*/
+
+    if (pickupStruct->pickupType == EPUT_Decoration)
+    {
+        switch (pickupStruct->decorationType)
+            {
+            case EDT_Decoration1:
+                pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_rock_1.t3dm");
+                color = color_from_packed32(0x4a4a4a<<8);
+                break;
+            case EDT_Decoration2:
+                pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_carrot.t3dm");
+                color = color_from_packed32(0xdb741a<<8);
+                break;
+            case EDT_Decoration3:
+                pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_mitt.t3dm");
+                color = color_from_packed32(0xc75292<<8);
+                break;
+            case EDT_Decoration4:
+                pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_hat.t3dm");
+                color = color_from_packed32(0xffffff<<8);
+                break;
+            case EDT_Decoration5:
+                pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_scarf.t3dm");
+                color = color_from_packed32(0xb02e20<<8);
+                break;
+            case EDT_Decoration6:
+                pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_stick.t3dm");
+                color = color_from_packed32(0x704022<<8);
+                break;
+            
+            default:
+                break;
+            }
     }
+    else
+    {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/pickup_snowball.t3dm");
+        color = RGBA32(255, 255, 255, 255);
 
         rspq_block_begin();
-        t3d_matrix_push(pickupStruct->pickupActor.TransformFP);//push the transformation matrix we created, 
-        //can alernatively push(1) and then set the mat you want t3d_matrix_set(,)
-        if (pickupStruct->pickupType == EPUT_Decoration)
-        {
-            //rdpq_set_prim_color(color_from_packed32(0x4a4a4a<<8));
-            rdpq_set_prim_color(color);
-        }
-        else
-        {
-            pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/pickup_snowball.t3dm");
-            color = RGBA32(255, 255, 255, 255);
-            rdpq_set_prim_color(color);
-        }
+            t3d_matrix_push(pickupStruct->pickupActor.TransformFP);
+            rdpq_set_prim_color(color_from_packed32(0xfca9dd<<8));
+            t3d_model_draw(pickupStruct->pickupActor.model);// Draw Static Mesh
+        t3d_matrix_pop(1);// must also pop it when done
+        pickupStruct->dplAltSnowball = rspq_block_end();
+    }
+   /*if(pickupStruct->decorationType == EDT_Decoration1)
+   {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_rock_1.t3dm");
+        color = color_from_packed32(0x4a4a4a<<8);
+   }
+   else if (pickupStruct->decorationType == EDT_Decoration2)
+   {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_carrot.t3dm");
+        color = color_from_packed32(0xdb741a<<8);
+   }
+    else if (pickupStruct->decorationType == EDT_Decoration3)
+   {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_mitt.t3dm");
+        color = color_from_packed32(0xc75292<<8);
+   }
+   else if (pickupStruct->decorationType == EDT_Decoration4)
+   {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_hat.t3dm");
+        color = color_from_packed32(0xffffff<<8);
+   }
+    else if (pickupStruct->decorationType == EDT_Decoration5)
+   {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_scarf.t3dm");
+        color = color_from_packed32(0xb02e20<<8);
+   }
+    else if (pickupStruct->decorationType == EDT_Decoration6)
+   {
+        pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_stick.t3dm");
+        color = color_from_packed32(0x704022<<8);
+   }*/
 
+    rspq_block_begin();
+        t3d_matrix_push(pickupStruct->pickupActor.TransformFP);
+        rdpq_set_prim_color(color);
         t3d_model_draw(pickupStruct->pickupActor.model);// Draw Static Mesh
-        //t3d_model_draw_skinned(playerStruct->PlayerActor.model, &playerStruct->skel);// Draw skinned mesh with main skeleton.  
     t3d_matrix_pop(1);// must also pop it when done
     pickupStruct->pickupActor.dpl = rspq_block_end();
     
@@ -543,4 +587,10 @@ void PickupFree(struct PickupStruct* pickupStruct)
 {
     ActorFree(&pickupStruct->pickupActor);
     TriggerFree(&pickupStruct->triggerStruct);
+
+    if (pickupStruct->dplAltSnowball != NULL)
+    {
+        rspq_block_free(pickupStruct->dplAltSnowball);
+    }
+
 }

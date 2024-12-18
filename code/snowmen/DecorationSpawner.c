@@ -55,8 +55,8 @@ void SpawnerInit(struct DecorationSpawnerStruct* decorationSpawner, enum EDecora
     for(int i = 0; i < 2; i++)
     {
         CreatePickup(&decorationSpawner->decorations[i]);
-        PickupInit(&decorationSpawner->decorations[i], EPUT_Decoration);
-        PickupSetType(&decorationSpawner->decorations[i], decorationType);
+        PickupInit(&decorationSpawner->decorations[i], decorationType);
+        //PickupSetType(&decorationSpawner->decorations[i], decorationType);
 
         PickupDeactivate(&decorationSpawner->decorations[i]);
     }
@@ -111,6 +111,8 @@ void SpawnerInit(struct DecorationSpawnerStruct* decorationSpawner, enum EDecora
         break;
     
     default:
+        decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_stones.t3dm");
+        color = color_from_packed32(0x4a4a4a<<8);
         break;
     }
 
@@ -233,6 +235,9 @@ void DecorationActivate(struct PickupStruct* pickupStruct)
 
 void SpawnerFree(struct DecorationSpawnerStruct* decorationSpawner)
 {
+    PickupFree(&decorationSpawner->decorations[0]);
+  PickupFree(&decorationSpawner->decorations[1]);
+
   ActorFree(&decorationSpawner->spawnerActor);
 
   t3d_model_free(decorationSpawner->modelBase);
@@ -240,6 +245,5 @@ void SpawnerFree(struct DecorationSpawnerStruct* decorationSpawner)
 
   TriggerFree(&decorationSpawner->spawnerTrigger);
 
-  PickupFree(&decorationSpawner->decorations[0]);
-  PickupFree(&decorationSpawner->decorations[1]);
+
 }
