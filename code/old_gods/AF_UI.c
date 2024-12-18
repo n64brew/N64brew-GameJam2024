@@ -36,7 +36,7 @@ void AF_UI_Init(AF_ECS* _ecs){
 		return;
 	} 
     
-	debugf("InitTextRendering\n");
+	//debugf("InitTextRendering\n");
     
 }
 
@@ -50,6 +50,7 @@ void AF_UI_Update(AF_ECS* _ecs, AF_Time* _time){
        
     }
 
+    
     for(int i = 0; i < _ecs->entitiesCount; ++i){
         AF_CText* text = &_ecs->texts[i];
 
@@ -187,7 +188,11 @@ void AF_UI_RendererText_Update(AF_CText* _text){
     // if text needs updating, rebuild, otherwise skip
     if(_text->isDirty == TRUE){
         int nbytes = strlen(_text->text);
-        rdpq_paragraph_free((rdpq_paragraph_t*)_text->textData);
+        // Free the previous text data safely
+        if (_text->textData != NULL) {
+            rdpq_paragraph_free((rdpq_paragraph_t*)_text->textData);
+            _text->textData = NULL; // Prevent double-free
+        }
         rdpq_paragraph_t* par = rdpq_paragraph_build(&(rdpq_textparms_t){
             // .line_spacing = -3,
             .align = ALIGN_LEFT,
@@ -209,10 +214,9 @@ void AF_UI_RendererText_Update(AF_CText* _text){
     
 
     //rdpq_paragraph_render(par, _text->screenPos.x, _text->screenPos.y);
-    // try to free the text data memory
-    //if(textData != NULL){
-    //    rdpq_paragraph_free(textData);
-    // }
+    
+    
+    
 }
 
 
@@ -233,6 +237,30 @@ AF_UI_RENDERER_SHUTDOWN
 Do shutdown things
 ====================
 */
-void AF_UI_Renderer_Shutdown(void){
+void AF_UI_Renderer_Shutdown(AF_ECS* _ecs){
+    //debugf("AF_UI_Renderer_Shutdown: \n");
 
+    // Try to free text data that may remain
+    for(int i = 0; _ecs->entitiesCount; ++i){
+        //debugf("AF_UI_Renderer_Shutdown: Starting %i \n", i);
+        AF_CText* text = _ecs->entities[i].text;
+        if(text == NULL){
+                //debugf("AF_UI_Renderer_Shutdown: text is null early exit %i \n", i);
+                return;
+            }
+        BOOL hasText = AF_Component_GetHas(text->enabled);
+        if(hasText == TRUE){
+            //debugf("AF_UI_Renderer_Shutdown: has text %i \n", i);
+            rdpq_paragraph_t* textData = (rdpq_paragraph_t*)text->textData;
+            // try to free the text data memory
+            if(textData != NULL){
+                //debugf("AF_UI_Renderer_Shutdown: try to free %i \n", i);
+                rdpq_paragraph_free(textData);
+                textData = NULL;
+                //debugf("AF_UI_Renderer_Shutdown: free success %i \n", i);
+            }
+        }
+        //debugf("AF_UI_Renderer_Shutdown: Finished %i \n", i);
+    }   
+    //debugf("AF_UI_Renderer_Shutdown: Finished\n");
 }

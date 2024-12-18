@@ -17,7 +17,7 @@ AF_Input_Init
 Init the input
 ================ */
 void AF_Input_Init(){
-	debugf("Input Init\n");
+	//debugf("Input Init\n");
 	// Init Libdragon input
 	joypad_init();
 	
@@ -33,8 +33,11 @@ void AF_Input_Update(AF_Input* _input){
 		debugf("Input: Input_Update: passed in a null reference to input\n");
 		return;
 	}
-	joypad_poll();
+	
+	// Disabled as was causing a memory leak
+	//joypad_poll();
 
+	
 		// Player 1
         joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_1);
 		joypad_buttons_t pressed1 = joypad_get_buttons_pressed(JOYPAD_PORT_1);
@@ -141,5 +144,6 @@ Implementation of shutdown
 Does nothing for now
 ================ */
 void AF_Input_Shutdown(void){
-	debugf("Input Shutdown\n");
+	joypad_close();
+	//debugf("Input Shutdown\n");
 }

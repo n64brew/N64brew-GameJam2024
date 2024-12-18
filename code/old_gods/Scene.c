@@ -145,7 +145,8 @@ void Scene_OnBucket4Trigger(AF_Collision* _collision);
 void Scene_OnCollision(AF_Collision* _collision);
 void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collision* _collision);
 
-
+// Audio Mixher channels
+#define SCENE_FX_CH 16
 // ================ SCENE GENERIC FUNCTIONS =================
 
 /* ================
@@ -200,9 +201,13 @@ void Scene_Update(AppData* _appData){
         RatAIBehaviourUpdate(_appData);
         SharkAIBehaviourUpdate(_appData);
     }
-
+    
+    
+    // TODO: suspect memory leak happens around this point
     Scene_UpdateWaterTrails(_appData);
+    
     Scene_UpdatePlayerAttackWaves(_appData);
+    
     Scene_UpdateEffects(_appData);
     Scene_UpdateSharkEffects(_appData);
 
@@ -224,7 +229,7 @@ void Scene_Update(AppData* _appData){
             //debugf("entity carrying villager: x: %f y: %f x: %f \n", villagerCarryPos.x, villagerCarryPos.y, villagerCarryPos.z);
         }
     }
-
+    
 
     // Update the god count by summing the players scores
     
@@ -293,7 +298,10 @@ Cleanup variables and memory
 // TODO: check if anything else needs cleanup
  ================ */
 void Scene_Destroy(AF_ECS* _ecs){
-    debugf("Scene: Destroy\n");
+    //debugf("Scene: Destroy\n");
+    // close the mixer channel
+    mixer_ch_stop(SCENE_FX_CH);
+    // close the wav file
     wav64_close(&feedGodSoundFX);
     wav64_close(&pickupSoundFX);
 }
@@ -465,6 +473,7 @@ Update the visual effects e.g. player water trails as it moves
 Trails appear based on the player velocity
  ================ */
 void Scene_UpdateWaterTrails(AppData* _appData){
+    
     // Player 1
     AF_C3DRigidbody* player1Rigidbody = _appData->gameplayData.playerEntities[0]->rigidbody;
     AF_CMesh* player1TrailMesh = player1Trail->mesh; 
@@ -477,7 +486,7 @@ void Scene_UpdateWaterTrails(AppData* _appData){
     }else{
         player1TrailMesh->enabled = AF_Component_SetEnabled(player1TrailMesh->enabled, TRUE);
     }
-
+    
     // Player 2
     AF_C3DRigidbody* player2Rigidbody = _appData->gameplayData.playerEntities[1]->rigidbody;
     AF_CMesh* player2TrailMesh = player2Trail->mesh; 
@@ -946,7 +955,7 @@ void Scene_Setup_Rats(AppData* _appData){
 	rat->rigidbody->inverseMass = 0.0f;
 	rat->rigidbody->isKinematic = TRUE;
     rat->collider->collision.callback = Scene_OnCollision;
-    debugf("Rat init: %p \n", rat);
+    //debugf("Rat init: %p \n", rat);
 
     // TODO: re-introduce the rats into the population
     /*
@@ -1108,6 +1117,8 @@ void Scene_SetupSharks(AppData* _appData){
     // create the shark home
     sharkHomeEntity = AF_ECS_CreateEntity(&_appData->ecs);
     sharkHomeEntity->transform->pos = sharkHunterSpawnPos;
+    sharkHomeEntity->rigidbody->inverseMass = 0.0f;
+    sharkHomeEntity->rigidbody->isKinematic = TRUE;
     // ==== Hunter Shark ====
     // 1 for each player
     for(int i = 0; i < PLAYER_COUNT; ++i){
@@ -1292,8 +1303,12 @@ void Scene_OnGodTrigger(AF_Collision* _collision){
         // TODO Move this:
         RespawnRat();
         // play sound
-        wav64_play(&feedGodSoundFX, 16);
-        // clear the players from carrying
+        if(ENABLE_SOUND == TRUE){
+            // stop the sound effect if its already playing
+            mixer_ch_stop(SCENE_FX_CH);
+            // play the sound effect
+            wav64_play(&feedGodSoundFX, SCENE_FX_CH);
+        }
     }
 }
 
@@ -1350,7 +1365,12 @@ void Scene_BucketCollisionBehaviour(int _currentBucket, int _bucketID, AF_Collis
         g_ratPtr->playerData->isCarried = TRUE;
 
         // play sound
-        wav64_play(&pickupSoundFX, 16);
+        if(ENABLE_SOUND == TRUE){
+            // stop the sound effect if its already playing
+            mixer_ch_stop(SCENE_FX_CH);
+            // play the sound effect
+            wav64_play(&pickupSoundFX, SCENE_FX_CH);
+        }
     }
 }
 
@@ -1503,7 +1523,12 @@ void OnSharkCollision(AF_Collision* _collision){
         playerData->isAlive = FALSE;
         //debugf("OnSharkCollision: hit player yum yum \n");
         // player yum yum audio
-        wav64_play(&pickupSoundFX, 16);
+        if(ENABLE_SOUND == TRUE){
+            // stop the sound effect if its already playing
+            mixer_ch_stop(SCENE_FX_CH);
+            // play the sound effect
+            wav64_play(&pickupSoundFX, SCENE_FX_CH);
+        }
     }
 
     

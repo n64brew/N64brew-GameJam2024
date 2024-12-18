@@ -17,8 +17,8 @@ Implementation of Init
 ====================
 */
 void AF_Physics_Init(AF_ECS* _ecs){
-	assert(_ecs != NULL && "Physics: Physics_Init pass in a null reference\n");
-	debugf("Physics_Init: \n");
+	//assert(_ecs != NULL && "Physics: Physics_Init pass in a null reference\n");
+	//debugf("Physics_Init: \n");
 
 	// Setup Broadphase physics
 	/*
@@ -134,6 +134,6 @@ Do shutdown things
 ====================
 */
 void AF_Physics_Shutdown(void){
-	debugf("Physics: Shutdown\n");
+	//debugf("Physics: Shutdown\n");
 }
 

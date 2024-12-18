@@ -60,7 +60,10 @@ extern const char* fontPath6;
 #define FONT5_ID 5
 #define FONT6_ID 6
 
-
+// ==== UTILITIES to enable/disable some features that may cause memory leaks
+// enable/Disable animation
+#define ENABLE_ANIMATION 1
+#define ENABLE_SOUND 1
 
 #endif  // ASSETS_H
 

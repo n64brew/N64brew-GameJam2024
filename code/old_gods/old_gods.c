@@ -34,6 +34,7 @@ void minigame_init()
 
     // init the other app things
     App_Init(&g_appData);// Initialize lastTime before the loop
+    
 }
 
 /*==============================
@@ -45,9 +46,13 @@ void minigame_init()
 ==============================*/
 void minigame_fixedloop(float deltatime)
 {
+    
     // set framerate to target 60fp and call the app update function
     //App_Update_Wrapper(1);
     App_Update(&g_appData);
+    //debugf("TODO: old_gods: minigame_fixedLoop: break in loop to find memory leak \n");
+    //minigame_end();
+    //return;
 }
 
 /*==============================
@@ -57,11 +62,15 @@ void minigame_fixedloop(float deltatime)
 ==============================*/
 void minigame_loop(float deltatime)
 {
+    
     g_appData.gameTime.currentTime = timer_ticks();
     g_appData.gameTime.timeSinceLastFrame = deltatime;
     g_appData.gameTime.lastTime = g_appData.gameTime.currentTime;
+    
     // render stuff as fast as possible, interdependent from other code
     App_Render_Update(&g_appData);
+    
+   
 }
 
 /*==============================

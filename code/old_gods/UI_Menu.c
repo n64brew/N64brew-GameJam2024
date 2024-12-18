@@ -55,6 +55,10 @@ char startCountdownCharBuffer[16] = "0";
 #define SCREEN_HALF_WIDTH 320
 #define SCREEN_HALF_HEIGHT 120
 
+// Audio Mixer channels
+#define UI_MUSIC_CH 0
+#define UI_FX_COUNTDOWN_CH 30
+#define UI_FX_CH 31
 
 // UI COLORS
 uint8_t whiteColor[4] = {255, 255, 255, 255};
@@ -153,6 +157,7 @@ void UI_Menu_SetupPauseMenu(AppData* _appData);
 void UI_Menu_SetupCountdownTimer(AppData* _appData);
 void UI_Menu_SetupStartCountdownTimer(AppData* _appData);
 void UI_Menu_SetupGameOverMenu(AppData* _appData);
+void UI_PrintHeapStatus(const char* _message);
 
 void UI_Menu_SetupAudio();
 
@@ -260,7 +265,7 @@ Shutdown sequence to free memory and clean up
  ================ */
 void UI_Menu_Shutdown(AF_ECS* _ecs){
     // ===== Destroy Font ===== 
-    debugf("UI Renderer Shutdown: Unregistering fonts \n");
+    //debugf("UI Renderer Shutdown: Unregistering fonts \n");
     rdpq_text_unregister_font(FONT2_ID);
     rdpq_text_unregister_font(FONT3_ID);
     rdpq_text_unregister_font(FONT4_ID);
@@ -283,18 +288,25 @@ void UI_Menu_Shutdown(AF_ECS* _ecs){
             AF_CSprite* sprite = entity->sprite;
             sprite_t* spriteData = (sprite_t*)sprite->spriteData;
             if(spriteData != NULL){
-                debugf("UI Renderer Shutdown: freeing sprites %i \n", i);
+                //debugf("UI Renderer Shutdown: freeing sprites %i \n", i);
                 sprite_free(spriteData);
             }
         }
     }
 
     // ===== Destroy Audio ===== 
+    //debugf("UI_Menu: Close Audio\n");
+    // close the mixer channels
+    mixer_ch_stop(UI_FX_CH);
+    mixer_ch_stop(UI_MUSIC_CH);
+    mixer_ch_stop(UI_FX_COUNTDOWN_CH);
+    // close the wav files
     wav64_close(&sfx_start);
     wav64_close(&sfx_countdown);
     wav64_close(&sfx_stop);
     wav64_close(&sfx_winner);
     wav64_close(&music_2);
+    wav64_close(&sfx_startButton);
 }
 
 //======= SETUP HELPERS ========
@@ -614,17 +626,32 @@ void UI_Menu_RenderMainMenu(AppData* _appData){
     // TODO: tidy this up
     if(isMusicPlaying == FALSE){
         // TODO: make this read from assets
-        wav64_open(&music_2, "rom:/old_gods/sandy_seaside.wav64");
+        
         // set sound to loop
         wav64_set_loop(&music_2, true);
-        wav64_play(&music_2, 0);
+        // TODO: fix memory leak with playing this music file.
+        // For some reason stopping the channel, then closing this wav doesn't release all the memory.
+        // other audio files seem to release fine.
+        
+        if(ENABLE_SOUND == TRUE){
+            // stop the music if its already playing
+            mixer_ch_stop(UI_MUSIC_CH);
+            // play the music
+            wav64_play(&music_2, UI_MUSIC_CH);
+        }
+        
         isMusicPlaying = TRUE;
     }
     
 
     // detect start button pressed
     if(_appData->input.keys[A_KEY]->pressed == TRUE){
-        wav64_play(&sfx_startButton, 31);
+        if(ENABLE_SOUND == TRUE){
+            // stop the music if its already playing
+            mixer_ch_stop(UI_FX_CH);
+            // play the music
+            wav64_play(&sfx_startButton, UI_FX_CH);
+        }
         GameplayData* gameplayData = &_appData->gameplayData;
         // gods count reset
         gameplayData->godEatCount = 0;
@@ -682,8 +709,13 @@ void UI_Menu_RenderPlayingUI(AppData* _appData){
     // detect start button pressed by any player
     for(int i = 0; i < PLAYER_COUNT; ++i){
         if(_appData->input.keys[i][START_KEY].pressed == TRUE){
-                debugf("Pause game\n");
-                wav64_play(&sfx_startButton, 31);
+                //debugf("Pause game\n");
+                if(ENABLE_SOUND == TRUE){
+                    // stop the music if its already playing
+                    mixer_ch_stop(UI_FX_CH);
+                    // play the music
+                    wav64_play(&sfx_startButton, UI_FX_CH);
+                }
                 GameplayData* gameplayData = &_appData->gameplayData;
                 gameplayData->gameState = GAME_STATE_PAUSED;
                 // TODO: hack to force the key off so the resume works ocrrectly.
@@ -734,9 +766,18 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     // only call this once
     // TODO: tidy this up
     if(isDeclaredWinner == FALSE){
-        wav64_close(&music_2);
-        wav64_play(&sfx_winner, 31);
-        //xm64player_stop(&music);
+        if(ENABLE_SOUND == TRUE){
+            // stop the music if its already playing
+            // close the music mixer
+            mixer_ch_stop(UI_MUSIC_CH);
+            // close the music wav
+            wav64_close(&music_2);
+            // stop what ever is playing on this channel
+            mixer_ch_stop(UI_FX_CH);
+            // play the winner track
+            wav64_play(&sfx_winner, UI_FX_CH);
+        }
+
         isDeclaredWinner = TRUE;
         isMusicPlaying = FALSE;
     }
@@ -745,15 +786,19 @@ void UI_Menu_RenderGameOverScreen(AppData* _appData ){
     for(int i = 0; i < PLAYER_COUNT; ++i){
         // detect start button pressed to restart the game
         if(_appData->input.keys[i][A_KEY].pressed == TRUE){
-            gameplayData->gameState = GAME_STATE_GAME_RESTART;
+            //gameplayData->gameState = GAME_STATE_GAME_RESTART;
+            //debugf("End minigame\n");
+            gameplayData->gameState = GAME_STATE_GAME_END;
+            core_set_winner(playerWithHighestScore);
+            //minigame_end(); 
         }
 
         // Let the game jam template handle the game ending
         if(_appData->input.keys[i][START_KEY].pressed == TRUE){
-            debugf("End minigame\n");
+            //debugf("End minigame\n");
             gameplayData->gameState = GAME_STATE_GAME_END;
             core_set_winner(playerWithHighestScore);
-            minigame_end(); 
+            //minigame_end(); 
         }
     }
 }
@@ -775,7 +820,11 @@ void UI_Menu_RenderCountdown(AppData* _appData){
         float prevCountDown = countDownTimer;
         countDownTimer -= _appData->gameTime.timeSinceLastFrame;
         if ((int)prevCountDown != (int)countDownTimer && countDownTimer >= 0){
-            wav64_play(&sfx_countdown, 31);
+           if(ENABLE_SOUND == TRUE){
+            // stop the music if its already playing
+                mixer_ch_stop(UI_FX_COUNTDOWN_CH);
+                wav64_play(&sfx_countdown, UI_FX_COUNTDOWN_CH);
+           }
             // update the char buffer that will be the onscreen text. ensure there
             sprintf(startCountdownCharBuffer, "%i", ((int)countDownTimer)+1);
             startCountdownLabelEntity->text->text = startCountdownCharBuffer;
@@ -784,9 +833,15 @@ void UI_Menu_RenderCountdown(AppData* _appData){
         return;
     }
     // this will only play once
-    wav64_play(&sfx_start, 31);
-    isStartedPlaying = TRUE;
-   
+    if(ENABLE_SOUND == TRUE){
+        // stop the music if its already playing
+        mixer_ch_stop(UI_MUSIC_CH);
+        // incase some other FX is already playing
+        mixer_ch_stop(UI_FX_CH);
+        // play the start sound
+        wav64_play(&sfx_start, UI_FX_CH);
+        isStartedPlaying = TRUE;
+    }
     
     startCountdownLabelEntity->text->isDirty = TRUE;
     // TODO: add a final slight delay to allow the words GO!!! to be read
@@ -805,18 +860,27 @@ void UI_Menu_RenderPausedScreen(AppData* _appData){
     UI_Menu_CountdownState(FALSE);
 
         // detect start button pressed by any player
-        
         for(int i = 0; i < PLAYER_COUNT; ++i){
             if(_appData->input.keys[i][A_KEY].pressed == TRUE){
-                    debugf("Resume game\n");
-                    wav64_play(&sfx_startButton, 31);
+                    //debugf("Resume game\n");
+                    if(ENABLE_SOUND == TRUE){
+                        // stop the music if its already playing
+                        mixer_ch_stop(UI_FX_CH);
+                        // play the music
+                        wav64_play(&sfx_startButton, UI_FX_CH);
+                    }
                     GameplayData* gameplayData = &_appData->gameplayData;
                     gameplayData->gameState = GAME_STATE_PLAYING;
             }
 
             if(_appData->input.keys[i][B_KEY].pressed == TRUE){
-                    debugf("Exit game\n");
-                    wav64_play(&sfx_startButton, 31);
+                    //debugf("Exit game\n");
+                    if(ENABLE_SOUND == TRUE){
+                        // stop the music if its already playing
+                        mixer_ch_stop(UI_FX_CH);
+                        // play the music
+                        wav64_play(&sfx_startButton, UI_FX_CH);
+                    }
                     GameplayData* gameplayData = &_appData->gameplayData;
                     gameplayData->gameState = GAME_STATE_GAME_END;
             }
@@ -830,12 +894,22 @@ UI_Menu_RenderCountdown
 Render in game count down clock
  ================ */
 void UI_Menu_SetupAudio(){
+  wav64_open(&music_2, "rom:/old_gods/sandy_seaside.wav64");
   wav64_open(&sfx_start, AUDIO_START_FX); //"rom:/core/Start.wav64");
   wav64_open(&sfx_countdown, AUDIO_COUNTDOWN_FX); //"rom:/core/Countdown.wav64");
   wav64_open(&sfx_stop, AUDIO_STOP_FX); //"rom:/core/Stop.wav64");
   wav64_open(&sfx_winner, AUDIO_WINNER_FX); //"rom:/core/Winner.wav64");
   wav64_open(&sfx_startButton, AUDIO_BUTTON_PRESS_FX); //"rom:/old_gods/Item2A.wav64");
   
-  mixer_ch_set_vol(31, 0.5f, 0.5f);
+  // Set the volume
+  mixer_ch_set_vol(UI_FX_COUNTDOWN_CH, 0.5f, 0.5f);
+  mixer_ch_set_vol(UI_MUSIC_CH, 0.5f, 0.5f);
+  mixer_ch_set_vol(UI_FX_CH, 0.5f, 0.5f);
 }
 
+
+void UI_PrintHeapStatus(const char* _message){
+    heap_stats_t heap_stats;
+    sys_get_heap_stats(&heap_stats);
+    debugf("====\n%s: Mem: %d KiB\n====\n", _message, heap_stats.used/1024);
+}
