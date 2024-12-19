@@ -682,6 +682,9 @@ void GenerateStaticCollisionNew(struct Actor* actor)
     debugf("%f %f %f %f\n", actor->Transform.m[1][0], actor->Transform.m[1][1], actor->Transform.m[1][2], actor->Transform.m[1][3]);
     debugf("%f %f %f %f\n", actor->Transform.m[2][0], actor->Transform.m[2][1], actor->Transform.m[2][2], actor->Transform.m[2][3]);
     debugf("%f %f %f %f\n", actor->Transform.m[3][0], actor->Transform.m[3][1], actor->Transform.m[3][2], actor->Transform.m[3][3]);*/
+
+
+  free(model);
 }
 
 void ActorFree(Actor* actor)

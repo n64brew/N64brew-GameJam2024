@@ -547,6 +547,9 @@ void AIPlayerLoop(PlayerStruct* playerStruct, int seed, float deltaTime)
     //bool isAIGoalPickup//don't like have them being seperate, if false then Goal must be snowman
     if (playerStruct->AIState == EPAIS_Idle)
     {
+        //NodeDA_Free(&playerStruct->AIPath);
+        //node **array = playerStruct->AIPath.nodeArray;
+        free(playerStruct->AIPath.nodeArray);
         playerStruct->isDestGoalPickupDirectAI = false;
         //maybe a timer for waiting to make ai easier?
         //We want to walk towards a goal, choose which from goals not already achieved and are available on map (random)
