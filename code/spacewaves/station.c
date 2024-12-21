@@ -40,12 +40,16 @@ void station_close(){
     if(station.matx) free_uncached(station.matx);
     if(station.arm.rocketgunmatx) free_uncached(station.arm.rocketgunmatx);
     if(station.arm.machinegunmatx) free_uncached(station.arm.machinegunmatx);
+    station.arm.rocketgunmatx = NULL;
+    station.arm.machinegunmatx = NULL;
     for(int p = 0; p < MAX_PROJECTILES; p++) {
         if(station.arm.rockets[p].matx) free_uncached(station.arm.rockets[p].matx);
+        station.arm.rockets[p].matx = NULL;
         station.arm.rockets[p].enabled = false;
         station.arm.bullets[p].enabled = false;
     }
     if(station.arm.rocketdl) rspq_block_free(station.arm.rocketdl);
+    station.arm.rocketdl = NULL;
 }
 
 void station_update(){
