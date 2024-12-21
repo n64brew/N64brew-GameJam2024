@@ -145,7 +145,7 @@ void effects_close(){
     for(int i = 0; i < MAX_EFFECTS; i++){
         effects.exp3d[i].enabled = false;
         if(effects.exp3d[i].matx) free_uncached(effects.exp3d[i].matx);
-
+        effects.exp3d[i].matx = NULL;
         effects.exp2d[i].enabled = false;
     }
     for(int i = 0; i < MAXPLAYERS; i++)
