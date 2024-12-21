@@ -424,17 +424,23 @@ void crafts_close(){
                     T3DMaterialTexture *tex = &(it.object->material->textureA);
                     if(tex->texture){
                         sprite_free(tex->texture);
+                        tex->texture = NULL;
                     }
                 }
         }
 
         if(crafts[c].matx) free_uncached(crafts[c].matx);
+        crafts[c].matx = NULL;
         for(int b = 0; b < MAX_PROJECTILES; b++){
             if(crafts[c].arm.rockets[b].matx) free_uncached(crafts[c].arm.rockets[b].matx);
             if(crafts[c].arm.asteroids[b].matx) free_uncached(crafts[c].arm.asteroids[b].matx);
+            crafts[c].arm.rockets[b].matx = NULL;
+            crafts[c].arm.asteroids[b].matx = NULL;
         }
         if(crafts[c].arm.asteroiddl) rspq_block_free(crafts[c].arm.asteroiddl);
         if(crafts[c].arm.rocketdl) rspq_block_free(crafts[c].arm.rocketdl);
+        crafts[c].arm.asteroiddl = NULL;
+        crafts[c].arm.rocketdl = NULL;
     }
 
 }
