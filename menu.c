@@ -207,11 +207,17 @@ char* menu(void)
             has_moved_selection = false;
         }
 
-        if (select < 0) select = 0;
-        if (select > item_count-1) select = item_count-1;
+        if (select < 0) select = item_count-1; // wrap around to bottom upon attempting to scroll from top of menu
+        if (select > item_count-1) select = 0; // wrap around to top upon attempting to scroll from bottom of menu
 
         if (select < yscroll) {
             yscroll -= 1;
+        }
+        
+        // allows scrolling and wrapping around the menu when cursor
+        // reaches either all way to top or bottom
+        else if (select > yscroll+3) { 
+            yscroll += 1;
         }
 
         joypad_buttons_t btn = joypad_get_buttons_pressed(JOYPAD_PORT_1);
