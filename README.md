@@ -1,4 +1,10 @@
-# N64brew Game Jam 2024 Minigame Template
+# N64brew Game Jam 2024
+
+For 2024, N64brew decided to put together a minigame jam. This repository originally contained the template project, and now it contains the final ROM that was put together at the end of the jam. You can obtain the final ROM from the [releases page](../../releases). You can also download the old template we provided, in case you wish to make a minigame of your own.
+
+Below is the original description of this repository's README before the final ROM was put together.
+
+---
 
 Welcome to this year's N64brew game jam. This year, we are creating a large collective minigame ROM, and that requires every project to use the same base. Therefore, we are providing this base template for all projects to fork from. Unfortunately, due to time constraints, we were only able to provide a single template for [Libdragon](https://github.com/DragonMinded/libdragon).
 
