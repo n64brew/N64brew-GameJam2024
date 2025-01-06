@@ -137,10 +137,10 @@ void libdragon_logo(void)
 
     display_init(RESOLUTION_640x480, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE);
 
-    float angle1, angle2, angle3;
-    float scale1, scale2, scale3, scroll4;
-    uint32_t ms0;
-    int anim_part;
+    float angle1=0, angle2=0, angle3=0;
+    float scale1=0, scale2=0, scale3=0, scroll4=0;
+    uint32_t ms0=0;
+    int anim_part=0;
     const int X0 = 10, Y0 = 30; // translation offset of the animation (simplify centering)
 
     void reset() {
