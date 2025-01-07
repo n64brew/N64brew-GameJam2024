@@ -1,6 +1,7 @@
 ROMNAME = gamejam2024
 ROMTITLE = "N64BREW GAMEJAM 2024"
-DEBUG = 1
+FINAL = 0			# Build the final ROM (tune up compression)
+DEBUG = 1			# Enable printf debugging
 
 BUILD_DIR = build
 ASSETS_DIR = assets
@@ -26,6 +27,12 @@ include $(N64_INST)/include/n64.mk
 include $(N64_INST)/include/t3d.mk
 
 N64_ROM_SAVETYPE = eeprom4k
+ifeq ($(FINAL),1)
+	N64_ROM_ELFCOMPRESS = 3
+	N64_ROM_DSOCOMPRESS = 3
+	MKSPRITE_FLAGS = --compress 2
+	MKFONT_FLAGS = --compress 2
+endif
 
 MINIGAMES_LIST = $(notdir $(wildcard $(MINIGAME_DIR)/*))
 DSO_LIST = $(addprefix $(MINIGAMEDSO_DIR)/, $(addsuffix .dso, $(MINIGAMES_LIST)))
