@@ -38,7 +38,6 @@ int main()
     joypad_init();
     timer_init();
     rdpq_init();
-    minigame_loadall();
     audio_init(32000, 3);
     mixer_init(32);
     savestate_initialize();
@@ -62,6 +61,9 @@ int main()
        n64brew_logo();
        libdragon_logo();
     }
+
+    // Load all minigames
+    minigame_loadall();
 
     // Initialize the level system
     core_initlevels();
