@@ -27,11 +27,11 @@ include $(N64_INST)/include/n64.mk
 include $(N64_INST)/include/t3d.mk
 
 N64_ROM_SAVETYPE = eeprom4k
-ifeq ($(FINAL),1)
-	N64_ROM_ELFCOMPRESS = 3
-	N64_ROM_DSOCOMPRESS = 3
-	MKSPRITE_FLAGS = --compress 2
-	MKFONT_FLAGS = --compress 2
+ifeq ($(strip $(FINAL)),1)
+  N64_ROM_ELFCOMPRESS = 3
+  N64_ROM_DSOCOMPRESS = 3
+  MKSPRITE_FLAGS = --compress 2
+  MKFONT_FLAGS = --compress 2
 endif
 
 MINIGAMES_LIST = $(notdir $(wildcard $(MINIGAME_DIR)/*))
