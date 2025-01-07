@@ -412,9 +412,9 @@ void expandingSimplexExpand(struct ExpandingSimplex* expandingSimplex, int newPo
 void epaCalculateContact(struct ExpandingSimplex* simplex, struct SimplexTriangle* closestFace, struct Vector3* planePos, struct EpaResult* result) {
     struct Vector3 baryCoords;
 
-        struct Vector3* a = &simplex->points[closestFace->indexData.indices[0]];
-        struct Vector3* b = &simplex->points[closestFace->indexData.indices[1]];
-        struct Vector3* c = &simplex->points[closestFace->indexData.indices[2]];
+    struct Vector3* a = &simplex->points[closestFace->indexData.indices[0]];
+    struct Vector3* b = &simplex->points[closestFace->indexData.indices[1]];
+    struct Vector3* c = &simplex->points[closestFace->indexData.indices[2]];
 
     calculateBarycentricCoords(
         a,
@@ -467,7 +467,7 @@ bool epaSolve(struct Simplex* startingSimplex, void* objectA, MinkowsiSum object
         expandingSimplexExpand(&simplex, nextIndex, simplex.triangleHeap[0]);
     }
 
-    if (closestFace) {
+    if (closestFace && vector3MagSqrd(&closestFace->normal) > 0.5f) {
         result->normal = closestFace->normal;
         result->penetration = -projection;
         struct Vector3 planePos;

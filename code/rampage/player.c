@@ -78,8 +78,6 @@ int floatBits(void* input) {
 }
 
 bool rampage_player_is_touching_target(struct RampagePlayer* player, struct Vector2* input_dir) {
-    struct contact* contact = player->dynamic_object.active_contacts;
-
     for (
         struct contact* contact = player->dynamic_object.active_contacts;
         contact; 
@@ -372,8 +370,6 @@ void rampage_player_handle_ground_movement(struct RampagePlayer* player, struct 
         vel_scale = 0.0f;
     }
 
-    float accel = PLAYER_ACCEL * delta_time * vel_scale;
-
     player->dynamic_object.velocity.x = mathfMoveTowards(
         player->dynamic_object.velocity.x,
         current_forward.x * vel_scale,
@@ -621,7 +617,6 @@ void rampage_player_render(struct RampagePlayer* player) {
     t3d_mat4fp_from_srt(UncachedAddr(&player->mtx), scale.v, (float*)&quat, (float*)&player->dynamic_object.position);
     rspq_block_run(player->render_block);
 
-    T3DModelState state = t3d_model_state_create();
     rspq_block_run(rampage_assets_get()->swing_split.material);
     swing_effect_render(&player->swing_effect);
 }
