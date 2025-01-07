@@ -1,13 +1,11 @@
 #include "mathf.h"
 
 #include <math.h>
-#include <stdio.h>
 
 unsigned int gRandomSeed = 1;
 
 void randomSeed(int seed) {
     gRandomSeed = seed;
-    fprintf(stderr, "gRandomSeed = %d\n", gRandomSeed);
 }
 
 int randomInt() {
