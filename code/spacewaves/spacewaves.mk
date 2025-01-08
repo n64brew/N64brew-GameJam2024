@@ -72,4 +72,4 @@ $(FILESYSTEM_DIR)/spacewaves/%.m1v: $(ASSETS_DIR)/spacewaves/%.m1v
 filesystem/spacewaves/machinegun_new_01.i4.sprite: MKSPRITE_FLAGS=--format I8
 filesystem/spacewaves/machinegun_new_02.i4.sprite: MKSPRITE_FLAGS=--format I8
 
-$(FILESYSTEM_DIR)/spacewaves/%.wav64: AUDIOCONV_FLAGS= --wav-compress 0
+$(FILESYSTEM_DIR)/spacewaves/%.wav64: AUDIOCONV_FLAGS= --wav-compress 1

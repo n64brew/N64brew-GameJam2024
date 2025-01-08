@@ -105,7 +105,7 @@ int main()
       if(btn.start && (gamestatus.state == GAMESTATE_PLAY || gamestatus.state == GAMESTATE_PAUSED)){
         gamestatus.paused = !gamestatus.paused;
         gamestatus.state = gamestatus.paused? GAMESTATE_PAUSED : GAMESTATE_PLAY;
-        wav64_play(&sounds[snd_button_click2], SFX_CHANNEL_EFFECTS);
+        afx_wav64_play_wrapper(snd_button_click2, SFX_CHANNEL_EFFECTS);
       }
       if(btn.start && gamestatus.state == GAMESTATE_GETREADY){
         gamestatus.paused = true;
@@ -116,7 +116,7 @@ int main()
           xm64player_open(&xmplayer, music_path[currentmusicindex]);
         xm64player_play(&xmplayer, SFX_CHANNEL_MUSIC);
         xm64player_set_loop(&xmplayer, true);
-        wav64_play(&sounds[snd_button_click1], SFX_CHANNEL_EFFECTS);
+        afx_wav64_play_wrapper(snd_button_click1, SFX_CHANNEL_EFFECTS);
         xmplayeropen = true;
       }
     }
@@ -124,12 +124,12 @@ int main()
       gamestatus.state = GAMESTATE_PLAY;
       gamestatus.paused = false;
       gamestatus.statetime = 180.0f;
-      wav64_play(&sounds[snd_button_click3], SFX_CHANNEL_BONUS);
+      afx_wav64_play_wrapper(snd_button_click3, SFX_CHANNEL_BONUS);
     }
     if(gamestatus.state == GAMESTATE_COUNTDOWN){
       int newcountseconds = (int)gamestatus.statetime;
       if (newcountseconds != countdownseconds){
-          wav64_play(&sounds[snd_button_click3], SFX_CHANNEL_BONUS);
+          afx_wav64_play_wrapper(snd_button_click3, SFX_CHANNEL_BONUS);
           countdownseconds = newcountseconds;
       }
     }

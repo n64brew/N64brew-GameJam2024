@@ -44,6 +44,7 @@ extern const char *model_path[MODEL_COUNT];
 
 extern wav64_t sounds[SOUND_COUNT];
 extern const char *sound_path[SOUND_COUNT];
+extern int sound_cur_channels[SOUND_COUNT];
 
 extern xm64player_t xmplayer;
 extern bool xmplayeropen;
@@ -152,5 +153,6 @@ inline float fwrap(float x, float min, float max) {
     return (x >= 0 ? min : max) + fmod(x, max - min);
 }
 
+void afx_wav64_play_wrapper(int soundindex, int ch);
 
 #endif
