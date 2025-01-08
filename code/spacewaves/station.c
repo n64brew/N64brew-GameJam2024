@@ -32,7 +32,7 @@ void station_init(PlyNum player){
     station.yaw = 0;
     station.arm.bulletnexttime = CURRENT_TIME + 0.5f;
     wav64_set_loop(&sounds[snd_machinery], true);
-    wav64_play(&sounds[snd_machinery], SFX_CHANNEL_STATION);
+    afx_wav64_play_wrapper(snd_machinery, SFX_CHANNEL_STATION);
     mixer_ch_set_vol(SFX_CHANNEL_STATION, 0.0f, 0.0f);
 }
 
@@ -84,7 +84,7 @@ void station_update(){
         if(station.arm.powerup > 0.0f && station.arm.powerup < 10.0f) 
             station.arm.bulletnexttime = CURRENT_TIME + 0.2f;
         station.arm.machinegunoffset = -150;
-        wav64_play(&sounds[snd_shoot], SFX_CHANNEL_MACHINEGUN);
+        afx_wav64_play_wrapper(snd_shoot, SFX_CHANNEL_MACHINEGUN);
         effects_add_rumble(station.currentplayerport, 0.1f);
         effects_add_ambientlight(RGBA32(0,25,50,0));
     }
@@ -98,7 +98,7 @@ void station_update(){
             station.arm.rocketnexttime = CURRENT_TIME + 1.0f;
         station.arm.rocketcount--;
         station.arm.rocketgunoffset = -150;
-        wav64_play(&sounds[snd_shoot_rocket], SFX_CHANNEL_ROCKET);
+        afx_wav64_play_wrapper(snd_shoot_rocket, SFX_CHANNEL_ROCKET);
         effects_add_rumble(station.currentplayerport, 0.25f);
         effects_add_ambientlight(RGBA32(50,50,25,0));
     }
@@ -110,7 +110,7 @@ void station_update(){
 
     if((pressed.a && station.arm.shield == 10.0f)){
         station.arm.shield -= DELTA_TIME;
-        wav64_play(&sounds[snd_use_shield], SFX_CHANNEL_BONUS);
+        afx_wav64_play_wrapper(snd_use_shield, SFX_CHANNEL_BONUS);
         effects_add_ambientlight(RGBA32(0,0,100,0));
     }
     if(station.arm.shield < 10.0f)
@@ -120,7 +120,7 @@ void station_update(){
 
     if((pressed.b && station.arm.powerup == 10.0f)){
         station.arm.powerup -= DELTA_TIME;
-        wav64_play(&sounds[snd_use_powerup], SFX_CHANNEL_BONUS);
+        afx_wav64_play_wrapper(snd_use_powerup, SFX_CHANNEL_BONUS);
         effects_add_ambientlight(RGBA32(0,100,0,0));
     }
     if(station.arm.powerup < 10.0f)
@@ -165,7 +165,7 @@ void station_update(){
                         gamestatus.playerscores[station.currentplayer] += 10 * 50;
                     }
                     station.arm.bullets[b].enabled = false;
-                    wav64_play(&sounds[snd_hit], SFX_CHANNEL_HIT);
+                    afx_wav64_play_wrapper(snd_hit, SFX_CHANNEL_HIT);
                     effects_add_exp2d(gfx_worldpos_from_polar(
                             station.arm.bullets[b].polarpos.v[0],
                             station.arm.bullets[b].polarpos.v[1],
@@ -178,7 +178,7 @@ void station_update(){
                         gamestatus.playerscores[station.currentplayer] += 8000;
                     }
                     station.arm.rockets[b].enabled = false;
-                    wav64_play(&sounds[snd_hit], SFX_CHANNEL_HIT);
+                    afx_wav64_play_wrapper(snd_hit, SFX_CHANNEL_HIT);
                     effects_add_ambientlight(RGBA32(50,50,25,0));
                 }
             }
@@ -195,7 +195,7 @@ void station_update(){
                     crafts[c].arm.asteroids[p].hp -= 10;
                     gamestatus.playerscores[station.currentplayer] += 10 * 20;
                     station.arm.bullets[b].enabled = false;
-                    wav64_play(&sounds[snd_hit], SFX_CHANNEL_EFFECTS);
+                    afx_wav64_play_wrapper(snd_hit, SFX_CHANNEL_EFFECTS);
                     effects_add_exp2d(gfx_worldpos_from_polar(
                             station.arm.bullets[b].polarpos.v[0],
                             station.arm.bullets[b].polarpos.v[1],
@@ -206,7 +206,7 @@ void station_update(){
                     crafts[c].arm.asteroids[p].hp -= 100;
                     gamestatus.playerscores[station.currentplayer] += 1000;
                     station.arm.rockets[b].enabled = false;
-                    wav64_play(&sounds[snd_hit], SFX_CHANNEL_EFFECTS);
+                    afx_wav64_play_wrapper(snd_hit, SFX_CHANNEL_EFFECTS);
                     effects_add_rumble(crafts[c].currentplayerport, 1.25f);
                     effects_add_shake(1.25f);
                 }
@@ -220,7 +220,7 @@ void station_update(){
                     crafts[c].arm.rockets[p].hp -= 10;
                     gamestatus.playerscores[station.currentplayer] += 10 * 50;
                     station.arm.bullets[b].enabled = false;
-                    wav64_play(&sounds[snd_hit], SFX_CHANNEL_EFFECTS);
+                    afx_wav64_play_wrapper(snd_hit, SFX_CHANNEL_EFFECTS);
                     effects_add_rumble(crafts[c].currentplayerport, 0.25f);
                 }
             }
