@@ -76,6 +76,7 @@ void minigame_loadall()
         fgets(newdef->definition.gamename, sizeof(newdef->definition.gamename), file);
         fgets(newdef->definition.developername, sizeof(newdef->definition.developername), file);
         fgets(newdef->definition.description, sizeof(newdef->definition.description), file);
+        newdef->definition.description[strcspn(newdef->definition.description, "\n")] = 0; // remove the \n for text rendering
         fgets(newdef->definition.instructions, sizeof(newdef->definition.instructions), file);
 
         // Set the internal name as the filename without the extension
