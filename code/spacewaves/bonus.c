@@ -11,7 +11,7 @@
 #include "gamestatus.h"
 #include "station.h"
 #include "enemycraft.h"
-
+#include "gfx.h"
 #include "bonus.h"
 
 /*#define MAX_BONUSES 10
@@ -77,25 +77,25 @@ void bonus_apply(int bindex, PlyNum playernum, DefenseStation* station, int craf
         case BONUS_POINTS:
             gamestatus.playerscores[playernum] += 1500;
             bonus->enabled = false;
-            wav64_play(&sounds[snd_reload], SFX_CHANNEL_BONUS);
+            afx_wav64_play_wrapper(snd_reload, SFX_CHANNEL_BONUS);
             break;
         case BONUS_UPGRADE:
             if(station) station->arm.powerup = 10.0f;
             if(craft >= 0)   crafts[craft].arm.powerup = 10.0f;
             bonus->enabled = false;
-            wav64_play(&sounds[snd_pickup_shield], SFX_CHANNEL_BONUS);
+            afx_wav64_play_wrapper(snd_pickup_shield, SFX_CHANNEL_BONUS);
             break;
         case BONUS_SHIELD:
             if(station) station->arm.shield = 10.0f;
             if(craft >= 0)   crafts[craft].arm.shield = 10.0f;
             bonus->enabled = false;
-            wav64_play(&sounds[snd_pickup_shield], SFX_CHANNEL_BONUS);
+            afx_wav64_play_wrapper(snd_pickup_shield, SFX_CHANNEL_BONUS);
             break;
         case BONUS_ROCKETS:
             if(station) station->arm.rocketcount += 5;
             if(craft >= 0)   crafts[craft].arm.rocketcount += 3;
             bonus->enabled = false;
-            wav64_play(&sounds[snd_pickup_ammo], SFX_CHANNEL_BONUS);
+            afx_wav64_play_wrapper(snd_pickup_ammo, SFX_CHANNEL_BONUS);
             break;
     }
 }
