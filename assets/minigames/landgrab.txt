@@ -1,0 +1,5 @@
+Land Grab
+Meeq Corporation
+Claim as much land as you can!
+Place pieces at diagonals to claim land. 
+The player with the most land at the end wins!

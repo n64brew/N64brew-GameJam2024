@@ -1,0 +1,4 @@
+Paintball
+Ali Naci Erdem
+Paint enemies to capture & score for your team. Winning color or last one standing gets more points!
+Move with analog stick, press C/D pad to shoot. Press START to pause.
