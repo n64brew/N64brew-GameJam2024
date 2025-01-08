@@ -62,7 +62,7 @@ void effects_add_exp3d(T3DVec3 pos, color_t color){
     effects.exp3d[i].position = pos;
     effects.exp3d[i].color = color;
     effects.exp3d[i].time = 2.0f;
-    wav64_play(&sounds[snd_explosion_blast], SFX_CHANNEL_EXPLOSION);
+    afx_wav64_play_wrapper(snd_explosion_blast, SFX_CHANNEL_EXPLOSION);
 }
 
 void effects_add_exp2d(T3DVec3 pos, color_t color){
