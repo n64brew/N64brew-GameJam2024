@@ -1,5 +1,4 @@
-Sauna Rush
-Flávio Zavan
-A relaxing winter day suddenly turns into a competition
-Inside: Hold Z to duck
-Outside: Press the buttons indicated on the screen
+Underground Grind
+raisedwizardry
+Find the treasure by grinding it out underground in a flat 3 x 3 grid
+Press A and Z in squence to dig through the blocks. Use the control stick move around
