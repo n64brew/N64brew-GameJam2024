@@ -171,7 +171,7 @@ void crafts_update(){
 
             if((pressed.a && crafts[c].arm.shield == 10.0f)){
                 crafts[c].arm.shield -= DELTA_TIME;
-                wav64_play(&sounds[snd_use_shield], SFX_CHANNEL_BONUS);
+                afx_wav64_play_wrapper(snd_use_shield, SFX_CHANNEL_BONUS);
                 effects_add_ambientlight(RGBA32(0,0,100,0));
             }
             if(crafts[c].arm.shield < 10.0f) crafts[c].arm.shield -= DELTA_TIME;
@@ -179,7 +179,7 @@ void crafts_update(){
 
             if((pressed.b && crafts[c].arm.powerup == 10.0f)){
                 crafts[c].arm.powerup -= DELTA_TIME;
-                wav64_play(&sounds[snd_use_powerup], SFX_CHANNEL_BONUS);
+                afx_wav64_play_wrapper(snd_use_powerup, SFX_CHANNEL_BONUS);
                 effects_add_ambientlight(RGBA32(0,100,0,0));
             }
             if(crafts[c].arm.powerup < 10.0f) crafts[c].arm.powerup -= DELTA_TIME;
@@ -198,7 +198,7 @@ void crafts_update(){
                 if(held.d_left) crafts[c].arm.asteroids[b].xspeed -= 0.03;
                 crafts[c].arm.asteroids[b].hp = randr(5, 25);
                 crafts[c].arm.asteroidnexttime = CURRENT_TIME + 12.0f;
-                wav64_play(&sounds[snd_hit], SFX_CHANNEL_EFFECTS);
+                afx_wav64_play_wrapper(snd_hit, SFX_CHANNEL_EFFECTS);
                 effects_add_ambientlight(RGBA32(50,50,50,0));
             }
 
@@ -209,7 +209,7 @@ void crafts_update(){
                 crafts[c].arm.rocketnexttime = CURRENT_TIME + 1.0f;
                 crafts[c].arm.rockets[b].hp = 5;
                 crafts[c].arm.rocketcount--;
-                wav64_play(&sounds[snd_shoot_rocket], SFX_CHANNEL_ROCKET);
+                afx_wav64_play_wrapper(snd_shoot_rocket, SFX_CHANNEL_ROCKET);
                 effects_add_rumble(crafts[c].currentplayerport, 0.45f);
                 effects_add_ambientlight(RGBA32(50,50,25,0));
             }
