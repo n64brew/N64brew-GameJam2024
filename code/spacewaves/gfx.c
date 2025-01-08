@@ -116,6 +116,8 @@ const char *sound_path[SOUND_COUNT] = {
     "rom://spacewaves/use_shield.wav64"
 };
 
+int sound_cur_channels[SOUND_COUNT] = {0};
+
 void gfx_load(){
     font = rdpq_font_load("rom://spacewaves/JupiteroidBoldItalic.font64");
     font2 = rdpq_font_load("rom://spacewaves/Jupiteroid.font64");
@@ -201,6 +203,19 @@ void gfx_close(){
     
     if(modelMatFP) free_uncached(modelMatFP);
 
+}
+
+// workaround for a bug with vadpcm
+void afx_wav64_play_wrapper(int soundindex, int ch){
+    mixer_ch_stop(ch);
+    mixer_ch_stop(ch+1); // stereo
+    int ch_pl = sound_cur_channels[soundindex];
+    if(ch_pl > 0){
+        mixer_ch_stop(ch_pl);
+        mixer_ch_stop(ch_pl+1); // stereo
+    }
+    wav64_play(&sounds[soundindex], ch);
+    sound_cur_channels[soundindex] = ch;
 }
 
 /* Extern inline instantiations. */
