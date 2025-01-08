@@ -6,6 +6,8 @@ The file contains the minigame manager
 
 #include <libdragon.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "core.h"
 #include "minigame.h"
 
@@ -39,7 +41,7 @@ void minigame_loadall()
     dir_findfirst(global_minigamepath, &minigamesdir);
     do
     {
-        if (!strstr(minigamesdir.d_name, ".sym"))
+        if (!strstr(minigamesdir.d_name, ".sym") && !strstr(minigamesdir.d_name, ".desc"))
             gamecount++;
     }
     while (dir_findnext(global_minigamepath, &minigamesdir) == 0);
@@ -53,35 +55,35 @@ void minigame_loadall()
     dir_findfirst(global_minigamepath, &minigamesdir);
     do
     {
-        void* handle;
         MinigameDef* loadeddef;
         Minigame* newdef = &global_minigame_list[gamecount];
         char* filename = minigamesdir.d_name;
 
-        // Ignore the symbol file
+        // Ignore the symbol and the dso file
         if (strstr(filename, ".sym"))
             continue;
+        if (strstr(filename, ".dso"))
+            continue;
 
-        // Get the filepath and open the dso
+        // Get the filepath and open the description file
         char fullpath[global_minigamepath_len + strlen(filename) + 1];
         sprintf(fullpath, "%s%s", global_minigamepath, filename);
-        handle = dlopen(fullpath, RTLD_LOCAL);
+        FILE* file = fopen(fullpath, "r");
 
-        // Get the symbols of the minigame definition. 
-        // Since these symbols will only be temporarily stored in memory, we must make a deep copy
-        loadeddef = dlsym(handle, "minigame_def");
-        assertf(loadeddef, "Unable to find symbol minigame_def in %s\n", filename);
-        newdef->definition.gamename      = strdup(loadeddef->gamename);
-        newdef->definition.developername = strdup(loadeddef->developername);
-        newdef->definition.description   = strdup(loadeddef->description);
-        newdef->definition.instructions  = strdup(loadeddef->instructions);
+        // Get the lines of the minigame definition. 
+        // These lines will be streamed directly to the minigame list
+        assertf(file, "Unable to find minigame description in %s\n", filename);
+        fgets(newdef->definition.gamename, sizeof(newdef->definition.gamename), file);
+        fgets(newdef->definition.developername, sizeof(newdef->definition.developername), file);
+        fgets(newdef->definition.description, sizeof(newdef->definition.description), file);
+        fgets(newdef->definition.instructions, sizeof(newdef->definition.instructions), file);
 
         // Set the internal name as the filename without the extension
         strrchr(filename, '.')[0] = '\0';
         newdef->internalname = strdup(filename);
 
         // Cleanup
-        dlclose(handle);
+        fclose(file);
         gamecount++;
     }
     while (dir_findnext("rom:/minigames/", &minigamesdir) == 0);
