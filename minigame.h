@@ -9,17 +9,12 @@ extern "C" {
                        Public Minigame Constants
     ***************************************************************/
 
-   #define GAMENAME_MAX_LENGTH 256
-   #define DEVNAME_MAX_LENGTH 256
-   #define DESCRIPTION_MAX_LENGTH 512
-   #define INSTRUCTIONS_MAX_LENGTH 512
-
     // You need to have one of these structs defined globally for the minigame manager to detect it
     typedef struct {
-        char gamename[GAMENAME_MAX_LENGTH];
-        char developername[DEVNAME_MAX_LENGTH];
-        char description[DESCRIPTION_MAX_LENGTH];
-        char instructions[INSTRUCTIONS_MAX_LENGTH];
+        const char* gamename;
+        const char* developername;
+        const char* description;
+        const char* instructions;
     } MinigameDef;
 
 
