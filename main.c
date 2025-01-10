@@ -33,6 +33,7 @@ int main()
     // Initialize most subsystems
     asset_init_compression(2);
     asset_init_compression(3);
+    wav64_init_compression(3);
     dfs_init(DFS_DEFAULT_LOCATION);
 
     joypad_init();
