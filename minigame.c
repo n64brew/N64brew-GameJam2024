@@ -55,7 +55,7 @@ void minigame_loadall()
     dir_findfirst(global_minigamepath, &minigamesdir);
     do
     {
-        char buffer[512];
+        char buffer[512] = {0};
         Minigame* newdef = &global_minigame_list[gamecount];
         char* filename = minigamesdir.d_name;
 
@@ -73,9 +73,10 @@ void minigame_loadall()
         // Get the lines of the minigame definition. 
         // These lines will be streamed directly to the minigame list
         assertf(file, "Unable to find minigame description in %s\n", filename);
+        buffer[0] = 0;
         fgets(buffer, sizeof(buffer), file);  newdef->definition.gamename = strdup(buffer);
         fgets(buffer, sizeof(buffer), file);  newdef->definition.developername = strdup(buffer);
-        fgets(buffer, sizeof(buffer), file);  buffer[strcspn(buffer, "\n")] = 0; // remove the \n for text rendering
+        fgets(buffer, sizeof(buffer), file);  buffer[strlen(buffer)-1] = 0;   // remove trailing \n
         newdef->definition.description = strdup(buffer);
         fgets(buffer, sizeof(buffer), file);  newdef->definition.instructions = strdup(buffer);
 
