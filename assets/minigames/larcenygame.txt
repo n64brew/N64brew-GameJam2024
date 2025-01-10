@@ -1,0 +1,4 @@
+Larceny
+RiPpEr253, music by drozerix
+A 2v2 game pitting Thieves against Guards and their treasures, hold r on start for hires
+Stick: Move, A: Thief: Wall Jump, Guard: Stun Thief

@@ -1,0 +1,4 @@
+Destroy!
+Ultrarare
+Destroy buildings for points. Most points wins.
+Press B to attack.

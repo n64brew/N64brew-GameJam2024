@@ -43,12 +43,14 @@ MODEL_LIST  = $(wildcard $(ASSETS_DIR)/*.glb) $(wildcard $(ASSETS_DIR)/core/*.gl
 SOUND_LIST  = $(wildcard $(ASSETS_DIR)/*.wav) $(wildcard $(ASSETS_DIR)/core/*.wav)
 SOUND2_LIST  = $(wildcard $(ASSETS_DIR)/*.mp3) $(wildcard $(ASSETS_DIR)/core/*.mp3)
 MUSIC_LIST  = $(wildcard $(ASSETS_DIR)/*.xm)  $(wildcard $(ASSETS_DIR)/core/*.xm)
+DESC_LIST  = $(wildcard $(ASSETS_DIR)/minigames/*.txt)  $(wildcard $(ASSETS_DIR)/core/*.txt)
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(IMAGE_LIST:%.png=%.sprite))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(FONT_LIST:%.ttf=%.font64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MODEL_LIST:%.glb=%.t3dm))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(SOUND_LIST:%.wav=%.wav64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(SOUND2_LIST:%.mp3=%.wav64))
 ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(MUSIC_LIST:%.xm=%.xm64))
+ASSETS_LIST += $(subst $(ASSETS_DIR),$(FILESYSTEM_DIR),$(DESC_LIST:%.txt=%.desc))
 
 ifeq ($(DEBUG), 1)
 	N64_CFLAGS += -g -DDEBUG=$(DEBUG)
@@ -101,6 +103,11 @@ $(FILESYSTEM_DIR)/%.xm64: $(ASSETS_DIR)/%.xm
 	@mkdir -p $(dir $@)
 	@echo "    [XM] $@"
 	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o $(dir $@) "$<"
+
+$(FILESYSTEM_DIR)/minigames/%.desc: $(ASSETS_DIR)/minigames/%.txt
+	@mkdir -p $(dir $@)
+	@echo "    [MINIGAME-INFO] $@"
+	cp "$<" $@
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/$(ROMNAME).externs
 $(MAIN_ELF_EXTERNS): $(DSO_LIST)

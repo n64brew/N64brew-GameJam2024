@@ -1,0 +1,4 @@
+Underground Grind
+raisedwizardry
+Find the treasure by grinding it out underground in a flat 3 x 3 grid
+Press A and Z in squence to dig through the blocks. Use the control stick move around
