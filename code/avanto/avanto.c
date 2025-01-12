@@ -14,9 +14,10 @@
 const MinigameDef minigame_def = {
   .gamename = "Sauna Rush",
   .developername = "Flávio Zavan",
-  .description = "A relaxing winter day suddenly turns into a competition",
-  .instructions = "Inside: Hold Z to duck\n"
-    "Outside: Press the buttons indicated on the screen",
+  .description = "A relaxing winter day turns into a competition",
+  .instructions = "Inside: Hold Z to duck and avoid the heat from the steam. "
+    "Don't pass out!\nOutside: Press the buttons indicated on the screen. "
+    "The heat from the sauna gives you a speed boost",
 };
 
 surface_t *z_buffer;
