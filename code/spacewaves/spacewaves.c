@@ -106,6 +106,8 @@ int main()
         gamestatus.paused = !gamestatus.paused;
         gamestatus.state = gamestatus.paused? GAMESTATE_PAUSED : GAMESTATE_PLAY;
         afx_wav64_play_wrapper(snd_button_click2, SFX_CHANNEL_EFFECTS);
+        for(int i = 0; i < MAXPLAYERS; i++)
+          joypad_set_rumble_active(i, false);
       }
       if(btn.start && gamestatus.state == GAMESTATE_GETREADY){
         gamestatus.paused = true;
@@ -142,6 +144,8 @@ int main()
       bool craftsalive = false;
       for(int i = 0; i < 3; i++) if(crafts[i].enabled) craftsalive = true;
       if((gamestatus.statetime <= 0.0f || !craftsalive || station.hp <= 0.0f)){
+        for(int i = 0; i < MAXPLAYERS; i++)
+          joypad_set_rumble_active(i, false);
         uint32_t count = core_get_playercount();
         playerturn++;
         effects.screenshaketime = 0;
