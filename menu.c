@@ -68,7 +68,7 @@ static float roulette;
 
 static rdpq_font_t *font;
 static rdpq_font_t *fontdbg;
-static int* sorted_indices;
+static int *minigame_indices;
 
 static wav64_t sfx_cursor;
 static wav64_t sfx_confirm;
@@ -80,20 +80,6 @@ static xm64player_t global_music;
 static float fadeouttime;
 static float time;
 
-
-/*==============================
-    minigame_sort
-    Sorts two names alphabetically
-    @param  The first name
-    @param  The second name
-    @return -1 if a is less than b, 1 if a is greater than b, and 0 if they are equal
-==============================*/
-
-static int minigame_sort(const void *a, const void *b)
-{
-    int idx1 = *(int*)a, idx2 = *(int*)b;
-    return strcasecmp(global_minigame_list[idx1].definition.gamename, global_minigame_list[idx2].definition.gamename);
-}
 
 /*==============================
     get_selection_offset
@@ -241,11 +227,11 @@ void menu_init()
     for (int i = 0; i < global_minigame_count; i++)
         if (!blacklist[i])
             minigamecount++;
-    sorted_indices = malloc(minigamecount * sizeof(int));
+    minigame_indices = malloc(minigamecount * sizeof(int));
+    // Minigames are globally sorted by name
     for (int i = 0; i < global_minigame_count; i++)
         if (!blacklist[i])
-            sorted_indices[j++] = i;
-    qsort(sorted_indices, minigamecount, sizeof(int), minigame_sort);
+            minigame_indices[j++] = i;
 
     select = global_lastplayed;
 
@@ -513,7 +499,7 @@ void menu_loop(float deltatime)
         }
 
         // Show the description of the selected minigame
-        Minigame *cur = &global_minigame_list[sorted_indices[select]];
+        Minigame *cur = &global_minigame_list[minigame_indices[select]];
         rdpq_textparms_t parms = {
             .width = rect_width + 10, 
             .wrap = WRAP_WORD,
@@ -540,7 +526,7 @@ void menu_loop(float deltatime)
           rdpq_text_printf(&textparmsCenter, FONT_TEXT, 
             pos_x-100, ycur+3, 
             select == global_i ? "^00%s" : "^01%s",
-            global_minigame_list[sorted_indices[global_i]].definition.gamename
+            global_minigame_list[minigame_indices[global_i]].definition.gamename
           );
           ycur += 24;
         }
@@ -600,7 +586,7 @@ void menu_loop(float deltatime)
         {
             is_first_time = false;
             global_lastplayed = select;
-            minigame_loadnext(global_minigame_list[sorted_indices[select]].internalname);
+            minigame_loadnext(global_minigame_list[minigame_indices[select]].internalname);
             if (core_get_nextround() != NR_FREEPLAY)
                 savestate_save(false);
             core_level_changeto(LEVEL_MINIGAME);
@@ -612,7 +598,7 @@ void menu_loop(float deltatime)
 
 void menu_cleanup()
 {
-    free(sorted_indices);
+    free(minigame_indices);
     rspq_wait();
     
     sprite_free(bg_pattern);

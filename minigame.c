@@ -26,6 +26,21 @@ size_t    global_minigame_count;
 static const char*  global_minigamepath = "rom:/minigames/";
 static const size_t global_minigamepath_len = 15;
 
+/*==============================
+    minigame_sort
+    Alphabetically sorts minigames based on their names
+    @param  The first minigame
+    @param  The second minigame
+    @return -1 if a is less than b, 1 if a is greater than b, and 0 if they are equal
+==============================*/
+
+static int minigame_sort(const void *a, const void *b)
+{
+    const Minigame *ma = (Minigame *) a;
+    const Minigame *mb = (Minigame *) b;
+    return strcasecmp(ma->definition.gamename, mb->definition.gamename);
+}
+
 
 /*==============================
     minigame_loadall
@@ -89,6 +104,8 @@ void minigame_loadall()
         gamecount++;
     }
     while (dir_findnext("rom:/minigames/", &minigamesdir) == 0);
+
+    qsort(global_minigame_list, gamecount, sizeof(Minigame), minigame_sort);
 }
 
 
