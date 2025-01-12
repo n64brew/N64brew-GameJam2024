@@ -1,0 +1,4 @@
+Coin Rush
+HailToDodongo
+Collect as many coins as possible!
+Stick: Move, B: Attack, A: Jump
