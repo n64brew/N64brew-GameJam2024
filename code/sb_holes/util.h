@@ -34,9 +34,9 @@ typedef struct
 
 enum OBJ_TYPES
 {
+  OBJ_HYDRANT,
   OBJ_CAR,
   OBJ_BUILDING,
-  OBJ_HYDRANT,
   NUM_OBJ_TYPES
 };
 
@@ -83,8 +83,9 @@ typedef struct
   float currSpeed;
   bool isAlive;
   PlyNum ai_targetPlayer;
-  PlyNum ai_targetObject;
-  int ai_reactionspeed;
+  object_type *ai_targetBatch;
+  object_data *ai_targetObject;
+  uint8_t ai_reactionspeed;
   uint8_t score;
   control_data btn;
 } player_data;
@@ -134,7 +135,8 @@ float vec2_dist_squared(T3DVec3 *pos0, T3DVec3 *pos1)
 {
   float dx = pos1->v[0] - pos0->v[0];
   float dy = pos1->v[2] - pos0->v[2];
-  return dx * dx + dy * dy;
+  float result = dx * dx + dy * dy;
+  return result < FM_EPSILON ? 0.0f : result; // Clamp results near 0
 }
 
 // Return whether point is within a radius (radii0 == 0), or if 2 radii overlap (radii0 != 0)

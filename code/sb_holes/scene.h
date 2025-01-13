@@ -84,18 +84,26 @@ void gameplay_fixedLoop(game_data *game, float deltaTime)
     {
         // Determine if a player has won
         uint32_t alivePlayers = 0;
+        uint32_t humanPlayers = 0;
+        int8_t highestScore = -1;
+        static PlyNum highestScorePlayer = 0;
         PlyNum lastPlayer = 0;
         for (size_t i = 0; i < MAXPLAYERS; i++)
         {
+            // Track players who are still alive
             if (players[i].isAlive)
             {
+                if (i < game->playerCount)
+                    humanPlayers++;
                 alivePlayers++;
                 lastPlayer = i;
             }
-            if (players[i].score >= 40)
+
+            // Track the player with the highest score
+            if (players[i].score > highestScore)
             {
-                alivePlayers = 1;
-                lastPlayer = i;
+                highestScore = players[i].score;
+                highestScorePlayer = i;
             }
         }
 
@@ -108,6 +116,17 @@ void gameplay_fixedLoop(game_data *game, float deltaTime)
             sound_wavPlay(SFX_STOP, false);
             game->scene = ENDING;
         }
+
+        if (humanPlayers <= 0)
+        {
+            game->isEnding = true;
+            game->winner = highestScorePlayer;
+            if (game->playerCount != 4)
+                sound_xmStop();
+            sound_wavPlay(SFX_STOP, false);
+            game->scene = ENDING;
+        }
+
     }
     else
     {

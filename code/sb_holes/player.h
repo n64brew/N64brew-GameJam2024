@@ -33,50 +33,9 @@ void player_init(player_data *player, color_t color, T3DVec3 position, float rot
   player->currSpeed = 0.0f;
   player->isAlive = true;
   player->ai_targetPlayer = rand() % MAXPLAYERS;
-  player->ai_targetObject = rand() % NUM_OBJECTS;
-  player->ai_reactionspeed = (2 - core_get_aidifficulty()) * 5 + rand() % ((3 - core_get_aidifficulty()) * 3);
-}
-
-float ai_target_priority_object(player_data *player, object_data *object)
-{
-  float priority = 0.0f;
-
-  if (!object->visible)
-    return 0.0f;
-
-  if (player->score >= 20)
-    priority -= 0.3f;
-
-  float distance = sqrtf(vec2_dist_squared(&object->position, &player->playerPos));
-
-  if (distance > 0 && object->visible)
-    priority += 0.5f / distance;
-
-  return priority;
-}
-
-float ai_target_priority_player(player_data *player, player_data *other)
-{
-  float priority = 0.0f;
-
-  if (!other->isAlive)
-    return 0.0f;
-
-  if (player->scale.x > 0.4f)
-    priority += 0.8f;
-
-  if (other->scale.x < player->scale.x)
-  {
-    priority += 0.8f;
-  }
-  else if (other->scale.x > player->scale.x)
-  {
-    priority -= 0.3f;
-  }
-
-  priority *= (1.0f + 0.1f * core_get_aidifficulty());
-
-  return priority;
+  player->ai_targetBatch = &objects[OBJ_HYDRANT];
+  player->ai_targetObject = &player->ai_targetBatch->objects[rand() % NUM_OBJECTS];
+  player->ai_reactionspeed = 2 - core_get_aidifficulty();
 }
 
 void player_do_damage(player_data *player)
@@ -107,6 +66,31 @@ void player_do_damage(player_data *player)
 bool player_has_control(game_data *game, player_data *player)
 {
   return player->isAlive && game->countDownTimer < 0.0f;
+}
+
+void ai_handle_direction(player_data *player, T3DVec3 *newDir, T3DVec3 *target)
+{
+  float dist, norm, diff = 0;
+  newDir->v[0] = (target->v[0] - player->playerPos.v[0]);
+  newDir->v[2] = (target->v[2] - player->playerPos.v[2]);
+  dist = sqrtf(newDir->v[0] * newDir->v[0] + newDir->v[2] * newDir->v[2]) + FM_EPSILON;
+  if (dist == 0)
+    dist = 1;
+  norm = 1 / dist;
+  switch (core_get_aidifficulty())
+  {
+    case 0:
+      diff = norm;
+      break;
+    case 1:
+      diff = norm + 0.05f;
+      break;
+    case 2:
+      diff = norm + 0.07f;
+      break;
+  }
+  newDir->v[0] *= diff;
+  newDir->v[2] *= diff;
 }
 
 void player_fixedloop(game_data *game, player_data *player, object_type *objects, float deltaTime, joypad_port_t port, bool is_human)
@@ -146,62 +130,36 @@ void player_fixedloop(game_data *game, player_data *player, object_type *objects
 
       newDir.v[0] = moveX;
       newDir.v[2] = moveY;
-      speed = sqrtf(t3d_vec3_len2(&newDir));
+      speed = sqrtf(t3d_vec3_len2(&newDir)) + FM_EPSILON;
     }
     else
     {
 
-      player_data *targetPlayer = &player[player->ai_targetPlayer];
-      object_data *targetObject = &objects->objects[player->ai_targetObject];
+      if (player->score < 2) player->ai_targetBatch = &objects[OBJ_HYDRANT];
+      else if (player->score >= 2 && player->score < 6) player->ai_targetBatch = &objects[OBJ_CAR];
+      else if (player->score >= 6) player->ai_targetBatch = &objects[OBJ_BUILDING];
 
-      float playerPriority = ai_target_priority_player(player, targetPlayer);
-      float objectPriority = ai_target_priority_object(player, targetObject);
-      if (objectPriority > playerPriority)
-      {
+      player_data *targetPlayer = targetPlayer = &player[player->ai_targetPlayer];
 
-        if (targetObject->visible)
-        {
-          float dist, norm;
-          newDir.v[0] = (targetObject->position.v[0] - player->playerPos.v[0]);
-          newDir.v[2] = (targetObject->position.v[2] - player->playerPos.v[2]);
-          dist = sqrtf(newDir.v[0] * newDir.v[0] + newDir.v[2] * newDir.v[2]);
-          if (dist == 0)
-            dist = 1;
-          norm = 1 / dist;
-          newDir.v[0] *= norm + (0.1f * core_get_aidifficulty());
-          newDir.v[2] *= norm + (0.1f * core_get_aidifficulty());
-          speed = 20;
-        }
-        else
-        {
-          player->ai_targetObject++;
-        }
-      }
-      else if (objectPriority < playerPriority)
+      if(player->score > 14)
       {
-        if (targetPlayer->isAlive && player->plynum != targetPlayer->plynum)
+        if (targetPlayer->isAlive && player->ai_targetPlayer != player->plynum)
         {
-          float dist, norm;
-          newDir.v[0] = (targetPlayer->playerPos.v[0] - player->playerPos.v[0]);
-          newDir.v[2] = (targetPlayer->playerPos.v[2] - player->playerPos.v[2]);
-          dist = sqrtf(newDir.v[0] * newDir.v[0] + newDir.v[2] * newDir.v[2]);
-          if (dist == 0)
-            dist = 1;
-          norm = 1 / dist;
-          newDir.v[0] *= norm + (0.05f * core_get_aidifficulty());
-          newDir.v[2] *= norm + (0.05f * core_get_aidifficulty());
-          speed = 15;
-        }
-        else
-        {
-          player->ai_targetPlayer = 0; // (Attempt) to aquire a new target this frame
+          ai_handle_direction(player, &newDir, &targetPlayer->playerPos);
+          speed = 50.0f - player->ai_reactionspeed;
+        } else {
+          player->ai_targetPlayer = rand() % MAXPLAYERS;
         }
       }
-      else
+
+      if (player->ai_targetObject->visible)
       {
-        player->ai_targetObject = rand() % NUM_OBJECTS;
-        player->ai_targetPlayer = rand() % MAXPLAYERS;
+        ai_handle_direction(player, &newDir, &player->ai_targetObject->position);
+        speed = 40.0f - player->ai_reactionspeed;
+      } else {
+        player->ai_targetObject = &player->ai_targetBatch->objects[rand() % NUM_OBJECTS];
       }
+
     }
   }
 
