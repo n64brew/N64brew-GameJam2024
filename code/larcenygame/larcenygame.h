@@ -1,6 +1,7 @@
 #ifndef GAMEJAM2024_LARCENYGAME_H
 #define GAMEJAM2024_LARCENYGAME_H 
 
+#include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 #include <t3d/t3dskeleton.h>
@@ -114,7 +115,7 @@
 
 // forward declarations
     void player_guardAbility(float deltaTime, int playerNumber);
-    void player_theifAbility(float deltaTime, int playerNumber);
+    void player_thiefAbility(float deltaTime, int playerNumber);
 
     // returns the index of the first unused effect, returns 0 (overwrites the first one) if none free
     int effect_getNextEmptyIndex();

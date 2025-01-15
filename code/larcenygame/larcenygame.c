@@ -4,11 +4,11 @@
 RiPpEr253's entry into the N64Brew 2024 Gamejam
 ***************************************************************/
 
-#include <libdragon.h>
 #include "../../core.h"
 #include "../../minigame.h"
 #include "larcenygame.h"
 #include "larcenygameAI.h"
+#include "larcenyrumblemanager.h"
 // TODO: debug stuff
 #include <inttypes.h>
 
@@ -90,6 +90,7 @@ bool gameEnding;
 bool gamePaused;
 float gamePauseDebounce;
 float gameTimeRemaining;
+int randomisedTeamsResult;
 
 player_team winningTeam;
 
@@ -809,18 +810,85 @@ void player_init(int playerNumber)
         players[playerNumber].aiIndex = ai_assign(playerNumber);
     }
 
+    // assign randomised teams based on player count
     // remember that players are zero indexed
-    if(playerNumber == 0 || playerNumber == 2)
+
+    // 6 starts for 4 players, 5 starts for 3, 2 starts for 2
+    // 16.6% (1 in 6) chance of each start with 4 players, 1 in 5 for 3, 1 in 2 for 2
+    if(randomisedTeamsResult == 0)
     {
-        players[playerNumber].playerTeam = teamThief;
-        players[playerNumber].model = t3d_model_load("rom:/larcenygame/foxThief.t3dm");
+        // normal start 
+        if(playerNumber == 0 || playerNumber == 2)
+        {
+            players[playerNumber].playerTeam = teamThief;
+        }
+        else
+        {
+            players[playerNumber].playerTeam = teamGuard;
+        }
+    }
+    else if(randomisedTeamsResult == 1)
+    {
+        // alternate start 1
+        if(playerNumber == 1 || playerNumber == 3)
+        {
+            players[playerNumber].playerTeam = teamThief;
+        }
+        else
+        {
+            players[playerNumber].playerTeam = teamGuard;
+        }
+    }
+    else if(randomisedTeamsResult == 2)
+    {
+        // alternate start 2
+        if(playerNumber == 0 || playerNumber == 1)
+        {
+            players[playerNumber].playerTeam = teamThief;
+        }
+        else
+        {
+            players[playerNumber].playerTeam = teamGuard;
+        }
+    }
+    else if(randomisedTeamsResult == 3)
+    {
+        // alternate start 3
+        if(playerNumber == 1 || playerNumber == 2)
+        {
+            players[playerNumber].playerTeam = teamThief;
+        }
+        else
+        {
+            players[playerNumber].playerTeam = teamGuard;
+        }
+    }
+    else if(randomisedTeamsResult == 4)
+    {
+        // alternate start 4
+        if(playerNumber == 0 || playerNumber == 3)
+        {
+            players[playerNumber].playerTeam = teamThief;
+        }
+        else
+        {
+            players[playerNumber].playerTeam = teamGuard;
+        }
     }
     else
     {
-        players[playerNumber].playerTeam = teamGuard;
-        players[playerNumber].model = t3d_model_load("rom:/larcenygame/dogGuard.t3dm");
+        // alternate start 5
+        if(playerNumber == 2 || playerNumber == 3)
+        {
+            players[playerNumber].playerTeam = teamThief;
+        }
+        else
+        {
+            players[playerNumber].playerTeam = teamGuard;
+        }
     }
 
+    // assign starting location based on player number and team
     switch(playerNumber)
     {
         case 0:
@@ -840,6 +908,16 @@ void player_init(int playerNumber)
             players[playerNumber].rotY = 0.0f;
         default:
         break;
+    }
+
+    // load models
+    if(players[playerNumber].playerTeam == teamThief)
+    {
+        players[playerNumber].model = t3d_model_load("rom:/larcenygame/foxThief.t3dm");
+    }
+    else
+    {
+        players[playerNumber].model = t3d_model_load("rom:/larcenygame/dogGuard.t3dm");
     }
 
     players[playerNumber].isActive = true;
@@ -1041,6 +1119,9 @@ void player_fixedloop(float deltaTime, int playerNumber)
             if(t3d_vec3_len(&tempVec) < OBJECTIVE_TOUCH_DISTANCE)
             {
                 objectives[iDx].isActive = false;
+
+                // rumble controller for a picked up objective
+                rumbleManager_startRumble(playerNumber, 0.2f);
                 
                 wav64_play(&sfx_objectiveCompleted, 30);
                 mixer_ch_set_vol(30, 0.5f, 0.5f);
@@ -1063,7 +1144,10 @@ void player_fixedloop(float deltaTime, int playerNumber)
             {
                 players[iDx].isActive = false;
 
-                
+                // rumble both thief and catching guards controllers for feedback
+                rumbleManager_startRumble(iDx, 0.5f);           // thief
+                rumbleManager_startRumble(playerNumber, 0.5f);  // guard
+
                 wav64_play(&sfx_thiefCaught, 27);
                 mixer_ch_set_vol(27, 0.5f, 0.5f);
             }
@@ -1090,12 +1174,29 @@ void player_guardAbility(float deltaTime, int playerNumber)
         t3d_vec3_diff(&tempVec, &players[playerNumber].playerPos, &players[iDx].playerPos);
         if(t3d_vec3_len(&tempVec) < GUARD_ABILITY_RANGE && players[iDx].stunTimer == 0.0f) 
         {
+            // rumble the thief's controller to give feedback that they were hit
+            rumbleManager_startRumble(iDx, 0.5f);
             players[iDx].stunTimer = 1.0f;
             tempHasHitSomeone = true;
+            // do a big rumble as feedback for a hit
+            rumbleManager_startRumble(playerNumber, 0.3f);
         }
     }
-    // set the ability timer
-    players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+
+    // didn't hit anyone, do a small rumble as feedback for a miss
+    if(!tempHasHitSomeone)
+    {
+        rumbleManager_startRumble(playerNumber, 0.1f);
+
+        // set the ability timer to be longer because of a miss
+        players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN * 2;
+    }
+    else
+    {
+        // set the ability timer normally
+        players[playerNumber].abilityTimer = DEFAULT_ABILITY_COOLDOWN;
+    }
+
     
     // play the animation for the ability
     t3d_anim_set_playing(&players[playerNumber].animAbility, true);
@@ -1165,6 +1266,9 @@ void player_thiefAbility(float deltaTime, int playerNumber)
             // play sound effect here
             wav64_play(&sfx_thiefJumpAbility, 26);
             mixer_ch_set_vol(26, 0.5f, 0.5f);
+
+            // do some rumblin'
+            rumbleManager_startRumble(playerNumber, 0.1f);
 
             break;
         }
@@ -1340,8 +1444,21 @@ void objective_init()
         t3d_matrix_pop(1);
     objectives[0].dplObjective = rspq_block_end();
     objectives[0].objectiveRotationY = 0.0f;
-    objectives[0].objectivePos = (T3DVec3){{-70.0f, 0.0f, -70.0f}};
-    
+    if(randomisedTeamsResult == 0 || randomisedTeamsResult == 2 || randomisedTeamsResult == 3)
+    {
+        // start top left
+        objectives[0].objectivePos = (T3DVec3){{-70.0f, 0.0f, -70.0f}};
+    }
+    else if(randomisedTeamsResult == 5)
+    {
+        // start bottom left
+        objectives[0].objectivePos = (T3DVec3){{-70.0f, 0.0f, 70.0f}};
+    }
+    else
+    {   // start top right
+        objectives[0].objectivePos = (T3DVec3){{70.0f, 0.0f, -70.0f}};
+    }
+
     objectives[1].isActive = true;
     objectives[1].modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
     objectives[1].objectiveModel = t3d_model_load("rom:/larcenygame/theKilogramObjective.t3dm");
@@ -1355,7 +1472,21 @@ void objective_init()
         t3d_matrix_pop(1);
     objectives[1].dplObjective = rspq_block_end();
     objectives[1].objectiveRotationY = 0.0f;
-    objectives[1].objectivePos = (T3DVec3){{70.0f, 0.0f, 70}};
+    if(randomisedTeamsResult == 0 || randomisedTeamsResult == 4 || randomisedTeamsResult == 5)
+    {
+        // start bottom right
+        objectives[1].objectivePos = (T3DVec3){{70.0f, 0.0f, 70}};
+    }
+    else if(randomisedTeamsResult == 1 || randomisedTeamsResult == 3)
+    {
+        //start bottom left
+        objectives[1].objectivePos = (T3DVec3){{-70.0f, 0.0f, 70}};
+    }
+    else
+    {
+        //start top right
+        objectives[1].objectivePos = (T3DVec3){{70.0f, 0.0f, -70}};
+    }
 }
 
 /*==============================
@@ -1536,6 +1667,19 @@ void minigame_init()
     gameEnding = false;
     gameTimeRemaining = STARTING_GAME_TIME;
 
+    if( core_get_playercount() <= 2)
+    {
+        randomisedTeamsResult = rand() % 2;
+    }
+    else if(core_get_playercount() == 3)
+    {
+        randomisedTeamsResult = rand() % 5;
+    }
+    else
+    {
+        randomisedTeamsResult = rand() % 6;
+    }
+
     // initialise the display, setting resolution, colour depth and AA
     joypad_buttons_t btn;
     btn = joypad_get_buttons_held(0);
@@ -1637,6 +1781,9 @@ void minigame_init()
         player_init(i);
     }
 
+    // now that players are initialised, go ahead and start rumble
+    rumbleManager_init(players);
+
     // set up objectives
     objective_init();
 
@@ -1673,6 +1820,8 @@ void minigame_fixedloop(float deltaTime)
         player_fixedloop(deltaTime, i);
     }
 
+    rumbleManager_update(deltaTime);
+
     HUD_Update(deltaTime);
 
     effect_update(deltaTime);
@@ -1685,6 +1834,12 @@ void minigame_fixedloop(float deltaTime)
         if(countdownTimer < lastCountdownNumber)
         {
             lastCountdownNumber = countdownTimer;
+            // rumble every players controller so they know game is about to start
+            for(uint32_t iDx = 0; iDx < MAXPLAYERS; iDx++)
+            {
+                // do some rumblin'
+                rumbleManager_startRumble(iDx, 0.1f);
+            }
             wav64_play(&sfx_countdown, 31);
             mixer_ch_set_vol(31, 0.5f, 0.5f);
         }
@@ -1695,7 +1850,15 @@ void minigame_fixedloop(float deltaTime)
             mixer_ch_set_vol(31, 0.75f, 0.75f);
             gameStarting = false;
 
-            // TODO: start playing music
+            
+            // rumble every players controller so they know game has started
+            for(uint32_t iDx = 0; iDx < MAXPLAYERS; iDx++)
+            {
+                // do some rumblin'
+                rumbleManager_startRumble(iDx, 0.2f);
+            }
+
+            // start playing music
             xm64player_play(&xm_music, 0);
             xm64player_set_loop(&xm_music, true);
             xm64player_set_vol(&xm_music, 0.5f);
@@ -1916,6 +2079,9 @@ void minigame_cleanup()
     {
         player_cleanup(i);
     }
+
+    // make sure rumbleManager cleans up too
+    rumbleManager_cleanup();
 
     // destroy collisions
     collision_cleanup();
