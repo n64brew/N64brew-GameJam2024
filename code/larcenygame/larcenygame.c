@@ -1815,16 +1815,27 @@ void minigame_loop(float deltaTime)
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
+<<<<<<< HEAD
     // tell tiny3d it's time to start a new frame
     t3d_frame_start();
     // attach the desired viewport
     t3d_viewport_attach(&viewport);
 
+=======
+>>>>>>> b732cb5c4d3ae52701a920d1cb7d32f790da6580
     // set the lighting details
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
+<<<<<<< HEAD
+=======
+    // tell tiny3d it's time to start a new frame
+    t3d_frame_start();
+    // attach the desired viewport
+    t3d_viewport_attach(&viewport);
+
+>>>>>>> b732cb5c4d3ae52701a920d1cb7d32f790da6580
     // clear the colour and depth buffers
     //t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
     t3d_screen_clear_color(RGBA32(32, 32, 32, 0xFF));
