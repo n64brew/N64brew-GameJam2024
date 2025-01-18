@@ -76,10 +76,10 @@ void userinterface_draw(){
     sys_get_heap_stats(&heap_stats);
     rdpq_sync_pipe(); // Hardware crashes otherwise
         rdpq_sync_tile(); // Hardware crashes otherwise
-    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, 20, h - 40, "FPS: %.2f", fps);
-    rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, 20, h - 20, "Mem: %d KiB", heap_stats.used/1024);
-rdpq_sync_pipe(); // Hardware crashes otherwise
-        rdpq_sync_tile(); // Hardware crashes otherwise
+    //rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, 20, h - 40, "FPS: %.2f", fps);
+    //rdpq_text_printf(&(rdpq_textparms_t){.disable_aa_fix = true}, FONT_TEXT, 20, h - 20, "Mem: %d KiB", heap_stats.used/1024);
+//rdpq_sync_pipe(); // Hardware crashes otherwise
+    //    rdpq_sync_tile(); // Hardware crashes otherwise
     if(gamestatus.state == GAMESTATE_PLAY){
 
         rdpq_set_mode_standard();
