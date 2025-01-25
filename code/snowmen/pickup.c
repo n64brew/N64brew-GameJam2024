@@ -491,7 +491,7 @@ void PickupSetType(struct PickupStruct* pickupStruct, enum EDecorationType decor
 {
     pickupStruct->decorationType = decorationType;
 
-    color_t color = color_from_packed32(0x000000<<8);
+    color_t color = color_from_packed32(0x000000ff);
 
     /*if (pickupStruct->pickupActor.model != NULL)
     {
@@ -504,27 +504,27 @@ void PickupSetType(struct PickupStruct* pickupStruct, enum EDecorationType decor
             {
             case EDT_Decoration1:
                 pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_rock_1.t3dm");
-                color = color_from_packed32(0x4a4a4a<<8);
+                color = color_from_packed32(0x4a4a4aff);
                 break;
             case EDT_Decoration2:
                 pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_carrot.t3dm");
-                color = color_from_packed32(0xdb741a<<8);
+                color = color_from_packed32(0xdb741aff);
                 break;
             case EDT_Decoration3:
                 pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_mitt.t3dm");
-                color = color_from_packed32(0xc75292<<8);
+                color = color_from_packed32(0xc75292ff);
                 break;
             case EDT_Decoration4:
                 pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_hat.t3dm");
-                color = color_from_packed32(0xffffff<<8);
+                color = color_from_packed32(0xffffffff);
                 break;
             case EDT_Decoration5:
                 pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_scarf.t3dm");
-                color = color_from_packed32(0xb02e20<<8);
+                color = color_from_packed32(0xb02e20ff);
                 break;
             case EDT_Decoration6:
                 pickupStruct->pickupActor.model = t3d_model_load("rom:/snowmen/deco_stick.t3dm");
-                color = color_from_packed32(0x704022<<8);
+                color = color_from_packed32(0x704022ff);
                 break;
             
             default:
@@ -538,7 +538,7 @@ void PickupSetType(struct PickupStruct* pickupStruct, enum EDecorationType decor
 
         rspq_block_begin();
             t3d_matrix_push(pickupStruct->pickupActor.TransformFP);
-            rdpq_set_prim_color(color_from_packed32(0xfca9dd<<8));
+            rdpq_set_prim_color(color_from_packed32(0xfca9ddff));
             t3d_model_draw(pickupStruct->pickupActor.model);// Draw Static Mesh
         t3d_matrix_pop(1);// must also pop it when done
         pickupStruct->dplAltSnowball = rspq_block_end();

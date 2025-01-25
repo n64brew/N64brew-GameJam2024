@@ -81,38 +81,38 @@ void SpawnerInit(struct DecorationSpawnerStruct* decorationSpawner, enum EDecora
     //decorationSpawner->decorationType = EDT_Decoration1;
 
         //////////////////////////////////////
-    color_t color = color_from_packed32(0x000000<<8);
+    color_t color = RGBA32(0, 0, 0, 255);// color_from_packed32(0x000000ff);
 
     switch (decorationSpawner->decorations[0].decorationType)
     {
     case EDT_Decoration1:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_stones.t3dm");
-        color = color_from_packed32(0x4a4a4a<<8);
+        color = RGBA32(74, 74, 74, 255);//color_from_packed32(0x4a4a4aff);
         break;
     case EDT_Decoration2:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_carrot.t3dm");
-        color = color_from_packed32(0xdb741a<<8);
+        color = RGBA32(219, 116, 26, 255);//color_from_packed32(0xdb741aff);
         break;
     case EDT_Decoration3:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_mitt.t3dm");
-        color = color_from_packed32(0xc75292<<8);
+        color = RGBA32(199, 82, 146, 255);//color_from_packed32(0xc75292ff);
         break;
     case EDT_Decoration4:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_hat.t3dm");
-        color = color_from_packed32(0xffffff<<8);
+        color = RGBA32(255, 255, 255, 255);//color_from_packed32(0xffffffff);
         break;
     case EDT_Decoration5:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_scarf.t3dm");
-        color = color_from_packed32(0xb02e20<<8);
+        color = RGBA32(176, 46, 32, 255);//color_from_packed32(0xb02e20ff);
         break;
     case EDT_Decoration6:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_sticks.t3dm");
-        color = color_from_packed32(0x704022<<8);
+        color = RGBA32(112, 64, 34, 255);//color_from_packed32(0x704022ff);
         break;
     
     default:
         decorationSpawner->spawnerActor.model = t3d_model_load("rom:/snowmen/spawner_stones.t3dm");
-        color = color_from_packed32(0x4a4a4a<<8);
+        color = RGBA32(74, 74, 74, 255);//color_from_packed32(0x4a4a4aff);
         break;
     }
 

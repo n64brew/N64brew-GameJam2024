@@ -145,7 +145,7 @@ void SnowmanInit(struct SnowmanStruct* snowmanStruct, enum EPlayerId newOwner)
         break;
 
         default:
-        SnowmanColour = color_from_packed32(0x000000<<8);
+        SnowmanColour = color_from_packed32(0x000000ff);
         break;
     }
     
@@ -158,7 +158,7 @@ void SnowmanInit(struct SnowmanStruct* snowmanStruct, enum EPlayerId newOwner)
     snowmanStruct->dpls[SNOWBALL0] = rspq_block_end();
     rspq_block_begin();
     t3d_matrix_push(snowmanStruct->HeadTransformFP);
-        rdpq_set_prim_color(color_from_packed32(0xdb741a<<8));
+        rdpq_set_prim_color(color_from_packed32(0xdb741aff));
         t3d_model_draw(snowmanStruct->models[CARROT]);
     t3d_matrix_pop(1);
     snowmanStruct->dpls[CARROT] = rspq_block_end();
@@ -208,7 +208,7 @@ void SnowmanInit(struct SnowmanStruct* snowmanStruct, enum EPlayerId newOwner)
     snowmanStruct->dpls[MITT] = rspq_block_end();
     rspq_block_begin();
     t3d_matrix_push(snowmanStruct->StickTransformFP);
-        rdpq_set_prim_color(color_from_packed32(0x704022<<8));
+        rdpq_set_prim_color(color_from_packed32(0x704022ff));
         t3d_model_draw(snowmanStruct->models[STICK]);
     t3d_matrix_pop(1);
     snowmanStruct->dpls[STICK] = rspq_block_end();
