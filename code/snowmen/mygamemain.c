@@ -1009,8 +1009,8 @@ void SetSnowballSpawnLocations(SpawnLocation locations[6])
 
 void player_draw_billboard(PlayerStruct* playerStruct)
 {
-  rdpq_sync_pipe();// Hardware crashes otherwise
-  rdpq_sync_tile(); // Hardware crashes otherwise
+  //rdpq_sync_pipe();// Hardware crashes otherwise
+  //rdpq_sync_tile(); // Hardware crashes otherwise
 
   T3DVec3 billboardPos = (T3DVec3){{
     playerStruct->PlayerActor.Position.v[0],
@@ -1024,8 +1024,8 @@ void player_draw_billboard(PlayerStruct* playerStruct)
   int x = floorf(billboardScreenPos.v[0]);
   int y = floorf(billboardScreenPos.v[1]);
 
-  rdpq_sync_pipe(); // Hardware crashes otherwise
-  rdpq_sync_tile(); // Hardware crashes otherwise
+  //rdpq_sync_pipe(); // Hardware crashes otherwise
+  //rdpq_sync_tile(); // Hardware crashes otherwise
 
     rdpq_text_printf(&(rdpq_textparms_t){ .style_id = playerStruct->playerId }, FONT_BILLBOARD, x-5, y-16, "P%d", playerStruct->playerId+1);
     //rdpq_text_printf(NULL, FONT_BILLBOARD, x-5, y-16, "P%d", playerStruct->playerId+1);
@@ -1034,8 +1034,8 @@ void player_draw_billboard(PlayerStruct* playerStruct)
 
 void draw_billboard_generic(T3DVec3* billboardPos, char* string, float yOffset)
 {
-  rdpq_sync_pipe(); // Hardware crashes otherwise
-  rdpq_sync_tile(); // Hardware crashes otherwise
+  //rdpq_sync_pipe(); // Hardware crashes otherwise
+  //rdpq_sync_tile(); // Hardware crashes otherwise
 
   /*T3DVec3 billboardPos = (T3DVec3){{
     playerStruct->PlayerActor.Position.v[0],
@@ -1049,14 +1049,13 @@ void draw_billboard_generic(T3DVec3* billboardPos, char* string, float yOffset)
   int x = floorf(billboardScreenPos.v[0]);
   int y = floorf(billboardScreenPos.v[1] + yOffset);
 
-  rdpq_sync_pipe(); // Hardware crashes otherwise
-  rdpq_sync_tile(); // Hardware crashes otherwise
+  //rdpq_sync_pipe(); // Hardware crashes otherwise
+  //rdpq_sync_tile(); // Hardware crashes otherwise
     //char string1[32];
   //snprintf(string1, sizeof(string1), "%d potatoe", -1);
 
     rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, FONT_BILLBOARD, x-5, y-16, "%s", string);
     //rdpq_text_printf(NULL, FONT_BILLBOARD, x-5, y-16, "P%d", playerStruct->playerId+1);
-
 }
 
 void spawn_temp_billboard(T3DVec3* billboardPos, char* string, bool moveUp, float deltaTime)
@@ -1123,11 +1122,17 @@ void minigame_init()
     rdpq_text_register_font(FONT_TEXT, font);
     rdpq_font_style(font, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
 
-    const color_t colors[] = {
+    /*const color_t colors[] = {
         color_from_packed32(0xFF0000<<8),
         color_from_packed32(0x0000FF<<8),
         color_from_packed32(0xFFFF00<<8),
         color_from_packed32(0x00FF00<<8),
+    };*/
+    const color_t colors[] = {
+        PLAYERCOLOR_1,
+        RGBA32(61, 90, 255, 255),
+        PLAYERCOLOR_4,
+        RGBA32(0, 255, 0, 255),
     };
 
     fontBillboard = rdpq_font_load("rom:/squarewave.font64");
@@ -1136,7 +1141,11 @@ void minigame_init()
     {
         rdpq_font_style(fontBillboard, i, &(rdpq_fontstyle_t){ .color = colors[i] });
     }
-    rdpq_font_style(fontBillboard, 4, &(rdpq_fontstyle_t){ .color = color_from_packed32(0xFFFFFF<<8) });
+    /*rdpq_font_style(fontBillboard, 0, &(rdpq_fontstyle_t){ .color = PLAYERCOLOR_1 });
+    rdpq_font_style(fontBillboard, 1, &(rdpq_fontstyle_t){ .color = PLAYERCOLOR_2 });
+    rdpq_font_style(fontBillboard, 2, &(rdpq_fontstyle_t){ .color = PLAYERCOLOR_3 });
+    rdpq_font_style(fontBillboard, 3, &(rdpq_fontstyle_t){ .color = PLAYERCOLOR_4 });*/
+    rdpq_font_style(fontBillboard, 4, &(rdpq_fontstyle_t){ .color = RGBA32(255, 255, 255, 255) });
 
     
 
@@ -1356,7 +1365,7 @@ void minigame_init()
     EnvActor.collisionModelPath = "rom:/snowmen/SnowyMapTest6_4_Collision.col";
     rspq_block_begin();
         t3d_matrix_push(EnvActor.TransformFP);
-        rdpq_set_prim_color(color_from_packed32(0x17752c));
+        rdpq_set_prim_color(RGBA32(23, 117, 44, 255));
         t3d_model_draw(EnvActor.model);
         t3d_matrix_pop(1);
     EnvActor.dpl = rspq_block_end();
@@ -1414,10 +1423,10 @@ T3DModel *treeModel;*/
     wav64_open(&sfx_stop, "rom:/core/Stop.wav64");
     wav64_open(&sfx_winner, "rom:/core/Winner.wav64");
     //xm64player_open(&music, "rom:/snake3d/bottled_bubbles.xm64");
-     xm64player_open(&music, "rom:/snowmen/christmas_day.xm64");
+    xm64player_open(&music, "rom:/snowmen/christmas_day.xm64");
     //xm64player_play(&music, 0);
-    rdpq_sync_pipe(); // Hardware crashes otherwise
-        rdpq_sync_tile(); 
+    //rdpq_sync_pipe(); // Hardware crashes otherwise
+        //rdpq_sync_tile(); 
 }
 
 void draw_loop(bool showText, float deltaTime)
@@ -1425,6 +1434,9 @@ void draw_loop(bool showText, float deltaTime)
     //rdpq_mode_antialias(AA_STANDARD);
     if (TitleScreen)
     {
+          //rdpq_sync_pipe(); // Hardware crashes otherwise
+            //rdpq_sync_tile(); // Hardware crashes otherwise
+        syncPoint = rspq_syncpoint_new();
         t3d_mat4_from_srt_euler(&snowballs[0].pickupActor.Transform,
             (float[3]){.5f, .5f, .5f}, 
             (float[3]){0.f, 0.f, 0.f},
@@ -1454,24 +1466,25 @@ void draw_loop(bool showText, float deltaTime)
           t3d_mat4_to_fixed(snowmen[0].HeadTransformFP,  &snowmen[0].snowmanActor.Transform);
             t3d_mat4_to_fixed(snowmen[0].TorsoTransformFP,  &snowmen[0].snowmanActor.Transform);
                 t3d_mat4_to_fixed(snowmen[0].StickTransformFP,  &snowmen[0].snowmanActor.Transform);
-
+          //rdpq_sync_pipe(); // Hardware crashes otherwise
+        //rdpq_sync_tile(); // Hardware crashes otherwise
 
         rspq_block_run(snowballs[0].pickupActor.dpl);
         rspq_block_run(spawners[3].spawnerActor.dpl);
         SnowmanDrawAll(&snowmen[0]);
 
-        rdpq_sync_pipe(); // Hardware crashes otherwise
-        rdpq_sync_tile(); // Hardware crashes otherwise
+        //rdpq_sync_pipe(); // Hardware crashes otherwise
+        //rdpq_sync_tile(); // Hardware crashes otherwise
 
         //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 10, 10,"%.2f", display_get_fps());
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.10f,"Grab decorations and Snowballs");// decorations and Snowballs \nwith the A Button!");
+        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, 2, 20, display_get_height()*.10f,"Grab decorations and Snowballs");// decorations and Snowballs \nwith the A Button!");
             //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 45, display_get_height()*.10f," decorations and Snowballs");//A Button!");
-                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.17f,"with the ");//A Button!");
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, 2, 20, display_get_height()*.17f,"with the ");//A Button!");
                     rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 70, display_get_height()*.17f,"A Button!");
         rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.25f,"Then");//, bring them back to your \nsmiley face base!");
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 2 }, 2, 50, display_get_height()*.25f,"bring them back");// to your \nsmiley face base!");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 50, display_get_height()*.25f,"bring them back");// to your \nsmiley face base!");
                 rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 140, display_get_height()*.25f,"to your");// \nsmiley face base!");
-                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 2 }, 2, 20, display_get_height()*.32f,"smiley face base!");
+                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 20, display_get_height()*.32f,"smiley face base!");
         rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.45f,"Snowballs = 2 points");
         rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.55f,"Decorations = 1 point");
         rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 20, display_get_height()*.68f,"Stun");// opponents with the B button \nto steal what they're holding!");
@@ -1561,7 +1574,7 @@ void draw_loop(bool showText, float deltaTime)
 
     if (showText)
     {
-        syncPoint = rspq_syncpoint_new();
+        //syncPoint = rspq_syncpoint_new();
 
 
         for(int i = 0; i < 4; i++)
@@ -1586,8 +1599,8 @@ void draw_loop(bool showText, float deltaTime)
                     snowmen[i].snowmanActor.BillboardPosition = snowmen[i].snowmanActor.Position;
                 }
             }
-              rdpq_sync_pipe(); // Hardware crashes otherwise
-                rdpq_sync_tile(); // Hardware crashes otherwise
+              //rdpq_sync_pipe(); // Hardware crashes otherwise
+                //rdpq_sync_tile(); // Hardware crashes otherwise
         }
 
         
@@ -1606,8 +1619,8 @@ void draw_loop(bool showText, float deltaTime)
                     spawners[i].spawnerActor.BillboardPosition = spawners[i].spawnerActor.Position;
                 }
             }
-              rdpq_sync_pipe(); // Hardware crashes otherwise
-  rdpq_sync_tile(); // Hardware crashes otherwise
+              //rdpq_sync_pipe(); // Hardware crashes otherwise
+  //rdpq_sync_tile(); // Hardware crashes otherwise
         }
 
 
@@ -1615,8 +1628,8 @@ void draw_loop(bool showText, float deltaTime)
         snprintf(string1, sizeof(string1), "+%d", 2);
         draw_billboard_generic(&players[0].PlayerActor.Position, string1);*/
 
-        rdpq_sync_pipe(); // Hardware crashes otherwise
-        rdpq_sync_tile(); // Hardware crashes otherwise
+        //rdpq_sync_pipe(); // Hardware crashes otherwise
+        //rdpq_sync_tile(); // Hardware crashes otherwise
 
 
         if (TESTING) rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 10, 10,"%.2f", display_get_fps());
@@ -2335,11 +2348,13 @@ void minigame_loop(float deltatime)
             t3d_light_set_ambient(colorAmbient);
             if (TitleScreen || EndDelay <= 0)
             {
-                t3d_screen_clear_color(color_from_packed32(0x9ab3ed<<8));
+                t3d_screen_clear_color(RGBA32(154, 179, 237, 255));
+                //t3d_screen_clear_color(color_from_packed32(0x9ab3ed<<8));
             }
             else
             {
-                t3d_screen_clear_color(color_from_packed32(0xdedede<<8));
+                t3d_screen_clear_color(RGBA32(222, 222, 222, 255));
+                //t3d_screen_clear_color(color_from_packed32(0xdedede<<8));
             }
             t3d_screen_clear_depth();
             uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
@@ -2359,8 +2374,8 @@ void minigame_loop(float deltatime)
         CameraLoop(&camera4, &players[3].PlayerActor, &viewports[3]);
         draw_loop(false, deltatime);
 
-        rdpq_sync_pipe(); // Hardware crashes otherwise
-        rdpq_sync_tile(); // Hardware crashes otherwise
+        //rdpq_sync_pipe(); // Hardware crashes otherwise
+        //rdpq_sync_tile(); // Hardware crashes otherwise
         rdpq_text_printf(NULL, 2, display_get_width()/2 + 10, display_get_height()/2 + 10,"%.2f", display_get_fps());
         //rdpq_text_printf(NULL, 2, display_get_width()/2 + 10, display_get_height()/2 + 20,"%.2f", dist);
         //rdpq_text_printf(NULL, 2, 10, 20,"%ld", core_get_playercount());

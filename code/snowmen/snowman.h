@@ -22,10 +22,10 @@
 #define STONESTORSO      9
 #define STONESBOTTOM     10
 
-#define RED              color_from_packed32(0xFF0000<<8)
-#define BLUE             color_from_packed32(0x0000FF<<8)
-#define YELLOW           color_from_packed32(0xFFFF00<<8)
-#define GREEN            color_from_packed32(0x00FF00<<8)
+#define RED              color_from_packed32(0xFF0000ff)
+#define BLUE             color_from_packed32(0x0000FFff)
+#define YELLOW           color_from_packed32(0xFFFF00ff)
+#define GREEN            color_from_packed32(0x00FF00ff)
 
 
 enum ESnowmanLevel {
