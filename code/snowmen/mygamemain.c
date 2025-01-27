@@ -461,7 +461,7 @@ PickupStruct* GetRandomDecoration(PlayerStruct* playerStruct, int seed)
     while(q < 6)
     {//(snowmanStruct->decorations & (1 << (pickupStruct->decorationType - 1)))
         int randNum = (int) fabs(seed % 6);
-        int typeToCheck = 0 | (1 << (spawners[randNum].decorations[0].decorationType - 1));
+        //int typeToCheck = 0 | (1 << (spawners[randNum].decorations[0].decorationType - 1));
         //if (!(snowmen[playerStruct->playerId].decorations & (1 << )))//Don't already have deco?
         if (!(snowmen[playerStruct->playerId].decorations & (1 << (spawners[randNum].decorations[0].decorationType - 1))))
         {
@@ -844,7 +844,7 @@ void AIPlayerLoop(PlayerStruct* playerStruct, int seed, float deltaTime)
                     }
                     else if (playerStruct->AIGoalType == EAIGT_Snowman)
                     {
-                        int typeToAdd = 0 | (1 << (playerStruct->AIGoalPickup->decorationType - 1));
+                        //int typeToAdd = 0 | (1 << (playerStruct->AIGoalPickup->decorationType - 1));
 
                         //if goal was snowman, check if snowman absorbed our pickup. If so, then return to idle, next tick we'll decide next goal.
                         if (playerStruct->AIGoalPickup->holdingPlayerStruct == NULL)
@@ -1099,8 +1099,8 @@ void minigame_init()
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS_DEDITHER);
     depthBuffer = display_get_zbuf();
 
-    int sizeX = display_get_width();
-    int sizeY = display_get_height();
+    //int sizeX = display_get_width();
+    //int sizeY = display_get_height();
 
     // Here we allocate multiple viewports to render to different parts of the screen
     // This isn't really any different to other examples, just that we have 3 of them now
@@ -1876,15 +1876,15 @@ void minigame_fixedloop(float deltatime)
     if (pause)
     {
         debugf("in pause\n");
-        joypad_inputs_t joypad[4];
+        //joypad_inputs_t joypad[4];
         joypad_buttons_t btn[4];
-        joypad_buttons_t held[4];
+        //joypad_buttons_t held[4];
 
         for(int i = 0; i < 4; i++)
         {
-            joypad[i] = joypad_get_inputs(core_get_playercontroller(i));
+            //joypad[i] = joypad_get_inputs(core_get_playercontroller(i));
             btn[i] = joypad_get_buttons_pressed(core_get_playercontroller(i));
-            held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
+            //held[i] = joypad_get_buttons_held(core_get_playercontroller(i));
         }
         for(int j = 0; j < 4; j++)
         {
