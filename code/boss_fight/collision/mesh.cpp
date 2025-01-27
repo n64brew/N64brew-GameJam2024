@@ -15,43 +15,6 @@ namespace {
 
   constexpr float MIN_PENETRATION = 0.0001f;
 
-  bool intersectRaySphere(
-    const T3DVec3 &rayStarting, const T3DVec3 &rayNormalizedDirection,
-    const T3DVec3 &sphereCenter,
-    float sphereRadiusSquared,
-    float &intersectionDistance
-  ) {
-    T3DVec3 diff = sphereCenter - rayStarting;
-    float t0 = t3d_vec3_dot(&diff, &rayNormalizedDirection);
-    float dSquared = t3d_vec3_dot(&diff, &diff) - t0 * t0;
-    if(dSquared > sphereRadiusSquared) {
-      return false;
-    }
-
-    float t1 = sqrtf( sphereRadiusSquared - dSquared );
-    intersectionDistance = t0 > t1 + MIN_PENETRATION ? t0 - t1 : t0 + t1;
-    return intersectionDistance > MIN_PENETRATION;
-  }
-
-  bool intersectRaySphere(
-      const T3DVec3 &rayStarting,
-      const T3DVec3 &rayNormalizedDirection,
-      const T3DVec3 &sphereCenter,
-      float sphereRadius,
-      T3DVec3 &intersectionPosition,
-      T3DVec3 &intersectionNormal
-    )
-  {
-    float distance;
-    if(intersectRaySphere(rayStarting, rayNormalizedDirection, sphereCenter, sphereRadius * sphereRadius, distance))
-    {
-      intersectionPosition = rayStarting + rayNormalizedDirection * distance;
-      intersectionNormal = (intersectionPosition - sphereCenter) / sphereRadius;
-      return true;
-    }
-    return false;
-  }
-
   float pointPlaneDistance(const T3DVec3 &p, const T3DVec3 planePos, const T3DVec3 planeNorm)
   {
     auto diff = (p - planePos);

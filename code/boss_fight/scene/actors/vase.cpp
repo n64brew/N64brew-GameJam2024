@@ -107,7 +107,6 @@ void Actor::Vase::update(float deltaTime)
       t3d_vec3_norm(&randomRot[i]);
 
       t3d_quat_rotate_euler(&bone.rotation, randomRot[i].v, 0.25f);
-      auto invBonePos = bone.position;
       bone.position += (bone.position+randomRot[i]) * deltaTime * timer * 1.9f;
       bone.position.y *= 0.92f;
 

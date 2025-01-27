@@ -34,11 +34,11 @@ namespace {
     }
   }
 
-  static void debugDrawBVTree(const Coll::BVH *bvh) {
+  /*static void debugDrawBVTree(const Coll::BVH *bvh) {
     const int16_t *data = (int16_t*)&bvh->nodes[bvh->nodeCount]; // data starts right after nodes
     uint32_t basePtr = (uint32_t)(char*)bvh;
     debugDrawBVTreeNode(data, basePtr, bvh->nodes, 0);
-  }
+  }*/
 }
 
 Coll::Mesh* Coll::Mesh::load(const std::string &path)

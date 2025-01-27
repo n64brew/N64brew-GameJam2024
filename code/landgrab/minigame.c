@@ -487,8 +487,8 @@ minigame_end_render (void)
 static void
 minigame_end_loop (float deltatime)
 {
-  joypad_port_t port;
-  joypad_buttons_t pressed;
+  //joypad_port_t port;
+  //joypad_buttons_t pressed;
 
   // Swallow inputs for a moment to prevent accidental input.
   // We want the players to actually see the victory screen.

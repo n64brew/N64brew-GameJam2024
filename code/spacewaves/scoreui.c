@@ -71,7 +71,7 @@ void userinterface_draw(){
     w2 = display_get_width() /  2;
     h2 = display_get_height() / 2;
 
-    float fps = display_get_fps();
+    //float fps = display_get_fps();
     heap_stats_t heap_stats;
     sys_get_heap_stats(&heap_stats);
     rdpq_sync_pipe(); // Hardware crashes otherwise

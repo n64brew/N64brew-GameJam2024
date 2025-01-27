@@ -20,7 +20,6 @@ the game jam.
 #define POWERBAR_BACKGROUND 0x333333FF
 #define POWERBAR_FOREGROUND 0xEEEEEEFF
 
-static arrow up;
 static arrow ui;
 static sprite_t *arrow_sprite;
 
@@ -152,9 +151,6 @@ int get_winner()
 
 void minigame_loop(float deltatime)
 {
-    static long counter = 0;
-    float seconds;
-
     // Render the Background
     rdpq_attach(display_get(), NULL);
     //rdpq_clear(color_from_packed32(GAME_BACKGROUND));
@@ -386,7 +382,6 @@ void loadSong()
 }
 int calculateXForArrow(uint8_t playerNum, uint8_t dir)
 {
-    int paddingArrow = 10;
     #define SCREEN_WIDTH 320
     #define SCREEN_MIDDLE SCREEN_WIDTH / 2
     #define WIDTH_PER_PLAYER SCREEN_WIDTH / 4

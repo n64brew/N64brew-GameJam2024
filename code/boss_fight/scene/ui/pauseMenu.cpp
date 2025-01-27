@@ -130,7 +130,6 @@ void PauseMenu::update(Scene &scene, float deltaTime)
   blinkTimer += deltaTime;
   auto ctrl = core_get_playercontroller(PLAYER_1);
   auto pressed = joypad_get_buttons_pressed(ctrl);
-  auto held = joypad_get_buttons_held(ctrl);
 
   bool needsClose = false;
   if(pressed.start) {
