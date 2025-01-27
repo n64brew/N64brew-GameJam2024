@@ -12,7 +12,6 @@ ASSETS_LIST += \
 	filesystem/snowmen/shadow.i8.sprite \
 	filesystem/snowmen/bottled_bubbles.xm64 \
 	filesystem/snowmen/m6x11plus.font64 \
-	filesystem/snowmen/TEST_ENV_4.t3dm \
 	filesystem/snowmen/p1.t3dm \
 	filesystem/snowmen/BootTex.ci4.sprite \
 	filesystem/snowmen/ChestTex_ci4.sprite \

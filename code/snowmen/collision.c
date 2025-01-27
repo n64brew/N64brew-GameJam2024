@@ -129,7 +129,7 @@ bool CollideSphereTriangle(const T3DVec3* verticies, const SphereCollider* spher
     if (inside || intersects)
     {
         //find best point, start with point0
-        T3DVec3 best_point = point0;
+        //T3DVec3 best_point = point0;
         T3DVec3 intersection_vec;
 
         if (inside)
@@ -141,7 +141,7 @@ bool CollideSphereTriangle(const T3DVec3* verticies, const SphereCollider* spher
             T3DVec3 d;
             t3d_vec3_diff(&d, &sphere->center, &point1);
             float best_distsq = t3d_vec3_len2(&d);
-            best_point = point1;
+            //best_point = point1;
             intersection_vec = d;
 
             t3d_vec3_diff(&d, &sphere->center, &point2);
@@ -150,7 +150,7 @@ bool CollideSphereTriangle(const T3DVec3* verticies, const SphereCollider* spher
             {
                 //distsq = best_distsq;//is this right????????????????
                 best_distsq = distsq;
-                best_point = point2;
+                //best_point = point2;
                 intersection_vec = d;
             }
 
@@ -160,7 +160,7 @@ bool CollideSphereTriangle(const T3DVec3* verticies, const SphereCollider* spher
             {
                 //distsq = best_distsq;//is this right????????????????
                 best_distsq = distsq;
-                best_point = point3;
+                //best_point = point3;
                 intersection_vec = d;
             }
         }

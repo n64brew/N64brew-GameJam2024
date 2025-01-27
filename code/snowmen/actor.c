@@ -195,7 +195,7 @@ T3DVec3 MoveTowardsVector(T3DVec3 CurrentVelocity, T3DVec3 DesiredVelocity, floa
 bool TestAllCollision(Actor* InstigatorActor, Actor** AllActors, T3DVec3* penetration_normal, float* penetration_depth, float deltaTime)//for now, for loop through all actors/terrain
 {
     bool anyCollision=false;
-    int numCollisions = 0;
+    //int numCollisions = 0;
     int length = 14;//13//7;//sizeof(AllActors) / sizeof(AllActors[0]);
     for (int i = 0; i < length; i++)//MUST CHANGE TO ACTUAL ARRAY LENGTH
     {

@@ -195,10 +195,10 @@ void PlayerInit(struct PlayerStruct* playerStruct, enum EPlayerId playerId)
   playerStruct->ai_path_index = 0;
 
 
-    T3DMat4 ArrowTransform;
-    T3DMat4FP *ArrowTransformFP;
-    T3DModel* modelArrow;
-    rspq_block_t* dplArrow;
+    //T3DMat4 ArrowTransform;
+    //T3DMat4FP *ArrowTransformFP;
+    //T3DModel* modelArrow;
+    //rspq_block_t* dplArrow;
 
   playerStruct->ArrowTransformFP = malloc_uncached(sizeof(T3DMat4FP));
   t3d_mat4fp_identity(playerStruct->ArrowTransformFP);

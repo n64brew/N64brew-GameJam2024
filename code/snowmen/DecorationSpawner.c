@@ -50,7 +50,7 @@ void SpawnerInit(struct DecorationSpawnerStruct* decorationSpawner, enum EDecora
 
     decorationSpawner->decorationType = decorationType;
 
-    struct PickupStruct* decorations[2];
+    //struct PickupStruct* decorations[2];
 
     for(int i = 0; i < 2; i++)
     {
