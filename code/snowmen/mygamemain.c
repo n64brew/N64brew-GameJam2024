@@ -885,7 +885,7 @@ void AIPlayerLoop(PlayerStruct* playerStruct, int seed, float deltaTime)
                             if (GameEnd)
                             {
                                 xm64player_stop(&music);
-                                wav64_play(&sfx_stop, 31);
+                                wav64_play(&sfx_stop, 30);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                             }
                             playerStruct->AIState = EPAIS_Idle;
                             debugf("return to idle from Force add snowman\n");
@@ -1009,8 +1009,8 @@ void SetSnowballSpawnLocations(SpawnLocation locations[6])
 
 void player_draw_billboard(PlayerStruct* playerStruct)
 {
-  //rdpq_sync_pipe();// Hardware crashes otherwise
-  //rdpq_sync_tile(); // Hardware crashes otherwise
+  rdpq_sync_pipe();// Hardware crashes otherwise
+  rdpq_sync_tile(); // Hardware crashes otherwise
 
   T3DVec3 billboardPos = (T3DVec3){{
     playerStruct->PlayerActor.Position.v[0],
@@ -1034,8 +1034,8 @@ void player_draw_billboard(PlayerStruct* playerStruct)
 
 void draw_billboard_generic(T3DVec3* billboardPos, char* string, float yOffset)
 {
-  //rdpq_sync_pipe(); // Hardware crashes otherwise
-  //rdpq_sync_tile(); // Hardware crashes otherwise
+  rdpq_sync_pipe(); // Hardware crashes otherwise
+  rdpq_sync_tile(); // Hardware crashes otherwise
 
   /*T3DVec3 billboardPos = (T3DVec3){{
     playerStruct->PlayerActor.Position.v[0],
@@ -1473,29 +1473,35 @@ void draw_loop(bool showText, float deltaTime)
         rspq_block_run(spawners[3].spawnerActor.dpl);
         SnowmanDrawAll(&snowmen[0]);
 
-        //rdpq_sync_pipe(); // Hardware crashes otherwise
-        //rdpq_sync_tile(); // Hardware crashes otherwise
 
-        //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 10, 10,"%.2f", display_get_fps());
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, 2, 20, display_get_height()*.10f,"Grab decorations and Snowballs");// decorations and Snowballs \nwith the A Button!");
-            //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 45, display_get_height()*.10f," decorations and Snowballs");//A Button!");
-                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, 2, 20, display_get_height()*.17f,"with the ");//A Button!");
-                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 70, display_get_height()*.17f,"A Button!");
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.25f,"Then");//, bring them back to your \nsmiley face base!");
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 50, display_get_height()*.25f,"bring them back");// to your \nsmiley face base!");
-                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 140, display_get_height()*.25f,"to your");// \nsmiley face base!");
-                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 20, display_get_height()*.32f,"smiley face base!");
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.45f,"Snowballs = 2 points");
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.55f,"Decorations = 1 point");
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 20, display_get_height()*.68f,"Stun");// opponents with the B button \nto steal what they're holding!");
-            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 50, display_get_height()*.68f,"opponents with the ");//B button \nto steal what they're holding!");
-                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 160, display_get_height()*.68f,"B button");// \nto steal what they're holding!");
-                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.75f,"to");
-                        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 40, display_get_height()*.75f,"steal");
-                            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 75, display_get_height()*.75f,"what they're holding!");
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.85f,"The highest scoring snowman wins!");
-        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, display_get_width()/2 - 25.f, display_get_height()*.94f,"Press Start!");
-        return;
+
+        if (showText)
+        {
+            rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
+            //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 10, 10,"%.2f", display_get_fps());
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, 2, 20, display_get_height()*.10f,"Grab decorations and Snowballs");// decorations and Snowballs \nwith the A Button!");
+                //rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 45, display_get_height()*.10f," decorations and Snowballs");//A Button!");
+                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4}, 2, 20, display_get_height()*.17f,"with the ");//A Button!");
+                        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 70, display_get_height()*.17f,"A Button!");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.25f,"Then");//, bring them back to your \nsmiley face base!");
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 50, display_get_height()*.25f,"bring them back");// to your \nsmiley face base!");
+                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 140, display_get_height()*.25f,"to your");// \nsmiley face base!");
+                        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 1 }, 2, 20, display_get_height()*.32f,"smiley face base!");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.45f,"Snowballs = 2 points");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.55f,"Decorations = 1 point");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 20, display_get_height()*.68f,"Stun");// opponents with the B button \nto steal what they're holding!");
+                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 50, display_get_height()*.68f,"opponents with the ");//B button \nto steal what they're holding!");
+                    rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 160, display_get_height()*.68f,"B button");// \nto steal what they're holding!");
+                        rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.75f,"to");
+                            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 3 }, 2, 40, display_get_height()*.75f,"steal");
+                                rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 75, display_get_height()*.75f,"what they're holding!");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 20, display_get_height()*.85f,"The highest scoring snowman wins!");
+            rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, display_get_width()/2 - 25.f, display_get_height()*.94f,"Press Start!");
+            return;
+        }
+
+
     }
     //rdpq_mode_antialias(AA_REDUCED);
     if(EndDelay > 0)
@@ -1599,8 +1605,8 @@ void draw_loop(bool showText, float deltaTime)
                     snowmen[i].snowmanActor.BillboardPosition = snowmen[i].snowmanActor.Position;
                 }
             }
-              //rdpq_sync_pipe(); // Hardware crashes otherwise
-                //rdpq_sync_tile(); // Hardware crashes otherwise
+              rdpq_sync_pipe(); // Hardware crashes otherwise
+                rdpq_sync_tile(); // Hardware crashes otherwise
         }
 
         
@@ -1619,8 +1625,8 @@ void draw_loop(bool showText, float deltaTime)
                     spawners[i].spawnerActor.BillboardPosition = spawners[i].spawnerActor.Position;
                 }
             }
-              //rdpq_sync_pipe(); // Hardware crashes otherwise
-  //rdpq_sync_tile(); // Hardware crashes otherwise
+              rdpq_sync_pipe(); // Hardware crashes otherwise
+            rdpq_sync_tile(); // Hardware crashes otherwise
         }
 
 
@@ -1628,8 +1634,8 @@ void draw_loop(bool showText, float deltaTime)
         snprintf(string1, sizeof(string1), "+%d", 2);
         draw_billboard_generic(&players[0].PlayerActor.Position, string1);*/
 
-        //rdpq_sync_pipe(); // Hardware crashes otherwise
-        //rdpq_sync_tile(); // Hardware crashes otherwise
+        rdpq_sync_pipe(); // Hardware crashes otherwise
+        rdpq_sync_tile(); // Hardware crashes otherwise
 
 
         if (TESTING) rdpq_text_printf(&(rdpq_textparms_t){ .style_id = 4 }, 2, 10, 10,"%.2f", display_get_fps());
@@ -1861,7 +1867,7 @@ void minigame_fixedloop(float deltatime)
     if (GameEnd == true) 
     {
                     //xm64player_stop(&music);
-                    //wav64_play(&sfx_stop, 31);
+                    //wav64_play(&sfx_stop, 30);
         if (EndDelay <= 0.f)
         {
             GameOver(deltatime);
@@ -1933,7 +1939,7 @@ void minigame_fixedloop(float deltatime)
         {
             GameTimer = 0.f;
             debugf("TIME!\n");
-            wav64_play(&sfx_stop, 31);
+            wav64_play(&sfx_stop, 30);//!!!!!!!!!!!!!!!!!!!!!!!!!!
             xm64player_stop(&music);
             GameEnd = true;
 
@@ -2228,7 +2234,7 @@ void minigame_fixedloop(float deltatime)
                 if (GameEnd)
                 {
                     xm64player_stop(&music);
-                    wav64_play(&sfx_stop, 31);
+                    wav64_play(&sfx_stop, 30);//!!!!!!!!!!!!!!!!!!!!!!
                 }
             }
         }
@@ -2261,7 +2267,7 @@ void minigame_fixedloop(float deltatime)
                     if (GameEnd)
                     {
                         xm64player_stop(&music);
-                        wav64_play(&sfx_stop, 31);
+                        wav64_play(&sfx_stop, 30);//!!!!!!!!!!!!!!!!!!cannot call on secondary stereo channel 31
                     }
                 }
             } 
