@@ -5,4 +5,4 @@
 [submodule "tiny3d"]
 	path = tiny3d
 	url = https://github.com/HailToDodongo/tiny3d.git
-    branch = main
+    	branch = main
