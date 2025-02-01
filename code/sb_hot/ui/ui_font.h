@@ -132,9 +132,9 @@ extern "C"
             STYLE_DEBUG,
             &txt_debug_fontStyle);
 
-        txt_debugParms = (rdpq_textparms_t){.style_id = STYLE_DEBUG, .disable_aa_fix = true};
-        txt_titleParms = (rdpq_textparms_t){.style_id = STYLE_TITLE, .disable_aa_fix = true};
-        txt_gameParms = (rdpq_textparms_t){.style_id = STYLE_BRIGHT, .disable_aa_fix = true};
+        txt_debugParms = (rdpq_textparms_t){.style_id = STYLE_DEBUG};
+        txt_titleParms = (rdpq_textparms_t){.style_id = STYLE_TITLE};
+        txt_gameParms = (rdpq_textparms_t){.style_id = STYLE_BRIGHT};
     }
 
     // Unregisters and frees fonts for the next minigame.

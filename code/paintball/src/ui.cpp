@@ -44,7 +44,6 @@ State UIRenderer::renderMenu(const State &state) {
         .align = ALIGN_CENTER,
         .valign = VALIGN_CENTER,
         .wrap = WRAP_WORD,
-        .disable_aa_fix = true
     };
 
     joypad_buttons_t pressed = joypad_get_buttons_pressed(core_get_playercontroller(PLAYER_1));
@@ -117,7 +116,6 @@ void UIRenderer::render(GameState &state, T3DViewport &viewport, float deltaTime
         .height = ScreenHeight,
         .align = ALIGN_CENTER,
         .valign = VALIGN_CENTER,
-        .disable_aa_fix = true
     };
 
     renderHitMarks(viewport, deltaTime);
@@ -157,7 +155,6 @@ void UIRenderer::render(GameState &state, T3DViewport &viewport, float deltaTime
                 .height = (int16_t)(ScreenHeight * 0.8),
                 .align = ALIGN_RIGHT,
                 .valign = VALIGN_BOTTOM,
-                .disable_aa_fix = true
             };
 
             rdpq_text_printf(&textparms3, MediumFont, ScreenWidth * 0.1, ScreenHeight * 0.1, "%d", (int)ceilf(LastOneStandingTime - state.timeInState));

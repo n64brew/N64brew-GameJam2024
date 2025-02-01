@@ -208,7 +208,6 @@ void Player::renderUI(uint32_t id, sprite_t *arrowSprite)
             .style_id = (int16_t)id,
             .width = 20,
             .align = ALIGN_CENTER,
-            .disable_aa_fix = true
         };
         rdpq_text_printf(
             &fontParams,

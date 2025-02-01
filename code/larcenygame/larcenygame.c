@@ -128,7 +128,7 @@ void debugInfoDraw(float deltaTime)
     rdpq_sync_pipe(); // Hardware crashes otherwise
     rdpq_sync_tile(); // Hardware crashes otherwise
 
-    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = resolutionDisplayX, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = { .align = ALIGN_LEFT, .width = resolutionDisplayX, };
     //rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+10, "Test Debug");
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 10, 80+20, "FPS: %f", 1.0f/deltaTime);
@@ -370,7 +370,7 @@ void HUD_draw()
     PLAYERCOLOR_4,
     };
 
-    rdpq_textparms_t textparms = {.style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+    rdpq_textparms_t textparms = {.style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, };
     rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
     rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, 20, "Time Left: %i", (int)gameTimeRemaining);
 
@@ -378,7 +378,7 @@ void HUD_draw()
     //uint64_t subDrawStart = get_ticks();
 
     
-    rdpq_textparms_t playerHUDTextParms = {.align = ALIGN_LEFT, .indent = 20, .line_spacing = -1, .style_id = 0, .disable_aa_fix = true, };
+    rdpq_textparms_t playerHUDTextParms = {.align = ALIGN_LEFT, .indent = 20, .line_spacing = -1, .style_id = 0, };
 
 
     // iterate through all the players and draw what we need
@@ -2018,21 +2018,21 @@ void minigame_loop(float deltaTime)
     // game starting countdown text draw
     if(gameStarting)
     {
-        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Starting in %i...", (int)countdownTimer);
     }
 
     if(gamePaused)
     {
-        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         rdpq_text_printf(&textparms, FONT_BUILTIN_DEBUG_MONO, 0, resolutionDisplayY / 2, "Game Paused \n Press L to Quit");
     }
 
     if(gameEnding)
     {
-        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, .disable_aa_fix = true, };
+        rdpq_textparms_t textparms = { .style_id = 7, .align = ALIGN_CENTER, .width = resolutionDisplayX, };
         rdpq_sync_tile(); rdpq_sync_pipe(); // make sure the RDP is sync'd Hardware crashes otherwise
         if(winningTeam == teamThief)
         {
