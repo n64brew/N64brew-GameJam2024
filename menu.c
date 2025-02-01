@@ -34,7 +34,7 @@ static bool is_first_time = false;
 
 static menu_screen current_screen;  // Current menu screen
 static int item_count;              // The number of selection items in the current screen
-static int select;                  // The currently selected item
+static int selected;                // The currently selected item
 static int yscroll;
 static int minigamecount;
 static int global_lastplayed = 0;
@@ -78,7 +78,7 @@ static wav64_t sfx_crash;
 static xm64player_t global_music;
 
 static float fadeouttime;
-static float time;
+static float gtime;
 
 
 /*==============================
@@ -172,7 +172,7 @@ void menu_init()
 {
     int j = 0;
     bool blacklist[global_minigame_count];
-    time = 0.0f;
+    gtime = 0.0f;
     menu_done = false;
     menu_quit = false;
     minigamecount = 0;
@@ -233,7 +233,7 @@ void menu_init()
         if (!blacklist[i])
             minigame_indices[j++] = i;
 
-    select = global_lastplayed;
+    selected = global_lastplayed;
 
     // Handle automatic game selection
     ai_target = -1;
@@ -290,31 +290,31 @@ void menu_loop(float deltatime)
                 if (roulette <= 0)
                 {
                     wav64_play(&sfx_crash, 30);
-                    select = ai_target;
+                    selected = ai_target;
                     ai_nexttime = 2.0f;
                 }
                 else if (ai_nexttime <= 0)
                 {
                     ai_nexttime = 0.1f;
-                    select = rand() % minigamecount;
+                    selected = rand() % minigamecount;
                 }
-                yscroll = select-1;
-                if (select == 0)
+                yscroll = selected-1;
+                if (selected == 0)
                     yscroll = 0;
-                else if (select == minigamecount-1)
+                else if (selected == minigamecount-1)
                     yscroll = minigamecount - 3;
             }
             else if (ai_nexttime <= 0)
             {
-                if (select != ai_target)
+                if (selected != ai_target)
                 {
-                    if (select < ai_target)
-                        select++;
+                    if (selected < ai_target)
+                        selected++;
                     else
-                        select--;
+                        selected--;
                     wav64_play(&sfx_cursor, 31);
                     ai_nexttime = 0.5f;
-                    if (select == ai_target)
+                    if (selected == ai_target)
                         ai_nexttime = 2.0f;
                 }
                 else if (!ai_selected)
@@ -327,7 +327,7 @@ void menu_loop(float deltatime)
 
         if (selection_offset != 0) {
             if (!has_moved_selection) {
-                select += selection_offset;
+                selected += selection_offset;
                 has_moved_selection = true;
                 wav64_play(&sfx_cursor, 31);
             }
@@ -335,15 +335,15 @@ void menu_loop(float deltatime)
             has_moved_selection = false;
         }
 
-        if (select < 0) select = item_count-1;
-        if (select > item_count-1) select = 0;
+        if (selected < 0) selected = item_count-1;
+        if (selected > item_count-1) selected = 0;
 
         if (roulette <= 0)
         {
-            if (select < yscroll) {
+            if (selected < yscroll) {
                 yscroll -= 1;
             }
-            else if (select > yscroll+2) {
+            else if (selected > yscroll+2) {
                 yscroll += 1;
             }
         }
@@ -369,7 +369,7 @@ void menu_loop(float deltatime)
         }
     }
 
-    time += deltatime;
+    gtime += deltatime;
     if (fadeouttime > 0)
     {
         fadeouttime -= deltatime;
@@ -379,12 +379,11 @@ void menu_loop(float deltatime)
     surface_t *disp = display_get();
 
     rdpq_attach(disp, NULL);
-    menu_draw_bg(bg_pattern, bg_gradient, time * 12.0f);
+    menu_draw_bg(bg_pattern, bg_gradient, gtime * 12.0f);
 
     rdpq_textparms_t textparmsCenter = {
         .align = ALIGN_CENTER,
         .width = 200,
-        .disable_aa_fix = true,
     };
 
     rdpq_set_mode_standard();
@@ -421,20 +420,20 @@ void menu_loop(float deltatime)
 
       for (int i = yscroll; i < item_count; i++) {
             if (ycur > 100) {
-                if (select == i) {
+                if (selected == i) {
                     yscroll += 1;
                 }
                 break;
             }
 
             ++text_count;
-            if (select == i) yselect_target = ycur;
+            if (selected == i) yselect_target = ycur;
 
-            rdpq_set_prim_color(select == i ? TEXT_COLOR : ASH_GRAY);
+            rdpq_set_prim_color(selected == i ? TEXT_COLOR : ASH_GRAY);
 
             float btnScale = 1.0f;
-            if(select == i) {
-              btnScale = 1.0f + (fm_sinf(time * 4.0f) * 0.04f);
+            if(selected == i) {
+              btnScale = 1.0f + (fm_sinf(gtime * 4.0f) * 0.04f);
             }
 
             int button_width = 80;
@@ -492,19 +491,18 @@ void menu_loop(float deltatime)
           );
           // point
           rdpq_set_prim_color(WHITE);
-          slider_y += (float)select / item_count * (slider->height);
+          slider_y += (float)selected / item_count * (slider->height);
           rdpq_texture_rectangle(TILE0, 
             slider_x, slider_y, slider_x + slider->width, slider_y + 3.5f, 0, 0 
           );
         }
 
         // Show the description of the selected minigame
-        Minigame *cur = &global_minigame_list[minigame_indices[select]];
+        Minigame *cur = &global_minigame_list[minigame_indices[selected]];
         rdpq_textparms_t parms = {
             .width = rect_width + 10, 
             .wrap = WRAP_WORD,
             .align = ALIGN_RIGHT,
-            .disable_aa_fix = true
         };
 
         rdpq_set_mode_standard();
@@ -525,7 +523,7 @@ void menu_loop(float deltatime)
           int global_i = text_i+i;
           rdpq_text_printf(&textparmsCenter, FONT_TEXT, 
             pos_x-100, ycur+3, 
-            select == global_i ? "^00%s" : "^01%s",
+            selected == global_i ? "^00%s" : "^01%s",
             global_minigame_list[minigame_indices[global_i]].definition.gamename
           );
           ycur += 24;
@@ -540,7 +538,7 @@ void menu_loop(float deltatime)
     {
         if (ai_selected)
         {
-            if (((int)(time*4))%2 == 0)
+            if (((int)(gtime*4))%2 == 0)
             {
                 rdpq_set_mode_standard();
                 rdpq_mode_combiner(RDPQ_COMBINER1((TEX0,0,PRIM,0), (TEX0,0,PRIM,0)));
@@ -557,13 +555,13 @@ void menu_loop(float deltatime)
     }
 
     // Fade in
-    if (time < FADETIME)
+    if (gtime < FADETIME)
     {
-        xm64player_set_vol(&global_music, (time/FADETIME));
+        xm64player_set_vol(&global_music, (gtime/FADETIME));
         rdpq_set_mode_standard();
         rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
         rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_set_prim_color(RGBA32(0, 0, 0, 255*(1-(time/FADETIME))));
+        rdpq_set_prim_color(RGBA32(0, 0, 0, 255*(1-(gtime/FADETIME))));
         rdpq_fill_rectangle(0, 0, 320, 240);
     }
 
@@ -585,8 +583,8 @@ void menu_loop(float deltatime)
         if (!menu_quit)
         {
             is_first_time = false;
-            global_lastplayed = select;
-            minigame_loadnext(global_minigame_list[minigame_indices[select]].internalname);
+            global_lastplayed = selected;
+            minigame_loadnext(global_minigame_list[minigame_indices[selected]].internalname);
             if (core_get_nextround() != NR_FREEPLAY)
                 savestate_save(false);
             core_level_changeto(LEVEL_MINIGAME);

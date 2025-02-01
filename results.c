@@ -55,7 +55,7 @@ static bool winner_sfx_played;
 static bool selected_sfx_played;
 static xm64player_t global_music;
 
-static float time;
+static float gtime;
 
 static float iconxpos;
 static float confirm_start;
@@ -205,7 +205,7 @@ void results_init()
     xm64player_set_vol(&global_music, 0.0f);
     xm64player_play(&global_music, 0);
 
-    time = 0;
+    gtime = 0;
     fading_out = false;
 
     confirm_start = ending ? ANNOUNCE_DELAY : 0.0f;
@@ -278,9 +278,9 @@ float get_point_scale(PlyNum player, int index)
     if (index >= points) return 0.0f;
 
     if (core_get_winner(player) && index == points-1) {
-        if (time < POINTS_DELAY) return 0.0f;
-        if (time > POINTS_DELAY + POINTS_DURATION) return 1.0f;
-        float point_time = time - POINTS_DELAY;
+        if (gtime < POINTS_DELAY) return 0.0f;
+        if (gtime > POINTS_DELAY + POINTS_DURATION) return 1.0f;
+        float point_time = gtime - POINTS_DELAY;
         return ease_back_out(point_time/POINTS_DURATION);
     }
 
@@ -289,7 +289,7 @@ float get_point_scale(PlyNum player, int index)
 
 void results_loop(float deltatime)
 {
-    time += deltatime;
+    gtime += deltatime;
 
     joypad_buttons_t btn[4] = {
         joypad_get_buttons_pressed(JOYPAD_PORT_1),
@@ -302,17 +302,17 @@ void results_loop(float deltatime)
 
     rdpq_attach(disp, NULL);
     
-    float bg_fade = time < FADE_IN_DURATION ? (time/FADE_IN_DURATION) : 1.0f;
-    menu_draw_bg(bg_pattern, bg_gradient, time * 12.0f, bg_fade);
+    float bg_fade = gtime < FADE_IN_DURATION ? (gtime/FADE_IN_DURATION) : 1.0f;
+    menu_draw_bg(bg_pattern, bg_gradient, gtime * 12.0f, bg_fade);
     if (fading_out)
-        xm64player_set_vol(&global_music, (((1-(time-fade_out_start)/FADE_OUT_DURATION) < 0) ? 0 : (1-(time-fade_out_start)/FADE_OUT_DURATION)));
+        xm64player_set_vol(&global_music, (((1-(gtime-fade_out_start)/FADE_OUT_DURATION) < 0) ? 0 : (1-(gtime-fade_out_start)/FADE_OUT_DURATION)));
     else
-        xm64player_set_vol(&global_music, ((time/FADE_IN_DURATION > 1) ? 1 : time/FADE_IN_DURATION));
+        xm64player_set_vol(&global_music, ((gtime/FADE_IN_DURATION > 1) ? 1 : gtime/FADE_IN_DURATION));
 
-    bool can_confirm = time - confirm_start > CONFIRM_DELAY;
-    bool is_announcing = ending && time > ANNOUNCE_DELAY;
+    bool can_confirm = gtime - confirm_start > CONFIRM_DELAY;
+    bool is_announcing = ending && gtime > ANNOUNCE_DELAY;
 
-    if (time > POINTS_SFX_DELAY && !point_sfx_played) {
+    if (gtime > POINTS_SFX_DELAY && !point_sfx_played) {
         bool someonescored = false;
         for (PlyNum i = 0; i < MAXPLAYERS; i++)
         {
@@ -327,7 +327,7 @@ void results_loop(float deltatime)
         point_sfx_played = true;
     }
 
-    if (is_announcing && time > ANNOUNCE_DELAY && !winner_sfx_played) {
+    if (is_announcing && gtime > ANNOUNCE_DELAY && !winner_sfx_played) {
         wav64_play(&sfx_winner, 16);
         xm64player_stop(&global_music);
         winner_sfx_played = true;
@@ -379,7 +379,7 @@ void results_loop(float deltatime)
             }
         } else if (!fading_out && chooseanim >= ANIM_CHOOSEPLAYER_DONE) {
             fading_out = true;
-            fade_out_start = time;
+            fade_out_start = gtime;
         }
     }
 
@@ -387,7 +387,7 @@ void results_loop(float deltatime)
     int rect_width = 260;
     int rect_height = 180;
 
-    float box_time = time - BOX_ANIMATION_DELAY;
+    float box_time = gtime - BOX_ANIMATION_DELAY;
     if (box_time < BOX_ANIMATION_DURATION) {
         float box_factor = ease_cubic_out(box_time/BOX_ANIMATION_DURATION);
         rect_width *= box_factor;
@@ -397,7 +397,7 @@ void results_loop(float deltatime)
     int pos_x = display_get_width() / 2 - (rect_width / 2) - 8;
     int ycur = display_get_height() / 2 - (rect_height / 2) - 8;
 
-    if (time > BOX_ANIMATION_DELAY) {
+    if (gtime > BOX_ANIMATION_DELAY) {
         rdpq_set_mode_standard();
         rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
@@ -429,7 +429,7 @@ void results_loop(float deltatime)
 
     pos_x = 30;
 
-    if (time > TEXT_DELAY) {
+    if (gtime > TEXT_DELAY) {
         ycur += 20;
 
         rdpq_textparms_t parms = {
@@ -446,7 +446,7 @@ void results_loop(float deltatime)
             rdpq_blitparms_t blitparms = {
                 .cx = 10,
                 .cy = 10,
-                .theta = fmodf(time*2.4f, FM_PI*2)
+                .theta = fmodf(gtime*2.4f, FM_PI*2)
             };
             for (PlyNum i = 0; i < MAXPLAYERS; i++)
             {
@@ -505,7 +505,7 @@ void results_loop(float deltatime)
                                 .cy = 10,
                                 .scale_x = point_scale, 
                                 .scale_y = point_scale,
-                                .theta = fmodf(time*2.4f, FM_PI*2)
+                                .theta = fmodf(gtime*2.4f, FM_PI*2)
                             });
                         }
                     }
@@ -547,7 +547,7 @@ void results_loop(float deltatime)
 
     // Fade out
     if (fading_out) {
-        float fade_time = time - fade_out_start;
+        float fade_time = gtime - fade_out_start;
         float fade_out_factor = (fade_time/FADE_OUT_DURATION);
         if (fade_out_factor > 1.0f) fade_out_factor = 1.0f;
         rdpq_set_mode_standard();
@@ -564,12 +564,12 @@ void results_loop(float deltatime)
         wav64_play(&sfx_confirm, 31);
         if (core_get_nextround() == NR_RANDOMGAME) {
             fading_out = true;
-            fade_out_start = time;
+            fade_out_start = gtime;
         } else
             selectingnext = true;
     }
 
-    if (fading_out && time > fade_out_start + FADE_OUT_DURATION + FADE_OUT_POST_DELAY) {
+    if (fading_out && gtime > fade_out_start + FADE_OUT_DURATION + FADE_OUT_POST_DELAY) {
         if (ending) {
             results_reset_points();
             savestate_clear();
