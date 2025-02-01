@@ -102,6 +102,7 @@ Build:
 
 ```bash
 libdragon make -C tiny3d install
+libdragon make -C tiny3d/tools/gltf_importer
 libdragon make -C tiny3d/tools/gltf_importer install
 libdragon make
 ```
