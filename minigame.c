@@ -56,7 +56,7 @@ void minigame_loadall()
     dir_findfirst(global_minigamepath, &minigamesdir);
     do
     {
-        if (!strstr(minigamesdir.d_name, ".sym") && !strstr(minigamesdir.d_name, ".desc"))
+        if (strstr(minigamesdir.d_name, ".desc"))
             gamecount++;
     }
     while (dir_findnext(global_minigamepath, &minigamesdir) == 0);
@@ -75,9 +75,7 @@ void minigame_loadall()
         char* filename = minigamesdir.d_name;
 
         // Ignore the symbol and the dso file
-        if (strstr(filename, ".sym"))
-            continue;
-        if (strstr(filename, ".dso"))
+        if (!strstr(filename, ".desc"))
             continue;
 
         // Get the filepath and open the description file
