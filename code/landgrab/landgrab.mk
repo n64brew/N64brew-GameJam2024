@@ -33,3 +33,6 @@ ASSETS_LIST += \
 
 filesystem/landgrab/anita_semi_square.font64: MKFONT_FLAGS += --outline 2 --size 16
 filesystem/landgrab/bbrick.font64: MKFONT_FLAGS += --outline 2 --size 16
+filesystem/landgrab/buzz.wav64: AUDIOCONV_FLAGS += --wav-mono
+filesystem/landgrab/click.wav64: AUDIOCONV_FLAGS += --wav-mono
+filesystem/landgrab/pop.wav64: AUDIOCONV_FLAGS += --wav-mono
