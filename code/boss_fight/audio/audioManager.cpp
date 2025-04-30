@@ -148,7 +148,7 @@ uint32_t AudioManager::playSFX(uint64_t name, const T3DVec3 &pos, SfxConf conf) 
     char path[]{FS_BASE_PATH "sfx/01234567.wav64\0"};
     constructPath(path, name, sizeof(path)-1);
 
-    wav64_loadparms_t parms; parms.streaming_mode = WAV64_STREAMING_NONE;
+    wav64_loadparms_t parms = {0}; parms.streaming_mode = WAV64_STREAMING_NONE;
     wav64_t* sfx = wav64_load(path, &parms);
     it = sfxMap.insert({name, {sfx}}).first;
 
