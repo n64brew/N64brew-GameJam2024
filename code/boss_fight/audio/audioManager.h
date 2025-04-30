@@ -19,7 +19,7 @@ struct SfxConf {
 class AudioManager {
   private:
     struct SFXInstance {
-      wav64_t wave{};
+      wav64_t* wave{};
       uint8_t *sampleDataStart{};
       uint8_t *sampleDataCurr{};
       uint8_t channel{};
@@ -27,7 +27,7 @@ class AudioManager {
     };
 
     struct SFX {
-      wav64_t source{};
+      wav64_t* source{};
       uint8_t *sampleData{nullptr};
       std::array<SFXInstance, 4> instances{};
     };
