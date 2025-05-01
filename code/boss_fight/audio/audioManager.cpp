@@ -28,10 +28,6 @@ namespace {
     return -1;
   }
 
-  uint32_t getWaveSize(wav64_t *wav) {
-    return wav->wave.len * wav->wave.channels * (wav->wave.bits / 8);
-  }
-
   void constructPath(char *path, uint64_t name, std::size_t pathLen) {
     const char* nameStr = reinterpret_cast<const char*>(&name);
     char *p = path + pathLen - 15;
@@ -69,12 +65,11 @@ AudioManager::AudioManager() {
 
 AudioManager::~AudioManager() {
   for(auto &sfx : sfxMap) {
-    free_uncached(sfx.second.sampleData);
-    wav64_close(&sfx.second.source);
+    wav64_close(sfx.second.source);
   }
-  wav64_close(&bgm);
-  wav64_close(&infoSFXStart);
-  wav64_close(&infoSFXWin);
+  if(bgm.st) wav64_close(&bgm);
+  if(infoSFXStart.st) wav64_close(&infoSFXStart);
+  if(infoSFXWin.st) wav64_close(&infoSFXWin);
 }
 
 void AudioManager::update(const T3DVec3 &camPos, const T3DVec3 &camTarget, float deltaTime) {
@@ -145,27 +140,20 @@ uint32_t AudioManager::playSFX(uint64_t name, const T3DVec3 &pos, SfxConf conf) 
 
   auto it = sfxMap.find(name);
   if(it == sfxMap.end()) {
-    wav64_t sfx;
+
     char path[]{FS_BASE_PATH "sfx/01234567.wav64\0"};
     constructPath(path, name, sizeof(path)-1);
 
-    wav64_open(&sfx, path);
+    wav64_loadparms_t parms{}; parms.streaming_mode = WAV64_STREAMING_NONE;
+    wav64_t* sfx = wav64_load(path, &parms);
     it = sfxMap.insert({name, {sfx}}).first;
-
-    uint32_t dataSize = getWaveSize(&it->second.source);
-    it->second.source.wave.read = waveformRead;
-    it->second.source.wave.ctx = &it->second;
-    it->second.sampleData = (uint8_t*)malloc_uncached(dataSize);
-    read(it->second.source.current_fd, CachedAddr(it->second.sampleData), dataSize);
 
     for(auto & instance : it->second.instances) {
       instance.sampleDataStart = it->second.sampleData;
       instance.sampleDataCurr = it->second.sampleData;
-      instance.bps = (it->second.source.wave.bits == 8 ? 0 : 1) + (it->second.source.wave.channels == 2 ? 1 : 0);
+      instance.bps = (it->second.source->wave.bits == 8 ? 0 : 1) + (it->second.source->wave.channels == 2 ? 1 : 0);
       instance.wave = it->second.source;
-      instance.wave.wave.ctx = &instance;
     }
-    //data_cache_hit_writeback(it->second.sampleData, dataSize);
   }
 
   // check if any channel is free
@@ -185,10 +173,10 @@ uint32_t AudioManager::playSFX(uint64_t name, const T3DVec3 &pos, SfxConf conf) 
       } else {
         setVolume3D(ch, pos, vol);
       }
-      mixer_ch_play(ch, &instance.wave.wave);
+      mixer_ch_play(ch, &instance.wave->wave);
       if(conf.variation) {
         float var = (conf.variation / 255.0f) * Math::rand01() * 10000.0f;
-        mixer_ch_set_freq(ch, instance.wave.wave.frequency - var);
+        mixer_ch_set_freq(ch, instance.wave->wave.frequency - var);
       }
       return 0;
     }
