@@ -543,7 +543,7 @@ void minigame_fixedloop(float deltatime){
 
 void minigame_loop(float deltatime){
     // floor color
-    color_t WHITE = RGBA16(255, 255, 255, 0);
+    color_t WHITE = RGBA32(255, 255, 255, 0);
 
     if(game_state == 1){
         uint32_t playercount = core_get_playercount();
