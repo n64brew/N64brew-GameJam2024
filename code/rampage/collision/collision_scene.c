@@ -1,5 +1,6 @@
 #include "collision_scene.h"
 
+#include <stddef.h>
 #include <malloc.h>
 #include <stdbool.h>
 #include <assert.h>
